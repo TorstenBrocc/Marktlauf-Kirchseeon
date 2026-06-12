@@ -10,21 +10,14 @@ jobs:
     name: Deploy
     runs-on: ubuntu-latest
     steps:
-    - name:  Checkout repository
+    - name: Checkout repository
       uses: actions/checkout@v4
 
     - name: SFTP Deploy
-      uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      uses: wlixcc/SFTP-Deploy-Action@v1.2.4
       with:
         server: ${{ secrets.SFTP_HOST }}
         username: ${{ secrets.SFTP_USERNAME }}
-        ssh-private-key: ${{ secrets.SFTP_SSH_KEY }}
-        server-dir: ${{ secrets.SFTP_REMOTE_PATH }}
-        exclude: |
-          .git/
-          .github/
-          .vscode/
-          node_modules/
-          .gitignore
-          README.md
-          briefing.md
+        ssh_private_key: ${{ secrets.SFTP_SSH_KEY }}
+        remote_path: ${{ secrets.SFTP_REMOTE_PATH }}
+        local_path: './*'
