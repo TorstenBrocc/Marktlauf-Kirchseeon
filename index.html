@@ -1,0 +1,344 @@
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="meta.title">Marktlauf Kirchseeon 2026 | ATS Kirchseeon e.V.</title>
+    <meta name="description" content="Marktlauf Kirchseeon 2026 - Ein sportliches Event für die ganze Familie. Jetzt anmelden!" data-i18n="meta.description">
+    <link rel="icon" type="image/png" href="assets/images/ATSV_Logo-750x968.png">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+
+    <header class="main-header">
+        <div class="container nav-container">
+            <a href="#" class="nav-logo">
+                <img src="assets/images/ATSV_Logo-750x968.png" alt="ATSV Logo" class="logo-img">
+            </a>
+            
+            <button class="mobile-menu-toggle" aria-label="Menü öffnen">
+                <span class="burger-icon"></span>
+            </button>
+
+            <nav class="nav-links">
+                <a href="#distanzen" class="nav-link" data-i18n="nav.laeufe">Läufe</a>
+                <a href="#ablauf" class="nav-link" data-i18n="nav.zeitplan">Zeitplan</a>
+                <a href="#strecke" class="nav-link" data-i18n="nav.strecke">Strecke</a>
+                <a href="#sponsoren" class="nav-link" data-i18n="nav.sponsoren">Sponsoren</a>
+                <a href="#kontakt" class="nav-link" data-i18n="nav.kontakt">Kontakt</a>
+                <div class="lang-switcher">
+                    <button id="lang-toggle" class="lang-btn" title="Sprache wechseln">
+                        <img src="assets/images/allemand.png" alt="Deutsch" id="lang-flag" class="flag-icon">
+                    </button>
+                </div>
+                <a href="#anmeldung" class="nav-link nav-cta" data-i18n="nav.anmeldung">Jetzt anmelden</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section id="hero" class="hero">
+            <div class="hero-overlay"></div>
+            <div class="hero-logo-container">
+                <img src="assets/images/20050716_Logo_Martktlauf_auf weiß.png" alt="Marktlauf Logo" class="hero-logo">
+            </div>
+            <div class="container hero-content">
+                <div class="hero-text">
+                    <span class="hero-badge" data-i18n="hero.badge">ATSV Kirchseeon präsentiert zusammen mit der Gemeinde</span>
+                    <h1 data-i18n="hero.title">Marktlauf <br><span class="text-highlight">Kirchseeon 2026</span></h1>
+                    <p class="hero-details">
+                        <time datetime="2026-09-20" data-i18n="hero.date">20. September 2026</time>
+                    </p>
+                    <div class="hero-actions">
+                        <a href="#anmeldung" class="btn btn-primary" data-i18n="hero.cta_primary">Jetzt anmelden</a>
+                        <a href="#distanzen" class="btn btn-secondary" data-i18n="hero.cta_secondary">Alle Läufe</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Distanzen Section -->
+        <section id="distanzen" class="section-padding">
+            <div class="container">
+                <h2 class="text-center" data-i18n="distanzen.title">Die Läufe</h2>
+                <div class="run-grid">
+                    <!-- Bambini -->
+                    <div class="run-card">
+                        <div class="run-card-header">
+                            <span class="run-category" data-i18n="distanzen.bambini.category">Kinder</span>
+                            <span class="run-distance">500m</span>
+                        </div>
+                        <p class="run-card-desc" data-i18n="distanzen.bambini.desc">Der perfekte Einstieg für die kleinsten Sportler. Ein kurzer, spannender Lauf für alle Bambinis.</p>
+                    </div>
+                    <!-- Schüler -->
+                    <div class="run-card">
+                        <div class="run-card-header">
+                            <span class="run-category" data-i18n="distanzen.schueler.category">Jugend</span>
+                            <span class="run-distance">1km & 2km</span>
+                        </div>
+                        <p class="run-card-desc" data-i18n="distanzen.schueler.desc">Herausforderungen für Schüler in zwei verschiedenen Distanzen, um die eigenen Grenzen zu testen.</p>
+                    </div>
+                    <!-- Elite -->
+                    <div class="run-card">
+                        <div class="run-card-header">
+                            <span class="run-category" data-i18n="distanzen.elite.category">Erwachsene</span>
+                            <span class="run-distance">5km & 10km</span>
+                        </div>
+                        <p class="run-card-desc" data-i18n="distanzen.elite.desc">Die Königsdisziplinen für ambitionierte Läufer und Hobbysportler. Wer holt sich den Sieg in Kirchseeon?</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Ablauf Section -->
+        <section id="ablauf" class="section-padding" style="background-color: var(--gray-50);">
+            <div class="container">
+                <h2 class="text-center" data-i18n="ablauf.title">Zeitplan</h2>
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content">
+                            <span class="timeline-time" data-i18n="ablauf.time1">09:00 Uhr</span>
+                            <span class="timeline-event" data-i18n="ablauf.event1">Bambini Lauf (500m)</span>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content">
+                            <span class="timeline-time" data-i18n="ablauf.time2">09:30 Uhr</span>
+                            <span class="timeline-event" data-i18n="ablauf.event2">Schüler Läufe (1000m & 2000m)</span>
+                        </div>
+                    </div>
+                     <div class="timeline-item">
+                         <div class="timeline-dot"></div>
+                         <div class="timeline-content">
+                             <span class="timeline-time" data-i18n="ablauf.time3">10:00 Uhr</span>
+                             <span class="timeline-event" data-i18n="ablauf.event3">Elite Läufe (5km & 10km)</span>
+                         </div>
+                     </div>
+                     <div class="timeline-item">
+                         <div class="timeline-dot"></div>
+                         <div class="timeline-content">
+                             <span class="timeline-time" data-i18n="ablauf.time4">11:00 Uhr</span>
+                             <span class="timeline-event" data-i18n="ablauf.event4">Siegerehrung Bambini und Schüler</span>
+                         </div>
+                     </div>
+                     <div class="timeline-item">
+                         <div class="timeline-dot"></div>
+                         <div class="timeline-content">
+                             <span class="timeline-time" data-i18n="ablauf.time5">12:00 Uhr</span>
+                             <span class="timeline-event" data-i18n="ablauf.event5">Siegerehrung Elite</span>
+                         </div>
+                     </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Strecke Section -->
+        <section id="strecke" class="section-padding">
+            <div class="container">
+                <h2 class="text-center" data-i18n="strecke.title">Start & Ziel</h2>
+                <p class="text-center" style="margin-bottom: var(--space-lg); color: var(--gray-600);" data-i18n="strecke.address">
+                    Start und Ziel befinden sich am Westring 6, 85614 Kirchseeon.
+                </p>
+                
+                <div class="map-container">
+                    <iframe 
+                        class="map-iframe" 
+                        src="https://maps.google.com/maps?q=Westring%206,%2085614%20Kirchseeon&t=&z=15&ie=UTF8&iwloc=&output=embed" 
+                        title="Marktlauf Kirchseeon Karte">
+                    </iframe>
+                </div>
+
+                <div class="route-container">
+                    <h3 class="text-center" style="margin-bottom: var(--space-md);" data-i18n="strecke.routes_title">Die Strecken</h3>
+                    <div class="route-list">
+                        <div class="route-item">
+                            <div class="route-info">
+                                <span class="route-icon">📍</span>
+                                <span data-i18n="strecke.route1">Bambini Lauf (500m)</span>
+                            </div>
+                            <a href="Routes/bambini.gpx" class="btn btn-secondary gpx-download" download>
+                                <img src="https://cdn-icons-png.flaticon.com/512/2163/2163161.png" alt="GPX" class="gpx-thumb">
+                                <span data-i18n="strecke.gpx_download">GPX Download</span>
+                            </a>
+                        </div>
+                        <div class="route-item">
+                            <div class="route-info">
+                                <span class="route-icon">📍</span>
+                                <span data-i18n="strecke.route2">Schüler Lauf (1km/2km)</span>
+                            </div>
+                            <a href="Routes/schueler.gpx" class="btn btn-secondary gpx-download" download>
+                                <img src="https://cdn-icons-png.flaticon.com/512/2163/2163161.png" alt="GPX" class="gpx-thumb">
+                                <span data-i18n="strecke.gpx_download">GPX Download</span>
+                            </a>
+                        </div>
+                        <div class="route-item">
+                            <div class="route-info">
+                                <span class="route-icon">📍</span>
+                                <span data-i18n="strecke.route3">Elite Lauf (5km/10km)</span>
+                            </div>
+                            <a href="assets/Routes/8,6km ex JEK 2x über Bucher Str. & über Ilching.gpx" class="btn btn-secondary gpx-download" download>
+                                <img src="https://cdn-icons-png.flaticon.com/512/2163/2163161.png" alt="GPX" class="gpx-thumb">
+                                <span data-i18n="strecke.gpx_download">GPX Download</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Anmeldung Section -->
+        <section id="anmeldung" class="section-padding" style="background-color: var(--gray-50);">
+            <div class="container">
+                <h2 class="text-center" data-i18n="anmeldung.title">Anmeldung</h2>
+                <p class="text-center" style="margin-bottom: var(--space-lg); color: var(--gray-600);" data-i18n="anmeldung.text">
+                    Sichere dir jetzt deinen Startplatz für den Marktlauf 2026!
+                </p>
+                
+                <div class="registration-container">
+                    <!-- RaceResult Snippet Start -->
+                    <div class="registration-placeholder">
+                        <p><strong data-i18n="anmeldung.placeholder_title">RaceResult Anmeldung</strong></p>
+                        <p data-i18n="anmeldung.placeholder_text">Hier wird das RaceResult-Anmelde-Snippet eingebunden.</p>
+                        <p style="font-size: 0.8rem; margin-top: var(--space-sm);" data-i18n="anmeldung.placeholder_note">
+                            (Bitte RaceResult-Iframe/Script hier einfügen)
+                        </p>
+                    </div>
+                    <!-- RaceResult Snippet End -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Sponsors Section -->
+        <section id="sponsoren" class="section-padding">
+            <div class="container">
+                <h2 class="text-center" data-i18n="sponsoren.title">Unsere Sponsoren</h2>
+                <div class="sponsor-grid">
+                    <!-- Placeholder Sponsors -->
+                    <div class="sponsor-item">
+                        <img src="https://via.placeholder.com/200x100?text=Sponsor+1" alt="Sponsor 1">
+                    </div>
+                    <div class="sponsor-item">
+                        <img src="https://via.placeholder.com/200x100?text=Sponsor+2" alt="Sponsor 2">
+                    </div>
+                    <div class="sponsor-item">
+                        <img src="https://via.placeholder.com/200x100?text=Sponsor+3" alt="Sponsor 3">
+                    </div>
+                    <div class="sponsor-item">
+                        <img src="https://via.placeholder.com/200x100?text=Sponsor+4" alt="Sponsor 4">
+                    </div>
+                    <div class="sponsor-item">
+                        <img src="https://via.placeholder.com/200x100?text=Sponsor+5" alt="Sponsor 5">
+                    </div>
+                    <div class="sponsor-item">
+                        <img src="https://via.placeholder.com/200x100?text=Sponsor+6" alt="Sponsor 6">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section id="kontakt" class="section-padding" style="background-color: var(--gray-50);">
+            <div class="container">
+                <h2 class="text-center" data-i18n="kontakt.title">Schreiben Sie uns – wir helfen Ihnen gerne weiter!</h2>
+                
+                <div class="contact-faq-link text-center" style="margin-bottom: var(--space-lg);">
+                    <p data-i18n="kontakt.faq_text">Haben Sie eine schnelle Frage? <a href="#faq" class="text-highlight" style="font-weight: 600; text-decoration: underline;" data-i18n="kontakt.faq_link">Besuchen Sie unsere FAQ</a></p>
+                </div>
+
+                <div class="contact-wrapper">
+                    <form action="contact.php" method="POST" class="contact-form">
+                        <div class="form-group">
+                            <label for="vorname" data-i18n="kontakt.form.vorname">Vorname *</label>
+                            <input type="text" id="vorname" name="vorname" required placeholder="Vorname">
+                        </div>
+                        <div class="form-group">
+                            <label for="nachname" data-i18n="kontakt.form.nachname">Nachname *</label>
+                            <input type="text" id="nachname" name="nachname" required placeholder="Nachname">
+                        </div>
+                        <div class="form-group">
+                            <label for="email" data-i18n="kontakt.form.email">E-Mail-Adresse *</label>
+                            <input type="email" id="email" name="email" required placeholder="ihre@email.de">
+                        </div>
+                        <div class="form-group">
+                            <label for="betreff" data-i18n="kontakt.form.betreff">Betreff / Anliegen *</label>
+                            <select id="betreff" name="betreff" required>
+                                <option value="" disabled selected data-i18n="kontakt.form.betreff_placeholder">Bitte wählen Sie ein Thema aus</option>
+                                <option value="Anmeldung" data-i18n="kontakt.form.opt_anmeldung">Fragen zur Anmeldung / Startgebühr</option>
+                                <option value="Strecke" data-i18n="kontakt.form.opt_strecke">Streckenverlauf & Zeitnahme</option>
+                                <option value="Sponsoring" data-i18n="kontakt.form.opt_sponsoring">Sponsoring & Partner</option>
+                                <option value="Helfer" data-i18n="kontakt.form.opt_helfer">Helfer / Volunteers</option>
+                                <option value="Sonstiges" data-i18n="kontakt.form.opt_sonstiges">Sonstiges</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="nachricht" data-i18n="kontakt.form.nachricht">Nachricht *</label>
+                            <textarea id="nachricht" name="nachricht" rows="5" required placeholder="Wie können wir Ihnen helfen?"></textarea>
+                        </div>
+                        
+                        <div class="form-group privacy-group">
+                            <label class="checkbox-container">
+                                <input type="checkbox" name="privacy" required>
+                                <span class="checkmark"></span>
+                                <span class="label-text" data-i18n="kontakt.form.privacy">Ich habe die <a href="https://atsvkirchseeon.de/datenschutz-informationspflichten/" target="_blank">Datenschutzerklärung</a> gelesen und stimme der Verarbeitung meiner Daten zu. *</span>
+                            </label>
+                        </div>
+
+                        <!-- Spam Protection Placeholder -->
+                        <div class="captcha-placeholder text-center" style="margin-bottom: var(--space-md); font-size: 0.8rem; color: var(--gray-500);" data-i18n="kontakt.captcha">
+                            [Spamschutz: Friendly Captcha / reCAPTCHA Integration]
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-block" data-i18n="kontakt.form.submit">Nachricht senden</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="main-footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <h4 data-i18n="footer.title">Marktlauf 2026</h4>
+                    <p style="color: var(--gray-400); line-height: 1.6;" data-i18n="footer.text">
+                        Ein sportliches Highlight in Kirchseeon für die ganze Familie. 
+                        Wir freuen uns auf euch!
+                    </p>
+                </div>
+                <div class="footer-col">
+                    <h4 data-i18n="footer.links_title">Quick Links</h4>
+                    <div class="footer-links">
+                        <a href="#distanzen" class="footer-link" data-i18n="nav.laeufe">Die Läufe</a>
+                        <a href="#ablauf" class="footer-link" data-i18n="nav.zeitplan">Zeitplan</a>
+                        <a href="#strecke" class="footer-link" data-i18n="nav.strecke">Die Strecke</a>
+                        <a href="#anmeldung" class="footer-link" data-i18n="nav.anmeldung">Anmeldung</a>
+                    </div>
+                </div>
+                <div class="footer-col">
+                    <h4 data-i18n="footer.legal_title">Rechtliches</h4>
+                    <div class="footer-links">
+                        <a href="https://atsvkirchseeon.de/impressum-datenschutz-2/" class="footer-link" target="_blank" data-i18n="footer.legal.impressum">Impressum</a>
+                        <a href="https://atsvkirchseeon.de/datenschutz-informationspflichten/" class="footer-link" target="_blank" data-i18n="footer.legal.privacy">Datenschutz</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p data-i18n="footer.copyright">&copy; 2026 ATS Kirchseeon e.V. | Alle Rechte vorbehalten.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+</html>

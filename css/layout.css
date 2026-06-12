@@ -1,0 +1,174 @@
+/* 
+  Marktlauf Kirchseeon 2026 - Layout Styles
+  Header, Navigation, and Footer
+*/
+
+.main-header {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background-color: var(--white);
+    box-shadow: var(--shadow-sm);
+    height: 70px;
+    display: flex;
+    align-items: center;
+}
+
+.nav-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.nav-logo {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    flex-shrink: 1;
+}
+
+.logo-img {
+    height: 50px;
+    width: auto;
+    max-width: 100%;
+    object-fit: contain;
+}
+
+@media (max-width: 480px) {
+    .logo-img {
+        height: 30px;
+    }
+    .nav-container {
+        gap: var(--space-xs);
+    }
+}
+
+.nav-links {
+    display: flex;
+    gap: var(--space-md);
+    justify-content: center;
+    align-items: center;
+}
+
+.nav-link {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--gray-600);
+    transition: color 0.2s ease;
+}
+
+.nav-link:hover {
+    color: var(--color-primary);
+}
+
+.nav-cta {
+    background-color: var(--color-primary);
+    color: var(--white);
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+
+.nav-cta:hover {
+    background-color: var(--color-primary-dark);
+    color: var(--white);
+}
+
+.mobile-menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: var(--space-sm);
+}
+
+.burger-icon {
+    display: block;
+    width: 24px;
+    height: 2px;
+    background-color: var(--gray-900);
+    position: relative;
+}
+
+.burger-icon::before, .burger-icon::after {
+    content: '';
+    position: absolute;
+    width: 24px;
+    height: 2px;
+    background-color: var(--gray-900);
+    left: 0;
+}
+
+.burger-icon::before { top: -8px; }
+.burger-icon::after { top: 8px; }
+
+/* Footer */
+.main-footer {
+    background-color: var(--gray-900);
+    color: var(--gray-300);
+    padding: var(--space-xl) 0 var(--space-md);
+    font-size: 0.875rem;
+}
+
+.footer-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--space-lg);
+    margin-bottom: var(--space-xl);
+}
+
+.footer-col h4 {
+    color: var(--white);
+    margin-bottom: var(--space-md);
+    font-size: 1.1rem;
+}
+
+.footer-links {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.footer-link {
+    color: var(--gray-400);
+    transition: color 0.2s ease;
+}
+
+.footer-link:hover {
+    color: var(--color-primary-light);
+}
+
+.footer-bottom {
+    border-top: 1px solid var(--gray-800);
+    padding-top: var(--space-md);
+    text-align: center;
+    color: var(--gray-500);
+}
+
+/* Responsive Navigation */
+@media (max-width: 768px) {
+    .mobile-menu-toggle {
+        display: block;
+    }
+
+    .nav-links {
+        position: absolute;
+        top: 70px;
+        left: 0;
+        right: 0;
+        background-color: var(--white);
+        flex-direction: column;
+        padding: var(--space-lg);
+        gap: var(--space-lg);
+        text-align: center;
+        border-top: 1px solid var(--gray-100);
+        transform: translateY(-150%);
+        transition: transform 0.3s ease-in-out;
+        box-shadow: var(--shadow-md);
+    }
+
+    .nav-links.active {
+        transform: translateY(0);
+    }
+}

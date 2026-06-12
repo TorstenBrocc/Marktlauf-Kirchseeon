@@ -1,0 +1,523 @@
+/* 
+  Marktlauf Kirchseeon 2026 - Component Styles
+  Buttons, Hero Section, and other UI elements
+*/
+
+/* Buttons */
+.btn {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    text-align: center;
+    border: none;
+}
+
+.btn-primary {
+    background-color: var(--color-primary);
+    color: var(--white);
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-primary:hover {
+    background-color: var(--color-primary-dark);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-secondary {
+    background-color: var(--white);
+    color: var(--gray-900);
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-secondary:hover {
+    background-color: var(--gray-50);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+/* Hero Section */
+.hero {
+    position: relative;
+    min-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--gray-800);
+    background-image: url('../images/hero-bg.jpg'); /* Placeholder */
+    background-size: cover;
+    background-position: center;
+    color: var(--white);
+    overflow: hidden;
+}
+
+.hero-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        135deg, 
+        rgba(15, 23, 42, 0.8) 0%, 
+        rgba(0, 150, 64, 0.4) 100%
+    );
+    z-index: 1;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 2;
+}
+
+.hero-text {
+    max-width: 700px;
+}
+
+.hero-badge {
+    display: inline-block;
+    background-color: var(--color-primary);
+    color: var(--white);
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border-radius: 100px;
+    margin-bottom: var(--space-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.hero h1 {
+    color: var(--white);
+    line-height: 1.1;
+    margin-bottom: var(--space-sm);
+}
+
+.text-highlight {
+    color: var(--color-primary-light);
+}
+
+.hero-details {
+    font-size: 1.25rem;
+    color: var(--gray-300);
+    margin-bottom: var(--space-lg);
+    font-weight: 400;
+}
+
+.hero-actions {
+    display: flex;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+}
+
+/* Responsive Hero */
+@media (max-width: 768px) {
+    .hero {
+        min-height: 70vh;
+        text-align: center;
+    }
+
+    .hero-content {
+        display: flex;
+        justify-content: center;
+    }
+
+    .hero-text {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .hero-actions {
+        justify-content: center;
+    }
+}
+
+/* Run Cards (Distanzen) */
+.run-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--space-lg);
+    margin-top: var(--space-lg);
+}
+
+.run-card {
+    background-color: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: 12px;
+    padding: var(--space-lg);
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+}
+
+.run-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--color-primary);
+}
+
+.run-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-md);
+}
+
+.run-category {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-primary);
+    text-transform: uppercase;
+}
+
+.run-distance {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--gray-900);
+}
+
+.run-card-desc {
+    color: var(--gray-600);
+    margin-bottom: var(--space-lg);
+    flex-grow: 1;
+}
+
+/* Timeline (Ablauf) */
+.timeline {
+    position: relative;
+    max-width: 800px;
+    margin: var(--space-lg) auto 0;
+    padding-left: var(--space-md);
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 4px;
+    height: 100%;
+    background-color: var(--color-primary);
+    border-radius: 2px;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: var(--space-lg);
+    padding-left: var(--space-lg);
+}
+
+.timeline-dot {
+    position: absolute;
+    left: -10px;
+    top: 0;
+    width: 20px;
+    height: 20px;
+    background-color: var(--white);
+    border: 4px solid var(--color-primary);
+    border-radius: 50%;
+    z-index: 2;
+}
+
+.timeline-content {
+    background-color: var(--gray-50);
+    padding: var(--space-md);
+    border-radius: 8px;
+    border-left: 4px solid var(--color-primary);
+}
+
+.timeline-time {
+    font-weight: 800;
+    color: var(--color-primary);
+    font-size: 1.1rem;
+    display: block;
+    margin-bottom: var(--space-xs);
+}
+
+.timeline-event {
+    font-weight: 600;
+    color: var(--gray-900);
+    font-size: 1.2rem;
+}
+
+/* Map & Route Section */
+.map-container {
+    position: relative;
+    width: 100%;
+    height: 450px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+    margin-bottom: var(--space-lg);
+}
+
+.map-iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+.route-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--space-md);
+    margin-top: var(--space-lg);
+}
+
+.route-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-md);
+    background-color: var(--gray-50);
+    border-radius: 8px;
+    border: 1px solid var(--gray-200);
+}
+
+.route-info {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.route-icon {
+    color: var(--color-primary);
+    font-weight: bold;
+}
+
+/* Registration Section */
+.registration-container {
+    max-width: 900px;
+    margin: 0 auto;
+    background-color: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: 12px;
+    padding: var(--space-lg);
+    box-shadow: var(--shadow-md);
+}
+
+.registration-placeholder {
+    min-height: 400px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: var(--gray-500);
+    border: 2px dashed var(--gray-200);
+    border-radius: 8px;
+}
+
+.text-center {
+    text-align: center;
+}
+
+/* Hero Logo */
+.hero-logo-container {
+    position: absolute;
+    top: 20px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    z-index: 3;
+}
+
+.hero-logo {
+    width: 300px;
+    max-width: 80%;
+    height: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+}
+
+/* GPX Thumbnails */
+.gpx-download {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+}
+
+.gpx-thumb {
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
+}
+
+/* Sponsors Section */
+.sponsor-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: var(--space-lg);
+    align-items: center;
+    justify-items: center;
+    margin-top: var(--space-lg);
+}
+
+.sponsor-item {
+    width: 100%;
+    max-width: 200px;
+    transition: all 0.3s ease;
+}
+
+.sponsor-item img {
+    width: 100%;
+    height: auto;
+    filter: grayscale(20%);
+    transition: filter 0.3s ease;
+}
+
+.sponsor-item:hover img {
+    filter: grayscale(0%);
+}
+
+/* Contact Form */
+.contact-wrapper {
+    display: block;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.contact-form {
+    background-color: var(--white);
+    padding: var(--space-lg);
+    border-radius: 12px;
+    border: 1px solid var(--gray-200);
+    box-shadow: var(--shadow-md);
+}
+
+.form-group {
+    margin-bottom: var(--space-md);
+    text-align: left;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: var(--space-xs);
+    color: var(--gray-700);
+    font-size: 0.9rem;
+}
+
+.form-group input, 
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--gray-300);
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 1rem;
+    transition: border-color 0.2s ease;
+}
+
+.form-group input:focus, 
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--color-primary);
+}
+
+.btn-block {
+    width: 100%;
+}
+
+/* Form Feedback Messages */
+.form-message {
+    padding: 1rem;
+    border-radius: 6px;
+    margin-bottom: var(--space-md);
+    text-align: center;
+    font-weight: 600;
+    display: none;
+}
+
+.form-message.success {
+    display: block;
+    background-color: #dcfce7;
+    color: #166534;
+    border: 1px solid #bbf7d0;
+}
+
+.form-message.error {
+    display: block;
+    background-color: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}
+
+/* Custom Checkbox styling */
+.checkbox-container {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-sm);
+    cursor: pointer;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    color: var(--gray-700);
+}
+
+.checkbox-container input {
+    width: auto;
+    margin-top: 4px;
+}
+
+@media (max-width: 768px) {
+    .hero-logo {
+        width: 160px;
+    }
+
+    .hero-logo-container {
+        top: 10px;
+    }
+
+    .hero-text {
+        margin-top: 100px; /* Push content down to prevent overlap with absolute logo */
+    }
+    
+    .contact-wrapper {
+        width: 100%;
+    }
+}
+
+.lang-switcher {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin: 0 var(--space-sm);
+}
+
+.lang-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    width: 24px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    opacity: 0.6;
+}
+
+.lang-btn:hover {
+    transform: scale(1.1);
+    opacity: 1;
+}
+
+.lang-btn.active {
+    opacity: 1;
+    filter: drop-shadow(0 0 2px rgba(0,0,0,0.2));
+}
+
+.flag-icon {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
