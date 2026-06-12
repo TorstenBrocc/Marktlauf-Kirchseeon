@@ -20,5 +20,5 @@ jobs:
         REMOTE_HOST: ${{ secrets.SFTP_HOST }}
         REMOTE_USER: ${{ secrets.SFTP_USERNAME }}
         TARGET: ${{ secrets.SFTP_REMOTE_PATH }}
-        SOURCE: "/"
+        SOURCE: "./"
         ARGS: "-rlgoDzvc -i --delete"
