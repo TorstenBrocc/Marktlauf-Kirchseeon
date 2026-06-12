@@ -1,0 +1,25 @@
+# --- AI / Cline ---
+# .memory
+.clinerrules  <-- Wenn diese Regeln nur für DICH lokal gelten, lass sie hier drin.
+# Wenn andere (oder du auf einem anderen Mac) die gleichen KI-Regeln nutzen sollen, 
+# nimm das Gatter # vorne weg, um sie DOCH zu tracken.
+
+# --- MacOS Spezifisches (Sehr wichtig!) ---
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+
+# --- Editoren ---
+.vscode/
+.idea/
+*.swp
+*.bak
+
+# --- Sicherheit (Sehr wichtig!) ---
+.env
+.env.local
+credentials.json
+*.pem
+*.key
