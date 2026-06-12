@@ -13,11 +13,12 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: SFTP Deploy
-      uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+    - name: SSH Deploy
+      uses: easingthemes/ssh-deploy@v5.1.0
       with:
-        server: ${{ secrets.SFTP_HOST }}
-        username: ${{ secrets.SFTP_USERNAME }}
-        ssh_private_key: ${{ secrets.SFTP_SSH_KEY }}
-        remote_path: ${{ secrets.SFTP_REMOTE_PATH }}
-        local_path: './*'
+        SSH_PRIVATE_KEY: ${{ secrets.SFTP_SSH_KEY }}
+        REMOTE_HOST: ${{ secrets.SFTP_HOST }}
+        REMOTE_USER: ${{ secrets.SFTP_USERNAME }}
+        TARGET: ${{ secrets.SFTP_REMOTE_PATH }}
+        SOURCE: "/"
+        ARGS: "-rlgoDzvc -i --delete"
