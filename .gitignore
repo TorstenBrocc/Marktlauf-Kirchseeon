@@ -36,4 +36,5 @@ build/
 Thumbs.db
 npm-debug.log*
 yarn-debug.log*
-yarn-error.log*
+yarn-error.log*briefing.md
+assets/images/design-briefing*.md
