@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initMapLifecycle();
     initContactForm();
     initLanguageSwitcher();
+    initTabSwitcher();
 });
 
 /**
@@ -41,6 +42,31 @@ function initMobileMenu() {
 /**
  * Language Switching Logic
  */
+function initTabSwitcher() {
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    if (!tabBtns.length || !tabContents.length) return;
+
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const targetTab = btn.getAttribute('data-tab');
+
+            // Update active button
+            tabBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            // Update active content
+            tabContents.forEach(content => {
+                content.classList.remove('active');
+                if (content.id === `tab-${targetTab}`) {
+                    content.classList.add('active');
+                }
+            });
+        });
+    });
+}
+
 function initLanguageSwitcher() {
     const translations = {
         de: {
