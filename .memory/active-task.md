@@ -1,15 +1,16 @@
-# Active Task: Fix Newsletter AdBlocker Issue
+# Active Task: Implement Credit, humans.txt & Local Impressum
 
 ## Goal
-Implement user-friendly error handling for the Brevo newsletter registration to notify users when an AdBlocker is preventing the submission.
+Create a `humans.txt` file, add credits to the footer, and implement a local `impressum.html` page based on provided legal content.
 
 ## Status
-- [x] Analyze newsletter form structure in `index.html`.
-- [x] Implement `initNewsletterForm` in `js/main.js` to intercept form submission.
-- [x] Add `fetch` call with error handling to detect blocked requests (Catch-Error).
-- [x] Display a specific warning message: "Hinweis: Die Anmeldung wurde blockiert. Bitte deaktiviere deinen AdBlocker und versuche es erneut."
-- [x] Ensure redirection to `newsletter-bestaetigung.html` only occurs on a successful (200/201) response.
+- [x] Analyze project technologies (Static HTML/CSS/JS).
+- [x] Create `humans.txt` in root directory.
+- [x] Add credit link to `index.html` footer.
+- [x] Style credit link in `css/layout.css` (discreet, hover effect).
+- [x] Create local `impressum.html` with full legal text and credits.
+- [x] Update internal links in `index.html` to point to local `impressum.html`.
 - [x] Commit changes to Git.
 
 ## Outcome
-The newsletter registration now provides a clear hint to users if their AdBlocker is interfering, and the redirection to the confirmation page is only triggered upon a successful API response, improving the user experience and reliability.
+The website now has a professional technical credit system via `humans.txt` and a discreet footer credit. The legal notice (Impressum) is now hosted locally on the site, ensuring full control over the content and including the required technical credits and a reference back to the main association page.
