@@ -1,19 +1,8 @@
-# Project Progress: ATSV Kirchseeon Marktlauf
+# Project Progress
 
-## Completed Milestones
-- [x] Initial project structure and base styling.
-- [x] Implementation of Hero section with responsive logo.
-- [x] Run distances and schedule timeline implemented.
-- [x] Start & Finish section with Google Maps and GPX downloads.
-- [x] Registration section (Placeholder for RaceResult).
-- [x] Sponsors section with responsive grid.
-- [x] Contact form implemented with PHP backend (`contact.php`).
-- [x] Global navigation and footer links updated.
-- [x] Responsive design verification (Mobile Friendly).
-- [x] Calendar file for Marktlauf 2026 created (`marktlauf2026.ics`).
-
-## Next Steps
-- [ ] Further design refinements.
-- [ ] Integration of actual RaceResult registration snippet.
-- [ ] Implementation of actual sponsor logos.
-- [ ] Final SEO and performance optimization.
+## Completed Tasks
+- [x] Impressum aufgeräumt:
+    - Ausrichtung auf linksbündig geändert.
+    - Verweis auf humans.txt entfernt.
+    - Linkfarbe von "Impressum ATSV Kirchseeon" auf ATSV-Grün (`var(--color-primary)`) vereinheitlicht.
+- [x] Linkfarbe in `.memory/colors.md` dokumentiert.
