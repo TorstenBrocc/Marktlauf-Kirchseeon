@@ -1,0 +1,12 @@
+/* TEAM */
+Projektleiter & Webentwickler: Torsten Tyras
+LinkedIn: https://www.linkedin.com/in/torstentyras/
+GitHub: https://github.com/TorstenBrocc
+
+/* THANKS */
+Dank an: ATSV Kirchseeon für das Vertrauen und die Zusammenarbeit beim Marktlauf-Projekt.
+
+/* SITE */
+Software: Vanilla JavaScript, HTML5, CSS3
+Standards: HTML5, CSS3
+Standort: Kirchseeon, Deutschland

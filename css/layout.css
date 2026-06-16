@@ -111,6 +111,23 @@
     font-size: 0.875rem;
 }
 
+.footer-credit {
+    margin-top: var(--space-sm);
+    font-size: 0.75rem;
+    color: var(--gray-500);
+}
+
+.credit-link {
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.credit-link:hover {
+    color: var(--gray-300);
+    text-decoration: underline;
+}
+
 .footer-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
