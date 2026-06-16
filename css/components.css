@@ -502,13 +502,13 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.2s ease, opacity 0.2s ease;
-    opacity: 0.6;
+    transition: all 0.2s ease;
+    opacity: 1;
 }
 
 .lang-btn:hover {
-    transform: scale(1.1);
-    opacity: 1;
+    transform: scale(1.2);
+    filter: brightness(1.1);
 }
 
 .lang-btn.active {

@@ -233,12 +233,29 @@ function initLanguageSwitcher() {
     toggleBtn.addEventListener('click', () => {
         currentLang = currentLang === 'de' ? 'en' : 'de';
         
-        // Swap image and alt text
+        // Swap image and alt text: Show the flag of the language to switch TO
         const flagSrc = currentLang === 'de' ? 'assets/images/allemand.png' : 'assets/images/anglais.png';
         const flagAlt = currentLang === 'de' ? 'Deutsch' : 'English';
         
-        langFlag.src = flagSrc;
-        langFlag.alt = flagAlt;
+        // Wait, the user said: "Das Fahnenzeichen sollte bei deutscher Version das englische sein und umgekehrt."
+        // If currentLang is 'de', show 'anglais.png'.
+        // If currentLang is 'en', show 'allemand.png'.
+        
+        const targetFlagSrc = currentLang === 'de' ? 'assets/images/allemand.png' : 'assets/images/anglais.png';
+        // Let's re-read carefully: "Das Fahnenzeichen sollte bei deutscher Version das englische sein"
+        // If site is in German (currentLang === 'de'), flag should be English.
+        // But in the code above, currentLang is toggled FIRST.
+        
+        // Let's correct the logic:
+        // If site is now 'en', show 'de' flag? No, usually it's: "Current is DE, show EN flag to switch".
+        // Let's implement: if currentLang === 'de' -> show 'anglais.png'. If currentLang === 'en' -> show 'allemand.png'.
+        
+        const finalFlagSrc = currentLang === 'de' ? 'assets/images/allemand.png' : 'assets/images/anglais.png';
+        // I'll use the state AFTER the toggle. 
+        // If after toggle currentLang is 'en', we are in English mode, so we should show the German flag to switch back.
+        
+        langFlag.src = currentLang === 'en' ? 'assets/images/allemand.png' : 'assets/images/anglais.png';
+        langFlag.alt = currentLang === 'en' ? 'Deutsch' : 'English';
         
         updateContent(currentLang);
     });
