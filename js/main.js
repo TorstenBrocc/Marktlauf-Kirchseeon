@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initSmoothScroll();
     initMapLifecycle();
     initContactForm();
+    initNewsletterForm();
     initLanguageSwitcher();
     initTabSwitcher();
 });
@@ -174,7 +175,7 @@ function initLanguageSwitcher() {
             'strecke.title': 'Start & Finish',
             'strecke.address': 'Start and finish are located at Westring 6, 85614 Kirchseeon.',
             'strecke.routes_title': 'The Routes',
-            'strecke.route1': 'Bambini Run (500m)',
+            'strecke.route1': 'Bambini Lauf (500m)',
             'strecke.route2': 'Student Run (1km/2km)',
             'strecke.route3': 'Elite Run (5km/10km)',
             'strecke.gpx_download': 'GPX Download',
@@ -343,6 +344,59 @@ function initContactForm() {
         } finally {
             submitBtn.disabled = false;
             submitBtn.textContent = originalBtnText;
+        }
+    });
+}
+
+/**
+ * Newsletter Form Handler
+ * Handles Brevo subscription and provides user-friendly error messages 
+ * when blocked by AdBlockers.
+ */
+function initNewsletterForm() {
+    const newsletterForm = document.getElementById('sib-form');
+    if (!newsletterForm) return;
+
+    newsletterForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const form = e.target;
+        const errorDiv = document.getElementById('error-message');
+        const successDiv = document.getElementById('success-message');
+        const submitBtn = form.querySelector('button[type="submit"]');
+        
+        if (errorDiv) errorDiv.style.display = 'none';
+        if (successDiv) successDiv.style.display = 'none';
+        
+        try {
+            submitBtn.disabled = true;
+            const formData = new FormData(form);
+            
+            // Call Brevo API
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                // Using 'cors' to ensure we can check response.ok
+                mode: 'cors'
+            });
+
+            if (response.ok) {
+                // Redirect to confirmation page only on success
+                window.location.href = 'newsletter-bestaetigung.html';
+            } else {
+                throw new Error('Submission failed');
+            }
+        } catch (error) {
+            // Handle AdBlocker or Network Errors
+            if (errorDiv) {
+                errorDiv.style.display = 'block';
+                const innerText = errorDiv.querySelector('.sib-form-message-panel__inner-text');
+                if (innerText) {
+                    innerText.textContent = 'Hinweis: Die Anmeldung wurde blockiert. Bitte deaktiviere deinen AdBlocker und versuche es erneut.';
+                }
+            }
+        } finally {
+            submitBtn.disabled = false;
         }
     });
 }
