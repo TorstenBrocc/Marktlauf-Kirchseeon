@@ -10,6 +10,7 @@
 - [x] Contact form implemented with PHP backend (`contact.php`).
 - [x] Global navigation and footer links updated.
 - [x] Responsive design verification (Mobile Friendly).
+- [x] Calendar file for Marktlauf 2026 created (`marktlauf2026.ics`).
 
 ## Next Steps
 - [ ] Further design refinements.

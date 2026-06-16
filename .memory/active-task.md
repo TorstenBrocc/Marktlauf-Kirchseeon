@@ -1,12 +1,13 @@
-# Active Task: Project Initialization & Memory Bank Setup
-
-## Current Status
-- The project has been successfully transitioned to a professional memory bank structure.
-- All core functionality of the homepage is implemented.
+# Active Task: Create Calendar File for Marktlauf 2026
 
 ## Goal
-Establish a persistent memory across sessions to ensure consistency in design, tech stack, and progress tracking.
+Create an `.ics` calendar file for the Marktlauf 2026 event and upload it to the web server.
 
-## Next Steps
-- Project is ready for further design refinements or feature implementation.
-- Ready for session handover.
+## Status
+- [x] Create `marktlauf2026.ics` with provided event details.
+- [x] Verify file content.
+- [x] Commit changes to Git.
+- [x] Update project progress.
+
+## Outcome
+The file `marktlauf2026.ics` is now available in the root directory, allowing users to add the Marktlauf 2026 event to their digital calendars.
