@@ -1,12 +1,15 @@
-# Active Task: Update Calendar File for Marktlauf 2026
+# Active Task: Fix Newsletter AdBlocker Issue
 
 ## Goal
-Update the `.ics` calendar file for the Marktlauf 2026 event with corrected event details (time, location, and alarm).
+Implement user-friendly error handling for the Brevo newsletter registration to notify users when an AdBlocker is preventing the submission.
 
 ## Status
-- [x] Update `marktlauf2026.ics` with new provided content.
+- [x] Analyze newsletter form structure in `index.html`.
+- [x] Implement `initNewsletterForm` in `js/main.js` to intercept form submission.
+- [x] Add `fetch` call with error handling to detect blocked requests (Catch-Error).
+- [x] Display a specific warning message: "Hinweis: Die Anmeldung wurde blockiert. Bitte deaktiviere deinen AdBlocker und versuche es erneut."
+- [x] Ensure redirection to `newsletter-bestaetigung.html` only occurs on a successful (200/201) response.
 - [x] Commit changes to Git.
-- [x] Verify file state.
 
 ## Outcome
-The file `marktlauf2026.ics` has been updated with the correct time (06:00 - 11:00), updated location (Marktplatz, Kirchseeon), and an added event alarm.
+The newsletter registration now provides a clear hint to users if their AdBlocker is interfering, and the redirection to the confirmation page is only triggered upon a successful API response, improving the user experience and reliability.
