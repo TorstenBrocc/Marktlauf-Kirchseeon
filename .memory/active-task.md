@@ -1,13 +1,12 @@
-# Active Task: Create Calendar File for Marktlauf 2026
+# Active Task: Update Calendar File for Marktlauf 2026
 
 ## Goal
-Create an `.ics` calendar file for the Marktlauf 2026 event and upload it to the web server.
+Update the `.ics` calendar file for the Marktlauf 2026 event with corrected event details (time, location, and alarm).
 
 ## Status
-- [x] Create `marktlauf2026.ics` with provided event details.
-- [x] Verify file content.
+- [x] Update `marktlauf2026.ics` with new provided content.
 - [x] Commit changes to Git.
-- [x] Update project progress.
+- [x] Verify file state.
 
 ## Outcome
-The file `marktlauf2026.ics` is now available in the root directory, allowing users to add the Marktlauf 2026 event to their digital calendars.
+The file `marktlauf2026.ics` has been updated with the correct time (06:00 - 11:00), updated location (Marktplatz, Kirchseeon), and an added event alarm.
