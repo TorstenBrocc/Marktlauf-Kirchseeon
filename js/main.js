@@ -102,6 +102,33 @@ async function switchLanguage(lang) {
     updateLanguageUI();
 }
 
+function getNestedValue(obj, keyPath) {
+    return keyPath.split('.').reduce((acc, part) => acc && acc[part], obj) || null;
+}
+
+function updateMetaTags(translations) {
+    const path = window.location.pathname.toLowerCase();
+    let pageType = 'index';
+    
+    if (path.includes('impressum')) {
+        pageType = 'impressum';
+    } else if (path.includes('datenschutz')) {
+        pageType = 'datenschutz';
+    }
+
+    const titleKey = pageType === 'index' ? 'meta.title' : `legal.${pageType}.meta_title`;
+    const descKey = pageType === 'index' ? 'meta.description' : `legal.${pageType}.meta_description`;
+
+    const title = getNestedValue(translations, titleKey) || translations[titleKey];
+    const desc = getNestedValue(translations, descKey) || translations[descKey];
+
+    if (title) document.title = title;
+    if (desc) {
+        const metaDesc = document.querySelector('meta[name="description"]');
+        if (metaDesc) metaDesc.setAttribute('content', desc);
+    }
+}
+
 function applyTranslations() {
     // Update all elements with data-i18n attribute
     document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -115,12 +142,7 @@ function applyTranslations() {
         }
     });
 
-    // Update Page Title and Meta Description
-    if (translations['meta.title']) document.title = translations['meta.title'];
-    if (translations['meta.description']) {
-        const metaDesc = document.querySelector('meta[name="description"]');
-        if (metaDesc) metaDesc.setAttribute('content', translations['meta.description']);
-    }
+    updateMetaTags(translations);
 
     // Update HTML lang attribute
     document.documentElement.lang = currentLanguage;

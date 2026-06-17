@@ -12,8 +12,8 @@
 
 ### C. i18n Meta-Tag-Übersetzung
 - [x] Basis-Open-Graph- und Twitter-Tags in HTML-Dateien implementiert
-- [ ] js/main.js: updateMetaTags()-Funktion implementieren
-- [ ] js/main.js: applyTranslations() um Meta-Tag-Update erweitern
-- [ ] js/main.js: initLanguageSwitcher() auf allen Unterseiten robust machen
+- [x] js/main.js: updateMetaTags()-Funktion implementieren
+- [x] js/main.js: applyTranslations() um Meta-Tag-Update erweitern
+- [x] js/main.js: initLanguageSwitcher() auf allen Unterseiten robust machen
 - [x] lang/de.json: Keys meta.title, meta.description, legal.imprint.*, legal.privacy.* prüfen/ergänzen
 - [x] lang/en.json: Gleiche Keys prüfen/ergänzen
