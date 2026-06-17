@@ -34,3 +34,9 @@ Bei jeder Bearbeitung, Neuerstellung oder Optimierung von HTML- und Inhaltsseite
 ## 4. PROJEKTSPEZIFISCHE REGELN
 * **Terminologie:** 'Marktlauf' ist ein Eigenname und darf NIEMALS übersetzt werden (bleibt in DE und EN immer 'Marktlauf').
 * **Internationalisierung (i18n):** Die Architektur nutzt JSON-Dateien für Übersetzungen (`lang/de.json` und `lang/en.json`). Alle Texte müssen dort gepflegt werden. Logik zur Textausgabe gehört in die entsprechenden Funktionen, aber die Texte selbst dürfen nicht hartcodiert in `js/main.js` stehen.
+
+## 5. GESCHÜTZTE DATEIEN & BEREICHE
+Die folgenden Dateien und Bereiche dürfen NIEMALS verändert werden, es sei denn, der Nutzer fordert dies explizit und direkt auf:
+* **`impressum.html`** – Diese Datei ist gesperrt. Kein Refactoring, kein Reformatting, keine inhaltlichen Änderungen.
+* **Impressum-Link im Footer von `index.html`** – Der Link `<a href="impressum.html">Impressum & Datenschutz</a>` im Footer darf nicht verändert, verschoben oder entfernt werden.
+* Bei Zweifeln gilt: lieber nachfragen als anfassen.
