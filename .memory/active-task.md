@@ -3,9 +3,9 @@
 ## Task: Footer, Impressum-Erweiterung & i18n Meta-Tags
 
 ### A. Footer humans.txt Link (alle 3 Seiten)
-- [ ] index.html: humans.txt-Link im Footer ergänzen
-- [ ] impressum.html: humans.txt-Link im Footer ergänzen
-- [ ] datenschutz.html: humans.txt-Link im Footer ergänzen
+- [x] index.html: humans.txt-Link im Footer ergänzen
+- [x] impressum.html: humans.txt-Link im Footer ergänzen
+- [x] datenschutz.html: humans.txt-Link im Footer ergänzen
 
 ### B. Impressum Abschnitt Technische Umsetzung
 - [ ] impressum.html: Neuen Abschnitt am Ende des Hauptinhalts einfügen
