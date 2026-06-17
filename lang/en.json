@@ -132,5 +132,14 @@
   "legal.rights_automated_list": "(1) is necessary for the conclusion or performance of a contract between you and the controller,\n(2) is permitted on the basis of union or member state law to which the controller is subject and this law provides appropriate measures to safeguard your rights and freedoms and your legitimate interests contain or\n(3) is based on your explicit consent.",
   "legal.rights_automated_special": "However, such decisions may not be based on special categories of personal data according to Art. 9 Para. 1 GDPR, unless Art. 9 Para. 2 lit. a or g GDPR applies or appropriate measures to safeguard the rights and freedoms and the legitimate interests of the data subject have been taken. With regard to cases (1) and (3), the controller shall take appropriate measures to safeguard the rights and freedoms and the legitimate interests of the data subject, which at least include the right to obtain human intervention on the part of the controller, to express his or her point of view and to contest the decision.",
   "legal.rights_complaint": "Without prejudice to any other administrative or judicial remedy, you have the right to lodge a complaint with a supervisory authority, in particular in the member state of your residence, your place of work or the place of the alleged infringement, if you consider that the processing of the personal data concerning you violates the GDPR.",
-  "legal.rights_complaint_info": "The supervisory authority with which the complaint has been lodged shall inform the complainant of the progress and result of the complaint including the possibility of a judicial remedy according to Art. 78 GDPR."
+  "legal.rights_complaint_info": "The supervisory authority with which the complaint has been lodged shall inform the complainant of the progress and result of the complaint including the possibility of a judicial remedy according to Art. 78 GDPR.",
+  "legal.newsletter_title": "Newsletter via Brevo",
+  "legal.newsletter_text1": "We use Brevo (Sendinblue GmbH) to send our newsletter. Data transmitted during registration (such as email address, IP address and time of registration) are sent to Brevo in Germany/EU.",
+  "legal.newsletter_text2": "The legal basis for this processing is your explicit consent according to Art. 6 Para. 1 lit. a GDPR.",
+  "legal.newsletter_text3": "You can revoke your consent at any time with effect for the future. Unsubscribing is possible at any time via the unsubscribe link in every email sent.",
+  "legal.legal_date": "As of: June 2022",
+  "legal.imprint.meta_title": "Imprint & Privacy Policy | Marktlauf Kirchseeon 2026",
+  "legal.imprint.meta_description": "Imprint and privacy policy of the Marktlauf Kirchseeon 2026.",
+  "legal.privacy.meta_title": "Privacy Policy | ATS Kirchseeon e.V.",
+  "legal.privacy.meta_description": "Privacy policy of ATSV Kirchseeon e.V. Information on the processing of personal data in the context of the Marktlauf 2026."
 }

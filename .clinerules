@@ -30,3 +30,7 @@ Bei jeder Bearbeitung, Neuerstellung oder Optimierung von HTML- und Inhaltsseite
   - `style:` Änderungen am Design/Layout ohne Logikänderung (z. B. `style: abstaende in components css optimiert`)
   - `refactor:` Code-Bereinigung ohne neue Features oder Fixes
 * **Keine unaufgeforderten Pushes:** Erstelle die Commits lokal auf dem aktuellen Branch. Ein `git push` in den Remote-Repository-Zweig (z. B. zur Auslösung der GitHub Action) erfolgt NUR nach expliziter Freigabe durch den Nutzer.
+
+## 4. PROJEKTSPEZIFISCHE REGELN
+* **Terminologie:** 'Marktlauf' ist ein Eigenname und darf NIEMALS übersetzt werden (bleibt in DE und EN immer 'Marktlauf').
+* **Internationalisierung (i18n):** Die Architektur nutzt JSON-Dateien für Übersetzungen (`lang/de.json` und `lang/en.json`). Alle Texte müssen dort gepflegt werden. Logik zur Textausgabe gehört in die entsprechenden Funktionen, aber die Texte selbst dürfen nicht hartcodiert in `js/main.js` stehen.
