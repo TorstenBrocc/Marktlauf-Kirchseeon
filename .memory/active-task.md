@@ -8,7 +8,7 @@
 - [x] datenschutz.html: humans.txt-Link im Footer ergänzen
 
 ### B. Impressum Abschnitt Technische Umsetzung
-- [ ] impressum.html: Neuen Abschnitt am Ende des Hauptinhalts einfügen
+- [x] impressum.html: Neuen Abschnitt am Ende des Hauptinhalts einfügen
 
 ### C. i18n Meta-Tag-Übersetzung
 - [ ] js/main.js: updateMetaTags()-Funktion implementieren
