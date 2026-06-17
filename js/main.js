@@ -142,6 +142,17 @@ function applyTranslations() {
         }
     });
 
+    // Options in Select (special case if needed)
+    const betreffSelect = document.getElementById('betreff');
+    if (betreffSelect) {
+        Array.from(betreffSelect.options).forEach(opt => {
+            const key = opt.getAttribute('data-i18n');
+            if (key && translations[key]) {
+                opt.textContent = translations[key];
+            }
+        });
+    }
+
     updateMetaTags(translations);
 
     // Update HTML lang attribute
