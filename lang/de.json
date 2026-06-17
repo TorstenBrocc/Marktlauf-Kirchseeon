@@ -66,6 +66,7 @@
   "footer.legal_title": "Rechtliches",
   "footer.legal.impressum": "Impressum",
   "footer.legal.privacy": "Datenschutz",
+  "footer.realized_by": "Realisiert durch <a href=\"/humans.txt\" rel=\"author\" style=\"opacity: 0.7; text-decoration: none; color: inherit;\">Torsten Tyras</a>",
   "footer.copyright": "© 2026 ATS Kirchseeon e.V. | Alle Rechte vorbehalten.",
   "legal.imprint_title": "Impressum und Datenschutz",
   "legal.tmg_title": "Angaben gem. §5 TMG:",
