@@ -15,5 +15,5 @@
 - [ ] js/main.js: updateMetaTags()-Funktion implementieren
 - [ ] js/main.js: applyTranslations() um Meta-Tag-Update erweitern
 - [ ] js/main.js: initLanguageSwitcher() auf allen Unterseiten robust machen
-- [ ] lang/de.json: Keys meta.title, meta.description, legal.imprint.*, legal.privacy.* prüfen/ergänzen
-- [ ] lang/en.json: Gleiche Keys prüfen/ergänzen
+- [x] lang/de.json: Keys meta.title, meta.description, legal.imprint.*, legal.privacy.* prüfen/ergänzen
+- [x] lang/en.json: Gleiche Keys prüfen/ergänzen
