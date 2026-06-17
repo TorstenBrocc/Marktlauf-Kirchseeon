@@ -85,7 +85,7 @@ async function initLanguage() {
 
 async function loadTranslations(lang) {
     try {
-        const response = await fetch(`lang/${lang}.json`);
+        const response = await fetch(`/lang/${lang}.json`);
         if (!response.ok) throw new Error(`Could not load ${lang}.json`);
         translations = await response.json();
     } catch (error) {
@@ -166,8 +166,8 @@ function updateLanguageUI() {
     // If current is 'de', show English flag (to switch to en)
     // If current is 'en', show German flag (to switch to de)
     const flagSrc = currentLanguage === 'de' 
-        ? 'assets/images/anglais.png' 
-        : 'assets/images/allemand.png';
+        ? '/assets/images/anglais.png' 
+        : '/assets/images/allemand.png';
     
     langFlag.src = flagSrc;
     langFlag.alt = currentLanguage === 'de' ? 'English' : 'Deutsch';
