@@ -7,3 +7,4 @@
     - Linkfarbe von "Impressum ATSV Kirchseeon" auf ATSV-Grün (`var(--color-primary)`) vereinheitlicht.
 - [x] Linkfarbe in `.memory/colors.md` dokumentiert.
 - [x] Übergabeprotokoll aufgenommen: Footer, Impressum-Erweiterung, i18n Meta-Tags als neue Active Task definiert.
+- [x] Open Graph und Twitter Card Meta-Tags für Link-Previews in index.html, impressum.html und datenschutz.html ergänzt.

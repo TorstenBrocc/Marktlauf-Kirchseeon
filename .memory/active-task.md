@@ -11,6 +11,7 @@
 - [x] impressum.html: Neuen Abschnitt am Ende des Hauptinhalts einfügen
 
 ### C. i18n Meta-Tag-Übersetzung
+- [x] Basis-Open-Graph- und Twitter-Tags in HTML-Dateien implementiert
 - [ ] js/main.js: updateMetaTags()-Funktion implementieren
 - [ ] js/main.js: applyTranslations() um Meta-Tag-Update erweitern
 - [ ] js/main.js: initLanguageSwitcher() auf allen Unterseiten robust machen
