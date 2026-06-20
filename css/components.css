@@ -306,38 +306,149 @@
     border: none;
 }
 
-.route-list {
+.route-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: var(--space-md);
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-lg);
     margin-top: var(--space-lg);
 }
 
-@media (max-width: 768px) {
-    .route-list {
-        grid-template-columns: 1fr;
-    }
+.route-card {
+    background-color: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: 12px;
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    transition: all 0.3s ease;
 }
 
-.route-item {
+.route-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--color-primary);
+}
+
+.route-map-preview {
+    height: 180px;
+    background-color: var(--gray-100);
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
+    color: var(--gray-500);
+    font-style: italic;
+    cursor: pointer;
+}
+
+.route-card-content {
     padding: var(--space-md);
-    background-color: var(--gray-50);
-    border-radius: 8px;
-    border: 1px solid var(--gray-200);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
 }
 
 .route-info {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: var(--space-sm);
 }
 
-.route-icon {
-    color: var(--color-primary);
+.route-title {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--gray-800);
+}
+
+.route-distance {
+    font-weight: 800;
+    font-size: 1.25rem;
+    color: var(--gray-900);
+}
+
+.gpx-download {
+    margin-top: auto; /* Pushes button to the bottom */
+}
+
+/* Map Modal Styles */
+.map-modal {
+    display: none; /* Hidden by default */
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(5px);
+    animation: fadeIn 0.3s ease;
+}
+
+.map-modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.map-modal-content {
+    position: relative;
+    background-color: var(--white);
+    padding: var(--space-lg);
+    border-radius: 12px;
+    box-shadow: var(--shadow-xl);
+    width: 90%;
+    max-width: 1200px;
+    height: 90%;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-close-btn {
+    position: absolute;
+    top: -15px;
+    right: -15px;
+    background-color: var(--white);
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    font-size: 1.5rem;
     font-weight: bold;
+    color: var(--gray-800);
+    cursor: pointer;
+    box-shadow: var(--shadow-md);
+    transition: all 0.2s ease;
+    z-index: 1010;
+}
+
+.modal-close-btn:hover {
+    background-color: var(--color-primary);
+    color: var(--white);
+    transform: rotate(90deg);
+}
+
+.modal-map-container {
+    flex-grow: 1;
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: var(--gray-100);
+}
+
+.modal-elevation-container {
+    height: 200px;
+    margin-top: var(--space-md);
+}
+
+.leaflet-elevation-pane path.leaflet-elevation-geopath {
+    stroke: var(--color-primary) !important;
+    stroke-width: 4px !important;
+}
+
+.leaflet-elevation-pane .background {
+    fill: var(--gray-50);
+}
+
+.leaflet-elevation-pane .mouse-focus-line {
+    stroke: var(--color-accent);
+    stroke-width: 1px;
 }
 
 /* Registration Section */

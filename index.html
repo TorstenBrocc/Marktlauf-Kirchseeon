@@ -15,6 +15,10 @@
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/layout.css">
     <link rel="stylesheet" href="css/components.css">
+
+    <!-- Leaflet & Plugins for GPX Maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <link rel="stylesheet" href="https://unpkg.com/@raruto/leaflet-elevation/dist/leaflet-elevation.css" />
     
     <!-- Brevo Form Styles -->
     <style>
@@ -235,56 +239,76 @@
 
                 <div class="route-container">
                     <h3 class="text-center" style="margin-bottom: var(--space-md);" data-i18n="strecke.routes_title">Die Strecken</h3>
-                    <div class="route-list">
-                        <div class="route-item">
-                            <div class="route-info">
-                                <span class="route-icon">📍</span>
-                                <span>Bambini Lauf (500m)</span>
+                    <div class="route-grid">
+                        <!-- Bambini -->
+                        <div class="route-card" data-route-id="bambini-500m">
+                            <div class="route-map-preview"></div>
+                            <div class="route-card-content">
+                                <div class="route-info">
+                                    <span class="route-title">Bambini Lauf</span>
+                                    <span class="route-distance">500m</span>
+                                </div>
+                                <a href="#" class="btn btn-secondary gpx-download" download style="display: none;">
+                                    <img src="https://cdn-icons-png.flaticon.com/512/2163/2163161.png" alt="GPX Icon" class="gpx-thumb">
+                                    <span>GPX Download</span>
+                                </a>
                             </div>
-                            <a href="#" class="btn btn-secondary gpx-download" download>
-                                 <img src="https://cdn-icons-png.flaticon.com/512/2163/2163161.png" alt="GPX-Datei Download Icon" class="gpx-thumb">
-                                <span>GPX Download</span>
-                            </a>
                         </div>
-                        <div class="route-item">
-                            <div class="route-info">
-                                <span class="route-icon">📍</span>
-                                <span>Schüler Lauf (1km)</span>
+                        <!-- Schüler 1km -->
+                        <div class="route-card" data-route-id="schueler-1km">
+                            <div class="route-map-preview"></div>
+                            <div class="route-card-content">
+                                <div class="route-info">
+                                    <span class="route-title">Schüler Lauf</span>
+                                    <span class="route-distance">1km</span>
+                                </div>
+                                <a href="#" class="btn btn-secondary gpx-download" download style="display: none;">
+                                    <img src="https://cdn-icons-png.flaticon.com/512/2163/2163161.png" alt="GPX Icon" class="gpx-thumb">
+                                    <span>GPX Download</span>
+                                </a>
                             </div>
-                            <a href="#" class="btn btn-secondary gpx-download" download>
-                                <img src="https://cdn-icons-png.flaticon.com/512/2163/2163161.png" alt="GPX" class="gpx-thumb">
-                                <span>GPX Download</span>
-                            </a>
                         </div>
-                        <div class="route-item">
-                            <div class="route-info">
-                                <span class="route-icon">📍</span>
-                                <span>Schüler Lauf (2km)</span>
+                        <!-- Schüler 2km -->
+                        <div class="route-card" data-route-id="schueler-2km">
+                            <div class="route-map-preview"></div>
+                            <div class="route-card-content">
+                                <div class="route-info">
+                                    <span class="route-title">Schüler Lauf</span>
+                                    <span class="route-distance">2km</span>
+                                </div>
+                                <a href="#" class="btn btn-secondary gpx-download" download style="display: none;">
+                                    <img src="https://cdn-icons-png.flaticon.com/512/2163/2163161.png" alt="GPX Icon" class="gpx-thumb">
+                                    <span>GPX Download</span>
+                                </a>
                             </div>
-                            <a href="#" class="btn btn-secondary gpx-download" download>
-                                <img src="https://cdn-icons-png.flaticon.com/512/2163/2163161.png" alt="GPX" class="gpx-thumb">
-                                <span>GPX Download</span>
-                            </a>
                         </div>
-                        <div class="route-item">
-                            <div class="route-info">
-                                <span class="route-icon">📍</span>
-                                <span>Elite Lauf (5km)</span>
+                        <!-- Elite 5km -->
+                        <div class="route-card" data-route-id="elite-5km">
+                            <div class="route-map-preview" id="preview-map-elite-5km"></div>
+                            <div class="route-card-content">
+                                <div class="route-info">
+                                    <span class="route-title">Elite Lauf</span>
+                                    <span class="route-distance">5km</span>
+                                </div>
+                                <a href="assets/Routes/5km.gpx" class="btn btn-secondary gpx-download" download>
+                                    <img src="https://cdn-icons-png.flaticon.com/512/2163/2163161.png" alt="GPX Icon" class="gpx-thumb">
+                                    <span>GPX Download</span>
+                                </a>
                             </div>
-                            <a href="#" class="btn btn-secondary gpx-download" download>
-                                <img src="https://cdn-icons-png.flaticon.com/512/2163/2163161.png" alt="GPX" class="gpx-thumb">
-                                <span>GPX Download</span>
-                            </a>
                         </div>
-                        <div class="route-item">
-                            <div class="route-info">
-                                <span class="route-icon">📍</span>
-                                <span>Elite Lauf (10km)</span>
+                        <!-- Elite 10km -->
+                        <div class="route-card" data-route-id="elite-10km">
+                            <div class="route-map-preview" id="preview-map-elite-10km"></div>
+                            <div class="route-card-content">
+                                <div class="route-info">
+                                    <span class="route-title">Elite Lauf</span>
+                                    <span class="route-distance">10km</span>
+                                </div>
+                                <a href="assets/Routes/10km (8,6km).gpx" class="btn btn-secondary gpx-download" download>
+                                    <img src="https://cdn-icons-png.flaticon.com/512/2163/2163161.png" alt="GPX Icon" class="gpx-thumb">
+                                    <span>GPX Download</span>
+                                </a>
                             </div>
-                            <a href="#" class="btn btn-secondary gpx-download" download>
-                                <img src="https://cdn-icons-png.flaticon.com/512/2163/2163161.png" alt="GPX" class="gpx-thumb">
-                                <span>GPX Download</span>
-                            </a>
                         </div>
                     </div>
                 </div>
@@ -839,5 +863,20 @@
     </footer>
 
     <script src="js/main.js"></script>
+
+    <!-- Map Modal -->
+    <div id="map-modal" class="map-modal">
+        <button id="modal-close-btn" class="modal-close-btn">&times;</button>
+        <div class="map-modal-content">
+            <div id="modal-map-container" class="modal-map-container"></div>
+            <div id="modal-elevation-container" class="modal-elevation-container"></div>
+        </div>
+    </div>
+
+    <!-- Leaflet & Plugins -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
+    <script src="https://unpkg.com/@raruto/leaflet-elevation/dist/leaflet-elevation.js"></script>
+    <script src="js/maps.js"></script>
 </body>
 </html>
