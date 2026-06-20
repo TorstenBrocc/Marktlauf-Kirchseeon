@@ -66,6 +66,10 @@ function createPreviewMap(mapId, gpxFile) {
         attributionControl: false,
     });
 
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
     new L.GPX(gpxFile, {
         async: true,
         marker_options: {
@@ -142,8 +146,11 @@ function openMapModal(routeId) {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(modalMap);
 
-        modalMap.invalidateSize();
-    }, 150);
+        // Invalidate size after the modal is fully visible and rendered
+        setTimeout(() => {
+            modalMap.invalidateSize(true);
+        }, 300); // Increased delay to ensure CSS transition is complete
+    }, 50); // Reduced initial delay
 }
 
 function closeMapModal() {

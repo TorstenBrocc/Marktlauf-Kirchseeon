@@ -391,12 +391,13 @@
 .map-modal-content {
     position: relative;
     background-color: var(--white);
-    padding: var(--space-lg);
+    padding: var(--space-md);
     border-radius: 12px;
     box-shadow: var(--shadow-xl);
-    width: 90%;
+    width: 95%;
     max-width: 1200px;
-    height: 90%;
+    height: 90vh;
+    max-height: 90vh;
     display: flex;
     flex-direction: column;
 }
@@ -427,14 +428,31 @@
 
 .modal-map-container {
     flex-grow: 1;
+    height: 65%; /* Fallback for browsers not supporting calc/vh well */
+    height: calc(100% - 200px - var(--space-md)); /* Adjust based on elevation + gap */
+    min-height: 200px;
     border-radius: 8px;
     overflow: hidden;
     background-color: var(--gray-100);
 }
 
 .modal-elevation-container {
-    height: 200px;
+    height: 200px; /* Fixed height for elevation */
     margin-top: var(--space-md);
+    flex-shrink: 0;
+}
+
+/* Responsive Modal Layout */
+@media (max-height: 600px) {
+    .map-modal-content {
+        padding: var(--space-sm);
+    }
+    .modal-map-container {
+        height: calc(100% - 150px - var(--space-sm)); /* Smaller elevation on short screens */
+    }
+    .modal-elevation-container {
+        height: 150px;
+    }
 }
 
 .leaflet-elevation-pane path.leaflet-elevation-geopath {
