@@ -53,6 +53,7 @@
     background-position: center;
     color: var(--white);
     overflow: hidden;
+    padding: var(--space-xl) 0;
 }
 
 .hero-overlay {
@@ -73,10 +74,16 @@
     position: relative;
     z-index: 2;
     width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .hero-text {
     max-width: 700px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .hero-badge {
@@ -87,7 +94,7 @@
     font-size: 0.875rem;
     font-weight: 600;
     border-radius: 100px;
-    margin-bottom: var(--space-sm);
+    margin-bottom: var(--space-md);
     text-transform: uppercase;
     letter-spacing: 0.05em;
 }
@@ -301,9 +308,15 @@
 
 .route-list {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: var(--space-md);
     margin-top: var(--space-lg);
+}
+
+@media (max-width: 768px) {
+    .route-list {
+        grid-template-columns: 1fr;
+    }
 }
 
 .route-item {
@@ -356,21 +369,20 @@
 
 /* Hero Logo */
 .hero-logo-container {
-    position: absolute;
-    top: 20px;
-    left: 0;
-    right: 0;
+    position: relative;
+    z-index: 2;
+    padding-top: 100px; /* Space from top */
+    margin-bottom: var(--space-lg);
     display: flex;
     justify-content: center;
-    z-index: 3;
 }
 
-.hero-logo {
-    width: 300px;
-    max-width: 80%;
+.hero-logo-main {
+    width: 200px;
+    max-width: 90%;
     height: auto;
     object-fit: contain;
-    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+    filter: drop-shadow(0 6px 12px rgba(0,0,0,0.4));
 }
 
 /* GPX Thumbnails */
@@ -512,9 +524,13 @@
         top: 10px;
     }
 
-    .hero-text {
-        margin-top: 100px; /* Push content down to prevent overlap with absolute logo */
-    }
+.hero-text {
+    max-width: 700px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
     
     .contact-wrapper {
         width: 100%;

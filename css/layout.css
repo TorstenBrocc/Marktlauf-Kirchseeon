@@ -21,11 +21,21 @@
     width: 100%;
 }
 
+.header-logos {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+}
+
 .nav-logo {
     display: flex;
     align-items: center;
     gap: var(--space-sm);
     flex-shrink: 1;
+}
+
+.atsv-logo {
+    height: 42.5px; /* 15% smaller than 50px */
 }
 
 .logo-img {

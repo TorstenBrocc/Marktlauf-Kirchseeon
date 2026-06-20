@@ -88,12 +88,14 @@
 
     <header class="main-header">
         <div class="container nav-container">
-            <a href="#" class="nav-logo">
-                <img src="assets/images/Marktlauf%20Logo%20Schrift.png" alt="Marktlauf Kirchseeon Logo" class="logo-img marktlauf-logo">
-            </a>
-            <a href="https://www.atsv-kirchseeon.de/" target="_blank" class="nav-logo-atsv">
-                 <img src="assets/images/ATSV_Logo-750x968.png" alt="ATSV Kirchseeon e.V. Logo" class="logo-img atsv-logo">
-            </a>
+            <div class="header-logos">
+                <a href="#" class="nav-logo">
+                    <img src="assets/images/Marktlauf%20Logo%20Schrift.png" alt="Marktlauf Kirchseeon Logo" class="logo-img marktlauf-logo">
+                </a>
+                <a href="https://www.atsv-kirchseeon.de/" target="_blank" class="nav-logo-atsv">
+                     <img src="assets/images/ATSV_Logo-750x968.png" alt="ATSV Kirchseeon e.V. Logo" class="logo-img atsv-logo">
+                </a>
+            </div>
             
             <button class="mobile-menu-toggle" aria-label="Menü öffnen">
                 <span class="burger-icon"></span>
@@ -119,10 +121,11 @@
         <!-- Hero Section -->
         <section id="hero" class="hero">
             <div class="hero-overlay"></div>
-            <div class="hero-logo-container" style="display: none;">
+            <div class="hero-logo-container">
+                <img src="assets/images/logo-green-only.png" alt="Marktlauf Logo" class="hero-logo-main">
             </div>
             <div class="container hero-content">
-                <div class="hero-text">
+                <div class="hero-text text-center">
                     <span class="hero-badge" data-i18n="hero.badge">ATSV Kirchseeon präsentiert zusammen mit der Gemeinde</span>
                     <h1 data-i18n="hero.title">Marktlauf <br><span class="text-highlight">Kirchseeon 2026</span></h1>
                     <p class="hero-details">
@@ -143,29 +146,29 @@
                 <h2 class="text-center" data-i18n="distanzen.title">Die Läufe</h2>
                 <div class="run-grid">
                     <!-- Bambini -->
-                    <div class="run-card" style="background-image: url('https://images.unsplash.com/photo-1500938434938-058cadb135c3?auto=format&fit=crop&w=1920&q=80');">
+                    <a href="#strecke" class="run-card">
                         <div class="run-card-header">
                             <span class="run-category" data-i18n="distanzen.bambini.category">Kinder</span>
                             <span class="run-distance">500m</span>
                         </div>
                         <p class="run-card-desc" data-i18n="distanzen.bambini.desc">Der perfekte Einstieg für die kleinsten Sportler. Ein kurzer, spannender Lauf für alle Bambinis.</p>
-                    </div>
+                    </a>
                     <!-- Schüler -->
-                    <div class="run-card" style="background-image: url('https://images.unsplash.com/photo-1486427944299-d1955d23e34d?auto=format&fit=crop&w=1920&q=80');">
+                    <a href="#strecke" class="run-card">
                         <div class="run-card-header">
                             <span class="run-category" data-i18n="distanzen.schueler.category">Jugend</span>
                             <span class="run-distance">1km & 2km</span>
                         </div>
                         <p class="run-card-desc" data-i18n="distanzen.schueler.desc">Herausforderungen für Schüler in zwei verschiedenen Distanzen, um die eigenen Grenzen zu testen.</p>
-                    </div>
+                    </a>
                     <!-- Elite -->
-                    <div class="run-card" style="background-image: url('https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=1920&q=80');">
+                    <a href="#strecke" class="run-card">
                         <div class="run-card-header">
                             <span class="run-category" data-i18n="distanzen.elite.category">Erwachsene</span>
                             <span class="run-distance">5km & 10km</span>
                         </div>
                         <p class="run-card-desc" data-i18n="distanzen.elite.desc">Die Königsdisziplinen für ambitionierte Läufer und Hobbysportler. Wer holt sich den Sieg in Kirchseeon?</p>
-                    </div>
+                    </a>
                 </div>
             </div>
         </section>
@@ -236,31 +239,51 @@
                         <div class="route-item">
                             <div class="route-info">
                                 <span class="route-icon">📍</span>
-                                <span data-i18n="strecke.route1">Bambini Lauf (500m)</span>
+                                <span>Bambini Lauf (500m)</span>
                             </div>
-                            <a href="Routes/bambini.gpx" class="btn btn-secondary gpx-download" download>
+                            <a href="#" class="btn btn-secondary gpx-download" download>
                                  <img src="https://cdn-icons-png.flaticon.com/512/2163/2163161.png" alt="GPX-Datei Download Icon" class="gpx-thumb">
-                                <span data-i18n="strecke.gpx_download">GPX Download</span>
+                                <span>GPX Download</span>
                             </a>
                         </div>
                         <div class="route-item">
                             <div class="route-info">
                                 <span class="route-icon">📍</span>
-                                <span data-i18n="strecke.route2">Schüler Lauf (1km/2km)</span>
+                                <span>Schüler Lauf (1km)</span>
                             </div>
-                            <a href="Routes/schueler.gpx" class="btn btn-secondary gpx-download" download>
+                            <a href="#" class="btn btn-secondary gpx-download" download>
                                 <img src="https://cdn-icons-png.flaticon.com/512/2163/2163161.png" alt="GPX" class="gpx-thumb">
-                                <span data-i18n="strecke.gpx_download">GPX Download</span>
+                                <span>GPX Download</span>
                             </a>
                         </div>
                         <div class="route-item">
                             <div class="route-info">
                                 <span class="route-icon">📍</span>
-                                <span data-i18n="strecke.route3">Elite Lauf (5km/10km)</span>
+                                <span>Schüler Lauf (2km)</span>
                             </div>
-                            <a href="assets/Routes/8,6km ex JEK 2x über Bucher Str. & über Ilching.gpx" class="btn btn-secondary gpx-download" download>
+                            <a href="#" class="btn btn-secondary gpx-download" download>
                                 <img src="https://cdn-icons-png.flaticon.com/512/2163/2163161.png" alt="GPX" class="gpx-thumb">
-                                <span data-i18n="strecke.gpx_download">GPX Download</span>
+                                <span>GPX Download</span>
+                            </a>
+                        </div>
+                        <div class="route-item">
+                            <div class="route-info">
+                                <span class="route-icon">📍</span>
+                                <span>Elite Lauf (5km)</span>
+                            </div>
+                            <a href="#" class="btn btn-secondary gpx-download" download>
+                                <img src="https://cdn-icons-png.flaticon.com/512/2163/2163161.png" alt="GPX" class="gpx-thumb">
+                                <span>GPX Download</span>
+                            </a>
+                        </div>
+                        <div class="route-item">
+                            <div class="route-info">
+                                <span class="route-icon">📍</span>
+                                <span>Elite Lauf (10km)</span>
+                            </div>
+                            <a href="#" class="btn btn-secondary gpx-download" download>
+                                <img src="https://cdn-icons-png.flaticon.com/512/2163/2163161.png" alt="GPX" class="gpx-thumb">
+                                <span>GPX Download</span>
                             </a>
                         </div>
                     </div>
