@@ -36,8 +36,9 @@ Den Zustand des Repositories validiert.
 Nicht benötigte Dateien herausfiltert (z.B. .git, Konfigurationsdateien).
 Die aktualisierten Dateien via SSH-Deploy sicher auf den Strato-Produktionsserver überträgt.
 
-📁 Projektstruktur
+## 📁 Projektstruktur
 
+```text
 .
 ├── assets/ # Bilder, Logos, GPX-Routen
 ├── css/ # Modulares Styling (base.css, layout.css, components.css)
@@ -47,3 +48,5 @@ Die aktualisierten Dateien via SSH-Deploy sicher auf den Strato-Produktionsserve
 ├── impressum.html # Impressum
 ├── datenschutz.html # Datenschutzerklärung
 └── README.md # Projekt-Dokumentation
+```
+
