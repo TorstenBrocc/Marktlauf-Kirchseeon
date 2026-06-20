@@ -45,7 +45,7 @@
     min-height: 80vh;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
     background-color: var(--gray-800);
     background-image: url("../images/hero-bg.jpg"); /* Placeholder */
@@ -371,7 +371,6 @@
 .hero-logo-container {
     position: relative;
     z-index: 2;
-    padding-top: 100px; /* Space from top */
     margin-bottom: var(--space-lg);
     display: flex;
     justify-content: center;
