@@ -110,37 +110,85 @@ function openMapModal(routeId) {
         const elevationControl = L.control.elevation({
             container: '#modal-elevation-container',
             theme: 'steelblue-theme',
-            detached: true, // Render elevation in its own container
+            detached: true,
             elevationDiv: '#modal-elevation-container',
             autohide: false,
+            summary: 'inline',
+            marker: "#ff6b35",
+            // Disable default start/end markers from elevation plugin
+            waypoints: false,
             polyline: {
                 color: '#009640',
-                weight: 4,
+                weight: 5,
             },
-            marker: "#ff6b35",
-            summary: 'inline'
+            // Custom summary labels
+            legend: {
+                totalAscent: 'Gesamthöhenmeter',
+            }
         });
         elevationControl.addTo(modalMap);
 
         const gpxLayer = new L.GPX(config.gpx, {
             async: true,
+            // Disable default GPX markers, we create them manually
             marker_options: {
-                startIconUrl: 'https://cdn-icons-png.flaticon.com/512/1077/1077041.png', // Example start icon
-                endIconUrl: 'https://cdn-icons-png.flaticon.com/512/3237/3237443.png',     // Example end icon
+                startIconUrl: null,
+                endIconUrl: null,
                 shadowUrl: null,
-                iconSize: [32, 32],
-                iconAnchor: [16, 32]
             },
             polyline_options: {
-                color: '#009640',
-                weight: 5,
+                color: 'transparent', // Make original GPX line invisible
+                weight: 0,
             },
         });
 
         gpxLayer.on('loaded', function(e) {
-            modalMap.fitBounds(e.target.getBounds());
+            const gpx = e.target;
+            modalMap.fitBounds(gpx.getBounds());
             elevationControl.load(config.gpx);
+
+            // Custom Marker Logic
+            const startPoint = gpx.get_start_point();
+            const endPoint = gpx.get_end_point();
+            const distance = startPoint.lat.toFixed(5) === endPoint.lat.toFixed(5) && startPoint.lng.toFixed(5) === endPoint.lng.toFixed(5);
+
+            if (distance) {
+                const icon = L.divIcon({
+                    html: 'S/Z',
+                    className: 'map-pin map-pin-sz',
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 30]
+                });
+                L.marker(startPoint, { icon: icon }).addTo(modalMap);
+            } else {
+                const startIcon = L.divIcon({
+                    html: 'S',
+                    className: 'map-pin map-pin-start',
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 30]
+                });
+                const endIcon = L.divIcon({
+                    html: 'Z',
+                    className: 'map-pin map-pin-end',
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 30]
+                });
+                L.marker(startPoint, { icon: startIcon }).addTo(modalMap);
+                L.marker(endPoint, { icon: endIcon }).addTo(modalMap);
+            }
         }).addTo(modalMap);
+
+        // Replace Avg Elevation with Total Ascent after data is loaded
+        elevationControl.on('eledata_loaded', function(e) {
+            const summary = elevationControl._container.querySelector('.summary');
+            if (summary) {
+                const avgRow = summary.querySelector('tr:nth-child(4)'); // 4th row is usually Avg
+                if(avgRow && avgRow.innerHTML.includes('Avg')) {
+                    const ascent = e.ascent.toFixed(0) + ' m';
+                    avgRow.innerHTML = `<td>Gesamthöhenmeter</td><td>${ascent}</td>`;
+                }
+            }
+        });
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
