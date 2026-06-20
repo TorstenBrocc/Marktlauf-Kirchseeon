@@ -391,7 +391,7 @@
 .map-modal-content {
     position: relative;
     background-color: var(--white);
-    padding: var(--space-md);
+    padding: var(--space-lg);
     border-radius: 12px;
     box-shadow: var(--shadow-xl);
     width: 95%;
@@ -400,24 +400,28 @@
     max-height: 90vh;
     display: flex;
     flex-direction: column;
+    gap: var(--space-md);
 }
 
 .modal-close-btn {
     position: absolute;
-    top: -15px;
-    right: -15px;
-    background-color: var(--white);
-    border: none;
+    top: 10px;
+    right: 10px;
+    background-color: rgba(255, 255, 255, 0.8);
+    border: 1px solid var(--gray-200);
     border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    font-size: 1.5rem;
+    width: 36px;
+    height: 36px;
+    font-size: 1.2rem;
     font-weight: bold;
     color: var(--gray-800);
     cursor: pointer;
     box-shadow: var(--shadow-md);
     transition: all 0.2s ease;
-    z-index: 1010;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .modal-close-btn:hover {
@@ -427,31 +431,25 @@
 }
 
 .modal-map-container {
-    flex-grow: 1;
-    height: 65%; /* Fallback for browsers not supporting calc/vh well */
-    height: calc(100% - 200px - var(--space-md)); /* Adjust based on elevation + gap */
-    min-height: 200px;
+    flex: 1 1 auto; /* Let the map grow and shrink */
+    min-height: 0; /* Important for flexbox shrinking */
     border-radius: 8px;
     overflow: hidden;
     background-color: var(--gray-100);
 }
 
 .modal-elevation-container {
-    height: 200px; /* Fixed height for elevation */
-    margin-top: var(--space-md);
-    flex-shrink: 0;
+    flex: 0 0 180px; /* Fixed height, no growth/shrink */
 }
 
 /* Responsive Modal Layout */
-@media (max-height: 600px) {
+@media (max-height: 700px) {
     .map-modal-content {
-        padding: var(--space-sm);
-    }
-    .modal-map-container {
-        height: calc(100% - 150px - var(--space-sm)); /* Smaller elevation on short screens */
+        gap: var(--space-sm);
+        padding: var(--space-md);
     }
     .modal-elevation-container {
-        height: 150px;
+        flex-basis: 120px; /* Smaller elevation on short screens */
     }
 }
 
