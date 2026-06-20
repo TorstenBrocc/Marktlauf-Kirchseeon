@@ -1,33 +1,49 @@
-# Professional Web Project
+ATSV Kirchseeon Marktlauf Homepage
 
-A high-performance, modern web project designed with best practices in mind. This repository serves as a showcase of clean code, scalable architecture, and professional deployment workflows.
+Ein performantes, modernes Webprojekt für den Marktlauf der Gemeinde Kirchseeon. Das Projekt zeichnet sich durch sauberen Code, barrierefreies Design und eine professionelle Deployment-Pipeline aus.
 
-## 🚀 Features
-- Modern frontend implementation
-- Optimized asset delivery
-- Responsive design across all devices
-- Automated deployment pipeline
+🚀 Features & Seiten
+- Mehrsprachigkeit (i18n): Dynamische Sprachumschaltung (DE/EN) basierend auf JSON-Dateien (lang/de.json, lang/en.json).
+- SEO & Social Media: Integrierte Open Graph (OG) Meta-Tags für optimales Teilen in sozialen Netzwerken.
+- Rechtliche Seiten: Vollständige Einbindung von Impressum (impressum.html) und Datenschutz (datenschutz.html).
+- Responsives Design: Vollständig optimiert für mobile und Desktop-Ansichten.
 
-## 🛠️ Tech Stack
-- **Frontend:** HTML5, CSS3, JavaScript (ES6+)
-- **Deployment:** GitHub Actions, SFTP
-- **Version Control:** Git
+🎨 Design
+Das visuelle Design wurde grundlegend modernisiert, um einen klaren, sportlichen und zugänglichen Auftritt zu gewährleisten. Im Vergleich zum alten Design liegt der Fokus auf besserer Lesbarkeit, semantischem HTML und klarer visueller Hierarchie.
 
-## ⚙️ DevOps & Deployment
+Markenfarben:
 
-This project implements a professional **CI/CD (Continuous Integration / Continuous Deployment)** pipeline to ensure seamless updates and high availability.
+ATSV Green: #009640 (Primärfarbe für Wiedererkennung und Vertrauen)
+Accent Orange: #ff6b35 (Akzentfarbe für Call-to-Actions und wichtige Hervorhebungen)
+Layout-Prinzipien:
 
-### Workflow: GitHub Actions $\rightarrow$ SFTP
-The deployment process is fully automated. Every push to the `main` branch triggers a GitHub Actions workflow that:
-1. **Validates** the repository state.
-2. **Filters** unnecessary files (e.g., `.git`, `node_modules`, configuration files) to keep the production server clean.
-3. **Securely Transfers** the updated files to the production server via SFTP using encrypted SSH keys.
+Klares, modulares CSS (Base, Layout, Components).
+Semantisches HTML5 für bessere Barrierefreiheit und SEO.
 
-This approach eliminates manual upload errors and ensures that the live environment always reflects the latest stable version of the codebase.
+🛠️ Tech Stack
+- Frontend: Vanilla HTML5, CSS3, JavaScript (ES6+). Es werden keine externen Frameworks oder Bibliotheken (wie React, Vue oder Bootstrap) verwendet, um maximale Performance und Kontrolle zu gewährleisten.
+- Datenhaltung: JSON (für i18n-Übersetzungen).
+- Deployment: GitHub Actions CI/CD mit automatisiertem SSH-Deploy zu Strato.
+- Version Control: Git
 
-## 📁 Project Structure
-```text
+⚙️ DevOps & Deployment
+Dieses Projekt implementiert eine professionelle CI/CD (Continuous Integration / Continuous Deployment) Pipeline.
+
+Workflow: GitHub Actions → Strato per SSH
+Jeder Push auf den main-Branch löst eine GitHub Actions Workflow aus, der:
+
+Den Zustand des Repositories validiert.
+Nicht benötigte Dateien herausfiltert (z.B. .git, Konfigurationsdateien).
+Die aktualisierten Dateien via SSH-Deploy sicher auf den Strato-Produktionsserver überträgt.
+
+📁 Projektstruktur
+
 .
-├── .github/workflows/  # CI/CD pipeline configurations
-├── .gitignore          # Version control exclusions
-└── README.md           # Project documentation
+├── assets/ # Bilder, Logos, GPX-Routen
+├── css/ # Modulares Styling (base.css, layout.css, components.css)
+├── js/ # Vanilla JS Logik (main.js)
+├── lang/ # i18n Sprachdateien (de.json, en.json)
+├── index.html # Startseite
+├── impressum.html # Impressum
+├── datenschutz.html # Datenschutzerklärung
+└── README.md # Projekt-Dokumentation
