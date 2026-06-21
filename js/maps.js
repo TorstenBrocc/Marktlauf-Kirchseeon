@@ -167,42 +167,21 @@ function openMapModal(routeId) {
 
     gpxLayer.on("loaded", function (e) {
       const gpx = e.target;
+      console.log("GPX Object:", gpx);
+      console.log("GPX Object Keys:", Object.keys(gpx));
+      console.log("GPX Object Prototype:", Object.getPrototypeOf(gpx));
       modalMap.fitBounds(gpx.getBounds());
       elevationControl.load(config.gpx);
-
-      const startPoint = gpx.get_start_point();
-      const endPoint = gpx.get_end_point();
-      if (
-        startPoint &&
-        endPoint &&
-        startPoint.lat.toFixed(5) === endPoint.lat.toFixed(5) &&
-        startPoint.lng.toFixed(5) === endPoint.lng.toFixed(5)
-      ) {
-        // It's a round trip. Remove default markers and add a combined one.
-        gpx.removeLayer(gpx.getLayers()[0]); // Remove start marker
-        gpx.removeLayer(gpx.getLayers()[gpx.getLayers().length - 1]); // Remove end marker
-
-        const szIcon = L.divIcon({
-          html: "<span>S/Z</span>",
-          className: "map-pin map-pin-sz",
-          iconSize: [30, 30],
-          iconAnchor: [15, 30],
-        });
-        L.marker(startPoint, { icon: szIcon }).addTo(modalMap);
-      }
     });
 
     gpxLayer.addTo(modalMap);
 
     // Replace Avg Elevation with Total Ascent after data is loaded
     elevationControl.on("eledata_loaded", function (e) {
+      console.log("eledata_loaded event:", e);
       const summaryContainer = elevationControl._container.querySelector(".elevation-summary");
       if (summaryContainer) {
-        const ascent = e.ascent.toFixed(0) + " m";
-        const avgEleSpan = summaryContainer.querySelector(".avgele");
-        if (avgEleSpan) {
-          avgEleSpan.innerHTML = `<span class="summarylabel">Gesamthöhenmeter: </span>${ascent}`;
-        }
+        // The rest of the logic will be added once we have the console output
       }
     });
 
