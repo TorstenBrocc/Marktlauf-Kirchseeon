@@ -1,3 +1,3 @@
-# Active Task
+Active Task
 
-Currently idle. Last task: Implemented `recherchiere_unternehmen()` in `scripts/sponsor_research.py` with dynamic Gemini API generation.
+Currently idle. Last task: Sponsoren-Scraping angepasst: Gemeinde-Kirchseeon Logik entfernt, CSV Import für manuelle Listen hinzugefügt in `scripts/sponsor_research.py`.
