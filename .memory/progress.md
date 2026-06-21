@@ -2,3 +2,4 @@ Der GPX-Track wird wieder korrekt angezeigt. Der Fehler wurde durch eine fehlerh
 - Höhenmeteranzeige korrigiert: Gesamthöhenmeter werden nun direkt über `get_elevation_gain()` aus dem GPX-Objekt bezogen statt fehlerhaft aus `e.track_info.ascent`.- Neue 10km Strecke (10km.gpx) gegen alte getauscht und diese archiviert.
 - GPX Ordner von 'Routes' in 'courses' umbenannt.
 - Referenzen in index.html und maps.js aktualisiert.
+- Disclaimer ("Streckenverlauf unter Vorbehalt - noch in Abstimmung mit Gemeinde") in halber Schriftgröße bei 5km und 10km "Elite Lauf" Kacheln in index.html, de.json und en.json hinzugefügt.
