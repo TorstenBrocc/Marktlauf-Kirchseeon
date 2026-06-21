@@ -206,8 +206,32 @@ function openMapModal(routeId) {
     // This will trigger the 'loaded' event on the GPX layer.
     gpxLayer.on("loaded", function (e) {
       const gpx = e.target;
-      totalAscentMeters = gpx.get_elevation_gain();
-      console.log("Berechneter Gesamtanstieg:", totalAscentMeters);
+      const rawAscent = gpx.get_elevation_gain();
+      console.log("Original berechneter Gesamtanstieg (gpx.get_elevation_gain):", rawAscent);
+
+      // Berechne geglätteten Anstieg mit Schwellenwert-Filter
+      let eleData = gpx.get_elevation_data();
+      if (eleData && eleData.length > 0) {
+        let smoothedAscent = 0;
+        let lastElevation = eleData[0][1]; // Elevation is usually at index 1 in [distance, elevation, ...]
+        
+        for (let i = 1; i < eleData.length; i++) {
+          let currentElevation = eleData[i][1];
+          let diff = currentElevation - lastElevation;
+          
+          // Noise Filter: ignoriere Schwankungen unter 1.5m
+          if (Math.abs(diff) > 1.5) {
+            if (diff > 0) {
+              smoothedAscent += diff;
+            }
+            lastElevation = currentElevation; // Referenzpunkt aktualisieren
+          }
+        }
+        totalAscentMeters = smoothedAscent;
+        console.log("Geglätteter Gesamtanstieg (Schwellenwert 1.5m):", totalAscentMeters);
+      } else {
+        totalAscentMeters = rawAscent;
+      }
       
       modalMap.fitBounds(gpx.getBounds());
 
