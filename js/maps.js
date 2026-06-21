@@ -130,10 +130,7 @@ function openMapModal(routeId) {
         color: "#009640",
         weight: 5,
       },
-      // Custom summary labels
-      legend: {
-        totalAscent: "Gesamthöhenmeter",
-      },
+      // Custom summary labels are handled via DOM manipulation after data load
     });
     elevationControl.addTo(modalMap);
 
@@ -167,37 +164,39 @@ function openMapModal(routeId) {
 
     // First, register the event listener for when elevation data is loaded.
     elevationControl.on("eledata_loaded", function (e) {
-      console.log("Event 'eledata_loaded' gefeuert.", e);
-
-      const summaryContainer = elevationControl._container.querySelector(".elevation-summary");
-      console.log("Suche nach .elevation-summary...", summaryContainer);
-
-      if (!summaryContainer) {
-        console.error("FEHLER: .elevation-summary wurde nicht im DOM gefunden!");
-        return;
-      }
+      // 1. Log event data and control object to find the correct ascent property
+      console.log("eledata_loaded event object:", e);
+      console.log("elevationControl object:", elevationControl);
 
       // The leaflet-elevation plugin might build the summary asynchronously.
       // We will try to find the element and if not, wait a bit.
       setTimeout(() => {
-        const avgEleSpan = summaryContainer.querySelector(".avgele");
-        console.log("Suche nach .avgele in .elevation-summary...", avgEleSpan);
+        // 2. Use a more robust selector, independent of the plugin's internal structure
+        const avgEleSpan = document.querySelector("#modal-elevation-container .avgele");
 
-        if (avgEleSpan && e.metainfo && e.metainfo.gain) {
-          console.log("SUCCESS: .avgele gefunden. Aktualisiere Text...");
-          const ascent = e.metainfo.gain.toFixed(0) + " m";
-          const labelSpan = avgEleSpan.querySelector(".summarylabel");
-          const valueSpan = avgEleSpan.querySelector(".summaryvalue");
+        if (avgEleSpan) {
+          console.log("SUCCESS: .avgele gefunden", avgEleSpan);
+          // ATTENTION: The line below is a GUESS. Please check the console output of 'e'
+          // and replace 'e.track_info.ascent' with the correct property path.
+          const ascentInMeters = e.track_info.ascent; // EXAMPLE - PLEASE VERIFY
 
-          if (labelSpan) {
-            labelSpan.textContent = "Gesamthöhenmeter: ";
+          if (ascentInMeters !== undefined) {
+            const ascent = ascentInMeters.toFixed(0) + " m";
+            const labelSpan = avgEleSpan.querySelector(".summarylabel");
+            const valueSpan = avgEleSpan.querySelector(".summaryvalue");
+
+            if (labelSpan) {
+              labelSpan.textContent = "Gesamthöhenmeter: ";
+            }
+            if (valueSpan) {
+              valueSpan.textContent = ascent;
+            }
+            console.log(`Label und Wert aktualisiert auf: ${ascent}`);
+          } else {
+            console.error("FEHLER: Die Eigenschaft für den Anstieg (z.B. e.track_info.ascent) wurde im Event-Objekt nicht gefunden. Bitte Konsole prüfen!");
           }
-          if (valueSpan) {
-            valueSpan.textContent = ascent;
-          }
-          console.log("Label und Wert aktualisiert.");
         } else {
-          console.error("FEHLER: .avgele oder Höhendaten (e.metainfo.gain) nicht gefunden nach Timeout.");
+          console.error("FEHLER: .avgele Element wurde im DOM nicht gefunden, auch nicht nach kurzer Wartezeit.");
         }
       }, 100); // Wait 100ms to ensure the DOM is updated by the plugin
     });
