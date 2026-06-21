@@ -4,6 +4,7 @@ Ein performantes, modernes Webprojekt für den Marktlauf der Gemeinde Kirchseeon
 
 🚀 Features & Seiten
 - Mehrsprachigkeit (i18n): Dynamische Sprachumschaltung (DE/EN) basierend auf JSON-Dateien (lang/de.json, lang/en.json).
+- Interaktive Streckenkarten: Visualisierung der GPX-Routen (5km und 10km) mit Leaflet, inklusive Anzeige von Distanz, Höhenmetern und dynamischen Höhenprofilen.
 - SEO & Social Media: Integrierte Open Graph (OG) Meta-Tags für optimales Teilen in sozialen Netzwerken.
 - Rechtliche Seiten: Vollständige Einbindung von Impressum (impressum.html) und Datenschutz (datenschutz.html).
 - Responsives Design: Vollständig optimiert für mobile und Desktop-Ansichten.
@@ -22,6 +23,7 @@ Semantisches HTML5 für bessere Barrierefreiheit und SEO.
 
 🛠️ Tech Stack
 - Frontend: Vanilla HTML5, CSS3, JavaScript (ES6+). Es werden keine externen Frameworks oder Bibliotheken (wie React, Vue oder Bootstrap) verwendet, um maximale Performance und Kontrolle zu gewährleisten.
+- Karten & Routing: Leaflet.js in Kombination mit leaflet-gpx zur interaktiven Darstellung der Laufstrecken inklusive Höhenprofilen und Wegpunkten.
 - Datenhaltung: JSON (für i18n-Übersetzungen).
 - Deployment: GitHub Actions CI/CD mit automatisiertem SSH-Deploy zu Strato.
 - Version Control: Git
