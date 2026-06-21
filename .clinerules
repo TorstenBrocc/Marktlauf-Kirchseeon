@@ -4,7 +4,7 @@ Du bist der leitende Entwickler für die ATSV Kirchseeon Marktlauf Homepage.
 
 ## CORE BEHAVIORAL RULES
 1. Jede Session beginnt damit, dass du die Dateien im Ordner `.memory/` liest.
-2. Nach jedem bedeutenden Fortschritt oder vor Ende eines Chats aktualisierst du die `progress.md` und `active-task.md` im `.memory/`-Ordner.
+2. Nach jedem bedeutenden Fortschritt oder vor Ende eines Chats aktualisierst du die `progress.md` und `active-task.md` im `.memory/`-Ordner. Prüfe dabei zwingend auch: Wurde eine neue Library/ein neuer Service eingebunden, hat sich das Deployment geändert, gab es eine sichtbare Design-Änderung, oder wurden rechtliche/Pflichtseiten geändert? Falls eine dieser Fragen zutrifft, erstelle zusätzlich einen Vorschlag zur Ergänzung von README.md (nur der betroffene Abschnitt, keine vollständige Überarbeitung) und lege mir diesen zur Bestätigung vor, bevor du ihn übernimmst. Trage parallel in .memory/doku-log.md eine kurze Notiz ein, welche Kategorie betroffen war.
 3. Entscheidungen über Design (Farben des ATSV Kirchseeon) oder Architektur werden in der `project-brief.md` festgehalten.
 4. Du arbeitest modular und achtest auf sauberen Code, damit Teile später leicht erweitert werden können (z.B. Anmeldesystem, Ergebnislisten).
 5. Bevor du eine Aufgabe als erledigt markierst, verifizierst du die Responsivität (Mobile Friendly).
@@ -35,8 +35,7 @@ Bei jeder Bearbeitung, Neuerstellung oder Optimierung von HTML- und Inhaltsseite
 * **Terminologie:** 'Marktlauf' ist ein Eigenname und darf NIEMALS übersetzt werden (bleibt in DE und EN immer 'Marktlauf').
 * **Internationalisierung (i18n):** Die Architektur nutzt JSON-Dateien für Übersetzungen (`lang/de.json` und `lang/en.json`). Alle Texte müssen dort gepflegt werden. Logik zur Textausgabe gehört in die entsprechenden Funktionen, aber die Texte selbst dürfen nicht hartcodiert in `js/main.js` stehen.
 
-## 5. DOKUMENTATIONS-CHECK
-Dokumentations-Check: Bevor du eine Aufgabe als abgeschlossen markierst, prüfe, ob eine der folgenden Kategorien betroffen war: (1) Tech-Stack – neue Library, neuer Service, neue Build- oder Deploy-Stufe; (2) Deployment/CI-CD – Änderungen an GitHub Actions, Strato-Konfiguration, Domains; (3) Design – sichtbare Änderungen an Farben, Layout, Branding, neuen Seiten; (4) Rechtliches/Pflichtinhalte – neue oder geänderte Seiten wie Impressum, Datenschutz, i18n. Falls ja: Erstelle einen Vorschlag für die entsprechende Ergänzung in README.md und zeig mir den Vorschlag zur Bestätigung, bevor du ihn übernimmst. Bearbeite README.md niemals ohne vorherige Bestätigung, und ändere ausschließlich den betroffenen Abschnitt, nicht die gesamte Datei. Trage zusätzlich in .memory/doku-log.md eine kurze Notiz ein, welche Kategorie betroffen war und was geändert wurde, auch wenn der README-Vorschlag noch nicht bestätigt ist.
+
 
 ## 6. GESCHÜTZTE DATEIEN & BEREICHE
 Die folgenden Dateien und Bereiche dürfen NIEMALS verändert werden, es sei denn, der Nutzer fordert dies explizit und direkt auf:
