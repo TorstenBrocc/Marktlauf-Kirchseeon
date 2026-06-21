@@ -137,13 +137,26 @@ function openMapModal(routeId) {
     });
     elevationControl.addTo(modalMap);
 
+    const startIcon = L.divIcon({
+      html: "<span>S</span>",
+      className: "map-pin map-pin-start",
+      iconSize: [30, 30],
+      iconAnchor: [15, 30],
+    });
+
+    const endIcon = L.divIcon({
+      html: "<span>Z</span>",
+      className: "map-pin map-pin-end",
+      iconSize: [30, 30],
+      iconAnchor: [15, 30],
+    });
+
     const gpxLayer = new L.GPX(config.gpx, {
       async: true,
-      // Disable default GPX markers, we create them manually
       marker_options: {
-        startIcon: transparentIcon,
-        endIcon: transparentIcon,
-        wptIcon: transparentIcon,
+        startIcon: startIcon,
+        endIcon: endIcon,
+        wptIcon: transparentIcon, // Keep waypoint icons transparent
         shadowUrl: null,
       },
       polyline_options: {
@@ -158,59 +171,50 @@ function openMapModal(routeId) {
         modalMap.fitBounds(gpx.getBounds());
         elevationControl.load(config.gpx);
 
-        // Custom Marker Logic
+        // Handle S/Z icon for round trips
         const startPoint = gpx.get_start_point();
         const endPoint = gpx.get_end_point();
-        const distance =
+        if (
+          startPoint &&
+          endPoint &&
           startPoint.lat.toFixed(5) === endPoint.lat.toFixed(5) &&
-          startPoint.lng.toFixed(5) === endPoint.lng.toFixed(5);
-
-        if (distance) {
-          const icon = L.divIcon({
+          startPoint.lng.toFixed(5) === endPoint.lng.toFixed(5)
+        ) {
+          // Remove individual start/end markers
+          gpx.clearLayers(); // This might be too aggressive, let's see
+          const szIcon = L.divIcon({
             html: "<span>S/Z</span>",
             className: "map-pin map-pin-sz",
             iconSize: [30, 30],
             iconAnchor: [15, 30],
           });
-          L.marker(startPoint, { icon: icon }).addTo(modalMap);
-        } else {
-          const startIcon = L.divIcon({
-            html: "<span>S</span>",
-            className: "map-pin map-pin-start",
-            iconSize: [30, 30],
-            iconAnchor: [15, 30],
+          L.marker(startPoint, { icon: szIcon }).addTo(modalMap);
+          // Re-add the polyline if clearLayers removed it
+          const polyline = new L.Polyline(gpx.get_latlngs(), {
+            color: "#009640",
+            weight: 5,
           });
-          const endIcon = L.divIcon({
-            html: "<span>Z</span>",
-            className: "map-pin map-pin-end",
-            iconSize: [30, 30],
-            iconAnchor: [15, 30],
-          });
-          L.marker(startPoint, { icon: startIcon }).addTo(modalMap);
-          L.marker(endPoint, { icon: endIcon }).addTo(modalMap);
+          polyline.addTo(modalMap);
         }
       })
       .addTo(modalMap);
 
     // Replace Avg Elevation with Total Ascent after data is loaded
     elevationControl.on("eledata_loaded", function (e) {
-        const summaryContainer = elevationControl._container.querySelector(".elevation-summary");
-        if (!summaryContainer) return;
-
+      const summaryContainer = elevationControl._container.querySelector(".elevation-summary");
+      if (summaryContainer) {
+        console.log("Elevation summary HTML:", summaryContainer.innerHTML);
         const ascent = e.ascent.toFixed(0) + " m";
-        
-        // Find and replace the specific summary item.
-        // This is more robust than relying on table row order.
         const summaryItems = summaryContainer.querySelectorAll("span");
-        summaryItems.forEach(item => {
-            if (item.innerHTML.includes("Avg")) {
-                // Replace the entire parent container of the label to ensure structure is maintained.
-                const parent = item.closest("span");
-                if (parent) {
-                    parent.innerHTML = `<span class="summarylabel">Gesamthöhenmeter: </span>${ascent}`;
-                }
+        summaryItems.forEach((item) => {
+          if (item.innerHTML.includes("Avg")) {
+            const parent = item.closest("span");
+            if (parent) {
+              parent.innerHTML = `<span class="summarylabel">Gesamthöhenmeter: </span>${ascent}`;
             }
+          }
         });
+      }
     });
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
