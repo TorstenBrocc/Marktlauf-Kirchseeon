@@ -156,7 +156,7 @@ function openMapModal(routeId) {
       marker_options: {
         startIcon: startIcon,
         endIcon: endIcon,
-        wptIcon: transparentIcon, // Keep waypoint icons transparent
+        wptIcon: transparentIcon,
         shadowUrl: null,
       },
       polyline_options: {
@@ -165,55 +165,44 @@ function openMapModal(routeId) {
       },
     });
 
-    gpxLayer
-      .on("loaded", function (e) {
-        const gpx = e.target;
-        modalMap.fitBounds(gpx.getBounds());
-        elevationControl.load(config.gpx);
+    gpxLayer.on("loaded", function (e) {
+      const gpx = e.target;
+      modalMap.fitBounds(gpx.getBounds());
+      elevationControl.load(config.gpx);
 
-        // Handle S/Z icon for round trips
-        const startPoint = gpx.get_start_point();
-        const endPoint = gpx.get_end_point();
-        if (
-          startPoint &&
-          endPoint &&
-          startPoint.lat.toFixed(5) === endPoint.lat.toFixed(5) &&
-          startPoint.lng.toFixed(5) === endPoint.lng.toFixed(5)
-        ) {
-          // Remove individual start/end markers
-          gpx.clearLayers(); // This might be too aggressive, let's see
-          const szIcon = L.divIcon({
-            html: "<span>S/Z</span>",
-            className: "map-pin map-pin-sz",
-            iconSize: [30, 30],
-            iconAnchor: [15, 30],
-          });
-          L.marker(startPoint, { icon: szIcon }).addTo(modalMap);
-          // Re-add the polyline if clearLayers removed it
-          const polyline = new L.Polyline(gpx.get_latlngs(), {
-            color: "#009640",
-            weight: 5,
-          });
-          polyline.addTo(modalMap);
-        }
-      })
-      .addTo(modalMap);
+      const startPoint = gpx.get_start_point();
+      const endPoint = gpx.get_end_point();
+      if (
+        startPoint &&
+        endPoint &&
+        startPoint.lat.toFixed(5) === endPoint.lat.toFixed(5) &&
+        startPoint.lng.toFixed(5) === endPoint.lng.toFixed(5)
+      ) {
+        // It's a round trip. Remove default markers and add a combined one.
+        gpx.removeLayer(gpx.getLayers()[0]); // Remove start marker
+        gpx.removeLayer(gpx.getLayers()[gpx.getLayers().length - 1]); // Remove end marker
+
+        const szIcon = L.divIcon({
+          html: "<span>S/Z</span>",
+          className: "map-pin map-pin-sz",
+          iconSize: [30, 30],
+          iconAnchor: [15, 30],
+        });
+        L.marker(startPoint, { icon: szIcon }).addTo(modalMap);
+      }
+    });
+
+    gpxLayer.addTo(modalMap);
 
     // Replace Avg Elevation with Total Ascent after data is loaded
     elevationControl.on("eledata_loaded", function (e) {
       const summaryContainer = elevationControl._container.querySelector(".elevation-summary");
       if (summaryContainer) {
-        console.log("Elevation summary HTML:", summaryContainer.innerHTML);
         const ascent = e.ascent.toFixed(0) + " m";
-        const summaryItems = summaryContainer.querySelectorAll("span");
-        summaryItems.forEach((item) => {
-          if (item.innerHTML.includes("Avg")) {
-            const parent = item.closest("span");
-            if (parent) {
-              parent.innerHTML = `<span class="summarylabel">Gesamthöhenmeter: </span>${ascent}`;
-            }
-          }
-        });
+        const avgEleSpan = summaryContainer.querySelector(".avgele");
+        if (avgEleSpan) {
+          avgEleSpan.innerHTML = `<span class="summarylabel">Gesamthöhenmeter: </span>${ascent}`;
+        }
       }
     });
 
