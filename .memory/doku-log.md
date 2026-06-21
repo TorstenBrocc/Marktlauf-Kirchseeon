@@ -7,3 +7,4 @@
 | 2026-06-21 | Bugfix | Start/Ziel-Pin Ausrichtung (senkrecht) und Größe korrigiert |
 | 2026-06-21 | Design | Feinjustierung Start/Ziel-Pin: Form verschmälert und Symbol rotiert/vergrößert |
 | 2026-06-21 | Design | Start/Ziel-Marker durch standardisierten Geo-Pin-Pfad ersetzt |
+| 2026-06-21 | Design | Symbolgröße (Bergsymbol) im Start/Ziel-Pin um 100% vergrößert |

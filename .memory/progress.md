@@ -7,3 +7,4 @@ Der GPX-Track wird wieder korrekt angezeigt. Der Fehler wurde durch eine fehlerh
 - 2026-06-21: Größe und Ausrichtung des kombinierten Start/Ziel-Markers (Größe des Tropfens und des Berg-Symbols, korrekte senkrechte Ausrichtung) korrigiert.
 - 2026-06-21: Feinjustierung des Start/Ziel-Markers (Tropfen oben schmaler gemacht via scaleX, Bergsymbol rotiert und vergrößert).
 - 2026-06-21: Kompletten Custom-CSS-Tropfen durch standardisierten Geo-Pin-Pfad ersetzt (inkl. exakter Berechnung des iconAnchor).
+- 2026-06-21: Symbolgröße (Bergsymbol) im Start/Ziel-Pin um 100% vergrößert (auf 18x18).
