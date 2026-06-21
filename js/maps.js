@@ -167,8 +167,33 @@ function openMapModal(routeId) {
 
     gpxLayer.on("loaded", function (e) {
       const gpx = e.target;
-      console.log("GPX Object:", gpx);
       modalMap.fitBounds(gpx.getBounds());
+
+      const layers = gpx.getLayers();
+      if (layers.length > 0) {
+        const firstLayer = layers[0];
+        if (firstLayer.getLatLngs) {
+          const latlngs = firstLayer.getLatLngs();
+          if (latlngs.length > 0) {
+            const startPoint = latlngs[0];
+            const endPoint = latlngs[latlngs.length - 1];
+
+            if (startPoint.distanceTo(endPoint) < 10) {
+              // It's a round trip, remove default markers
+              gpx.removeLayer(gpx.getLayers()[0]);
+              gpx.removeLayer(gpx.getLayers()[gpx.getLayers().length - 1]);
+
+              const szIcon = L.divIcon({
+                html: "<span>S/Z</span>",
+                className: "map-pin map-pin-sz",
+                iconSize: [30, 30],
+                iconAnchor: [15, 30],
+              });
+              L.marker(startPoint, { icon: szIcon }).addTo(modalMap);
+            }
+          }
+        }
+      }
       elevationControl.load(config.gpx);
     });
 
@@ -176,10 +201,16 @@ function openMapModal(routeId) {
 
     // Replace Avg Elevation with Total Ascent after data is loaded
     elevationControl.on("eledata_loaded", function (e) {
-      console.log("eledata_loaded event:", e);
       const summaryContainer = elevationControl._container.querySelector(".elevation-summary");
-      if (summaryContainer) {
-        // The rest of the logic will be added once we have the console output
+      if (summaryContainer && e.metainfo && e.metainfo.gain) {
+        const ascent = e.metainfo.gain.toFixed(0) + " m";
+        const avgEleSpan = summaryContainer.querySelector(".avgele");
+        if (avgEleSpan) {
+            const labelSpan = avgEleSpan.querySelector(".summarylabel");
+            const valueSpan = avgEleSpan.querySelector(".summaryvalue");
+            if (labelSpan) labelSpan.textContent = "Gesamthöhenmeter: ";
+            if (valueSpan) valueSpan.textContent = ascent;
+        }
       }
     });
 
