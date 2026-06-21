@@ -5,3 +5,4 @@ Der GPX-Track wird wieder korrekt angezeigt. Der Fehler wurde durch eine fehlerh
 - Disclaimer ("Streckenverlauf unter Vorbehalt - noch in Abstimmung mit Gemeinde") in halber Schriftgröße bei 5km und 10km "Elite Lauf" Kacheln in index.html, de.json und en.json hinzugefügt.
 - 2026-06-21: Kombinierten Start/Ziel-Marker für die GPX-Karten eingefügt.
 - 2026-06-21: Größe und Ausrichtung des kombinierten Start/Ziel-Markers (Größe des Tropfens und des Berg-Symbols, korrekte senkrechte Ausrichtung) korrigiert.
+- 2026-06-21: Feinjustierung des Start/Ziel-Markers (Tropfen oben schmaler gemacht via scaleX, Bergsymbol rotiert und vergrößert).

@@ -5,3 +5,4 @@
 | 2026-06-21 | Design | Text-Disclaimer zu 5km und 10km Kacheln hinzugefügt |
 | 2026-06-21 | Design | Style-Update: Kombinierter Start/Ziel-Marker für GPX-Karten eingefügt |
 | 2026-06-21 | Bugfix | Start/Ziel-Pin Ausrichtung (senkrecht) und Größe korrigiert |
+| 2026-06-21 | Design | Feinjustierung Start/Ziel-Pin: Form verschmälert und Symbol rotiert/vergrößert |
