@@ -40,3 +40,8 @@ yarn-error.log*briefing.md
 assets/images/design-briefing*.md
 briefing.md
 assets/images/design-briefing*.md
+
+# Sponsoring-Recherche – niemals committen
+sponsor-data/
+*.sponsor.csv
+.env
