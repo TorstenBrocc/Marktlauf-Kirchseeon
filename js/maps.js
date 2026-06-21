@@ -46,7 +46,7 @@ function initRouteMaps() {
       createPreviewMap(mapId, config.gpx);
       previewEl.addEventListener("click", () => openMapModal(routeId));
     } else {
-      previewEl.innerHTML = `<span data-i18n=\"strecke.placeholder\">Strecke folgt in Kürze</span>`;
+      previewEl.innerHTML = `<span data-i18n="strecke.placeholder">Strecke folgt in Kürze</span>`;
       previewEl.style.cursor = "default";
     }
   });
@@ -73,7 +73,7 @@ function createPreviewMap(mapId, gpxFile) {
   });
 
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    attribution: '&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   }).addTo(map);
 
   new L.GPX(gpxFile, {
@@ -162,6 +162,8 @@ function openMapModal(routeId) {
       },
     });
 
+    let totalAscentMeters = null;
+
     // First, register the event listener for when elevation data is loaded.
     elevationControl.on("eledata_loaded", function (e) {
       // 1. Log event data and control object to find the correct ascent property
@@ -176,11 +178,10 @@ function openMapModal(routeId) {
 
         if (avgEleSpan) {
           console.log("SUCCESS: .avgele gefunden", avgEleSpan);
-          // ATTENTION: The line below is a GUESS. Please check the console output of 'e'
-          // and replace 'e.track_info.ascent' with the correct property path.
-          const ascentInMeters = e.track_info.ascent; // EXAMPLE - PLEASE VERIFY
+          
+          const ascentInMeters = totalAscentMeters;
 
-          if (ascentInMeters !== undefined) {
+          if (ascentInMeters !== undefined && ascentInMeters !== null) {
             const ascent = ascentInMeters.toFixed(0) + " m";
             const labelSpan = avgEleSpan.querySelector(".summarylabel");
             const valueSpan = avgEleSpan.querySelector(".summaryvalue");
@@ -193,7 +194,7 @@ function openMapModal(routeId) {
             }
             console.log(`Label und Wert aktualisiert auf: ${ascent}`);
           } else {
-            console.error("FEHLER: Die Eigenschaft für den Anstieg (z.B. e.track_info.ascent) wurde im Event-Objekt nicht gefunden. Bitte Konsole prüfen!");
+            console.error("FEHLER: Die Eigenschaft für den Anstieg konnte nicht berechnet werden. Bitte Konsole prüfen!");
           }
         } else {
           console.error("FEHLER: .avgele Element wurde im DOM nicht gefunden, auch nicht nach kurzer Wartezeit.");
@@ -205,6 +206,9 @@ function openMapModal(routeId) {
     // This will trigger the 'loaded' event on the GPX layer.
     gpxLayer.on("loaded", function (e) {
       const gpx = e.target;
+      totalAscentMeters = gpx.get_elevation_gain();
+      console.log("Berechneter Gesamtanstieg:", totalAscentMeters);
+      
       modalMap.fitBounds(gpx.getBounds());
 
       // Handle Start/End-Icons for round trips
@@ -238,7 +242,7 @@ function openMapModal(routeId) {
     gpxLayer.addTo(modalMap);
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: '&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors',
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(modalMap);
 
     // Invalidate size after the modal is fully visible and rendered
