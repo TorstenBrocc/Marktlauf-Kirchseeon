@@ -147,8 +147,8 @@ function openMapModal(routeId) {
         shadowUrl: null,
       },
       polyline_options: {
-        color: "transparent", // Make original GPX line invisible
-        weight: 0,
+        color: "#009640",
+        weight: 5,
       },
     });
 
@@ -194,14 +194,23 @@ function openMapModal(routeId) {
 
     // Replace Avg Elevation with Total Ascent after data is loaded
     elevationControl.on("eledata_loaded", function (e) {
-      const summary = elevationControl._container.querySelector(".summary");
-      if (summary) {
-        const avgRow = summary.querySelector("tr:nth-child(4)"); // 4th row is usually Avg
-        if (avgRow && avgRow.innerHTML.includes("Avg")) {
-          const ascent = e.ascent.toFixed(0) + " m";
-          avgRow.innerHTML = `<td>Gesamthöhenmeter</td><td>${ascent}</td>`;
-        }
-      }
+        const summaryContainer = elevationControl._container.querySelector(".elevation-summary");
+        if (!summaryContainer) return;
+
+        const ascent = e.ascent.toFixed(0) + " m";
+        
+        // Find and replace the specific summary item.
+        // This is more robust than relying on table row order.
+        const summaryItems = summaryContainer.querySelectorAll("span");
+        summaryItems.forEach(item => {
+            if (item.innerHTML.includes("Avg")) {
+                // Replace the entire parent container of the label to ensure structure is maintained.
+                const parent = item.closest("span");
+                if (parent) {
+                    parent.innerHTML = `<span class="summarylabel">Gesamthöhenmeter: </span>${ascent}`;
+                }
+            }
+        });
     });
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
