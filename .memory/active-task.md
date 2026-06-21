@@ -1,1 +1,1 @@
-Aufgabe abgeschlossen: Hinweis "Streckenverlauf unter Vorbehalt - noch in Abstimmung mit Gemeinde" in grauer, kleiner Schrift zu den 5km und 10km Strecken-Kacheln hinzugefügt.
+Kombinierten Start/Ziel-Marker erstellt

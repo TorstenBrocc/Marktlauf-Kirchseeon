@@ -793,29 +793,14 @@
     background-color: white;
     border-radius: 50% 50% 50% 0;
     transform: rotate(-45deg);
-    border: 2px solid white;
+    border: 1px solid #d1d5db;
     box-shadow: var(--shadow-md);
     display: flex;
-    justify-content: center;
     align-items: center;
-    font-weight: bold;
-    font-size: 14px;
-    color: white;
+    justify-content: center;
 }
 
-.map-pin-start {
-    background-color: var(--color-primary);
-}
-
-.map-pin-end {
-    background-color: var(--color-accent);
-}
-
-.map-pin-sz {
-    background: linear-gradient(135deg, var(--color-primary) 50%, var(--color-accent) 50%);
-}
-
-.map-pin > span {
+.map-pin > svg {
     transform: rotate(45deg);
 }
 
