@@ -40,3 +40,8 @@ Die folgenden Dateien und Bereiche dürfen NIEMALS verändert werden, es sei den
 * **`impressum.html`** – Diese Datei ist gesperrt. Kein Refactoring, kein Reformatting, keine inhaltlichen Änderungen.
 * **Impressum-Link im Footer von `index.html`** – Der Link `<a href="impressum.html">Impressum & Datenschutz</a>` im Footer darf nicht verändert, verschoben oder entfernt werden.
 * Bei Zweifeln gilt: lieber nachfragen als anfassen.
+
+## 6. DATENSCHUTZ IN MEMORY- UND DOKU-DATEIEN
+* **Keine personenbezogenen oder geschäftlichen Recherchedaten in `.memory/`:** Wenn eine Aufgabe das Sammeln, Verarbeiten oder Aufbereiten von Daten Dritter betrifft (z. B. Sponsoren-Recherche, Kontaktlisten, Teilnehmerdaten), dürfen `progress.md`, `doku-log.md`, `active-task.md` und alle Dateien unter `.memory/solutions/` AUSSCHLIESSLICH den Task-Status und die technische Lösung beschreiben (z. B. "Sponsor-Research-Script erstellt, Output-Pfad via .env konfigurierbar").
+* **Verboten in diesen Dateien:** Firmennamen, Personennamen, E-Mail-Adressen, Telefonnummern, Adressen, konkrete Recherche-Treffer oder Auszüge aus generierten CSV-/Datendateien – unabhängig davon, ob diese Daten selbst im Repo landen oder (korrekt) außerhalb davon (z. B. OneDrive) gespeichert werden.
+* **Bei Unsicherheit:** Schreibe lieber zu allgemein als zu konkret. Im Zweifel nachfragen, ob eine Information in die Doku darf, statt sie aufzunehmen.
