@@ -168,8 +168,6 @@ function openMapModal(routeId) {
     gpxLayer.on("loaded", function (e) {
       const gpx = e.target;
       console.log("GPX Object:", gpx);
-      console.log("GPX Object Keys:", Object.keys(gpx));
-      console.log("GPX Object Prototype:", Object.getPrototypeOf(gpx));
       modalMap.fitBounds(gpx.getBounds());
       elevationControl.load(config.gpx);
     });
