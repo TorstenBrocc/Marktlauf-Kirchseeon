@@ -6,3 +6,4 @@
 | 2026-06-21 | Design | Style-Update: Kombinierter Start/Ziel-Marker für GPX-Karten eingefügt |
 | 2026-06-21 | Bugfix | Start/Ziel-Pin Ausrichtung (senkrecht) und Größe korrigiert |
 | 2026-06-21 | Design | Feinjustierung Start/Ziel-Pin: Form verschmälert und Symbol rotiert/vergrößert |
+| 2026-06-21 | Design | Start/Ziel-Marker durch standardisierten Geo-Pin-Pfad ersetzt |
