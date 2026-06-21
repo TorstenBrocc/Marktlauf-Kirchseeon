@@ -1,1 +1,2 @@
 Der GPX-Track wird wieder korrekt angezeigt. Der Fehler wurde durch eine fehlerhafte Icon-Definition verursacht.
+- Höhenmeteranzeige korrigiert: Gesamthöhenmeter werden nun direkt über `get_elevation_gain()` aus dem GPX-Objekt bezogen statt fehlerhaft aus `e.track_info.ascent`.
