@@ -24,10 +24,10 @@ const routesConfig = {
     gpx: null,
   },
   "elite-5km": {
-    gpx: "assets/Routes/5km.gpx",
+    gpx: "assets/courses/5km.gpx",
   },
   "elite-10km": {
-    gpx: "assets/Routes/10km (8,6km).gpx",
+    gpx: "assets/courses/10km.gpx",
   },
 };
 

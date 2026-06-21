@@ -1,1 +1,1 @@
-Keine aktive Aufgabe.
+Aufgabe abgeschlossen: GPX ausgetauscht und Ordner umbenannt.
