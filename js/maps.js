@@ -137,17 +137,6 @@ function openMapModal(routeId) {
     });
     elevationControl.addTo(modalMap);
 
-    // Log text on mousemove to check for re-rendering
-    elevationControl.on("eledata_mousemove", (e) => {
-      const summaryContainer = elevationControl._container.querySelector(".elevation-summary");
-      if (summaryContainer) {
-        const avgEleSpan = summaryContainer.querySelector(".avgele");
-        if (avgEleSpan) {
-          console.log("mousemove .avgele text:", avgEleSpan.textContent.trim());
-        }
-      }
-    });
-
     const startIcon = L.divIcon({
       html: "<span>S</span>",
       className: "map-pin map-pin-start",
@@ -207,8 +196,6 @@ function openMapModal(routeId) {
             valueSpan.textContent = ascent;
           }
           console.log("Label und Wert aktualisiert.");
-          // Verify text immediately after replacement
-          console.log("Text after initial replacement:", summaryContainer.querySelector(".avgele").textContent.trim());
         } else {
           console.error("FEHLER: .avgele oder Höhendaten (e.metainfo.gain) nicht gefunden nach Timeout.");
         }
