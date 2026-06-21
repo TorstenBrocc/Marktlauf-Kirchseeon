@@ -45,3 +45,4 @@ assets/images/design-briefing*.md
 sponsor-data/
 *.sponsor.csv
 .env
+venv/
