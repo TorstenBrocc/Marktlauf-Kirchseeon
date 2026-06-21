@@ -46,7 +46,7 @@ function initRouteMaps() {
       createPreviewMap(mapId, config.gpx);
       previewEl.addEventListener("click", () => openMapModal(routeId));
     } else {
-      previewEl.innerHTML = `<span data-i18n="strecke.placeholder">Strecke folgt in Kürze</span>`;
+      previewEl.innerHTML = `<span data-i18n=\"strecke.placeholder\">Strecke folgt in Kürze</span>`;
       previewEl.style.cursor = "default";
     }
   });
@@ -73,7 +73,7 @@ function createPreviewMap(mapId, gpxFile) {
   });
 
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    attribution: '&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors',
   }).addTo(map);
 
   new L.GPX(gpxFile, {
@@ -165,10 +165,50 @@ function openMapModal(routeId) {
       },
     });
 
+    // First, register the event listener for when elevation data is loaded.
+    elevationControl.on("eledata_loaded", function (e) {
+      console.log("Event 'eledata_loaded' gefeuert.", e);
+
+      const summaryContainer = elevationControl._container.querySelector(".elevation-summary");
+      console.log("Suche nach .elevation-summary...", summaryContainer);
+
+      if (!summaryContainer) {
+        console.error("FEHLER: .elevation-summary wurde nicht im DOM gefunden!");
+        return;
+      }
+
+      // The leaflet-elevation plugin might build the summary asynchronously.
+      // We will try to find the element and if not, wait a bit.
+      setTimeout(() => {
+        const avgEleSpan = summaryContainer.querySelector(".avgele");
+        console.log("Suche nach .avgele in .elevation-summary...", avgEleSpan);
+
+        if (avgEleSpan && e.metainfo && e.metainfo.gain) {
+          console.log("SUCCESS: .avgele gefunden. Aktualisiere Text...");
+          const ascent = e.metainfo.gain.toFixed(0) + " m";
+          const labelSpan = avgEleSpan.querySelector(".summarylabel");
+          const valueSpan = avgEleSpan.querySelector(".summaryvalue");
+
+          if (labelSpan) {
+            labelSpan.textContent = "Gesamthöhenmeter: ";
+          }
+          if (valueSpan) {
+            valueSpan.textContent = ascent;
+          }
+          console.log("Label und Wert aktualisiert.");
+        } else {
+          console.error("FEHLER: .avgele oder Höhendaten (e.metainfo.gain) nicht gefunden nach Timeout.");
+        }
+      }, 100); // Wait 100ms to ensure the DOM is updated by the plugin
+    });
+
+    // Second, add the GPX layer to the map.
+    // This will trigger the 'loaded' event on the GPX layer.
     gpxLayer.on("loaded", function (e) {
       const gpx = e.target;
       modalMap.fitBounds(gpx.getBounds());
 
+      // Handle Start/End-Icons for round trips
       const layers = gpx.getLayers();
       if (layers.length > 0) {
         const firstLayer = layers[0];
@@ -177,12 +217,9 @@ function openMapModal(routeId) {
           if (latlngs.length > 0) {
             const startPoint = latlngs[0];
             const endPoint = latlngs[latlngs.length - 1];
-
             if (startPoint.distanceTo(endPoint) < 10) {
-              // It's a round trip, remove default markers
               gpx.removeLayer(gpx.getLayers()[0]);
               gpx.removeLayer(gpx.getLayers()[gpx.getLayers().length - 1]);
-
               const szIcon = L.divIcon({
                 html: "<span>S/Z</span>",
                 className: "map-pin map-pin-sz",
@@ -194,25 +231,12 @@ function openMapModal(routeId) {
           }
         }
       }
+
+      // Third, load the elevation data. This will trigger the 'eledata_loaded' event.
       elevationControl.load(config.gpx);
     });
 
     gpxLayer.addTo(modalMap);
-
-    // Replace Avg Elevation with Total Ascent after data is loaded
-    elevationControl.on("eledata_loaded", function (e) {
-      const summaryContainer = elevationControl._container.querySelector(".elevation-summary");
-      if (summaryContainer && e.metainfo && e.metainfo.gain) {
-        const ascent = e.metainfo.gain.toFixed(0) + " m";
-        const avgEleSpan = summaryContainer.querySelector(".avgele");
-        if (avgEleSpan) {
-            const labelSpan = avgEleSpan.querySelector(".summarylabel");
-            const valueSpan = avgEleSpan.querySelector(".summaryvalue");
-            if (labelSpan) labelSpan.textContent = "Gesamthöhenmeter: ";
-            if (valueSpan) valueSpan.textContent = ascent;
-        }
-      }
-    });
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
