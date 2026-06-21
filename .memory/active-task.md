@@ -1,3 +1,3 @@
 # Active Task
 
-Currently idle. Last task: Created `scripts/sponsor_research.py` for safe generation of sponsor research CSV files.
+Currently idle. Last task: Implemented `recherchiere_unternehmen()` in `scripts/sponsor_research.py` with dynamic Gemini API generation.
