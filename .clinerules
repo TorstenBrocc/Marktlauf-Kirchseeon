@@ -21,15 +21,20 @@ Bei jeder Bearbeitung, Neuerstellung oder Optimierung von HTML- und Inhaltsseite
 * **Interne Verlinkung:** Achte auf sprechende URLs und aussagekräftige Linktexte (Vermeide "Hier klicken").
 * **Performance:** Halte den Code schlank und vermeide blockierendes JavaScript im `<head>`.
 
-## 3. AUTOMATISIERTE & STANDARDISIERTE GIT-COMMITS
-* **Selbstständiges Committen:** Sobald ein Meilenstein, ein Feature oder ein Bugfix erfolgreich abgeschlossen und getestet wurde (und bevor du die `.memory/` updatest), führst du den Git-Commit selbstständig aus.
-* **Conventional Commits Standard:** Verwende für JEDEN Commit zwingend das deutsche oder englische "Conventional Commits"-Format. Die Commit-Nachricht muss kurz, präzise und in Kleinbuchstaben (nach dem Präfix) verfasst sein:
+## 3. AUTOMATISIERTE, ATOMARE & STANDARDISIERTE GIT-COMMITS
+
+* **Verbot von Terminal-Ketten:** Du darfst Git-Befehle NIEMALS über `&&` an andere Befehle koppeln. Git-Befehle müssen immer als isolierter Terminal-Aufruf ausgeführt werden.
+* **Das Zwei-Phasen-Commit-Prinzip:** Code-/Asset-Änderungen und Updates der `.memory/` dürfen NIEMALS im selben Commit landen. Du folgst zwingend diesem Ablauf:
+  1. **Phase 1 (Die Arbeit):** Du schließt das Feature/den Bugfix ab. Du prüfst mit `git status` die geänderten Dateien. Du machst den Commit (z.B. `feat: 2km strecke integriert`).
+  2. **Phase 2 (Das Gedächtnis):** ERST JETZT aktualisierst du die Dateien in `.memory/`. Danach machst du einen ZWEITEN Commit, exklusiv für das Gedächtnis (z.B. `docs: update memory nach 2km strecken integration`).
+* **Kein blindes `git add .`:** Bevor du Dateien stakst, führst du IMMER erst `git status` aus, um zu verifizieren, dass du keine unerwünschten temporären Dateien erfasst.
+* **Dateien verschieben:** Nutze für das Umbenennen oder Verschieben von Dateien im Repo zwingend `git mv` anstelle von Bash-`mv`.
+* **Conventional Commits Standard:** Verwende für JEDEN Commit zwingend das deutsche oder englische Format in Kleinbuchstaben:
   - `feat:` Neue Funktionen (z. B. `feat: sprachumschaltung hinzugefuegt`)
   - `fix:` Bugfixes (z. B. `fix: kontaktformular validierung korrigiert`)
-  - `docs:` Änderungen an Dokumentationen, `.memory/` oder `.clinerules` (z. B. `docs: update clinerules fuer seo und commits`)
-  - `style:` Änderungen am Design/Layout ohne Logikänderung (z. B. `style: abstaende in components css optimiert`)
-  - `refactor:` Code-Bereinigung ohne neue Features oder Fixes
-* **Keine unaufgeforderten Pushes:** Erstelle die Commits lokal auf dem aktuellen Branch. Ein `git push` in den Remote-Repository-Zweig (z. B. zur Auslösung der GitHub Action) erfolgt NUR nach expliziter Freigabe durch den Nutzer.
+  - `docs:` Änderungen an Dokumentationen oder `.memory/`
+  - `style:` Design/Layout ohne Logikänderung
+  - `refactor:` Code-Bereinigung ohne neue Features
 
 ## 4. PROJEKTSPEZIFISCHE REGELN
 * **Terminologie:** 'Marktlauf' ist ein Eigenname und darf NIEMALS übersetzt werden (bleibt in DE und EN immer 'Marktlauf').
