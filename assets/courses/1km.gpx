@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx creator="https://gpx.studio" version="1.1" xmlns="http://www.topografix.com/GPX/1/1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd http://www.garmin.com/xmlschemas/GpxExtensions/v3 http://www.garmin.com/xmlschemas/GpxExtensionsv3.xsd http://www.garmin.com/xmlschemas/TrackPointExtension/v1 http://www.garmin.com/xmlschemas/TrackPointExtensionv1.xsd http://www.garmin.com/xmlschemas/PowerExtension/v1 http://www.garmin.com/xmlschemas/PowerExtensionv1.xsd http://www.topografix.com/GPX/gpx_style/0/2 http://www.topografix.com/GPX/gpx_style/0/2/gpx_style.xsd" xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1" xmlns:gpxx="http://www.garmin.com/xmlschemas/GpxExtensions/v3" xmlns:gpxpx="http://www.garmin.com/xmlschemas/PowerExtension/v1" xmlns:gpx_style="http://www.topografix.com/GPX/gpx_style/0/2">
+  <metadata>
+    <name>1km</name>
+    <author>
+      <name>gpx.studio</name>
+      <link href="https://gpx.studio"/>
+    </author>
+  </metadata>
+  <trk>
+    <name>1km</name>
+    <trkseg>
+      <trkpt lat="48.080227" lon="11.855212">
+        <ele>558</ele>
+      </trkpt>
+      <trkpt lat="48.080112" lon="11.855202">
+        <ele>558.27</ele>
+      </trkpt>
+      <trkpt lat="48.079914" lon="11.855236">
+        <ele>559</ele>
+      </trkpt>
+      <trkpt lat="48.079255" lon="11.855407">
+        <ele>559</ele>
+      </trkpt>
+      <trkpt lat="48.079186" lon="11.855379">
+        <ele>559</ele>
+      </trkpt>
+      <trkpt lat="48.079131" lon="11.855105">
+        <ele>559</ele>
+      </trkpt>
+      <trkpt lat="48.079018" lon="11.853751">
+        <ele>559</ele>
+      </trkpt>
+      <trkpt lat="48.078642" lon="11.851512">
+        <ele>559.99</ele>
+      </trkpt>
+      <trkpt lat="48.078642" lon="11.851512">
+        <ele>559.99</ele>
+      </trkpt>
+      <trkpt lat="48.07864" lon="11.851497">
+        <ele>560</ele>
+      </trkpt>
+      <trkpt lat="48.077961" lon="11.852007">
+        <ele>560.19</ele>
+      </trkpt>
+      <trkpt lat="48.07864" lon="11.851497">
+        <ele>560</ele>
+      </trkpt>
+      <trkpt lat="48.079018" lon="11.853751">
+        <ele>559</ele>
+      </trkpt>
+      <trkpt lat="48.079131" lon="11.855105">
+        <ele>559</ele>
+      </trkpt>
+      <trkpt lat="48.079186" lon="11.855379">
+        <ele>559</ele>
+      </trkpt>
+      <trkpt lat="48.079255" lon="11.855407">
+        <ele>559</ele>
+      </trkpt>
+      <trkpt lat="48.079914" lon="11.855236">
+        <ele>559</ele>
+      </trkpt>
+      <trkpt lat="48.080112" lon="11.855202">
+        <ele>558.27</ele>
+      </trkpt>
+      <trkpt lat="48.08022" lon="11.85521">
+        <ele>558</ele>
+      </trkpt>
+      <trkpt lat="48.080211" lon="11.855271">
+        <ele>558</ele>
+      </trkpt>
+    </trkseg>
+  </trk>
+</gpx>

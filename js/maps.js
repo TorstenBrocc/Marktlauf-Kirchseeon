@@ -18,7 +18,7 @@ const routesConfig = {
     gpx: null,
   },
   "schueler-1km": {
-    gpx: null,
+    gpx: "assets/courses/1km.gpx",
   },
   "schueler-2km": {
     gpx: "assets/courses/2km.gpx",
