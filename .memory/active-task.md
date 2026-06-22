@@ -1,3 +1,3 @@
-Active Task
+# Active Task
 
-Currently idle. Last task: Sponsoren-Scraping angepasst: Gemeinde-Kirchseeon Logik entfernt, CSV Import für manuelle Listen hinzugefügt in `scripts/sponsor_research.py`.
+Currently idle. Last task: 2km Strecke implementiert, 5km und 10km Strecken aktualisiert.

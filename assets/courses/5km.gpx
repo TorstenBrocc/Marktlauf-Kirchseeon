@@ -1,755 +1,299 @@
-<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<gpx version="1.1" creator="outdooractive - http://www.outdooractive.com" xmlns="http://www.topografix.com/GPX/1/1" xmlns:oa="http://www.outdooractive.com/GPX/Extensions/1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd http://www.outdooractive.com/GPX/Extensions/1 https://www.outdooractive.com/schema/gpx_extensions.xsd">
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="outdooractive - http://www.outdooractive.com" schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd http://www.outdooractive.com/GPX/Extensions/1 https://www.outdooractive.com/schema/gpx_extensions.xsd" xmlns="http://www.topografix.com/GPX/1/1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd http://www.garmin.com/xmlschemas/GpxExtensions/v3 http://www.garmin.com/xmlschemas/GpxExtensionsv3.xsd http://www.garmin.com/xmlschemas/TrackPointExtension/v1 http://www.garmin.com/xmlschemas/TrackPointExtensionv1.xsd http://www.garmin.com/xmlschemas/PowerExtension/v1 http://www.garmin.com/xmlschemas/PowerExtensionv1.xsd http://www.topografix.com/GPX/gpx_style/0/2 http://www.topografix.com/GPX/gpx_style/0/2/gpx_style.xsd" xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1" xmlns:gpxx="http://www.garmin.com/xmlschemas/GpxExtensions/v3" xmlns:gpxpx="http://www.garmin.com/xmlschemas/PowerExtension/v1" xmlns:gpx_style="http://www.topografix.com/GPX/gpx_style/0/2">
   <metadata>
     <name>Eglharting 5km</name>
     <author>
-      <name>Stefan Reinhart - Community</name>
+      <name>gpx.studio</name>
+      <link href="https://gpx.studio"/>
     </author>
     <link href="https://www.outdooractive.com/r/343376686"/>
     <time>2026-06-07T16:46:27.039Z</time>
-    <extensions>
-      <oa:oaCategory>hikingTourTrail</oa:oaCategory>
-    </extensions>
   </metadata>
   <trk>
     <name>Eglharting 5km</name>
     <type>hikingTourTrail</type>
     <trkseg>
-      <trkpt lat="48.080365" lon="11.855242">
-        <ele>557.6</ele>
-        <name>48.080360N, 11.855238E</name>
-        <extensions>
-          <oa:locType>routingNode</oa:locType>
-        </extensions>
+      <trkpt lat="48.080248" lon="11.855159">
+        <ele>558.04</ele>
       </trkpt>
-      <trkpt lat="48.08037" lon="11.855223">
-        <ele>557.6</ele>
+      <trkpt lat="48.080178" lon="11.855149">
+        <ele>558.15</ele>
       </trkpt>
-      <trkpt lat="48.08037" lon="11.855223">
-        <ele>557.6</ele>
+      <trkpt lat="48.079907" lon="11.855193">
+        <ele>559</ele>
       </trkpt>
-      <trkpt lat="48.08037" lon="11.855223">
-        <ele>557.6</ele>
-      </trkpt>
-      <trkpt lat="48.080252" lon="11.855173">
-        <ele>558.1</ele>
-      </trkpt>
-      <trkpt lat="48.080207" lon="11.855168">
-        <ele>558.2</ele>
-      </trkpt>
-      <trkpt lat="48.080129" lon="11.855176">
-        <ele>558.4</ele>
-      </trkpt>
-      <trkpt lat="48.079949" lon="11.855222">
-        <ele>558.5</ele>
-      </trkpt>
-      <trkpt lat="48.079949" lon="11.855222">
-        <ele>558.5</ele>
-      </trkpt>
-      <trkpt lat="48.079949" lon="11.855222">
-        <ele>558.5</ele>
-      </trkpt>
-      <trkpt lat="48.079699" lon="11.855285">
-        <ele>558.7</ele>
-      </trkpt>
-      <trkpt lat="48.079449" lon="11.855349">
-        <ele>558.9</ele>
-      </trkpt>
-      <trkpt lat="48.079449" lon="11.855349">
-        <ele>558.9</ele>
-      </trkpt>
-      <trkpt lat="48.079449" lon="11.855349">
-        <ele>558.9</ele>
-      </trkpt>
-      <trkpt lat="48.07924" lon="11.855411">
-        <ele>559.2</ele>
-      </trkpt>
-      <trkpt lat="48.079242" lon="11.855402">
-        <ele>559.0</ele>
-        <name>48.079241N, 11.855425E</name>
-        <extensions>
-          <oa:locType>routingNode</oa:locType>
-        </extensions>
-      </trkpt>
-      <trkpt lat="48.079186" lon="11.855379">
-        <ele>559.1</ele>
-      </trkpt>
-      <trkpt lat="48.079131" lon="11.855105">
-        <ele>558.9</ele>
-      </trkpt>
-      <trkpt lat="48.079093" lon="11.854654">
-        <ele>558.9</ele>
-      </trkpt>
-      <trkpt lat="48.079056" lon="11.854203">
-        <ele>559.1</ele>
-      </trkpt>
-      <trkpt lat="48.079018" lon="11.853751">
-        <ele>559.3</ele>
-      </trkpt>
-      <trkpt lat="48.078911" lon="11.853112">
-        <ele>559.5</ele>
-      </trkpt>
-      <trkpt lat="48.078804" lon="11.852474">
-        <ele>559.9</ele>
-      </trkpt>
-      <trkpt lat="48.078696" lon="11.851835">
-        <ele>560.0</ele>
-      </trkpt>
-      <trkpt lat="48.078641" lon="11.851503">
-        <ele>559.9</ele>
-        <name>Kirchseeon, Landkreis Ebersberg</name>
-        <extensions>
-          <oa:locType>routingNode</oa:locType>
-        </extensions>
-      </trkpt>
-      <trkpt lat="48.07864" lon="11.851497">
-        <ele>559.9</ele>
-      </trkpt>
-      <trkpt lat="48.07864" lon="11.851497">
-        <ele>559.9</ele>
-      </trkpt>
-      <trkpt lat="48.07864" lon="11.851497">
-        <ele>559.9</ele>
-      </trkpt>
-      <trkpt lat="48.078492" lon="11.851615">
-        <ele>559.9</ele>
-      </trkpt>
-      <trkpt lat="48.078249" lon="11.851796">
-        <ele>560.1</ele>
-      </trkpt>
-      <trkpt lat="48.078007" lon="11.851978">
-        <ele>560.4</ele>
-      </trkpt>
-      <trkpt lat="48.078007" lon="11.851978">
-        <ele>560.4</ele>
-      </trkpt>
-      <trkpt lat="48.078007" lon="11.851978">
-        <ele>560.4</ele>
-      </trkpt>
-      <trkpt lat="48.07773" lon="11.852152">
-        <ele>560.6</ele>
-      </trkpt>
-      <trkpt lat="48.077583" lon="11.852286">
-        <ele>560.8</ele>
-      </trkpt>
-      <trkpt lat="48.077583" lon="11.852286">
-        <ele>560.8</ele>
-      </trkpt>
-      <trkpt lat="48.077583" lon="11.852286">
-        <ele>560.8</ele>
-      </trkpt>
-      <trkpt lat="48.077432" lon="11.852683">
-        <ele>560.6</ele>
-      </trkpt>
-      <trkpt lat="48.077347" lon="11.852825">
-        <ele>560.8</ele>
-      </trkpt>
-      <trkpt lat="48.077347" lon="11.852825">
-        <ele>560.8</ele>
-      </trkpt>
-      <trkpt lat="48.077347" lon="11.852825">
-        <ele>560.8</ele>
-      </trkpt>
-      <trkpt lat="48.077288" lon="11.852924">
-        <ele>561.0</ele>
-      </trkpt>
-      <trkpt lat="48.077288" lon="11.852924">
-        <ele>561.0</ele>
-      </trkpt>
-      <trkpt lat="48.077288" lon="11.852924">
-        <ele>561.0</ele>
-      </trkpt>
-      <trkpt lat="48.077008" lon="11.85334">
-        <ele>560.8</ele>
-      </trkpt>
-      <trkpt lat="48.076728" lon="11.853756">
-        <ele>561.1</ele>
-      </trkpt>
-      <trkpt lat="48.076447" lon="11.854172">
-        <ele>561.2</ele>
-      </trkpt>
-      <trkpt lat="48.076167" lon="11.854589">
-        <ele>561.3</ele>
-      </trkpt>
-      <trkpt lat="48.075902" lon="11.854961">
-        <ele>561.3</ele>
-      </trkpt>
-      <trkpt lat="48.075619" lon="11.855293">
-        <ele>561.3</ele>
-      </trkpt>
-      <trkpt lat="48.075335" lon="11.855626">
-        <ele>561.2</ele>
-      </trkpt>
-      <trkpt lat="48.075052" lon="11.855958">
-        <ele>561.6</ele>
-      </trkpt>
-      <trkpt lat="48.075052" lon="11.855958">
-        <ele>561.6</ele>
-      </trkpt>
-      <trkpt lat="48.075052" lon="11.855958">
-        <ele>561.6</ele>
-      </trkpt>
-      <trkpt lat="48.074922" lon="11.856425">
-        <ele>561.6</ele>
-      </trkpt>
-      <trkpt lat="48.074947" lon="11.856769">
-        <ele>561.4</ele>
-      </trkpt>
-      <trkpt lat="48.074971" lon="11.857112">
-        <ele>562.4</ele>
-      </trkpt>
-      <trkpt lat="48.074971" lon="11.857495">
-        <ele>563.7</ele>
-        <name>Kirchseeon, Landkreis Ebersberg</name>
-        <extensions>
-          <oa:locType>routingNode</oa:locType>
-        </extensions>
-      </trkpt>
-      <trkpt lat="48.074971" lon="11.857545">
-        <ele>563.9</ele>
-      </trkpt>
-      <trkpt lat="48.074971" lon="11.857545">
-        <ele>563.9</ele>
-      </trkpt>
-      <trkpt lat="48.074971" lon="11.857545">
-        <ele>563.9</ele>
-      </trkpt>
-      <trkpt lat="48.07465" lon="11.857533">
-        <ele>564.4</ele>
-      </trkpt>
-      <trkpt lat="48.07465" lon="11.857533">
-        <ele>564.4</ele>
-      </trkpt>
-      <trkpt lat="48.07465" lon="11.857533">
-        <ele>564.4</ele>
-      </trkpt>
-      <trkpt lat="48.074346" lon="11.857522">
-        <ele>564.8</ele>
-      </trkpt>
-      <trkpt lat="48.074346" lon="11.857522">
-        <ele>564.8</ele>
-      </trkpt>
-      <trkpt lat="48.074346" lon="11.857522">
-        <ele>564.8</ele>
-      </trkpt>
-      <trkpt lat="48.074289" lon="11.857023">
-        <ele>563.3</ele>
-      </trkpt>
-      <trkpt lat="48.074289" lon="11.857023">
-        <ele>563.3</ele>
-      </trkpt>
-      <trkpt lat="48.074289" lon="11.857023">
-        <ele>563.3</ele>
-      </trkpt>
-      <trkpt lat="48.074086" lon="11.856858">
-        <ele>563.3</ele>
-      </trkpt>
-      <trkpt lat="48.073883" lon="11.856694">
-        <ele>563.1</ele>
-      </trkpt>
-      <trkpt lat="48.073631" lon="11.856353">
-        <ele>562.6</ele>
-      </trkpt>
-      <trkpt lat="48.07338" lon="11.856011">
-        <ele>562.5</ele>
-      </trkpt>
-      <trkpt lat="48.073217" lon="11.855703">
-        <ele>562.7</ele>
-      </trkpt>
-      <trkpt lat="48.073053" lon="11.855396">
-        <ele>563.0</ele>
-      </trkpt>
-      <trkpt lat="48.073053" lon="11.855396">
-        <ele>563.0</ele>
-      </trkpt>
-      <trkpt lat="48.073053" lon="11.855396">
-        <ele>563.0</ele>
-      </trkpt>
-      <trkpt lat="48.072723" lon="11.85523">
-        <ele>563.2</ele>
-      </trkpt>
-      <trkpt lat="48.072423" lon="11.854981">
-        <ele>563.3</ele>
-      </trkpt>
-      <trkpt lat="48.072124" lon="11.854732">
-        <ele>563.5</ele>
-      </trkpt>
-      <trkpt lat="48.071727" lon="11.85449">
-        <ele>563.8</ele>
-      </trkpt>
-      <trkpt lat="48.071424" lon="11.854204">
-        <ele>564.1</ele>
-      </trkpt>
-      <trkpt lat="48.07127" lon="11.854046">
-        <ele>564.3</ele>
-      </trkpt>
-      <trkpt lat="48.07127" lon="11.854046">
-        <ele>564.3</ele>
-      </trkpt>
-      <trkpt lat="48.07127" lon="11.854046">
-        <ele>564.3</ele>
-      </trkpt>
-      <trkpt lat="48.071178" lon="11.854069">
-        <ele>564.4</ele>
-      </trkpt>
-      <trkpt lat="48.071178" lon="11.854069">
-        <ele>564.4</ele>
-      </trkpt>
-      <trkpt lat="48.071178" lon="11.854069">
-        <ele>564.4</ele>
-      </trkpt>
-      <trkpt lat="48.070782" lon="11.854165">
-        <ele>564.4</ele>
-      </trkpt>
-      <trkpt lat="48.070387" lon="11.854262">
-        <ele>565.5</ele>
-      </trkpt>
-      <trkpt lat="48.069991" lon="11.854358">
-        <ele>567.0</ele>
-      </trkpt>
-      <trkpt lat="48.069991" lon="11.854358">
-        <ele>567.0</ele>
-      </trkpt>
-      <trkpt lat="48.069991" lon="11.854358">
-        <ele>567.0</ele>
-      </trkpt>
-      <trkpt lat="48.06962" lon="11.854448">
-        <ele>567.4</ele>
-      </trkpt>
-      <trkpt lat="48.069249" lon="11.854539">
-        <ele>568.2</ele>
-      </trkpt>
-      <trkpt lat="48.068878" lon="11.854629">
-        <ele>569.3</ele>
-      </trkpt>
-      <trkpt lat="48.068507" lon="11.854719">
-        <ele>569.8</ele>
-      </trkpt>
-      <trkpt lat="48.068137" lon="11.85481">
-        <ele>570.2</ele>
-      </trkpt>
-      <trkpt lat="48.067766" lon="11.8549">
-        <ele>570.6</ele>
-      </trkpt>
-      <trkpt lat="48.067766" lon="11.8549">
-        <ele>570.6</ele>
-      </trkpt>
-      <trkpt lat="48.067766" lon="11.8549">
-        <ele>570.6</ele>
-      </trkpt>
-      <trkpt lat="48.067779" lon="11.85486">
-        <ele>570.6</ele>
-        <name>Kirchseeon, Landkreis Ebersberg</name>
-        <extensions>
-          <oa:locType>routingNode</oa:locType>
-        </extensions>
-      </trkpt>
-      <trkpt lat="48.067888" lon="11.854543">
-        <ele>570.6</ele>
-      </trkpt>
-      <trkpt lat="48.068009" lon="11.854187">
-        <ele>570.5</ele>
-      </trkpt>
-      <trkpt lat="48.068058" lon="11.853849">
-        <ele>570.4</ele>
-      </trkpt>
-      <trkpt lat="48.068106" lon="11.853511">
-        <ele>570.5</ele>
-      </trkpt>
-      <trkpt lat="48.068106" lon="11.853511">
-        <ele>570.5</ele>
-      </trkpt>
-      <trkpt lat="48.068106" lon="11.853511">
-        <ele>570.5</ele>
-      </trkpt>
-      <trkpt lat="48.068106" lon="11.852891">
-        <ele>569.0</ele>
-      </trkpt>
-      <trkpt lat="48.068106" lon="11.852271">
-        <ele>568.0</ele>
-      </trkpt>
-      <trkpt lat="48.068031" lon="11.851876">
-        <ele>567.2</ele>
-      </trkpt>
-      <trkpt lat="48.067956" lon="11.85148">
-        <ele>566.9</ele>
-      </trkpt>
-      <trkpt lat="48.067901" lon="11.851147">
-        <ele>567.3</ele>
-      </trkpt>
-      <trkpt lat="48.067846" lon="11.850814">
-        <ele>567.4</ele>
-      </trkpt>
-      <trkpt lat="48.067774" lon="11.850541">
-        <ele>567.5</ele>
-      </trkpt>
-      <trkpt lat="48.067774" lon="11.850541">
-        <ele>567.5</ele>
-      </trkpt>
-      <trkpt lat="48.067774" lon="11.850541">
-        <ele>567.5</ele>
-      </trkpt>
-      <trkpt lat="48.067677" lon="11.850171">
-        <ele>567.8</ele>
-      </trkpt>
-      <trkpt lat="48.067627" lon="11.849776">
-        <ele>568.0</ele>
-      </trkpt>
-      <trkpt lat="48.067614" lon="11.84967">
-        <ele>568.0</ele>
-        <name>48.067705N, 11.849644E</name>
-        <extensions>
-          <oa:locType>routingNode</oa:locType>
-        </extensions>
-      </trkpt>
-      <trkpt lat="48.067577" lon="11.849381">
-        <ele>567.9</ele>
-      </trkpt>
-      <trkpt lat="48.067577" lon="11.849381">
-        <ele>567.9</ele>
-      </trkpt>
-      <trkpt lat="48.067577" lon="11.849381">
-        <ele>567.9</ele>
-      </trkpt>
-      <trkpt lat="48.067935" lon="11.849031">
-        <ele>567.3</ele>
-      </trkpt>
-      <trkpt lat="48.068293" lon="11.84868">
-        <ele>567.0</ele>
-      </trkpt>
-      <trkpt lat="48.068666" lon="11.848395">
-        <ele>566.7</ele>
-      </trkpt>
-      <trkpt lat="48.069039" lon="11.848111">
-        <ele>566.6</ele>
-      </trkpt>
-      <trkpt lat="48.06934" lon="11.84795">
-        <ele>566.5</ele>
-      </trkpt>
-      <trkpt lat="48.069641" lon="11.847789">
-        <ele>566.2</ele>
-      </trkpt>
-      <trkpt lat="48.070051" lon="11.8476">
-        <ele>566.3</ele>
-      </trkpt>
-      <trkpt lat="48.070461" lon="11.84741">
-        <ele>566.2</ele>
-      </trkpt>
-      <trkpt lat="48.070855" lon="11.847201">
-        <ele>566.0</ele>
-      </trkpt>
-      <trkpt lat="48.071248" lon="11.846991">
-        <ele>565.8</ele>
-      </trkpt>
-      <trkpt lat="48.071551" lon="11.846722">
-        <ele>565.9</ele>
-      </trkpt>
-      <trkpt lat="48.071854" lon="11.846453">
-        <ele>565.6</ele>
-      </trkpt>
-      <trkpt lat="48.072157" lon="11.846184">
-        <ele>565.8</ele>
-      </trkpt>
-      <trkpt lat="48.072541" lon="11.846076">
-        <ele>565.2</ele>
-      </trkpt>
-      <trkpt lat="48.072926" lon="11.845969">
-        <ele>565.3</ele>
-      </trkpt>
-      <trkpt lat="48.07331" lon="11.845861">
-        <ele>565.1</ele>
-      </trkpt>
-      <trkpt lat="48.073694" lon="11.845753">
-        <ele>564.7</ele>
-      </trkpt>
-      <trkpt lat="48.074078" lon="11.845645">
-        <ele>564.5</ele>
-      </trkpt>
-      <trkpt lat="48.074462" lon="11.845537">
-        <ele>564.1</ele>
-      </trkpt>
-      <trkpt lat="48.074462" lon="11.845537">
-        <ele>564.1</ele>
-      </trkpt>
-      <trkpt lat="48.074462" lon="11.845537">
-        <ele>564.1</ele>
-      </trkpt>
-      <trkpt lat="48.074609" lon="11.845819">
-        <ele>564.1</ele>
-        <name>48.074651N, 11.845769E</name>
-        <extensions>
-          <oa:locType>routingNode</oa:locType>
-        </extensions>
-      </trkpt>
-      <trkpt lat="48.074637" lon="11.845873">
-        <ele>564.1</ele>
-      </trkpt>
-      <trkpt lat="48.074957" lon="11.846116">
-        <ele>563.9</ele>
-      </trkpt>
-      <trkpt lat="48.075178" lon="11.84625">
-        <ele>563.7</ele>
-      </trkpt>
-      <trkpt lat="48.075399" lon="11.846384">
-        <ele>563.6</ele>
-      </trkpt>
-      <trkpt lat="48.075662" lon="11.846385">
-        <ele>563.3</ele>
-      </trkpt>
-      <trkpt lat="48.075926" lon="11.846386">
-        <ele>563.4</ele>
-      </trkpt>
-      <trkpt lat="48.0762" lon="11.846186">
-        <ele>563.0</ele>
-      </trkpt>
-      <trkpt lat="48.076474" lon="11.845987">
-        <ele>563.1</ele>
-      </trkpt>
-      <trkpt lat="48.076474" lon="11.845987">
-        <ele>563.1</ele>
-      </trkpt>
-      <trkpt lat="48.076474" lon="11.845987">
-        <ele>563.1</ele>
-      </trkpt>
-      <trkpt lat="48.076791" lon="11.845936">
-        <ele>563.2</ele>
-      </trkpt>
-      <trkpt lat="48.077088" lon="11.845911">
-        <ele>563.0</ele>
-      </trkpt>
-      <trkpt lat="48.077088" lon="11.845911">
-        <ele>563.0</ele>
-      </trkpt>
-      <trkpt lat="48.077088" lon="11.845911">
-        <ele>563.0</ele>
-      </trkpt>
-      <trkpt lat="48.077427" lon="11.845931">
-        <ele>562.7</ele>
-      </trkpt>
-      <trkpt lat="48.077767" lon="11.84595">
-        <ele>562.5</ele>
-      </trkpt>
-      <trkpt lat="48.078" lon="11.845922">
-        <ele>562.3</ele>
-      </trkpt>
-      <trkpt lat="48.078234" lon="11.845893">
-        <ele>562.1</ele>
-      </trkpt>
-      <trkpt lat="48.078609" lon="11.845739">
-        <ele>561.8</ele>
-      </trkpt>
-      <trkpt lat="48.078609" lon="11.845739">
-        <ele>561.8</ele>
-      </trkpt>
-      <trkpt lat="48.078609" lon="11.845739">
-        <ele>561.8</ele>
-      </trkpt>
-      <trkpt lat="48.078965" lon="11.845711">
-        <ele>561.6</ele>
-      </trkpt>
-      <trkpt lat="48.079322" lon="11.845684">
-        <ele>561.3</ele>
-      </trkpt>
-      <trkpt lat="48.079679" lon="11.845657">
-        <ele>560.9</ele>
-      </trkpt>
-      <trkpt lat="48.08001" lon="11.845577">
-        <ele>560.6</ele>
-      </trkpt>
-      <trkpt lat="48.080342" lon="11.845498">
-        <ele>560.4</ele>
-      </trkpt>
-      <trkpt lat="48.080674" lon="11.845418">
-        <ele>560.3</ele>
-      </trkpt>
-      <trkpt lat="48.080771" lon="11.845429">
-        <ele>560.2</ele>
-      </trkpt>
-      <trkpt lat="48.080771" lon="11.845429">
-        <ele>560.2</ele>
-      </trkpt>
-      <trkpt lat="48.080771" lon="11.845429">
-        <ele>560.2</ele>
-      </trkpt>
-      <trkpt lat="48.080867" lon="11.845482">
-        <ele>559.9</ele>
-      </trkpt>
-      <trkpt lat="48.080867" lon="11.845482">
-        <ele>559.9</ele>
-      </trkpt>
-      <trkpt lat="48.080867" lon="11.845482">
-        <ele>559.9</ele>
-      </trkpt>
-      <trkpt lat="48.081024" lon="11.845502">
-        <ele>559.7</ele>
-      </trkpt>
-      <trkpt lat="48.081313" lon="11.84549">
-        <ele>559.4</ele>
-      </trkpt>
-      <trkpt lat="48.081313" lon="11.84549">
-        <ele>559.4</ele>
-      </trkpt>
-      <trkpt lat="48.081313" lon="11.84549">
-        <ele>559.4</ele>
-      </trkpt>
-      <trkpt lat="48.081314" lon="11.845499">
-        <ele>559.4</ele>
-        <name>Zorneding, Landkreis Ebersberg</name>
-        <extensions>
-          <oa:locType>routingNode</oa:locType>
-        </extensions>
-      </trkpt>
-      <trkpt lat="48.081391" lon="11.846083">
-        <ele>559.2</ele>
-      </trkpt>
-      <trkpt lat="48.08147" lon="11.846676">
-        <ele>559.2</ele>
-      </trkpt>
-      <trkpt lat="48.081549" lon="11.847269">
-        <ele>559.2</ele>
-      </trkpt>
-      <trkpt lat="48.081627" lon="11.847862">
-        <ele>559.1</ele>
-      </trkpt>
-      <trkpt lat="48.081706" lon="11.848455">
-        <ele>559.1</ele>
-      </trkpt>
-      <trkpt lat="48.081767" lon="11.84878">
-        <ele>558.9</ele>
-      </trkpt>
-      <trkpt lat="48.081827" lon="11.849106">
-        <ele>558.8</ele>
-      </trkpt>
-      <trkpt lat="48.081827" lon="11.849106">
-        <ele>558.8</ele>
-      </trkpt>
-      <trkpt lat="48.081827" lon="11.849106">
-        <ele>558.8</ele>
-      </trkpt>
-      <trkpt lat="48.081396" lon="11.8492">
-        <ele>559.1</ele>
-      </trkpt>
-      <trkpt lat="48.080964" lon="11.849294">
-        <ele>559.4</ele>
-      </trkpt>
-      <trkpt lat="48.080672" lon="11.849393">
-        <ele>559.5</ele>
-      </trkpt>
-      <trkpt lat="48.080379" lon="11.849492">
-        <ele>559.8</ele>
-      </trkpt>
-      <trkpt lat="48.080169" lon="11.849624">
-        <ele>559.7</ele>
-      </trkpt>
-      <trkpt lat="48.079861" lon="11.849905">
-        <ele>559.8</ele>
-      </trkpt>
-      <trkpt lat="48.079558" lon="11.850356">
-        <ele>559.8</ele>
-      </trkpt>
-      <trkpt lat="48.079256" lon="11.850807">
-        <ele>559.4</ele>
-      </trkpt>
-      <trkpt lat="48.078954" lon="11.851258">
-        <ele>559.6</ele>
-      </trkpt>
-      <trkpt lat="48.078842" lon="11.851349">
-        <ele>559.6</ele>
-        <name>Kirchseeon, Landkreis Ebersberg</name>
-        <extensions>
-          <oa:locType>routingNode</oa:locType>
-        </extensions>
-      </trkpt>
-      <trkpt lat="48.078773" lon="11.851405">
-        <ele>559.7</ele>
-      </trkpt>
-      <trkpt lat="48.078773" lon="11.851405">
-        <ele>559.7</ele>
-      </trkpt>
-      <trkpt lat="48.078773" lon="11.851405">
-        <ele>559.7</ele>
-      </trkpt>
-      <trkpt lat="48.07864" lon="11.851497">
-        <ele>559.9</ele>
-      </trkpt>
-      <trkpt lat="48.07864" lon="11.851497">
-        <ele>559.9</ele>
-      </trkpt>
-      <trkpt lat="48.07864" lon="11.851497">
-        <ele>559.9</ele>
-      </trkpt>
-      <trkpt lat="48.078696" lon="11.851835">
-        <ele>560.0</ele>
-      </trkpt>
-      <trkpt lat="48.078804" lon="11.852474">
-        <ele>559.9</ele>
-      </trkpt>
-      <trkpt lat="48.078911" lon="11.853112">
-        <ele>559.5</ele>
-      </trkpt>
-      <trkpt lat="48.079018" lon="11.853751">
-        <ele>559.3</ele>
-      </trkpt>
-      <trkpt lat="48.079056" lon="11.854203">
-        <ele>559.1</ele>
-      </trkpt>
-      <trkpt lat="48.079093" lon="11.854654">
-        <ele>558.9</ele>
-      </trkpt>
-      <trkpt lat="48.079131" lon="11.855105">
-        <ele>558.9</ele>
-      </trkpt>
-      <trkpt lat="48.079186" lon="11.855379">
-        <ele>559.1</ele>
+      <trkpt lat="48.079914" lon="11.855236">
+        <ele>559</ele>
       </trkpt>
       <trkpt lat="48.079255" lon="11.855407">
-        <ele>559.0</ele>
+        <ele>559</ele>
       </trkpt>
-      <trkpt lat="48.079326" lon="11.855388">
-        <ele>559.0</ele>
+      <trkpt lat="48.079186" lon="11.855379">
+        <ele>559</ele>
       </trkpt>
-      <trkpt lat="48.079326" lon="11.855388">
-        <ele>559.0</ele>
+      <trkpt lat="48.079131" lon="11.855105">
+        <ele>559</ele>
       </trkpt>
-      <trkpt lat="48.079326" lon="11.855388">
-        <ele>559.0</ele>
+      <trkpt lat="48.079018" lon="11.853751">
+        <ele>559</ele>
       </trkpt>
-      <trkpt lat="48.079471" lon="11.855351">
-        <ele>558.9</ele>
+      <trkpt lat="48.07864" lon="11.851497">
+        <ele>560</ele>
       </trkpt>
-      <trkpt lat="48.079471" lon="11.855351">
-        <ele>558.9</ele>
+      <trkpt lat="48.078773" lon="11.851405">
+        <ele>560</ele>
       </trkpt>
-      <trkpt lat="48.079471" lon="11.855351">
-        <ele>558.9</ele>
+      <trkpt lat="48.078349" lon="11.849591">
+        <ele>561</ele>
       </trkpt>
-      <trkpt lat="48.079693" lon="11.855293">
-        <ele>558.7</ele>
+      <trkpt lat="48.078106" lon="11.848386">
+        <ele>561.27</ele>
+      </trkpt>
+      <trkpt lat="48.077309" lon="11.846527">
+        <ele>563</ele>
+      </trkpt>
+      <trkpt lat="48.077088" lon="11.845911">
+        <ele>563</ele>
+      </trkpt>
+      <trkpt lat="48.076791" lon="11.845936">
+        <ele>563</ele>
+      </trkpt>
+      <trkpt lat="48.076553" lon="11.845973">
+        <ele>563</ele>
+      </trkpt>
+      <trkpt lat="48.076517" lon="11.845991">
+        <ele>563</ele>
+      </trkpt>
+      <trkpt lat="48.076517" lon="11.845992">
+        <ele>563</ele>
+      </trkpt>
+      <trkpt lat="48.076517" lon="11.845991">
+        <ele>563</ele>
+      </trkpt>
+      <trkpt lat="48.076482" lon="11.846009">
+        <ele>563</ele>
+      </trkpt>
+      <trkpt lat="48.076394" lon="11.846385">
+        <ele>563</ele>
+      </trkpt>
+      <trkpt lat="48.076162" lon="11.846693">
+        <ele>563</ele>
+      </trkpt>
+      <trkpt lat="48.076088" lon="11.846811">
+        <ele>563</ele>
+      </trkpt>
+      <trkpt lat="48.075955" lon="11.847227">
+        <ele>563</ele>
+      </trkpt>
+      <trkpt lat="48.075845" lon="11.847439">
+        <ele>563</ele>
+      </trkpt>
+      <trkpt lat="48.075267" lon="11.848151">
+        <ele>563</ele>
+      </trkpt>
+      <trkpt lat="48.075028" lon="11.848593">
+        <ele>563</ele>
+      </trkpt>
+      <trkpt lat="48.074768" lon="11.849427">
+        <ele>563</ele>
+      </trkpt>
+      <trkpt lat="48.074549" lon="11.850075">
+        <ele>563</ele>
+      </trkpt>
+      <trkpt lat="48.074447" lon="11.850319">
+        <ele>563</ele>
+      </trkpt>
+      <trkpt lat="48.074269" lon="11.850882">
+        <ele>563</ele>
+      </trkpt>
+      <trkpt lat="48.074095" lon="11.851501">
+        <ele>563</ele>
+      </trkpt>
+      <trkpt lat="48.073145" lon="11.851927">
+        <ele>563.37</ele>
+      </trkpt>
+      <trkpt lat="48.073019" lon="11.851954">
+        <ele>563.21</ele>
+      </trkpt>
+      <trkpt lat="48.071167" lon="11.852833">
+        <ele>564</ele>
+      </trkpt>
+      <trkpt lat="48.070363" lon="11.853204">
+        <ele>565</ele>
+      </trkpt>
+      <trkpt lat="48.069659" lon="11.853297">
+        <ele>565.45</ele>
+      </trkpt>
+      <trkpt lat="48.068806" lon="11.853409">
+        <ele>569.86</ele>
+      </trkpt>
+      <trkpt lat="48.068106" lon="11.853511">
+        <ele>570</ele>
+      </trkpt>
+      <trkpt lat="48.068106" lon="11.853444">
+        <ele>569.89</ele>
+      </trkpt>
+      <trkpt lat="48.068106" lon="11.853444">
+        <ele>569.89</ele>
+      </trkpt>
+      <trkpt lat="48.068106" lon="11.852271">
+        <ele>568</ele>
+      </trkpt>
+      <trkpt lat="48.067957" lon="11.85148">
+        <ele>567</ele>
+      </trkpt>
+      <trkpt lat="48.067846" lon="11.850814">
+        <ele>567</ele>
+      </trkpt>
+      <trkpt lat="48.067677" lon="11.850171">
+        <ele>568</ele>
+      </trkpt>
+      <trkpt lat="48.067577" lon="11.849381">
+        <ele>568</ele>
+      </trkpt>
+      <trkpt lat="48.067293" lon="11.848563">
+        <ele>568</ele>
+      </trkpt>
+      <trkpt lat="48.067283" lon="11.84721">
+        <ele>568</ele>
+      </trkpt>
+      <trkpt lat="48.067067" lon="11.846088">
+        <ele>568</ele>
+      </trkpt>
+      <trkpt lat="48.067011" lon="11.845215">
+        <ele>568</ele>
+      </trkpt>
+      <trkpt lat="48.06694" lon="11.844562">
+        <ele>568</ele>
+      </trkpt>
+      <trkpt lat="48.066967" lon="11.844188">
+        <ele>568</ele>
+      </trkpt>
+      <trkpt lat="48.067044" lon="11.843876">
+        <ele>568</ele>
+      </trkpt>
+      <trkpt lat="48.067056" lon="11.842702">
+        <ele>571</ele>
+      </trkpt>
+      <trkpt lat="48.067234" lon="11.841843">
+        <ele>572</ele>
+      </trkpt>
+      <trkpt lat="48.070906" lon="11.839973">
+        <ele>569</ele>
+      </trkpt>
+      <trkpt lat="48.071554" lon="11.839605">
+        <ele>569</ele>
+      </trkpt>
+      <trkpt lat="48.071897" lon="11.838984">
+        <ele>568.18</ele>
+      </trkpt>
+      <trkpt lat="48.071934" lon="11.839056">
+        <ele>568.15</ele>
+      </trkpt>
+      <trkpt lat="48.071934" lon="11.839056">
+        <ele>568.15</ele>
+      </trkpt>
+      <trkpt lat="48.071934" lon="11.839056">
+        <ele>568.15</ele>
+      </trkpt>
+      <trkpt lat="48.072093" lon="11.839359">
+        <ele>568</ele>
+      </trkpt>
+      <trkpt lat="48.072175" lon="11.839715">
+        <ele>567</ele>
+      </trkpt>
+      <trkpt lat="48.072633" lon="11.840593">
+        <ele>567</ele>
+      </trkpt>
+      <trkpt lat="48.073056" lon="11.841518">
+        <ele>567</ele>
+      </trkpt>
+      <trkpt lat="48.073679" lon="11.842702">
+        <ele>566</ele>
+      </trkpt>
+      <trkpt lat="48.073987" lon="11.843318">
+        <ele>566</ele>
+      </trkpt>
+      <trkpt lat="48.074161" lon="11.843919">
+        <ele>566</ele>
+      </trkpt>
+      <trkpt lat="48.074257" lon="11.844376">
+        <ele>565.82</ele>
+      </trkpt>
+      <trkpt lat="48.074338" lon="11.844948">
+        <ele>564.05</ele>
+      </trkpt>
+      <trkpt lat="48.074427" lon="11.845416">
+        <ele>564</ele>
+      </trkpt>
+      <trkpt lat="48.074462" lon="11.845537">
+        <ele>564</ele>
+      </trkpt>
+      <trkpt lat="48.074652" lon="11.845861">
+        <ele>564</ele>
+      </trkpt>
+      <trkpt lat="48.075014" lon="11.846202">
+        <ele>564</ele>
+      </trkpt>
+      <trkpt lat="48.075232" lon="11.846358">
+        <ele>564</ele>
+      </trkpt>
+      <trkpt lat="48.075404" lon="11.846419">
+        <ele>563.61</ele>
+      </trkpt>
+      <trkpt lat="48.075796" lon="11.846424">
+        <ele>563</ele>
+      </trkpt>
+      <trkpt lat="48.075969" lon="11.846369">
+        <ele>563</ele>
+      </trkpt>
+      <trkpt lat="48.076482" lon="11.846009">
+        <ele>563</ele>
+      </trkpt>
+      <trkpt lat="48.076553" lon="11.845973">
+        <ele>563</ele>
+      </trkpt>
+      <trkpt lat="48.076791" lon="11.845936">
+        <ele>563</ele>
+      </trkpt>
+      <trkpt lat="48.077088" lon="11.845911">
+        <ele>563</ele>
+      </trkpt>
+      <trkpt lat="48.077309" lon="11.846527">
+        <ele>563</ele>
+      </trkpt>
+      <trkpt lat="48.078106" lon="11.848386">
+        <ele>561.27</ele>
+      </trkpt>
+      <trkpt lat="48.078349" lon="11.849591">
+        <ele>561</ele>
+      </trkpt>
+      <trkpt lat="48.078773" lon="11.851405">
+        <ele>560</ele>
+      </trkpt>
+      <trkpt lat="48.07864" lon="11.851497">
+        <ele>560</ele>
+      </trkpt>
+      <trkpt lat="48.079018" lon="11.853751">
+        <ele>559</ele>
+      </trkpt>
+      <trkpt lat="48.079131" lon="11.855105">
+        <ele>559</ele>
+      </trkpt>
+      <trkpt lat="48.079186" lon="11.855379">
+        <ele>559</ele>
+      </trkpt>
+      <trkpt lat="48.079255" lon="11.855407">
+        <ele>559</ele>
       </trkpt>
       <trkpt lat="48.079914" lon="11.855236">
-        <ele>558.5</ele>
+        <ele>559</ele>
       </trkpt>
-      <trkpt lat="48.079914" lon="11.855236">
-        <ele>558.5</ele>
+      <trkpt lat="48.080112" lon="11.855202">
+        <ele>558.27</ele>
       </trkpt>
-      <trkpt lat="48.079914" lon="11.855236">
-        <ele>558.5</ele>
-      </trkpt>
-      <trkpt lat="48.079907" lon="11.855193">
-        <ele>558.6</ele>
-      </trkpt>
-      <trkpt lat="48.079907" lon="11.855193">
-        <ele>558.6</ele>
-      </trkpt>
-      <trkpt lat="48.079907" lon="11.855193">
-        <ele>558.6</ele>
-      </trkpt>
-      <trkpt lat="48.079955" lon="11.855184">
-        <ele>558.6</ele>
-        <name>Am Westring, Kirchseeon</name>
-        <extensions>
-          <oa:locType>routingNode</oa:locType>
-        </extensions>
+      <trkpt lat="48.080236" lon="11.855216">
+        <ele>558</ele>
       </trkpt>
     </trkseg>
   </trk>
