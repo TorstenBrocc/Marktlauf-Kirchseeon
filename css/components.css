@@ -261,7 +261,7 @@
 
 .timeline-content {
     background-color: var(--white);
-    padding: var(--space-lg);
+    padding: var(--space-md);
     border-radius: 12px;
     box-shadow: var(--shadow-md);
     transition: all 0.3s ease;
