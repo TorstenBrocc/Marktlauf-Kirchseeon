@@ -1,3 +1,3 @@
 # Active Task
 
-Currently idle. Last task: 1km Strecke implementiert.
+Currently idle. Last task: Altersangaben hinzugefügt und Elite umbenannt.

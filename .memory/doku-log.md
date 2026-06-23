@@ -12,3 +12,4 @@
 | 2026-06-21 | Scripts | Funktion `recherchiere_unternehmen` im Research-Script integriert, inklusive Web-Scraping und LLM (Gemini-API) Anbindung für automatisierte Bewertung |- Sponsoren-Scraping angepasst: Gemeinde-Kirchseeon Logik entfernt, CSV Import für manuelle Listen hinzugefügt
 | 2026-06-22 | Map | 2km-Strecke eingebunden und 5km/10km GPX mit neuen GPXStudio-Dateien ersetzt |
 | 2026-06-22 | Map | 1km-Strecke eingebunden |
+| 2026-06-23 | Content | Altersangaben ergänzt, GPX-Button 1km aktiviert, "Elite" in "Jugend & Erwachsene" umbenannt |
