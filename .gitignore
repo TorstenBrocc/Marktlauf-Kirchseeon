@@ -46,6 +46,7 @@ briefing.md
 assets/images/design-briefing*.md
 sponsor-data/
 *.sponsor.csv
+scripts/
 
 # --- Debug-Dateien (temporär, nie committen) ---
 whoami_ip.php
