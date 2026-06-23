@@ -34,6 +34,8 @@ if ($honeypot !== '') {
     exit;
 }
 
+recordRegisterAttempt();
+
 if (isRegisterRateLimited()) {
     redirectWithError('Zu viele Anmeldungen von dieser Adresse. Bitte später erneut versuchen.');
 }
@@ -135,11 +137,7 @@ try {
 
     $pdo->commit();
 
-    recordRegisterAttempt();
-
     sendHelferEingangsbestaetigung($email, $name);
-
-    cleanupOldRegisterAttempts();
 
     header('Location: ../../helfer-anmeldung.php?success=1');
     exit;
@@ -153,6 +151,6 @@ try {
         redirectWithError('Diese E-Mail-Adresse ist bereits angemeldet.');
     }
 
-    error_log('Helfer registration error: ' . $e->getMessage());
+    error_log('Helfer registration error: ' . $e->getMessage(), 3, __DIR__ . '/../../storage/logs/error.log');
     redirectWithError('Ein Fehler ist aufgetreten. Bitte versuche es später erneut.');
 }
