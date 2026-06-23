@@ -17,3 +17,4 @@
 | 2026-06-23 | Content/Style | Bambini/Schüler Texte auf Karten aktualisiert, Bambini Karte Disclaimer hinzugefügt und Größe angeglichen |
 | 2026-06-23 | Style | 'Jugend' zur Elite-Kachel hinzugefügt und Timeline Padding für bessere Raumaufteilung reduziert |
 - 2026-06-23: Wort 'Lauf' aus den isolierten Streckentiteln entfernt (in de.json, en.json, index.html) #content
+- 2026-06-23: 10km.gpx durch neue Version ersetzt und alte Datei ins Archiv verschoben #gpx #courses
