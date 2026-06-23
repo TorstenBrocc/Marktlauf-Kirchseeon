@@ -7,3 +7,4 @@
 - [x] 2km.gpx Map und neue 5km/10km GPX Strecken integriert
 - [x] 1km.gpx Strecke integriert
 - [x] 1km GPX-Download Button aktiviert, Altersangaben in Strecken und Timeline ergänzt, "Elite" in "Jugend & Erwachsene" umbenannt
+- [x] Bambini Streckenkarte Text-Update und Größenangleichung, 'Kinder' in 'Bambini' und 'Schüler' korrigiert

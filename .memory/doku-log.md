@@ -14,3 +14,4 @@
 | 2026-06-22 | Map | 1km-Strecke eingebunden |
 | 2026-06-23 | Content | Altersangaben ergänzt, GPX-Button 1km aktiviert, "Elite" in "Jugend & Erwachsene" umbenannt |
 | 2026-06-23 | Style | Strecken-Kacheln Layout korrigiert (kompakter, Altersangaben-Abstand verringert, Disclaimer-Größe angepasst) |
+| 2026-06-23 | Content/Style | Bambini/Schüler Texte auf Karten aktualisiert, Bambini Karte Disclaimer hinzugefügt und Größe angeglichen |
