@@ -13,3 +13,4 @@
 | 2026-06-22 | Map | 2km-Strecke eingebunden und 5km/10km GPX mit neuen GPXStudio-Dateien ersetzt |
 | 2026-06-22 | Map | 1km-Strecke eingebunden |
 | 2026-06-23 | Content | Altersangaben ergänzt, GPX-Button 1km aktiviert, "Elite" in "Jugend & Erwachsene" umbenannt |
+| 2026-06-23 | Style | Strecken-Kacheln Layout korrigiert (kompakter, Altersangaben-Abstand verringert, Disclaimer-Größe angepasst) |

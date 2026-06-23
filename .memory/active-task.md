@@ -1,3 +1,3 @@
 # Active Task
 
-Currently idle. Last task: Altersangaben hinzugefügt und Elite umbenannt.
+Currently idle. Last task: Strecken-Kacheln Layout korrigiert (Altersangaben-Abstand, Disclaimer und Compact Grid).
