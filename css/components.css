@@ -354,8 +354,15 @@
 
 .route-title {
     font-weight: 700;
-    font-size: 1.1rem;
-    color: var(--gray-800);
+    font-size: 1.25rem;
+    color: var(--secondary-color);
+}
+
+.strecke-alter {
+    display: block;
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-top: 2px;
 }
 
 .route-disclaimer {
