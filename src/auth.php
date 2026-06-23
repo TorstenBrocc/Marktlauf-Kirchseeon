@@ -62,6 +62,22 @@ function getClientIp(): string {
     return $remoteAddr;
 }
 
+function getRateLimitKey(): string {
+    $ip = getClientIp();
+    $binary = @inet_pton($ip);
+
+    if ($binary === false) {
+        return $ip;
+    }
+
+    if (strlen($binary) === 16) {
+        $binary = substr($binary, 0, 8) . str_repeat("\0", 8);
+        return inet_ntop($binary);
+    }
+
+    return $ip;
+}
+
 function normalizeEmail(string $email): string {
     return strtolower(trim($email));
 }
@@ -73,7 +89,7 @@ function isLoginRateLimited(string $email): bool {
     $maxAttempts = $config['security']['login_max_attempts'] ?? 5;
     $maxAttemptsPerIp = $config['security']['login_max_attempts_per_ip'] ?? 20;
     $lockoutMinutes = $config['security']['login_lockout_minutes'] ?? 15;
-    $ip = getClientIp();
+    $ipKey = getRateLimitKey();
     $emailNorm = normalizeEmail($email);
 
     $stmt = $pdo->prepare('
@@ -83,7 +99,7 @@ function isLoginRateLimited(string $email): bool {
           AND ts > DATE_SUB(NOW(), INTERVAL :minutes MINUTE)
     ');
     $stmt->execute([
-        'ip'      => $ip,
+        'ip'      => $ipKey,
         'email'   => $emailNorm,
         'minutes' => $lockoutMinutes,
     ]);
@@ -100,7 +116,7 @@ function isLoginRateLimited(string $email): bool {
           AND ts > DATE_SUB(NOW(), INTERVAL :minutes MINUTE)
     ');
     $stmt->execute([
-        'ip'      => $ip,
+        'ip'      => $ipKey,
         'minutes' => $lockoutMinutes,
     ]);
     $countPerIp = (int) $stmt->fetchColumn();
@@ -110,11 +126,11 @@ function isLoginRateLimited(string $email): bool {
 
 function recordLoginAttempt(string $email): void {
     $pdo = getDbConnection();
-    $ip = getClientIp();
+    $ipKey = getRateLimitKey();
     $emailNorm = normalizeEmail($email);
 
     $stmt = $pdo->prepare('INSERT INTO login_attempts (ip, email) VALUES (:ip, :email)');
-    $stmt->execute(['ip' => $ip, 'email' => $emailNorm]);
+    $stmt->execute(['ip' => $ipKey, 'email' => $emailNorm]);
 
     if (random_int(1, 100) === 1) {
         cleanupOldLoginAttempts();
@@ -227,14 +243,14 @@ function isRegisterRateLimited(): bool {
     $config = getConfig();
 
     $maxPerHour = $config['security']['register_max_per_hour'] ?? 10;
-    $ip = getClientIp();
+    $ipKey = getRateLimitKey();
 
     $stmt = $pdo->prepare('
         SELECT COUNT(*) as cnt
         FROM register_attempts
         WHERE ip = :ip AND ts > DATE_SUB(NOW(), INTERVAL 1 HOUR)
     ');
-    $stmt->execute(['ip' => $ip]);
+    $stmt->execute(['ip' => $ipKey]);
 
     $count = (int) $stmt->fetchColumn();
 
@@ -243,10 +259,10 @@ function isRegisterRateLimited(): bool {
 
 function recordRegisterAttempt(): void {
     $pdo = getDbConnection();
-    $ip = getClientIp();
+    $ipKey = getRateLimitKey();
 
     $stmt = $pdo->prepare('INSERT INTO register_attempts (ip) VALUES (:ip)');
-    $stmt->execute(['ip' => $ip]);
+    $stmt->execute(['ip' => $ipKey]);
 
     if (random_int(1, 100) === 1) {
         cleanupOldRegisterAttempts();
