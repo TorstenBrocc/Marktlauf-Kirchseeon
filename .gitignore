@@ -23,6 +23,8 @@ Icon?
 credentials.json
 *.pem
 *.key
+storage/config.php
+migrations/002_seed_admins.sql
 
 # --- Zusätzliche CI/CD & Dependency Exclusions ---
 node_modules/
@@ -46,3 +48,6 @@ sponsor-data/
 *.sponsor.csv
 .env
 venv/
+vendor/
+storage/logs/*
+!storage/logs/.gitkeep

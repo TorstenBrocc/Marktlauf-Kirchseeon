@@ -1,0 +1,17 @@
+-- Admin-Seed für ATSV Kirchseeon Marktlauf Dashboard
+--
+-- ANLEITUNG:
+-- 1. Kopiere diese Datei zu 002_seed_admins.sql
+-- 2. Generiere Passwort-Hashes mit: php bin/hash_password.php
+-- 3. Ersetze die Platzhalter <HASH_HIER> mit den generierten Hashes
+-- 4. Führe das SQL aus
+-- 5. Lösche 002_seed_admins.sql (nicht committen!)
+--
+-- WICHTIG: Diese Datei (.sql.sample) ist ein Template.
+--          Die eigentliche Seed-Datei (.sql) darf NIEMALS ins Repo.
+
+INSERT INTO `users` (`name`, `email`, `pass_hash`, `role`, `active`) VALUES
+('Admin', 'admin@example.com', '<HASH_HIER>', 'admin', 1);
+
+-- Weitere Admins/Orga nach Bedarf:
+-- ('Orga User', 'orga@example.com', '<HASH_HIER>', 'orga', 1);

@@ -1,0 +1,261 @@
+<?php
+/**
+ * Öffentliches Helfer-Anmeldeformular
+ */
+
+declare(strict_types=1);
+
+require_once __DIR__ . '/src/auth.php';
+
+initSession();
+$csrfToken = generateCsrfToken();
+
+$success = isset($_GET['success']);
+$error = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submitted'])) {
+    header('Location: orga/api/helfer_register.php');
+    exit;
+}
+?>
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Helfer-Anmeldung | ATSV Kirchseeon Marktlauf</title>
+    <meta name="description" content="Melde dich als Helfer beim ATSV Kirchseeon Marktlauf an und unterstütze unser Team.">
+    <link rel="stylesheet" href="css/main.css">
+    <style>
+        .helfer-form {
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .helfer-form h1 {
+            color: #009640;
+            margin-bottom: 1rem;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        .form-group input[type="text"],
+        .form-group input[type="email"],
+        .form-group input[type="tel"],
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #009640;
+            box-shadow: 0 0 0 2px rgba(0, 150, 64, 0.2);
+        }
+        .form-hint {
+            font-size: 0.875rem;
+            color: #666;
+            margin-top: 0.25rem;
+        }
+        .timetable {
+            display: grid;
+            grid-template-columns: auto repeat(2, 1fr);
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        .timetable-header {
+            font-weight: 500;
+            text-align: center;
+            padding: 0.5rem;
+            background: #f5f5f5;
+        }
+        .timetable-day {
+            padding: 0.5rem;
+            background: #f5f5f5;
+        }
+        .timetable-cell {
+            text-align: center;
+            padding: 0.5rem;
+        }
+        .timetable-cell input {
+            width: 20px;
+            height: 20px;
+        }
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: normal;
+            cursor: pointer;
+        }
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+        }
+        .btn-submit {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: #009640;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            width: 100%;
+        }
+        .btn-submit:hover {
+            background: #007a34;
+        }
+        .alert {
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1.5rem;
+        }
+        .alert-success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .alert-error {
+            background: #fdecea;
+            color: #d32f2f;
+        }
+        .hp-field {
+            position: absolute;
+            left: -9999px;
+        }
+        .required::after {
+            content: " *";
+            color: #d32f2f;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="index.html">Zurück zur Startseite</a>
+        </nav>
+    </header>
+
+    <main>
+        <div class="helfer-form">
+            <h1>Helfer-Anmeldung</h1>
+            <p>Werde Teil unseres Teams beim ATSV Kirchseeon Marktlauf! Fülle das Formular aus und wir melden uns bei dir.</p>
+
+            <?php if ($success): ?>
+                <div class="alert alert-success">
+                    <strong>Vielen Dank!</strong> Deine Anmeldung ist eingegangen. Du erhältst in Kürze eine Bestätigungs-E-Mail.
+                </div>
+            <?php endif; ?>
+
+            <?php if ($error): ?>
+                <div class="alert alert-error"><?= htmlspecialchars($error) ?></div>
+            <?php endif; ?>
+
+            <?php if (!$success): ?>
+            <form method="post" action="orga/api/helfer_register.php">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+
+                <div class="hp-field">
+                    <label for="website">Website</label>
+                    <input type="text" name="website" id="website" tabindex="-1" autocomplete="off">
+                </div>
+
+                <div class="form-group">
+                    <label for="name" class="required">Name</label>
+                    <input type="text" id="name" name="name" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="email" class="required">E-Mail</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="phone" class="required">Handynummer</label>
+                    <input type="tel" id="phone" name="phone" required>
+                    <p class="form-hint">Für schnelle Kommunikation am Veranstaltungstag.</p>
+                </div>
+
+                <div class="form-group">
+                    <label class="required">Wann hast du Zeit?</label>
+                    <p class="form-hint">Markiere die Zeitfenster, in denen du helfen kannst.</p>
+                    <div class="timetable">
+                        <div></div>
+                        <div class="timetable-header">Vormittag</div>
+                        <div class="timetable-header">Nachmittag</div>
+
+                        <div class="timetable-day">Samstag (Aufbau)</div>
+                        <div class="timetable-cell">
+                            <input type="checkbox" name="slots[]" value="2026-10-10_vormittag" id="slot_sa_vm">
+                        </div>
+                        <div class="timetable-cell">
+                            <input type="checkbox" name="slots[]" value="2026-10-10_nachmittag" id="slot_sa_nm">
+                        </div>
+
+                        <div class="timetable-day">Sonntag (Renntag)</div>
+                        <div class="timetable-cell">
+                            <input type="checkbox" name="slots[]" value="2026-10-11_vormittag" id="slot_so_vm">
+                        </div>
+                        <div class="timetable-cell">
+                            <input type="checkbox" name="slots[]" value="2026-10-11_nachmittag" id="slot_so_nm">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Was kannst du mitbringen oder beitragen?</label>
+                    <p class="form-hint">Optional, aber sehr willkommen!</p>
+                    <div class="checkbox-group">
+                        <label>
+                            <input type="checkbox" name="beitrag[]" value="kuchen">
+                            Kuchen / Gebäck
+                        </label>
+                        <label>
+                            <input type="checkbox" name="beitrag[]" value="getraenke">
+                            Getränke
+                        </label>
+                        <label>
+                            <input type="checkbox" name="beitrag[]" value="equipment">
+                            Equipment (Tische, Zelte, etc.)
+                        </label>
+                        <label>
+                            <input type="checkbox" name="beitrag[]" value="sonstiges">
+                            Sonstiges
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="beitrag_freitext">Falls Sonstiges, was genau?</label>
+                    <textarea id="beitrag_freitext" name="beitrag_freitext" rows="3"></textarea>
+                </div>
+
+                <button type="submit" class="btn-submit">Anmeldung absenden</button>
+            </form>
+            <?php endif; ?>
+        </div>
+    </main>
+
+    <footer>
+        <p><a href="impressum.html">Impressum & Datenschutz</a></p>
+    </footer>
+</body>
+</html>

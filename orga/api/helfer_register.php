@@ -1,0 +1,154 @@
+<?php
+/**
+ * Helfer-Registrierung Handler
+ * Verarbeitet das öffentliche Anmeldeformular.
+ */
+
+declare(strict_types=1);
+
+require_once __DIR__ . '/../../src/auth.php';
+require_once __DIR__ . '/../../src/db.php';
+require_once __DIR__ . '/../../src/channels/mail.php';
+
+initSession();
+
+function redirectWithError(string $message): void {
+    $_SESSION['helfer_error'] = $message;
+    header('Location: ../../helfer-anmeldung.php?error=1');
+    exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    header('Location: ../../helfer-anmeldung.php');
+    exit;
+}
+
+$csrfToken = $_POST['csrf_token'] ?? '';
+if (!verifyCsrfToken($csrfToken)) {
+    redirectWithError('Ungültige Anfrage. Bitte erneut versuchen.');
+}
+
+$honeypot = trim($_POST['website'] ?? '');
+if ($honeypot !== '') {
+    header('Location: ../../helfer-anmeldung.php?success=1');
+    exit;
+}
+
+if (isRegisterRateLimited()) {
+    redirectWithError('Zu viele Anmeldungen von dieser Adresse. Bitte später erneut versuchen.');
+}
+
+$name = trim($_POST['name'] ?? '');
+$email = trim($_POST['email'] ?? '');
+$phone = trim($_POST['phone'] ?? '');
+$slots = $_POST['slots'] ?? [];
+$beitrag = $_POST['beitrag'] ?? [];
+$beitragFreitext = trim($_POST['beitrag_freitext'] ?? '');
+
+if (empty($name) || empty($email) || empty($phone)) {
+    redirectWithError('Bitte fülle alle Pflichtfelder aus.');
+}
+
+if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    redirectWithError('Bitte gib eine gültige E-Mail-Adresse ein.');
+}
+
+if (strlen($name) > 100 || strlen($email) > 255 || strlen($phone) > 30) {
+    redirectWithError('Eingabe zu lang.');
+}
+
+if (!is_array($slots)) {
+    $slots = [];
+}
+if (!is_array($beitrag)) {
+    $beitrag = [];
+}
+
+$validSlots = [];
+$slotPattern = '/^(\d{4}-\d{2}-\d{2})_(vormittag|nachmittag)$/';
+foreach ($slots as $slot) {
+    if (preg_match($slotPattern, $slot, $matches)) {
+        $validSlots[] = [
+            'tag' => $matches[1],
+            'zeitfenster' => $matches[2],
+        ];
+    }
+}
+
+$validBeitragTypes = ['kuchen', 'getraenke', 'equipment', 'sonstiges'];
+$validBeitrag = array_filter($beitrag, fn($b) => in_array($b, $validBeitragTypes, true));
+
+$uuid = sprintf(
+    '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+    random_int(0, 0xffff), random_int(0, 0xffff),
+    random_int(0, 0xffff),
+    random_int(0, 0x0fff) | 0x4000,
+    random_int(0, 0x3fff) | 0x8000,
+    random_int(0, 0xffff), random_int(0, 0xffff), random_int(0, 0xffff)
+);
+
+try {
+    $pdo = getDbConnection();
+    $pdo->beginTransaction();
+
+    $stmt = $pdo->prepare('
+        INSERT INTO helfer (uuid, name, email, phone, status)
+        VALUES (:uuid, :name, :email, :phone, :status)
+    ');
+    $stmt->execute([
+        'uuid'   => $uuid,
+        'name'   => $name,
+        'email'  => $email,
+        'phone'  => $phone,
+        'status' => 'neu',
+    ]);
+    $helferId = (int) $pdo->lastInsertId();
+
+    if (!empty($validSlots)) {
+        $slotStmt = $pdo->prepare('
+            INSERT INTO helfer_slots (helfer_id, tag, zeitfenster)
+            VALUES (:helfer_id, :tag, :zeitfenster)
+        ');
+        foreach ($validSlots as $slot) {
+            $slotStmt->execute([
+                'helfer_id'  => $helferId,
+                'tag'        => $slot['tag'],
+                'zeitfenster' => $slot['zeitfenster'],
+            ]);
+        }
+    }
+
+    if (!empty($validBeitrag)) {
+        $beitragStmt = $pdo->prepare('
+            INSERT INTO helfer_beitrag (helfer_id, typ, freitext)
+            VALUES (:helfer_id, :typ, :freitext)
+        ');
+        foreach ($validBeitrag as $typ) {
+            $freitext = ($typ === 'sonstiges' && $beitragFreitext !== '') ? $beitragFreitext : null;
+            $beitragStmt->execute([
+                'helfer_id' => $helferId,
+                'typ'       => $typ,
+                'freitext'  => $freitext,
+            ]);
+        }
+    }
+
+    $pdo->commit();
+
+    recordRegisterAttempt();
+
+    sendHelferEingangsbestaetigung($email, $name);
+
+    cleanupOldRegisterAttempts();
+
+    header('Location: ../../helfer-anmeldung.php?success=1');
+    exit;
+
+} catch (PDOException $e) {
+    if (isset($pdo) && $pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+
+    error_log('Helfer registration error: ' . $e->getMessage());
+    redirectWithError('Ein Fehler ist aufgetreten. Bitte versuche es später erneut.');
+}
