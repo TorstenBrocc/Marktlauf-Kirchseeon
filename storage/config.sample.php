@@ -29,8 +29,13 @@ return [
     ],
 
     'security' => [
-        'login_max_attempts'    => 5,
-        'login_lockout_minutes' => 15,
-        'register_max_per_hour' => 10,
+        'login_max_attempts'        => 5,
+        'login_max_attempts_per_ip' => 20,
+        'login_lockout_minutes'     => 15,
+        'register_max_per_hour'     => 10,
+
+        // Nur setzen, wenn hinter einem Reverse-Proxy (z.B. Cloudflare, nginx).
+        // Dann X-Forwarded-For vom Proxy auswerten. Sonst REMOTE_ADDR nutzen.
+        // 'trusted_proxy' => '127.0.0.1',
     ],
 ];

@@ -47,12 +47,23 @@ function verifyCsrfToken(string $token): bool {
 }
 
 function getClientIp(): string {
-    if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-        $ips = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
-        return trim($ips[0]);
+    $remoteAddr = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+
+    $config = getConfig();
+    $trustedProxy = $config['security']['trusted_proxy'] ?? null;
+
+    if ($trustedProxy !== null && $remoteAddr === $trustedProxy) {
+        if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            $ips = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
+            return trim($ips[0]);
+        }
     }
 
-    return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+    return $remoteAddr;
+}
+
+function normalizeEmail(string $email): string {
+    return strtolower(trim($email));
 }
 
 function isLoginRateLimited(string $email): bool {
@@ -60,8 +71,10 @@ function isLoginRateLimited(string $email): bool {
     $config = getConfig();
 
     $maxAttempts = $config['security']['login_max_attempts'] ?? 5;
+    $maxAttemptsPerIp = $config['security']['login_max_attempts_per_ip'] ?? 20;
     $lockoutMinutes = $config['security']['login_lockout_minutes'] ?? 15;
     $ip = getClientIp();
+    $emailNorm = normalizeEmail($email);
 
     $stmt = $pdo->prepare('
         SELECT COUNT(*) as cnt
@@ -71,21 +84,41 @@ function isLoginRateLimited(string $email): bool {
     ');
     $stmt->execute([
         'ip'      => $ip,
-        'email'   => $email,
+        'email'   => $emailNorm,
         'minutes' => $lockoutMinutes,
     ]);
+    $countPerEmail = (int) $stmt->fetchColumn();
 
-    $count = (int) $stmt->fetchColumn();
+    if ($countPerEmail >= $maxAttempts) {
+        return true;
+    }
 
-    return $count >= $maxAttempts;
+    $stmt = $pdo->prepare('
+        SELECT COUNT(*) as cnt
+        FROM login_attempts
+        WHERE ip = :ip
+          AND ts > DATE_SUB(NOW(), INTERVAL :minutes MINUTE)
+    ');
+    $stmt->execute([
+        'ip'      => $ip,
+        'minutes' => $lockoutMinutes,
+    ]);
+    $countPerIp = (int) $stmt->fetchColumn();
+
+    return $countPerIp >= $maxAttemptsPerIp;
 }
 
 function recordLoginAttempt(string $email): void {
     $pdo = getDbConnection();
     $ip = getClientIp();
+    $emailNorm = normalizeEmail($email);
 
     $stmt = $pdo->prepare('INSERT INTO login_attempts (ip, email) VALUES (:ip, :email)');
-    $stmt->execute(['ip' => $ip, 'email' => $email]);
+    $stmt->execute(['ip' => $ip, 'email' => $emailNorm]);
+
+    if (random_int(1, 100) === 1) {
+        cleanupOldLoginAttempts();
+    }
 }
 
 function cleanupOldLoginAttempts(): void {
@@ -94,18 +127,20 @@ function cleanupOldLoginAttempts(): void {
 }
 
 function attemptLogin(string $email, string $password): ?array {
-    if (isLoginRateLimited($email)) {
+    $emailNorm = normalizeEmail($email);
+
+    if (isLoginRateLimited($emailNorm)) {
         return null;
     }
 
     $pdo = getDbConnection();
 
-    $stmt = $pdo->prepare('SELECT * FROM users WHERE email = :email AND active = 1');
-    $stmt->execute(['email' => $email]);
+    $stmt = $pdo->prepare('SELECT * FROM users WHERE LOWER(email) = :email AND active = 1');
+    $stmt->execute(['email' => $emailNorm]);
     $user = $stmt->fetch();
 
     if (!$user || !password_verify($password, $user['pass_hash'])) {
-        recordLoginAttempt($email);
+        recordLoginAttempt($emailNorm);
         return null;
     }
 
@@ -212,6 +247,10 @@ function recordRegisterAttempt(): void {
 
     $stmt = $pdo->prepare('INSERT INTO register_attempts (ip) VALUES (:ip)');
     $stmt->execute(['ip' => $ip]);
+
+    if (random_int(1, 100) === 1) {
+        cleanupOldRegisterAttempts();
+    }
 }
 
 function cleanupOldRegisterAttempts(): void {

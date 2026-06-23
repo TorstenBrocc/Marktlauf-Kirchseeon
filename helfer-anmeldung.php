@@ -12,11 +12,6 @@ $csrfToken = generateCsrfToken();
 
 $success = isset($_GET['success']);
 $error = '';
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submitted'])) {
-    header('Location: orga/api/helfer_register.php');
-    exit;
-}
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -173,7 +168,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submitted'])) {
             <form method="post" action="orga/api/helfer_register.php">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
 
-                <div class="hp-field">
+                <div class="hp-field" aria-hidden="true">
                     <label for="website">Website</label>
                     <input type="text" name="website" id="website" tabindex="-1" autocomplete="off">
                 </div>
