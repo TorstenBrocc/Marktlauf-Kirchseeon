@@ -9,3 +9,4 @@
 - [x] 1km GPX-Download Button aktiviert, Altersangaben in Strecken und Timeline ergänzt, "Elite" in "Jugend & Erwachsene" umbenannt
 - [x] Bambini Streckenkarte Text-Update und Größenangleichung, 'Kinder' in 'Bambini' und 'Schüler' korrigiert
 - [x] 'Jugend' zur Elite-Kachel hinzugefügt und Timeline-Padding (Raumaufteilung) reduziert
+- [x] Wort 'Lauf' aus den isolierten Streckentiteln entfernt

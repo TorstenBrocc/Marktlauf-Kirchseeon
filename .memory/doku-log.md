@@ -16,3 +16,4 @@
 | 2026-06-23 | Style | Strecken-Kacheln Layout korrigiert (kompakter, Altersangaben-Abstand verringert, Disclaimer-Größe angepasst) |
 | 2026-06-23 | Content/Style | Bambini/Schüler Texte auf Karten aktualisiert, Bambini Karte Disclaimer hinzugefügt und Größe angeglichen |
 | 2026-06-23 | Style | 'Jugend' zur Elite-Kachel hinzugefügt und Timeline Padding für bessere Raumaufteilung reduziert |
+- 2026-06-23: Wort 'Lauf' aus den isolierten Streckentiteln entfernt (in de.json, en.json, index.html) #content
