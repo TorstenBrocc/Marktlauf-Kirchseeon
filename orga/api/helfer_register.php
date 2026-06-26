@@ -1,6 +1,6 @@
 <?php
 /**
- * Helfer-Registrierung Handler
+ * Helfer-Registrierung Handler (Token-gegatet)
  * Verarbeitet das öffentliche Anmeldeformular.
  */
 
@@ -12,10 +12,32 @@ require_once __DIR__ . '/../../src/channels/mail.php';
 
 initSession();
 
-function redirectWithError(string $message): void {
+function redirectWithError(string $message, string $token = ''): void {
     $_SESSION['helfer_error'] = $message;
-    header('Location: ../../helfer-anmeldung.php?error=1');
+    $url = '../../helfer-anmeldung.php?error=1';
+    if ($token !== '') {
+        $url .= '&token=' . urlencode($token);
+    }
+    header('Location: ' . $url);
     exit;
+}
+
+function isValidAccessToken(string $token): bool {
+    if ($token === '' || strlen($token) > 64) {
+        return false;
+    }
+
+    try {
+        $pdo = getDbConnection();
+        $stmt = $pdo->prepare('
+            SELECT id FROM access_tokens
+            WHERE token = :token AND active = 1 AND expires_at > NOW()
+        ');
+        $stmt->execute(['token' => $token]);
+        return $stmt->fetch() !== false;
+    } catch (PDOException $e) {
+        return false;
+    }
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -23,9 +45,15 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+$accessToken = trim($_POST['access_token'] ?? '');
+if (!isValidAccessToken($accessToken)) {
+    header('Location: ../../helfer-anmeldung.php');
+    exit;
+}
+
 $csrfToken = $_POST['csrf_token'] ?? '';
 if (!verifyCsrfToken($csrfToken)) {
-    redirectWithError('Ungültige Anfrage. Bitte erneut versuchen.');
+    redirectWithError('Ungültige Anfrage. Bitte erneut versuchen.', $accessToken);
 }
 
 $honeypot = trim($_POST['website'] ?? '');
@@ -37,7 +65,7 @@ if ($honeypot !== '') {
 recordRegisterAttempt();
 
 if (isRegisterRateLimited()) {
-    redirectWithError('Zu viele Anmeldungen von dieser Adresse. Bitte später erneut versuchen.');
+    redirectWithError('Zu viele Anmeldungen von dieser Adresse. Bitte später erneut versuchen.', $accessToken);
 }
 
 $name = trim($_POST['name'] ?? '');
@@ -48,15 +76,15 @@ $beitrag = $_POST['beitrag'] ?? [];
 $beitragFreitext = trim($_POST['beitrag_freitext'] ?? '');
 
 if (empty($name) || empty($email) || empty($phone)) {
-    redirectWithError('Bitte fülle alle Pflichtfelder aus.');
+    redirectWithError('Bitte fülle alle Pflichtfelder aus.', $accessToken);
 }
 
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    redirectWithError('Bitte gib eine gültige E-Mail-Adresse ein.');
+    redirectWithError('Bitte gib eine gültige E-Mail-Adresse ein.', $accessToken);
 }
 
 if (strlen($name) > 100 || strlen($email) > 255 || strlen($phone) > 30) {
-    redirectWithError('Eingabe zu lang.');
+    redirectWithError('Eingabe zu lang.', $accessToken);
 }
 
 if (!is_array($slots)) {
@@ -148,9 +176,9 @@ try {
     }
 
     if ($e->getCode() === '23000' && str_contains($e->getMessage(), 'uk_helfer_email')) {
-        redirectWithError('Diese E-Mail-Adresse ist bereits angemeldet.');
+        redirectWithError('Diese E-Mail-Adresse ist bereits angemeldet.', $accessToken);
     }
 
     error_log('Helfer registration error: ' . $e->getMessage(), 3, __DIR__ . '/../../storage/logs/error.log');
-    redirectWithError('Ein Fehler ist aufgetreten. Bitte versuche es später erneut.');
+    redirectWithError('Ein Fehler ist aufgetreten. Bitte versuche es später erneut.', $accessToken);
 }

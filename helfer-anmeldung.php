@@ -1,17 +1,41 @@
 <?php
 /**
- * Öffentliches Helfer-Anmeldeformular
+ * Öffentliches Helfer-Anmeldeformular (Token-gegatet)
  */
 
 declare(strict_types=1);
 
 require_once __DIR__ . '/src/auth.php';
+require_once __DIR__ . '/src/db.php';
+
+function isValidAccessToken(string $token): bool {
+    if ($token === '' || strlen($token) > 64) {
+        return false;
+    }
+
+    try {
+        $pdo = getDbConnection();
+        $stmt = $pdo->prepare('
+            SELECT id FROM access_tokens
+            WHERE token = :token AND active = 1 AND expires_at > NOW()
+        ');
+        $stmt->execute(['token' => $token]);
+        return $stmt->fetch() !== false;
+    } catch (PDOException $e) {
+        return false;
+    }
+}
+
+$token = trim($_GET['token'] ?? '');
+$tokenValid = isValidAccessToken($token);
 
 initSession();
-$csrfToken = generateCsrfToken();
 
 $success = isset($_GET['success']);
-$error = '';
+$error = $_SESSION['helfer_error'] ?? '';
+unset($_SESSION['helfer_error']);
+
+$csrfToken = generateCsrfToken();
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -164,9 +188,12 @@ $error = '';
                 <div class="alert alert-error"><?= htmlspecialchars($error) ?></div>
             <?php endif; ?>
 
-            <?php if (!$success): ?>
+            <?php if (!$tokenValid && !$success): ?>
+                <p>Die Helfer-Anmeldung ist derzeit nicht verfügbar.</p>
+            <?php elseif (!$success): ?>
             <form method="post" action="orga/api/helfer_register.php">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                <input type="hidden" name="access_token" value="<?= htmlspecialchars($token) ?>">
 
                 <div class="hp-field" aria-hidden="true">
                     <label for="website">Website</label>

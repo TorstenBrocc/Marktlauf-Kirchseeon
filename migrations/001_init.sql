@@ -1,5 +1,5 @@
 -- ATSV Kirchseeon Marktlauf Dashboard
--- Phase 1 Schema: users, helfer, helfer_slots, helfer_beitrag, login_attempts, register_attempts
+-- Phase 1 Schema: users, helfer, helfer_slots, helfer_beitrag, login_attempts, register_attempts, access_tokens
 -- MySQL 5.7+ / MariaDB 10.2+
 
 SET NAMES utf8mb4;
@@ -75,6 +75,19 @@ CREATE TABLE IF NOT EXISTS `register_attempts` (
     `ts` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     KEY `idx_register_ip_ts` (`ip`, `ts`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Access Tokens (Token-Gate für öffentliche Formulare)
+CREATE TABLE IF NOT EXISTS `access_tokens` (
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `token` VARCHAR(64) NOT NULL,
+    `label` VARCHAR(64) NOT NULL,
+    `active` TINYINT(1) NOT NULL DEFAULT 1,
+    `expires_at` DATETIME NOT NULL,
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_access_tokens_token` (`token`),
+    KEY `idx_access_tokens_active_expires` (`active`, `expires_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS = 1;

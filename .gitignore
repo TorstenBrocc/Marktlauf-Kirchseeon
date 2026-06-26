@@ -23,7 +23,7 @@ credentials.json
 *.pem
 *.key
 storage/config.php
-migrations/002_seed_admins.sql
+migrations/00?_seed_*.sql
 
 # --- Dependencies / Build ---
 node_modules/
