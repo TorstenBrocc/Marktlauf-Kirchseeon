@@ -8,8 +8,10 @@
  * Nur der Hash wird auf stdout ausgegeben.
  */
 
-if (php_sapi_name() !== 'cli') {
-    exit('Dieses Script läuft nur auf der Kommandozeile.');
+// Strato: SSH-Shell liefert cgi-fcgi statt cli → Bypass via MARKTLAUF_CLI=1
+if (php_sapi_name() !== 'cli' && getenv('MARKTLAUF_CLI') !== '1') {
+    http_response_code(403);
+    exit('CLI only');
 }
 
 function readPasswordSecure(string $prompt): string {
