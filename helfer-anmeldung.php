@@ -61,6 +61,9 @@ $basePath = '';
             border-radius: var(--radius-lg);
             box-shadow: var(--shadow-md);
         }
+        .helfer-form h2 {
+            margin-bottom: var(--space-lg);
+        }
         .form-group {
             margin-bottom: var(--space-md);
         }
