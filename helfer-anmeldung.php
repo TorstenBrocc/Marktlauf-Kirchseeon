@@ -55,7 +55,7 @@ $basePath = '';
         }
         .helfer-form {
             max-width: 600px;
-            margin: var(--space-lg) auto 0;
+            margin: 0 auto;
             padding: var(--space-lg);
             background: var(--white);
             border-radius: var(--radius-lg);
@@ -177,8 +177,8 @@ $basePath = '';
     <main>
         <section class="helfer-section">
             <div class="container">
-                <h2 class="text-center">Helfer-Anmeldung</h2>
                 <div class="helfer-form">
+                    <h2 class="text-center">Helfer-Anmeldung</h2>
 
                     <?php if ($success): ?>
                         <div class="alert alert-success">
