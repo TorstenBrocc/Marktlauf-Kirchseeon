@@ -1,5 +1,5 @@
 /**
- * Marktlauf Kirchseeon 2026 - Map Logic
+ * ATSV Marktlauf Kirchseeon 2026 - Map Logic
  * Handles: GPX Preview Maps, Modal with Elevation Profile
  */
 

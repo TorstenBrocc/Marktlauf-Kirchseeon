@@ -88,8 +88,6 @@ if (strlen($vorname) > 50 || strlen($nachname) > 50 || strlen($email) > 255 || s
     redirectWithError('Eingabe zu lang.', $accessToken);
 }
 
-$name = $vorname . ' ' . $nachname;
-
 if (!is_array($slots)) {
     $slots = [];
 }
@@ -125,15 +123,16 @@ try {
     $pdo->beginTransaction();
 
     $stmt = $pdo->prepare('
-        INSERT INTO helfer (uuid, name, email, phone, status)
-        VALUES (:uuid, :name, :email, :phone, :status)
+        INSERT INTO helfer (uuid, vorname, nachname, email, phone, status)
+        VALUES (:uuid, :vorname, :nachname, :email, :phone, :status)
     ');
     $stmt->execute([
-        'uuid'   => $uuid,
-        'name'   => $name,
-        'email'  => $email,
-        'phone'  => $phone,
-        'status' => 'neu',
+        'uuid'     => $uuid,
+        'vorname'  => $vorname,
+        'nachname' => $nachname,
+        'email'    => $email,
+        'phone'    => $phone,
+        'status'   => 'neu',
     ]);
     $helferId = (int) $pdo->lastInsertId();
 
@@ -168,7 +167,7 @@ try {
 
     $pdo->commit();
 
-    sendHelferEingangsbestaetigung($email, $name);
+    sendHelferEingangsbestaetigung($email, $vorname . ' ' . $nachname);
 
     header('Location: ../../helfer-anmeldung.php?success=1');
     exit;

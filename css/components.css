@@ -1,5 +1,5 @@
-/* 
-  Marktlauf Kirchseeon 2026 - Component Styles
+/*
+  ATSV Marktlauf Kirchseeon 2026 - Component Styles
   Buttons, Hero Section, and other UI elements
 */
 
@@ -682,7 +682,6 @@
     display: flex;
     gap: 8px;
     align-items: center;
-    margin: 0 var(--space-sm);
 }
 
 .lang-btn {

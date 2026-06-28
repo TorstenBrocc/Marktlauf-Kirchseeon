@@ -1,5 +1,5 @@
 /**
- * Marktlauf Kirchseeon 2026 - Main JavaScript
+ * ATSV Marktlauf Kirchseeon 2026 - Main JavaScript
  * Handles: Mobile Menu, Tabs, Language Switching (External JSON), and i18n content updates.
  */
 

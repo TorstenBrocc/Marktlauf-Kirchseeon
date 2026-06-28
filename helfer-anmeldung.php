@@ -43,8 +43,8 @@ $basePath = '';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Helfer-Anmeldung | ATSV Kirchseeon Marktlauf</title>
-    <meta name="description" content="Melde dich als Helfer beim ATSV Kirchseeon Marktlauf an und unterstütze unser Team.">
+    <title>Helfer-Anmeldung | ATSV Marktlauf Kirchseeon</title>
+    <meta name="description" content="Melde dich als Helfer beim ATSV Marktlauf Kirchseeon an und unterstütze unser Team.">
     <meta name="robots" content="noindex, nofollow">
     <?php require_once __DIR__ . '/src/layout/head.php'; ?>
     <style>
@@ -62,13 +62,11 @@ $basePath = '';
             box-shadow: var(--shadow-md);
         }
         .helfer-form h1 {
-            color: var(--primary);
-            margin-bottom: var(--space-sm);
-            font-size: var(--text-2xl);
-        }
-        .helfer-form > p {
-            color: var(--gray-600);
+            color: var(--color-primary);
             margin-bottom: var(--space-lg);
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 700;
+            line-height: 1.2;
         }
         .form-group {
             margin-bottom: var(--space-md);
@@ -188,7 +186,6 @@ $basePath = '';
             <div class="container">
                 <div class="helfer-form">
                     <h1>Helfer-Anmeldung</h1>
-                    <p>Werde Teil unseres Teams beim ATSV Kirchseeon Marktlauf! Fülle das Formular aus und wir melden uns bei dir.</p>
 
                     <?php if ($success): ?>
                         <div class="alert alert-success">

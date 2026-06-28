@@ -1,5 +1,5 @@
-/* 
-  Marktlauf Kirchseeon 2026 - Layout Styles
+/*
+  ATSV Marktlauf Kirchseeon 2026 - Layout Styles
   Header, Navigation, and Footer
 */
 
@@ -59,6 +59,12 @@
     gap: var(--space-md);
     justify-content: center;
     align-items: center;
+    margin-left: var(--space-lg);
+}
+
+.nav-links .lang-switcher {
+    margin-left: 0;
+    margin-right: 0;
 }
 
 .nav-link {
@@ -167,10 +173,17 @@
 }
 
 .footer-bottom {
-    border-top: 1px solid var(--gray-800);
-    padding-top: var(--space-md);
     text-align: center;
     color: var(--gray-500);
+}
+
+.footer-legal {
+    margin-bottom: var(--space-sm);
+}
+
+.footer-separator {
+    margin: 0 var(--space-sm);
+    color: var(--gray-600);
 }
 
 .footer-credits {
@@ -211,6 +224,7 @@
         transform: translateY(-150%);
         transition: transform 0.3s ease-in-out;
         box-shadow: var(--shadow-md);
+        margin-left: 0;
     }
 
     .nav-links.active {
