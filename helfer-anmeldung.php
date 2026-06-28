@@ -164,6 +164,16 @@ $csrfToken = generateCsrfToken();
             content: " *";
             color: #d32f2f;
         }
+        .name-row {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+        @media (min-width: 600px) {
+            .name-row {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -200,14 +210,15 @@ $csrfToken = generateCsrfToken();
                     <input type="text" name="website" id="website" tabindex="-1" autocomplete="off">
                 </div>
 
-                <div class="form-group">
-                    <label for="vorname" class="required">Vorname</label>
-                    <input type="text" id="vorname" name="vorname" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="nachname" class="required">Nachname</label>
-                    <input type="text" id="nachname" name="nachname" required>
+                <div class="name-row">
+                    <div class="form-group">
+                        <label for="vorname" class="required">Vorname</label>
+                        <input type="text" id="vorname" name="vorname" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="nachname" class="required">Nachname</label>
+                        <input type="text" id="nachname" name="nachname" required>
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -272,10 +283,10 @@ $csrfToken = generateCsrfToken();
                             Equipment (Tische, Zelte, etc.)
                         </label>
                         <label style="align-items:flex-start">
-                            <input type="checkbox" name="beitrag[]" value="sonstiges" style="margin-top:0.2rem">
+                            <input type="checkbox" name="beitrag[]" value="sonstiges" style="margin-top:0.2rem;flex-shrink:0">
                             <span>Sonstige Unterstützung (wir suchen auch über den kompletten Zeitraum hinweg) – bitte gern näher beschreiben:</span>
                         </label>
-                        <textarea id="beitrag_freitext" name="beitrag_freitext" rows="3" style="margin-left:1.625rem"></textarea>
+                        <textarea id="beitrag_freitext" name="beitrag_freitext" rows="3" style="margin-left:calc(18px + 0.5rem);width:calc(100% - 18px - 0.5rem)"></textarea>
                     </div>
                 </div>
 
