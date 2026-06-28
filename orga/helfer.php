@@ -147,8 +147,8 @@ while ($row = $slotStmt->fetch()) {
             border-radius: 4px;
         }
         .inline-form button {
-            padding: 0.25rem 0.5rem;
-            font-size: 0.75rem;
+            padding: 4px 10px;
+            font-size: 0.8rem;
             background: var(--primary);
             color: var(--white);
             border: none;
