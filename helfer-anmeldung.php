@@ -61,13 +61,6 @@ $basePath = '';
             border-radius: var(--radius-lg);
             box-shadow: var(--shadow-md);
         }
-        .helfer-form h2 {
-            color: var(--color-primary);
-            margin-bottom: var(--space-lg);
-            font-size: clamp(2rem, 5vw, 3.5rem);
-            font-weight: 700;
-            line-height: 1.2;
-        }
         .form-group {
             margin-bottom: var(--space-md);
         }
