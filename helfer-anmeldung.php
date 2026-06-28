@@ -178,7 +178,7 @@ $basePath = '';
         <section class="helfer-section">
             <div class="container">
                 <div class="helfer-form">
-                    <h2>Helfer-Anmeldung</h2>
+                    <h2 class="text-center">Helfer-Anmeldung</h2>
 
                     <?php if ($success): ?>
                         <div class="alert alert-success">
