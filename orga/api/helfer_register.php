@@ -175,7 +175,11 @@ try {
 
     $pdo->commit();
 
-    sendHelferEingangsbestaetigung($email, $vorname . ' ' . $nachname);
+    try {
+        sendHelferEingangsbestaetigung($email, $vorname . ' ' . $nachname);
+    } catch (Throwable $e) {
+        error_log('Mail send error: ' . $e->getMessage(), 3, __DIR__ . '/../../storage/logs/php_errors.log');
+    }
 
     header('Location: ../../helfer-anmeldung.php?success=1');
     exit;

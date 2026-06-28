@@ -28,6 +28,14 @@ return [
         'from_name'    => 'ATSV Kirchseeon Marktlauf',
     ],
 
+    // SMTP-Versand (Strato)
+    'smtp_host'      => 'smtp.strato.de',
+    'smtp_port'      => 587,
+    'smtp_user'      => '',  // volle E-Mail-Adresse
+    'smtp_password'  => '',  // Postfach-Passwort
+    'smtp_from'      => '',  // Absender-Adresse (oder leer = smtp_user)
+    'smtp_from_name' => 'ATSV Kirchseeon Marktlauf',
+
     'security' => [
         'login_max_attempts'        => 5,
         'login_max_attempts_per_ip' => 20,

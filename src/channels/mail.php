@@ -1,15 +1,25 @@
 <?php
 /**
- * E-Mail-Versand via mail()
+ * E-Mail-Versand via SMTP (Strato) mit Fallback auf mail()
  */
 
 declare(strict_types=1);
 
 require_once __DIR__ . '/../db.php';
+require_once __DIR__ . '/../mailer.php';
 
-function sendMail(string $to, string $subject, string $body): bool {
+function sendMail(string $to, string $subject, string $textBody, string $htmlBody = ''): bool {
+    $mailer = getSmtpMailer();
+
+    if ($mailer !== null) {
+        $result = $mailer->send($to, $subject, $textBody, $htmlBody);
+        if (!$result) {
+            error_log('SMTP error: ' . $mailer->getLastError(), 3, __DIR__ . '/../../storage/logs/php_errors.log');
+        }
+        return $result;
+    }
+
     $config = getConfig();
-
     $fromAddress = $config['mail']['from_address'] ?? 'noreply@example.com';
     $fromName = $config['mail']['from_name'] ?? 'Marktlauf';
 
@@ -26,9 +36,9 @@ function sendMail(string $to, string $subject, string $body): bool {
         $headerString .= "$key: $value\r\n";
     }
 
-    $subject = '=?UTF-8?B?' . base64_encode($subject) . '?=';
+    $encodedSubject = '=?UTF-8?B?' . base64_encode($subject) . '?=';
 
-    return mail($to, $subject, $body, $headerString);
+    return mail($to, $encodedSubject, $textBody, $headerString);
 }
 
 function sendHelferEingangsbestaetigung(string $to, string $name): bool {
