@@ -79,7 +79,7 @@ $csrfToken = generateCsrfToken();
                 </div>
             </div>
 
-            <button type="submit" class="btn btn-primary">Anmelden</button>
+            <button type="submit" class="btn btn-primary btn-block">Anmelden</button>
         </form>
 
         <script>
