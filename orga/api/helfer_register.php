@@ -75,6 +75,8 @@ $phone = trim($_POST['phone'] ?? '');
 $slots = $_POST['slots'] ?? [];
 $beitrag = $_POST['beitrag'] ?? [];
 $beitragFreitext = trim($_POST['beitrag_freitext'] ?? '');
+$kuchenArt       = trim($_POST['kuchen_art'] ?? '');
+$kuchenNuesse    = trim($_POST['kuchen_nuesse'] ?? '');
 
 if (empty($vorname) || empty($nachname) || empty($email) || empty($phone)) {
     redirectWithError('Bitte fülle alle Pflichtfelder aus.', $accessToken);
@@ -156,7 +158,13 @@ try {
             VALUES (:helfer_id, :typ, :freitext)
         ');
         foreach ($validBeitrag as $typ) {
-            $freitext = ($typ === 'sonstiges' && $beitragFreitext !== '') ? $beitragFreitext : null;
+            if ($typ === 'kuchen') {
+                $freitext = $kuchenArt !== '' ? $kuchenArt . ($kuchenNuesse !== '' && $kuchenNuesse !== 'nein' ? ' | Nüsse: ' . $kuchenNuesse : '') : null;
+            } elseif ($typ === 'sonstiges' && $beitragFreitext !== '') {
+                $freitext = $beitragFreitext;
+            } else {
+                $freitext = null;
+            }
             $beitragStmt->execute([
                 'helfer_id' => $helferId,
                 'typ'       => $typ,
