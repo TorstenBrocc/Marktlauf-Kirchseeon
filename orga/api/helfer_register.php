@@ -159,7 +159,7 @@ try {
         ');
         foreach ($validBeitrag as $typ) {
             if ($typ === 'kuchen') {
-                $freitext = $kuchenArt !== '' ? $kuchenArt . ($kuchenNuesse !== '' && $kuchenNuesse !== 'nein' ? ' | Nüsse: ' . $kuchenNuesse : '') : null;
+                $freitext = $kuchenArt !== '' ? $kuchenArt . ($kuchenNuesse === 'ja' ? ' | enthält Nüsse' : '') : null;
             } elseif ($typ === 'sonstiges' && $beitragFreitext !== '') {
                 $freitext = $beitragFreitext;
             } else {

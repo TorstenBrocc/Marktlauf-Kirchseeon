@@ -167,49 +167,31 @@ $basePath = '';
             grid-template-columns: 1fr;
             gap: var(--space-md);
         }
-        .kuchen-details {
-            margin-left: calc(18px + var(--space-sm));
-            margin-top: var(--space-sm);
-            padding: var(--space-md);
-            background: var(--gray-50);
-            border-radius: var(--radius-md);
+        .kuchen-row {
             display: flex;
-            flex-direction: column;
-            gap: var(--space-md);
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
         }
-        .kuchen-fields {
-            display: flex;
-            gap: var(--space-md);
-        }
-        .kuchen-fields > div {
-            flex: 1;
-        }
-        .kuchen-details label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: var(--space-xs);
-        }
-        .kuchen-details input[type="text"],
-        .kuchen-details select {
-            width: 100%;
+        .kuchen-art-input {
+            width: 180px;
             padding: var(--space-sm);
             border: 1px solid var(--gray-300);
             border-radius: var(--radius-md);
             font-size: var(--text-base);
             font-family: inherit;
-            background: var(--white);
         }
-        .kuchen-details select {
-            cursor: pointer;
+        .kuchen-nuesse-label {
+            display: flex;
+            align-items: center;
+            gap: var(--space-xs);
+            font-weight: normal;
         }
-        .form-warning {
-            background: #fff8e1;
-            border: 1px solid #ffe082;
-            border-radius: var(--radius-md);
-            padding: var(--space-sm) var(--space-md);
-            font-size: var(--text-sm);
-            color: #5d4037;
-            line-height: 1.5;
+        .kuchen-hinweis {
+            font-size: 0.8rem;
+            color: var(--gray-500);
+            margin-left: calc(18px + var(--space-sm));
+            margin-top: var(--space-xs);
         }
         @media (min-width: 600px) {
             .name-row {
@@ -309,34 +291,18 @@ $basePath = '';
                             <label>Was kannst du mitbringen oder beitragen?</label>
                             <p class="form-hint">Optional, aber sehr willkommen!</p>
                             <div class="checkbox-group">
-                                <label>
-                                    <input type="checkbox" name="beitrag[]" value="kuchen" id="kuchen-checkbox">
-                                    Kuchen / Gebäck
-                                </label>
-                                <div class="kuchen-details">
-                                    <div class="kuchen-fields">
-                                        <div>
-                                            <label for="kuchen_art">Art des Kuchens</label>
-                                            <input type="text" id="kuchen_art" name="kuchen_art" placeholder="z.B. Apfelkuchen, Muffins">
-                                        </div>
-                                        <div>
-                                            <label for="kuchen_nuesse">Enthält Nüsse?</label>
-                                            <select id="kuchen_nuesse" name="kuchen_nuesse">
-                                                <option value="">Bitte wählen</option>
-                                                <option value="nein">Nein</option>
-                                                <option value="walnuesse">Ja – Walnüsse</option>
-                                                <option value="haselnuesse">Ja – Haselnüsse</option>
-                                                <option value="mandeln">Ja – Mandeln</option>
-                                                <option value="andere">Ja – Andere Nüsse</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="form-warning">
-                                        ⚠️ Bitte nur durchgebackene Produkte ohne rohe Eier oder ungekühlte Sahne.<br>
-                                        Kuchen mit Sahne bitte gekühlt transportieren.<br>
-                                        Allergene werden am Stand ausgehängt.
-                                    </div>
+                                <div class="kuchen-row">
+                                    <label>
+                                        <input type="checkbox" name="beitrag[]" value="kuchen" id="kuchen-checkbox">
+                                        Kuchen / Gebäck
+                                    </label>
+                                    <input type="text" id="kuchen_art" name="kuchen_art" placeholder="Art des Kuchens" class="kuchen-art-input">
+                                    <label class="kuchen-nuesse-label">
+                                        <input type="checkbox" name="kuchen_nuesse" id="kuchen_nuesse" value="ja">
+                                        enthält Nüsse
+                                    </label>
                                 </div>
+                                <p class="kuchen-hinweis">Bitte nur durchgebackene Produkte ohne rohe Eier oder ungekühlte Sahne. Kuchen mit Sahne gekühlt transportieren. Allergene werden am Stand ausgehängt.</p>
                                 <label>
                                     <input type="checkbox" name="beitrag[]" value="equipment">
                                     Equipment (Tische, Zelte, etc.)
