@@ -48,7 +48,7 @@
     justify-content: flex-start;
     align-items: center;
     background-color: var(--gray-800);
-    background-image: url("../images/hero-bg.jpg"); /* Placeholder */
+    /* background-image: url("../images/hero-bg.jpg"); -- Placeholder, Bild fehlt */
     background-size: cover;
     background-position: center;
     color: var(--white);

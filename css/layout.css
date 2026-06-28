@@ -25,6 +25,7 @@
     display: flex;
     align-items: center;
     gap: var(--space-md);
+    margin-right: var(--space-xl);
 }
 
 .nav-logo {
@@ -59,12 +60,10 @@
     gap: var(--space-md);
     justify-content: center;
     align-items: center;
-    margin-left: var(--space-lg);
 }
 
 .nav-links .lang-switcher {
-    margin-left: 0;
-    margin-right: 0;
+    margin-left: calc(var(--space-md) * -0.5);
 }
 
 .nav-link {
@@ -210,6 +209,10 @@
         display: block;
     }
 
+    .header-logos {
+        margin-right: 0;
+    }
+
     .nav-links {
         position: absolute;
         top: 70px;
@@ -224,6 +227,9 @@
         transform: translateY(-150%);
         transition: transform 0.3s ease-in-out;
         box-shadow: var(--shadow-md);
+    }
+
+    .nav-links .lang-switcher {
         margin-left: 0;
     }
 
