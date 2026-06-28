@@ -159,7 +159,7 @@ while ($row = $slotStmt->fetch()) {
             background: var(--primary-dark);
         }
         .btn-danger {
-            background: var(--error);
+            background-color: #dc3545;
             color: var(--white);
         }
         .btn-danger:hover {
