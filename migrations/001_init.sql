@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS `helfer` (
     `name` VARCHAR(100) NOT NULL,
     `email` VARCHAR(255) NOT NULL,
     `phone` VARCHAR(30) NOT NULL,
-    `status` ENUM('neu', 'bestaetigt') NOT NULL DEFAULT 'neu',
+    `status` ENUM('neu', 'bestaetigt', 'abgelehnt') NOT NULL DEFAULT 'neu',
     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_helfer_uuid` (`uuid`),

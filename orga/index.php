@@ -6,10 +6,15 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/api/_auth.php';
+require_once __DIR__ . '/../src/db.php';
 
 $user = getCurrentUserFromGuard();
 $isAdmin = isAdminFromGuard();
 $csrfToken = generateCsrfToken();
+
+$pdo = getDbConnection();
+$helferCount = (int) $pdo->query('SELECT COUNT(*) FROM helfer')->fetchColumn();
+$helferNeuCount = (int) $pdo->query("SELECT COUNT(*) FROM helfer WHERE status = 'neu'")->fetchColumn();
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -32,7 +37,6 @@ $csrfToken = generateCsrfToken();
                 </li>
                 <li class="nav-item">
                     <a href="helfer.php">Helfer</a>
-                    <span class="badge">Phase 2</span>
                 </li>
                 <li class="nav-item">
                     <a href="sponsoren.php">Sponsoren</a>
@@ -75,9 +79,9 @@ $csrfToken = generateCsrfToken();
             <section class="dashboard-grid">
                 <article class="card">
                     <h3>Helfer-Anmeldungen</h3>
-                    <p class="card-stat">—</p>
-                    <p class="card-label">Anmeldungen eingegangen</p>
-                    <p class="card-note">Orga-Ansicht folgt in Phase 2</p>
+                    <p class="card-stat"><?= $helferCount ?></p>
+                    <p class="card-label">Anmeldungen eingegangen<?= $helferNeuCount > 0 ? " ({$helferNeuCount} neu)" : '' ?></p>
+                    <a href="helfer.php" class="btn btn-small btn-primary" style="margin-top:0.5rem">Zur Übersicht</a>
                 </article>
 
                 <article class="card">
