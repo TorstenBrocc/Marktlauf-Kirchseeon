@@ -334,7 +334,7 @@ while ($row = $slotStmt->fetch()) {
                                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                                             <input type="hidden" name="helfer_id" value="<?= $h['id'] ?>">
                                             <textarea name="notiz" placeholder="Notiz..."><?= htmlspecialchars($h['notiz'] ?? '') ?></textarea>
-                                            <button type="submit" title="Notiz speichern">💾</button>
+                                            <button type="submit" title="Notiz speichern">Speichern</button>
                                         </form>
                                     </td>
                                     <?php if ($isAdmin): ?>
@@ -342,7 +342,7 @@ while ($row = $slotStmt->fetch()) {
                                         <form method="post" action="api/helfer_delete.php" class="inline-form" onsubmit="return confirm('Helfer wirklich löschen?');">
                                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                                             <input type="hidden" name="helfer_id" value="<?= $h['id'] ?>">
-                                            <button type="submit" class="btn-danger" title="Helfer löschen">🗑️</button>
+                                            <button type="submit" class="btn-danger" title="Helfer löschen">Löschen</button>
                                         </form>
                                     </td>
                                     <?php endif; ?>
