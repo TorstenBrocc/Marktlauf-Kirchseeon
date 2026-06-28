@@ -201,8 +201,13 @@ $csrfToken = generateCsrfToken();
                 </div>
 
                 <div class="form-group">
-                    <label for="name" class="required">Name</label>
-                    <input type="text" id="name" name="name" required>
+                    <label for="vorname" class="required">Vorname</label>
+                    <input type="text" id="vorname" name="vorname" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="nachname" class="required">Nachname</label>
+                    <input type="text" id="nachname" name="nachname" required>
                 </div>
 
                 <div class="form-group">
@@ -223,6 +228,14 @@ $csrfToken = generateCsrfToken();
                         <div></div>
                         <div class="timetable-header">Vormittag</div>
                         <div class="timetable-header">Nachmittag</div>
+
+                        <div class="timetable-day">Freitag (Aufbau)</div>
+                        <div class="timetable-cell">
+                            <input type="checkbox" name="slots[]" value="2026-10-09_vormittag" id="slot_fr_vm">
+                        </div>
+                        <div class="timetable-cell">
+                            <input type="checkbox" name="slots[]" value="2026-10-09_nachmittag" id="slot_fr_nm">
+                        </div>
 
                         <div class="timetable-day">Samstag (Aufbau)</div>
                         <div class="timetable-cell">
@@ -258,16 +271,12 @@ $csrfToken = generateCsrfToken();
                             <input type="checkbox" name="beitrag[]" value="equipment">
                             Equipment (Tische, Zelte, etc.)
                         </label>
-                        <label>
-                            <input type="checkbox" name="beitrag[]" value="sonstiges">
-                            Sonstiges
+                        <label style="align-items:flex-start">
+                            <input type="checkbox" name="beitrag[]" value="sonstiges" style="margin-top:0.2rem">
+                            <span>Sonstige Unterstützung (wir suchen auch über den kompletten Zeitraum hinweg) – bitte gern näher beschreiben:</span>
                         </label>
+                        <textarea id="beitrag_freitext" name="beitrag_freitext" rows="3" style="margin-left:1.625rem"></textarea>
                     </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="beitrag_freitext">Falls Sonstiges, was genau?</label>
-                    <textarea id="beitrag_freitext" name="beitrag_freitext" rows="3"></textarea>
                 </div>
 
                 <button type="submit" class="btn-submit">Anmeldung absenden</button>
@@ -276,7 +285,7 @@ $csrfToken = generateCsrfToken();
         </div>
     </main>
 
-    <footer>
+    <footer style="text-align:center">
         <p><a href="impressum.html">Impressum & Datenschutz</a></p>
     </footer>
 </body>

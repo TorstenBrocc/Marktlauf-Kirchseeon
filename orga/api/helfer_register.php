@@ -68,14 +68,15 @@ if (isRegisterRateLimited()) {
     redirectWithError('Zu viele Anmeldungen von dieser Adresse. Bitte später erneut versuchen.', $accessToken);
 }
 
-$name = trim($_POST['name'] ?? '');
+$vorname = trim($_POST['vorname'] ?? '');
+$nachname = trim($_POST['nachname'] ?? '');
 $email = trim($_POST['email'] ?? '');
 $phone = trim($_POST['phone'] ?? '');
 $slots = $_POST['slots'] ?? [];
 $beitrag = $_POST['beitrag'] ?? [];
 $beitragFreitext = trim($_POST['beitrag_freitext'] ?? '');
 
-if (empty($name) || empty($email) || empty($phone)) {
+if (empty($vorname) || empty($nachname) || empty($email) || empty($phone)) {
     redirectWithError('Bitte fülle alle Pflichtfelder aus.', $accessToken);
 }
 
@@ -83,9 +84,11 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     redirectWithError('Bitte gib eine gültige E-Mail-Adresse ein.', $accessToken);
 }
 
-if (strlen($name) > 100 || strlen($email) > 255 || strlen($phone) > 30) {
+if (strlen($vorname) > 50 || strlen($nachname) > 50 || strlen($email) > 255 || strlen($phone) > 30) {
     redirectWithError('Eingabe zu lang.', $accessToken);
 }
+
+$name = $vorname . ' ' . $nachname;
 
 if (!is_array($slots)) {
     $slots = [];
