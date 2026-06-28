@@ -146,13 +146,74 @@ $basePath = '';
             border-radius: var(--radius-md);
             margin-bottom: var(--space-lg);
         }
-        .alert-success {
-            background: #e8f5e9;
-            color: #2e7d32;
-        }
         .alert-error {
             background: #fdecea;
             color: #d32f2f;
+        }
+        .success-section {
+            padding: 12vh 0;
+            text-align: center;
+            background: #f0faf0;
+        }
+        .success-checkmark {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto var(--space-lg);
+        }
+        .success-checkmark circle {
+            fill: none;
+            stroke: var(--color-primary);
+            stroke-width: 3;
+            stroke-dasharray: 166;
+            stroke-dashoffset: 166;
+            animation: stroke-circle 0.6s ease-out forwards;
+        }
+        .success-checkmark path {
+            fill: none;
+            stroke: var(--color-primary);
+            stroke-width: 3;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            stroke-dasharray: 48;
+            stroke-dashoffset: 48;
+            animation: stroke-check 0.3s ease-out 0.4s forwards;
+        }
+        @keyframes stroke-circle {
+            to { stroke-dashoffset: 0; }
+        }
+        @keyframes stroke-check {
+            to { stroke-dashoffset: 0; }
+        }
+        .success-headline {
+            font-size: 2.8rem;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: var(--space-md);
+            line-height: 1.2;
+        }
+        .success-subline {
+            color: var(--gray-600);
+            max-width: 480px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        .success-backlink {
+            display: inline-block;
+            margin-top: 2rem;
+            color: var(--gray-500);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .success-backlink:hover {
+            color: var(--color-primary);
+        }
+        @media (max-width: 480px) {
+            .success-headline {
+                font-size: 2rem;
+            }
+            .success-section {
+                padding: 8vh var(--space-md);
+            }
         }
         .hp-field {
             position: absolute;
@@ -212,24 +273,31 @@ $basePath = '';
     <?php require_once __DIR__ . '/src/layout/header.php'; ?>
 
     <main>
+        <?php if ($success): ?>
+        <section class="success-section">
+            <div class="container">
+                <svg class="success-checkmark" viewBox="0 0 52 52">
+                    <circle cx="26" cy="26" r="24"/>
+                    <path d="M14 27l7 7 16-16"/>
+                </svg>
+                <h1 class="success-headline">Du bist dabei!</h1>
+                <p class="success-subline">Vielen Dank! Wir melden uns in Kürze mit allen Details per E-Mail.</p>
+                <a href="index.html" class="success-backlink">← Zurück zur Startseite</a>
+            </div>
+        </section>
+        <?php else: ?>
         <section class="helfer-section">
             <div class="container">
                 <div class="helfer-form">
                     <h2 class="text-center">Helfer-Anmeldung</h2>
 
-                    <?php if ($success): ?>
-                        <div class="alert alert-success">
-                            <strong>Vielen Dank!</strong> Deine Anmeldung ist eingegangen. Du erhältst in Kürze eine Bestätigungs-E-Mail.
-                        </div>
-                    <?php endif; ?>
-
                     <?php if ($error): ?>
                         <div class="alert alert-error"><?= htmlspecialchars($error) ?></div>
                     <?php endif; ?>
 
-                    <?php if (!$tokenValid && !$success): ?>
+                    <?php if (!$tokenValid): ?>
                         <p>Die Helfer-Anmeldung ist derzeit nicht verfügbar.</p>
-                    <?php elseif (!$success): ?>
+                    <?php else: ?>
                     <form method="post" action="orga/api/helfer_register.php">
                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                         <input type="hidden" name="access_token" value="<?= htmlspecialchars($token) ?>">
@@ -333,6 +401,7 @@ $basePath = '';
                 </div>
             </div>
         </section>
+        <?php endif; ?>
     </main>
 
     <?php require_once __DIR__ . '/src/layout/footer.php'; ?>
