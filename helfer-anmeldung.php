@@ -177,8 +177,12 @@ $basePath = '';
             flex-direction: column;
             gap: var(--space-md);
         }
-        .kuchen-details.hidden {
-            display: none;
+        .kuchen-fields {
+            display: flex;
+            gap: var(--space-md);
+        }
+        .kuchen-fields > div {
+            flex: 1;
         }
         .kuchen-details label {
             display: block;
@@ -309,21 +313,23 @@ $basePath = '';
                                     <input type="checkbox" name="beitrag[]" value="kuchen" id="kuchen-checkbox">
                                     Kuchen / Gebäck
                                 </label>
-                                <div class="kuchen-details hidden" id="kuchen-details">
-                                    <div>
-                                        <label for="kuchen_art">Art des Kuchens</label>
-                                        <input type="text" id="kuchen_art" name="kuchen_art" placeholder="z.B. Apfelkuchen, Muffins">
-                                    </div>
-                                    <div>
-                                        <label for="kuchen_nuesse">Enthält Nüsse?</label>
-                                        <select id="kuchen_nuesse" name="kuchen_nuesse">
-                                            <option value="">Bitte wählen</option>
-                                            <option value="nein">Nein</option>
-                                            <option value="walnuesse">Ja – Walnüsse</option>
-                                            <option value="haselnuesse">Ja – Haselnüsse</option>
-                                            <option value="mandeln">Ja – Mandeln</option>
-                                            <option value="andere">Ja – Andere Nüsse</option>
-                                        </select>
+                                <div class="kuchen-details">
+                                    <div class="kuchen-fields">
+                                        <div>
+                                            <label for="kuchen_art">Art des Kuchens</label>
+                                            <input type="text" id="kuchen_art" name="kuchen_art" placeholder="z.B. Apfelkuchen, Muffins">
+                                        </div>
+                                        <div>
+                                            <label for="kuchen_nuesse">Enthält Nüsse?</label>
+                                            <select id="kuchen_nuesse" name="kuchen_nuesse">
+                                                <option value="">Bitte wählen</option>
+                                                <option value="nein">Nein</option>
+                                                <option value="walnuesse">Ja – Walnüsse</option>
+                                                <option value="haselnuesse">Ja – Haselnüsse</option>
+                                                <option value="mandeln">Ja – Mandeln</option>
+                                                <option value="andere">Ja – Andere Nüsse</option>
+                                            </select>
+                                        </div>
                                     </div>
                                     <div class="form-warning">
                                         ⚠️ Bitte nur durchgebackene Produkte ohne rohe Eier oder ungekühlte Sahne.<br>
@@ -352,17 +358,5 @@ $basePath = '';
     </main>
 
     <?php require_once __DIR__ . '/src/layout/footer.php'; ?>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const kuchenCheckbox = document.getElementById('kuchen-checkbox');
-            const kuchenDetails = document.getElementById('kuchen-details');
-
-            if (kuchenCheckbox && kuchenDetails) {
-                kuchenCheckbox.addEventListener('change', function() {
-                    kuchenDetails.classList.toggle('hidden', !this.checked);
-                });
-            }
-        });
-    </script>
 </body>
 </html>
