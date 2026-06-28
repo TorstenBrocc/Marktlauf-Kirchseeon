@@ -106,7 +106,7 @@ foreach ($slots as $slot) {
     }
 }
 
-$validBeitragTypes = ['kuchen', 'getraenke', 'equipment', 'sonstiges'];
+$validBeitragTypes = ['kuchen', 'equipment', 'sonstiges'];
 $validBeitrag = array_filter($beitrag, fn($b) => in_array($b, $validBeitragTypes, true));
 
 $uuid = sprintf(

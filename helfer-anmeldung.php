@@ -61,7 +61,7 @@ $basePath = '';
             border-radius: var(--radius-lg);
             box-shadow: var(--shadow-md);
         }
-        .helfer-form h1 {
+        .helfer-form h2 {
             color: var(--color-primary);
             margin-bottom: var(--space-lg);
             font-size: clamp(2rem, 5vw, 3.5rem);
@@ -185,7 +185,7 @@ $basePath = '';
         <section class="helfer-section">
             <div class="container">
                 <div class="helfer-form">
-                    <h1>Helfer-Anmeldung</h1>
+                    <h2>Helfer-Anmeldung</h2>
 
                     <?php if ($success): ?>
                         <div class="alert alert-success">
@@ -272,10 +272,6 @@ $basePath = '';
                                 <label>
                                     <input type="checkbox" name="beitrag[]" value="kuchen">
                                     Kuchen / Gebäck
-                                </label>
-                                <label>
-                                    <input type="checkbox" name="beitrag[]" value="getraenke">
-                                    Getränke
                                 </label>
                                 <label>
                                     <input type="checkbox" name="beitrag[]" value="equipment">
