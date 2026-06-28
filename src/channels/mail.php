@@ -32,25 +32,21 @@ function sendMail(string $to, string $subject, string $body): bool {
 }
 
 function sendHelferEingangsbestaetigung(string $to, string $name): bool {
-    $config = getConfig();
-    $appUrl = $config['app']['url'] ?? 'https://atsv-kirchseeon-marktlauf.de';
-
-    $subject = 'Anmeldung als Helfer eingegangen';
+    $subject = '✅ Du bist dabei – Marktlauf Kirchseeon';
     $body = <<<TEXT
 Hallo {$name},
 
-vielen Dank für deine Anmeldung als Helfer beim ATSV Kirchseeon Marktlauf!
+🎉 Deine Anmeldung als Helfer ist eingegangen!
 
-Deine Anmeldung ist bei uns eingegangen. Das Orga-Team wird sich bei dir melden, sobald wir die Einsatzplanung abgeschlossen haben.
+Das Orga-Team meldet sich, sobald die Einsatzplanung abgeschlossen ist – du erhältst dann alle Details.
 
-Bei Fragen erreichst du uns unter: info@atsv-kirchseeon-marktlauf.de
+📧 Fragen? info@atsv-kirchseeon-marktlauf.de
 
 Sportliche Grüße
 Dein Marktlauf-Team
-
---
+──────────────────────────
 ATSV Kirchseeon Marktlauf
-{$appUrl}
+https://atsv-kirchseeon-marktlauf.de
 TEXT;
 
     return sendMail($to, $subject, $body);
