@@ -25,7 +25,7 @@ function getDbConnection(): PDO {
         $db['host'],
         $db['port'],
         $db['name'],
-        $db['charset']
+        $db['charset'] ?? 'utf8mb4'
     );
 
     $pdo = new PDO($dsn, $db['user'], $db['password'], [
