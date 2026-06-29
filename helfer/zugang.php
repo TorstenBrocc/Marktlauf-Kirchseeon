@@ -73,15 +73,20 @@ $basePath = '../';
         .zugang-page {
             min-height: 100vh;
             background: var(--gray-100);
+            display: flex;
+            flex-direction: column;
+        }
+        .zugang-page main {
+            flex: 1;
         }
         .zugang-content {
-            max-width: 800px;
+            max-width: 1000px;
             margin: 0 auto;
             padding: var(--space-xl) var(--space-md);
         }
         .zugang-header {
             text-align: center;
-            margin-bottom: var(--space-xl);
+            margin-bottom: var(--space-lg);
         }
         .zugang-header h1 {
             font-size: 2rem;
@@ -90,23 +95,39 @@ $basePath = '../';
         .zugang-header p {
             color: var(--gray-600);
         }
+        .zugang-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1rem;
+        }
         .zugang-section {
             background: var(--white);
             border-radius: var(--radius-lg);
             box-shadow: var(--shadow-md);
-            padding: var(--space-lg);
-            margin-bottom: var(--space-lg);
+            padding: var(--space-md);
         }
         .zugang-section h2 {
-            font-size: 1.25rem;
-            margin-bottom: var(--space-md);
-            padding-bottom: var(--space-sm);
+            font-size: 1.1rem;
+            margin-bottom: var(--space-sm);
+            padding-bottom: var(--space-xs);
             border-bottom: 2px solid var(--gray-200);
+        }
+        .zugang-page .main-footer {
+            background: var(--gray-900);
+            color: var(--gray-400);
+            padding: var(--space-lg) 0;
+            margin-top: auto;
+        }
+        .zugang-page .main-footer a {
+            color: var(--gray-300);
+        }
+        .zugang-page .main-footer a:hover {
+            color: var(--white);
         }
         .info-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: var(--space-md);
+            grid-template-columns: 1fr 1fr;
+            gap: var(--space-sm);
         }
         .info-item {
             display: flex;
@@ -155,10 +176,17 @@ $basePath = '../';
         }
         .placeholder-notice {
             text-align: center;
-            padding: var(--space-lg);
+            padding: var(--space-md);
             color: var(--gray-500);
             background: var(--gray-50);
             border-radius: var(--radius-md);
+            font-size: var(--text-sm);
+        }
+        .placeholder-notice p {
+            margin: 0 0 var(--space-xs) 0;
+        }
+        .placeholder-notice p:last-child {
+            margin-bottom: 0;
         }
         .btn-disabled {
             display: inline-block;
@@ -170,13 +198,16 @@ $basePath = '../';
             font-size: var(--text-sm);
         }
         .contact-grid {
-            display: grid;
-            gap: var(--space-md);
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-xs);
+            font-size: var(--text-sm);
         }
         .contact-item {
             display: flex;
+            flex-wrap: wrap;
             align-items: center;
-            gap: var(--space-sm);
+            gap: var(--space-xs);
         }
         .contact-item a {
             color: var(--color-primary);
@@ -219,6 +250,7 @@ $basePath = '../';
                 <p>Hier findest du alle Infos zu deiner Helfer-Anmeldung beim Marktlauf Kirchseeon.</p>
             </div>
 
+            <div class="zugang-grid">
             <section class="zugang-section">
                 <h2>Meine Anmeldung</h2>
                 <div class="info-grid">
@@ -274,7 +306,7 @@ $basePath = '../';
 
             <section class="zugang-section">
                 <h2>Dateien</h2>
-                <p style="color: var(--gray-600); margin-bottom: var(--space-md);">Wichtige Dokumente und Infomaterial zum Download.</p>
+                <p style="color: var(--gray-600); font-size: var(--text-sm); margin-bottom: var(--space-sm);">Wichtige Dokumente und Infomaterial zum Download.</p>
                 <span class="btn-disabled">Downloads folgen in Kürze</span>
             </section>
 
@@ -299,6 +331,7 @@ $basePath = '../';
                     <?php endif; ?>
                 </div>
             </section>
+            </div>
         </div>
         <?php endif; ?>
     </main>
