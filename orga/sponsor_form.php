@@ -20,6 +20,7 @@ $sponsorId = (int) ($_GET['id'] ?? 0);
 $isEdit = $sponsorId > 0;
 $sponsor = null;
 $aufgaben = [];
+$ansprechpartner = [];
 
 if ($isEdit) {
     $pdo = getDbConnection();
@@ -37,6 +38,14 @@ if ($isEdit) {
     $aufgabenStmt = $pdo->prepare('SELECT * FROM sponsor_aufgaben WHERE sponsor_id = :id ORDER BY erledigt ASC, created_at DESC');
     $aufgabenStmt->execute(['id' => $sponsorId]);
     $aufgaben = $aufgabenStmt->fetchAll();
+
+    try {
+        $apStmt = $pdo->prepare('SELECT * FROM sponsor_ansprechpartner WHERE sponsor_id = :id ORDER BY id ASC');
+        $apStmt->execute(['id' => $sponsorId]);
+        $ansprechpartner = $apStmt->fetchAll();
+    } catch (PDOException $e) {
+        // Table may not exist yet
+    }
 }
 
 $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
@@ -169,6 +178,86 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
         .btn-danger:hover {
             background: #b71c1c;
         }
+        .ap-row {
+            display: grid;
+            grid-template-columns: 100px 1fr 1fr 1fr 1fr 40px;
+            gap: 0.5rem;
+            align-items: end;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .ap-row:last-of-type {
+            border-bottom: none;
+        }
+        .ap-row input, .ap-row select {
+            padding: 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 0.875rem;
+        }
+        .ap-row label {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            margin-bottom: 0.25rem;
+            display: block;
+        }
+        .ap-remove {
+            background: var(--error-bg);
+            color: var(--error);
+            border: none;
+            border-radius: 4px;
+            width: 32px;
+            height: 32px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-bottom: 0.25rem;
+        }
+        .ap-remove:hover {
+            background: var(--error);
+            color: white;
+        }
+        .ap-remove:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+        .btn-add-ap {
+            margin-top: 0.5rem;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            background: var(--bg);
+            border: 1px dashed var(--border);
+            border-radius: 4px;
+            cursor: pointer;
+            color: var(--text-light);
+        }
+        .btn-add-ap:hover {
+            background: var(--border);
+            color: var(--text);
+        }
+        .kein-kontakt-details {
+            display: none;
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #fff8f8;
+            border-radius: 4px;
+            border: 1px solid #f5c6cb;
+        }
+        .kein-kontakt-details.visible {
+            display: block;
+        }
+        @media (max-width: 900px) {
+            .ap-row {
+                grid-template-columns: 1fr 1fr;
+            }
+            .ap-row > div:nth-child(5) {
+                grid-column: 1 / -1;
+            }
+            .ap-row > button {
+                grid-column: 2;
+                justify-self: end;
+            }
+        }
     </style>
 </head>
 <body>
@@ -231,9 +320,18 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
 
             <?php if ($isEdit && $sponsor['kein_kontakt']): ?>
                 <div class="kein-kontakt-notice">
-                    <strong>Kein Kontakt</strong> – Dieser Sponsor ist als "Kein Kontakt" markiert.
+                    <strong>Kein Kontakt mehr erwünscht</strong>
+                    <?php if ($sponsor['kein_kontakt_datum']): ?>
+                        – <?= date('d.m.Y', strtotime($sponsor['kein_kontakt_datum'])) ?>
+                    <?php endif; ?>
+                    <?php if ($sponsor['kein_kontakt_wer']): ?>
+                        (<?= htmlspecialchars($sponsor['kein_kontakt_wer']) ?>)
+                    <?php endif; ?>
+                    <?php if ($sponsor['kein_kontakt_grund']): ?>
+                        <br><small><?= nl2br(htmlspecialchars($sponsor['kein_kontakt_grund'])) ?></small>
+                    <?php endif; ?>
                     <?php if ($isAdmin): ?>
-                        <form method="post" action="api/sponsor_crud.php" style="display:inline">
+                        <form method="post" action="api/sponsor_crud.php" style="display:inline; margin-left:1rem;">
                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                             <input type="hidden" name="action" value="kein_kontakt_remove">
                             <input type="hidden" name="sponsor_id" value="<?= $sponsorId ?>">
@@ -259,19 +357,75 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                             <input type="text" id="firma" name="firma" required
                                    value="<?= htmlspecialchars($sponsor['firma'] ?? '') ?>">
                         </div>
+                    </div>
 
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="ansprechpartner">Ansprechpartner</label>
-                                <input type="text" id="ansprechpartner" name="ansprechpartner"
-                                       value="<?= htmlspecialchars($sponsor['ansprechpartner'] ?? '') ?>">
+                    <div class="form-card">
+                        <h2>Ansprechpartner</h2>
+
+                        <div id="ap-container">
+                            <?php if (empty($ansprechpartner)): ?>
+                            <div class="ap-row" data-ap-row>
+                                <div>
+                                    <label>Anrede</label>
+                                    <select name="ap_anrede[]">
+                                        <option value="">–</option>
+                                        <option value="Herr">Herr</option>
+                                        <option value="Frau">Frau</option>
+                                        <option value="Divers">Divers</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label>Vorname</label>
+                                    <input type="text" name="ap_vorname[]">
+                                </div>
+                                <div>
+                                    <label>Nachname</label>
+                                    <input type="text" name="ap_nachname[]">
+                                </div>
+                                <div>
+                                    <label>Funktion</label>
+                                    <input type="text" name="ap_funktion[]">
+                                </div>
+                                <div>
+                                    <label>E-Mail</label>
+                                    <input type="email" name="ap_email[]">
+                                </div>
+                                <button type="button" class="ap-remove" onclick="removeApRow(this)" disabled title="Löschen">×</button>
                             </div>
-                            <div class="form-group">
-                                <label for="email">E-Mail</label>
-                                <input type="email" id="email" name="email"
-                                       value="<?= htmlspecialchars($sponsor['email'] ?? '') ?>">
-                            </div>
+                            <?php else: ?>
+                                <?php foreach ($ansprechpartner as $i => $ap): ?>
+                                <div class="ap-row" data-ap-row>
+                                    <div>
+                                        <label>Anrede</label>
+                                        <select name="ap_anrede[]">
+                                            <option value="">–</option>
+                                            <option value="Herr" <?= $ap['anrede'] === 'Herr' ? 'selected' : '' ?>>Herr</option>
+                                            <option value="Frau" <?= $ap['anrede'] === 'Frau' ? 'selected' : '' ?>>Frau</option>
+                                            <option value="Divers" <?= $ap['anrede'] === 'Divers' ? 'selected' : '' ?>>Divers</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label>Vorname</label>
+                                        <input type="text" name="ap_vorname[]" value="<?= htmlspecialchars($ap['vorname']) ?>">
+                                    </div>
+                                    <div>
+                                        <label>Nachname</label>
+                                        <input type="text" name="ap_nachname[]" value="<?= htmlspecialchars($ap['nachname']) ?>">
+                                    </div>
+                                    <div>
+                                        <label>Funktion</label>
+                                        <input type="text" name="ap_funktion[]" value="<?= htmlspecialchars($ap['funktion']) ?>">
+                                    </div>
+                                    <div>
+                                        <label>E-Mail</label>
+                                        <input type="email" name="ap_email[]" value="<?= htmlspecialchars($ap['email']) ?>">
+                                    </div>
+                                    <button type="button" class="ap-remove" onclick="removeApRow(this)" <?= count($ansprechpartner) <= 1 ? 'disabled' : '' ?> title="Löschen">×</button>
+                                </div>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
                         </div>
+                        <button type="button" class="btn-add-ap" onclick="addApRow()">+ Weiteren Ansprechpartner hinzufügen</button>
                     </div>
 
                     <div class="form-card">
@@ -281,10 +435,11 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                             <div class="form-group">
                                 <label for="paket">Paket</label>
                                 <select id="paket" name="paket">
-                                    <option value="">– Kein Paket –</option>
-                                    <option value="bronze" <?= ($sponsor['paket'] ?? '') === 'bronze' ? 'selected' : '' ?>>Bronze</option>
-                                    <option value="silber" <?= ($sponsor['paket'] ?? '') === 'silber' ? 'selected' : '' ?>>Silber</option>
+                                    <option value="hauptsponsor" <?= ($sponsor['paket'] ?? '') === 'hauptsponsor' ? 'selected' : '' ?>>Hauptsponsor</option>
                                     <option value="gold" <?= ($sponsor['paket'] ?? '') === 'gold' ? 'selected' : '' ?>>Gold</option>
+                                    <option value="silber" <?= ($sponsor['paket'] ?? '') === 'silber' ? 'selected' : '' ?>>Silber</option>
+                                    <option value="bronze" <?= ($sponsor['paket'] ?? '') === 'bronze' ? 'selected' : '' ?>>Bronze</option>
+                                    <option value="" <?= ($sponsor['paket'] ?? '') === '' || ($sponsor['paket'] ?? null) === null ? 'selected' : '' ?>>– Kein Paket –</option>
                                 </select>
                             </div>
                             <div class="form-group">
@@ -324,11 +479,30 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                             <div class="checkbox-single">
                                 <input type="checkbox" id="kein_kontakt" name="kein_kontakt" value="1"
                                        <?= ($sponsor['kein_kontakt'] ?? 0) ? 'checked' : '' ?>
-                                       <?= ($sponsor['kein_kontakt'] ?? 0) && !$isAdmin ? 'disabled' : '' ?>>
-                                <label for="kein_kontakt">Kein Kontakt</label>
+                                       <?= ($sponsor['kein_kontakt'] ?? 0) && !$isAdmin ? 'disabled' : '' ?>
+                                       onchange="toggleKeinKontaktDetails()">
+                                <label for="kein_kontakt">Kein Kontakt mehr erwünscht</label>
                                 <?php if (($sponsor['kein_kontakt'] ?? 0) && !$isAdmin): ?>
                                     <span class="admin-only">(Nur Admin kann dies zurücknehmen)</span>
                                 <?php endif; ?>
+                            </div>
+                            <div id="kein-kontakt-details" class="kein-kontakt-details <?= ($sponsor['kein_kontakt'] ?? 0) ? 'visible' : '' ?>">
+                                <div class="form-group">
+                                    <label for="kein_kontakt_grund">Grund</label>
+                                    <textarea id="kein_kontakt_grund" name="kein_kontakt_grund" rows="2"><?= htmlspecialchars($sponsor['kein_kontakt_grund'] ?? '') ?></textarea>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="kein_kontakt_wer">Festgestellt von</label>
+                                        <input type="text" id="kein_kontakt_wer" name="kein_kontakt_wer"
+                                               value="<?= htmlspecialchars($sponsor['kein_kontakt_wer'] ?? $user['name']) ?>">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="kein_kontakt_datum">Datum</label>
+                                        <input type="date" id="kein_kontakt_datum" name="kein_kontakt_datum"
+                                               value="<?= $sponsor['kein_kontakt_datum'] ?? date('Y-m-d') ?>">
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -398,5 +572,71 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
             </div>
         </main>
     </div>
+
+    <script>
+    function addApRow() {
+        var container = document.getElementById('ap-container');
+        var template = `
+            <div class="ap-row" data-ap-row>
+                <div>
+                    <label>Anrede</label>
+                    <select name="ap_anrede[]">
+                        <option value="">–</option>
+                        <option value="Herr">Herr</option>
+                        <option value="Frau">Frau</option>
+                        <option value="Divers">Divers</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Vorname</label>
+                    <input type="text" name="ap_vorname[]">
+                </div>
+                <div>
+                    <label>Nachname</label>
+                    <input type="text" name="ap_nachname[]">
+                </div>
+                <div>
+                    <label>Funktion</label>
+                    <input type="text" name="ap_funktion[]">
+                </div>
+                <div>
+                    <label>E-Mail</label>
+                    <input type="email" name="ap_email[]">
+                </div>
+                <button type="button" class="ap-remove" onclick="removeApRow(this)" title="Löschen">×</button>
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', template);
+        updateRemoveButtons();
+    }
+
+    function removeApRow(btn) {
+        var row = btn.closest('[data-ap-row]');
+        row.remove();
+        updateRemoveButtons();
+    }
+
+    function updateRemoveButtons() {
+        var rows = document.querySelectorAll('[data-ap-row]');
+        rows.forEach(function(row) {
+            var btn = row.querySelector('.ap-remove');
+            btn.disabled = rows.length <= 1;
+        });
+    }
+
+    function toggleKeinKontaktDetails() {
+        var checkbox = document.getElementById('kein_kontakt');
+        var details = document.getElementById('kein-kontakt-details');
+        if (checkbox.checked) {
+            details.classList.add('visible');
+        } else {
+            details.classList.remove('visible');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        updateRemoveButtons();
+    });
+    </script>
 </body>
 </html>

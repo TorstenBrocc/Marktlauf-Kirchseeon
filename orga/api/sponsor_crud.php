@@ -44,6 +44,42 @@ if ($action === 'kein_kontakt_remove' && !$isAdmin) {
     exit;
 }
 
+function saveAnsprechpartner(PDO $pdo, int $sponsorId, array $post): void {
+    $pdo->prepare('DELETE FROM sponsor_ansprechpartner WHERE sponsor_id = :id')->execute(['id' => $sponsorId]);
+
+    $anreden = $post['ap_anrede'] ?? [];
+    $vornamen = $post['ap_vorname'] ?? [];
+    $nachnamen = $post['ap_nachname'] ?? [];
+    $funktionen = $post['ap_funktion'] ?? [];
+    $emails = $post['ap_email'] ?? [];
+
+    if (!is_array($anreden)) return;
+
+    $stmt = $pdo->prepare('
+        INSERT INTO sponsor_ansprechpartner (sponsor_id, anrede, vorname, nachname, funktion, email)
+        VALUES (:sponsor_id, :anrede, :vorname, :nachname, :funktion, :email)
+    ');
+
+    for ($i = 0; $i < count($anreden); $i++) {
+        $vorname = trim($vornamen[$i] ?? '');
+        $nachname = trim($nachnamen[$i] ?? '');
+        $email = trim($emails[$i] ?? '');
+
+        if ($vorname === '' && $nachname === '' && $email === '') {
+            continue;
+        }
+
+        $stmt->execute([
+            'sponsor_id' => $sponsorId,
+            'anrede'     => $anreden[$i] ?? '',
+            'vorname'    => $vorname,
+            'nachname'   => $nachname,
+            'funktion'   => trim($funktionen[$i] ?? ''),
+            'email'      => $email,
+        ]);
+    }
+}
+
 try {
     $pdo = getDbConnection();
 
@@ -56,21 +92,37 @@ try {
                 exit;
             }
 
+            $keinKontakt = isset($_POST['kein_kontakt']) ? 1 : 0;
+            $keinKontaktDatum = $_POST['kein_kontakt_datum'] ?? '';
+            if ($keinKontakt && empty($keinKontaktDatum)) {
+                $keinKontaktDatum = date('Y-m-d');
+            }
+
             $stmt = $pdo->prepare('
-                INSERT INTO sponsors (firma, ansprechpartner, email, paket, summe, status, kein_kontakt, notizen, wiedervorlage)
-                VALUES (:firma, :ansprechpartner, :email, :paket, :summe, :status, :kein_kontakt, :notizen, :wiedervorlage)
+                INSERT INTO sponsors (firma, paket, summe, status, kein_kontakt, kein_kontakt_grund, kein_kontakt_wer, kein_kontakt_datum, notizen, wiedervorlage)
+                VALUES (:firma, :paket, :summe, :status, :kein_kontakt, :kein_kontakt_grund, :kein_kontakt_wer, :kein_kontakt_datum, :notizen, :wiedervorlage)
             ');
             $stmt->execute([
-                'firma'           => $firma,
-                'ansprechpartner' => trim($_POST['ansprechpartner'] ?? '') ?: null,
-                'email'           => trim($_POST['email'] ?? '') ?: null,
-                'paket'           => $_POST['paket'] ?: null,
-                'summe'           => (float) ($_POST['summe'] ?? 0) ?: null,
-                'status'          => $_POST['status'] ?? 'angefragt',
-                'kein_kontakt'    => isset($_POST['kein_kontakt']) ? 1 : 0,
-                'notizen'         => trim($_POST['notizen'] ?? '') ?: null,
-                'wiedervorlage'   => $_POST['wiedervorlage'] ?: null,
+                'firma'              => $firma,
+                'paket'              => $_POST['paket'] ?: null,
+                'summe'              => (float) ($_POST['summe'] ?? 0) ?: null,
+                'status'             => $_POST['status'] ?? 'angefragt',
+                'kein_kontakt'       => $keinKontakt,
+                'kein_kontakt_grund' => $keinKontakt ? (trim($_POST['kein_kontakt_grund'] ?? '') ?: null) : null,
+                'kein_kontakt_wer'   => $keinKontakt ? (trim($_POST['kein_kontakt_wer'] ?? '') ?: null) : null,
+                'kein_kontakt_datum' => $keinKontakt ? ($keinKontaktDatum ?: null) : null,
+                'notizen'            => trim($_POST['notizen'] ?? '') ?: null,
+                'wiedervorlage'      => $_POST['wiedervorlage'] ?: null,
             ]);
+
+            $newSponsorId = (int) $pdo->lastInsertId();
+
+            try {
+                saveAnsprechpartner($pdo, $newSponsorId, $_POST);
+            } catch (PDOException $e) {
+                // Table may not exist yet
+            }
+
             $_SESSION['flash_success'] = 'Sponsor angelegt.';
             header('Location: ../sponsoren.php');
             exit;
@@ -100,37 +152,63 @@ try {
             }
 
             $keinKontakt = $sponsor['kein_kontakt'];
+            $keinKontaktGrund = null;
+            $keinKontaktWer = null;
+            $keinKontaktDatum = null;
+
             if (isset($_POST['kein_kontakt'])) {
                 $keinKontakt = 1;
+                $keinKontaktGrund = trim($_POST['kein_kontakt_grund'] ?? '') ?: null;
+                $keinKontaktWer = trim($_POST['kein_kontakt_wer'] ?? '') ?: null;
+                $keinKontaktDatum = $_POST['kein_kontakt_datum'] ?? '';
+                if (empty($keinKontaktDatum)) {
+                    $keinKontaktDatum = date('Y-m-d');
+                }
             } elseif ($isAdmin) {
                 $keinKontakt = 0;
+            } else {
+                $existingFull = $pdo->prepare('SELECT kein_kontakt_grund, kein_kontakt_wer, kein_kontakt_datum FROM sponsors WHERE id = :id');
+                $existingFull->execute(['id' => $sponsorId]);
+                $full = $existingFull->fetch();
+                $keinKontaktGrund = $full['kein_kontakt_grund'];
+                $keinKontaktWer = $full['kein_kontakt_wer'];
+                $keinKontaktDatum = $full['kein_kontakt_datum'];
             }
 
             $stmt = $pdo->prepare('
                 UPDATE sponsors SET
                     firma = :firma,
-                    ansprechpartner = :ansprechpartner,
-                    email = :email,
                     paket = :paket,
                     summe = :summe,
                     status = :status,
                     kein_kontakt = :kein_kontakt,
+                    kein_kontakt_grund = :kein_kontakt_grund,
+                    kein_kontakt_wer = :kein_kontakt_wer,
+                    kein_kontakt_datum = :kein_kontakt_datum,
                     notizen = :notizen,
                     wiedervorlage = :wiedervorlage
                 WHERE id = :id
             ');
             $stmt->execute([
-                'firma'           => $firma,
-                'ansprechpartner' => trim($_POST['ansprechpartner'] ?? '') ?: null,
-                'email'           => trim($_POST['email'] ?? '') ?: null,
-                'paket'           => $_POST['paket'] ?: null,
-                'summe'           => (float) ($_POST['summe'] ?? 0) ?: null,
-                'status'          => $_POST['status'] ?? 'angefragt',
-                'kein_kontakt'    => $keinKontakt,
-                'notizen'         => trim($_POST['notizen'] ?? '') ?: null,
-                'wiedervorlage'   => $_POST['wiedervorlage'] ?: null,
-                'id'              => $sponsorId,
+                'firma'              => $firma,
+                'paket'              => $_POST['paket'] ?: null,
+                'summe'              => (float) ($_POST['summe'] ?? 0) ?: null,
+                'status'             => $_POST['status'] ?? 'angefragt',
+                'kein_kontakt'       => $keinKontakt,
+                'kein_kontakt_grund' => $keinKontaktGrund,
+                'kein_kontakt_wer'   => $keinKontaktWer,
+                'kein_kontakt_datum' => $keinKontaktDatum ?: null,
+                'notizen'            => trim($_POST['notizen'] ?? '') ?: null,
+                'wiedervorlage'      => $_POST['wiedervorlage'] ?: null,
+                'id'                 => $sponsorId,
             ]);
+
+            try {
+                saveAnsprechpartner($pdo, $sponsorId, $_POST);
+            } catch (PDOException $e) {
+                // Table may not exist yet
+            }
+
             $_SESSION['flash_success'] = 'Sponsor aktualisiert.';
             header('Location: ../sponsor_form.php?id=' . $sponsorId);
             exit;
@@ -155,7 +233,7 @@ try {
                 exit;
             }
 
-            $stmt = $pdo->prepare('UPDATE sponsors SET kein_kontakt = 1 WHERE id = :id');
+            $stmt = $pdo->prepare('UPDATE sponsors SET kein_kontakt = 1, kein_kontakt_datum = COALESCE(kein_kontakt_datum, CURDATE()) WHERE id = :id');
             $stmt->execute(['id' => $sponsorId]);
             $_SESSION['flash_success'] = 'Kein-Kontakt gesetzt.';
             header('Location: ../sponsoren.php');
@@ -168,7 +246,7 @@ try {
                 exit;
             }
 
-            $stmt = $pdo->prepare('UPDATE sponsors SET kein_kontakt = 0 WHERE id = :id');
+            $stmt = $pdo->prepare('UPDATE sponsors SET kein_kontakt = 0, kein_kontakt_grund = NULL, kein_kontakt_wer = NULL, kein_kontakt_datum = NULL WHERE id = :id');
             $stmt->execute(['id' => $sponsorId]);
             $_SESSION['flash_success'] = 'Kein-Kontakt aufgehoben.';
             header('Location: ../sponsoren.php');
