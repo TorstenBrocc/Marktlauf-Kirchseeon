@@ -165,6 +165,19 @@ while ($row = $slotStmt->fetch()) {
         .btn-danger:hover {
             background: #b71c1c;
         }
+        .btn-confirm {
+            padding: 4px 10px;
+            font-size: 0.75rem;
+            background: #28a745;
+            color: var(--white);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .btn-confirm:hover {
+            background: #218838;
+        }
         .notiz-cell {
             max-width: 200px;
         }
@@ -325,6 +338,13 @@ while ($row = $slotStmt->fetch()) {
                                                 <option value="abgelehnt" <?= $h['status'] === 'abgelehnt' ? 'selected' : '' ?>>Abgelehnt</option>
                                             </select>
                                         </form>
+                                        <?php if ($h['status'] === 'neu'): ?>
+                                        <form method="post" action="api/helfer_bestaetigen.php" class="inline-form" style="margin-top: 0.25rem;">
+                                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                                            <input type="hidden" name="helfer_id" value="<?= $h['id'] ?>">
+                                            <button type="submit" class="btn-confirm" title="Bestätigen und Zugangslink senden">Bestätigen + Mail</button>
+                                        </form>
+                                        <?php endif; ?>
                                     </td>
                                     <td class="cell-small"><?= htmlspecialchars($h['slots'] ?? '-') ?></td>
                                     <td class="cell-small"><?= htmlspecialchars($h['beitraege'] ?? '-') ?></td>
