@@ -30,7 +30,7 @@ if ($filterStatus !== '' && in_array($filterStatus, ['angefragt', 'zugesagt', 'a
     $params['status'] = $filterStatus;
 }
 
-if ($filterPaket !== '' && in_array($filterPaket, ['bronze', 'silber', 'gold'], true)) {
+if ($filterPaket !== '' && in_array($filterPaket, ['hauptsponsor', 'gold', 'silber', 'bronze'], true)) {
     $where[] = 'paket = :paket';
     $params['paket'] = $filterPaket;
 }
@@ -44,6 +44,16 @@ $sql .= ' ORDER BY kein_kontakt ASC, firma ASC';
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $sponsoren = $stmt->fetchAll();
+
+$ansprechpartnerBySponsor = [];
+try {
+    $apStmt = $pdo->query('SELECT sponsor_id, anrede, vorname, nachname, email FROM sponsor_ansprechpartner ORDER BY sponsor_id, id');
+    while ($row = $apStmt->fetch()) {
+        $ansprechpartnerBySponsor[$row['sponsor_id']][] = $row;
+    }
+} catch (PDOException $e) {
+    // Table may not exist yet
+}
 
 $countStmt = $pdo->query('SELECT COUNT(*) FROM sponsors');
 $totalCount = (int) $countStmt->fetchColumn();
@@ -133,9 +143,10 @@ $gesamtSumme = (float) $summeStmt->fetchColumn();
             font-size: 0.75rem;
             font-weight: 500;
         }
-        .paket-bronze { background: #cd7f32; color: white; }
-        .paket-silber { background: #c0c0c0; color: #333; }
+        .paket-hauptsponsor { background: linear-gradient(135deg, #ff6b35, #f7931e); color: white; }
         .paket-gold { background: #ffd700; color: #333; }
+        .paket-silber { background: #c0c0c0; color: #333; }
+        .paket-bronze { background: #cd7f32; color: white; }
         .kein-kontakt-row {
             background: #f9f9f9;
         }
@@ -183,6 +194,18 @@ $gesamtSumme = (float) $summeStmt->fetchColumn();
         }
         .btn-icon:hover {
             background: #ccc;
+        }
+        .ap-count {
+            font-size: 0.7rem;
+            color: var(--text-light);
+            margin-left: 0.25rem;
+        }
+        .ap-name {
+            font-size: 0.875rem;
+        }
+        .ap-email {
+            font-size: 0.75rem;
+            color: var(--text-light);
         }
     </style>
 </head>
@@ -260,9 +283,10 @@ $gesamtSumme = (float) $summeStmt->fetchColumn();
                     <label>Paket</label>
                     <select name="paket" onchange="this.form.submit()">
                         <option value="">Alle</option>
-                        <option value="bronze" <?= $filterPaket === 'bronze' ? 'selected' : '' ?>>Bronze</option>
-                        <option value="silber" <?= $filterPaket === 'silber' ? 'selected' : '' ?>>Silber</option>
+                        <option value="hauptsponsor" <?= $filterPaket === 'hauptsponsor' ? 'selected' : '' ?>>Hauptsponsor</option>
                         <option value="gold" <?= $filterPaket === 'gold' ? 'selected' : '' ?>>Gold</option>
+                        <option value="silber" <?= $filterPaket === 'silber' ? 'selected' : '' ?>>Silber</option>
+                        <option value="bronze" <?= $filterPaket === 'bronze' ? 'selected' : '' ?>>Bronze</option>
                     </select>
                 </div>
                 <?php if ($filterStatus || $filterPaket): ?>
@@ -281,7 +305,6 @@ $gesamtSumme = (float) $summeStmt->fetchColumn();
                         <tr>
                             <th>Firma</th>
                             <th>Ansprechpartner</th>
-                            <th>E-Mail</th>
                             <th>Paket</th>
                             <th>Summe</th>
                             <th>Status</th>
@@ -292,10 +315,15 @@ $gesamtSumme = (float) $summeStmt->fetchColumn();
                     <tbody>
                         <?php if (empty($sponsoren)): ?>
                             <tr>
-                                <td colspan="8">Keine Sponsoren gefunden.</td>
+                                <td colspan="7">Keine Sponsoren gefunden.</td>
                             </tr>
                         <?php else: ?>
                             <?php foreach ($sponsoren as $s): ?>
+                                <?php
+                                $apList = $ansprechpartnerBySponsor[$s['id']] ?? [];
+                                $apCount = count($apList);
+                                $firstAp = $apList[0] ?? null;
+                                ?>
                                 <tr class="<?= $s['kein_kontakt'] ? 'kein-kontakt-row' : '' ?>">
                                     <td class="firma-cell">
                                         <a href="sponsor_form.php?id=<?= $s['id'] ?>">
@@ -305,22 +333,31 @@ $gesamtSumme = (float) $summeStmt->fetchColumn();
                                             <span class="kein-kontakt-badge">Kein Kontakt</span>
                                         <?php endif; ?>
                                     </td>
-                                    <td><?= htmlspecialchars($s['ansprechpartner'] ?? '-') ?></td>
                                     <td>
-                                        <?php if ($s['email']): ?>
-                                            <a href="mailto:<?= htmlspecialchars($s['email']) ?>"><?= htmlspecialchars($s['email']) ?></a>
+                                        <?php if ($firstAp): ?>
+                                            <div class="ap-name">
+                                                <?= htmlspecialchars(trim($firstAp['vorname'] . ' ' . $firstAp['nachname'])) ?: '–' ?>
+                                                <?php if ($apCount > 1): ?>
+                                                    <span class="ap-count">+<?= $apCount - 1 ?> weitere</span>
+                                                <?php endif; ?>
+                                            </div>
+                                            <?php if ($firstAp['email']): ?>
+                                                <div class="ap-email">
+                                                    <a href="mailto:<?= htmlspecialchars($firstAp['email']) ?>"><?= htmlspecialchars($firstAp['email']) ?></a>
+                                                </div>
+                                            <?php endif; ?>
                                         <?php else: ?>
-                                            -
+                                            –
                                         <?php endif; ?>
                                     </td>
                                     <td>
                                         <?php if ($s['paket']): ?>
                                             <span class="paket-badge paket-<?= $s['paket'] ?>"><?= ucfirst($s['paket']) ?></span>
                                         <?php else: ?>
-                                            -
+                                            –
                                         <?php endif; ?>
                                     </td>
-                                    <td><?= $s['summe'] ? number_format((float)$s['summe'], 2, ',', '.') . ' €' : '-' ?></td>
+                                    <td><?= $s['summe'] ? number_format((float)$s['summe'], 2, ',', '.') . ' €' : '–' ?></td>
                                     <td>
                                         <span class="status-badge status-<?= $s['status'] ?>"><?= ucfirst($s['status']) ?></span>
                                     </td>
@@ -328,7 +365,7 @@ $gesamtSumme = (float) $summeStmt->fetchColumn();
                                         <?php if ($s['wiedervorlage']): ?>
                                             <?= date('d.m.Y', strtotime($s['wiedervorlage'])) ?>
                                         <?php else: ?>
-                                            -
+                                            –
                                         <?php endif; ?>
                                     </td>
                                     <td>
