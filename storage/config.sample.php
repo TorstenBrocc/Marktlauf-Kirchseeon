@@ -46,4 +46,11 @@ return [
         // Dann X-Forwarded-For vom Proxy auswerten. Sonst REMOTE_ADDR nutzen.
         // 'trusted_proxy' => '127.0.0.1',
     ],
+
+    // Orga-Kontaktdaten (angezeigt auf der Helfer-Zugangsseite)
+    'orga' => [
+        'email'         => 'info@atsv-kirchseeon-marktlauf.de',
+        'phone'         => '',        // z.B. '08091 123456'
+        'notfall_phone' => '',        // Nur am Veranstaltungstag
+    ],
 ];

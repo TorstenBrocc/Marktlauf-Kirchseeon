@@ -61,3 +61,28 @@ TEXT;
 
     return sendMail($to, $subject, $body);
 }
+
+function sendHelferBestaetigung(string $to, string $name, string $zugangLink): bool {
+    $subject = '🎉 Du bist bestätigt – Marktlauf Kirchseeon';
+    $body = <<<TEXT
+Hallo {$name},
+
+Deine Anmeldung als Helfer beim Marktlauf Kirchseeon wurde bestätigt!
+
+Über deinen persönlichen Zugangslink kannst du jederzeit deine Anmeldung einsehen und weitere Infos abrufen:
+
+{$zugangLink}
+
+Bitte bewahre diesen Link auf – er ist dein persönlicher Zugang zu allen Helfer-Infos.
+
+📧 Fragen? info@atsv-kirchseeon-marktlauf.de
+
+Sportliche Grüße
+Dein Marktlauf-Team
+──────────────────────────
+ATSV Kirchseeon Marktlauf
+https://atsv-kirchseeon-marktlauf.de
+TEXT;
+
+    return sendMail($to, $subject, $body);
+}
