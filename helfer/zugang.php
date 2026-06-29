@@ -48,6 +48,38 @@ if ($uuid === '' || strlen($uuid) > 64) {
     }
 }
 
+$helferDateien = [];
+if (!$error) {
+    try {
+        $pdo = getDbConnection();
+        $dateiStmt = $pdo->prepare('SELECT id, originalname, mimetype, groesse, created_at FROM dateien WHERE bereich = :bereich ORDER BY created_at DESC');
+        $dateiStmt->execute(['bereich' => 'helfer']);
+        $helferDateien = $dateiStmt->fetchAll();
+    } catch (PDOException $e) {
+        // Table may not exist yet
+    }
+}
+
+function formatFileSizeHelfer(int $bytes): string {
+    if ($bytes >= 1048576) {
+        return number_format($bytes / 1048576, 1, ',', '.') . ' MB';
+    }
+    if ($bytes >= 1024) {
+        return number_format($bytes / 1024, 0, ',', '.') . ' KB';
+    }
+    return $bytes . ' B';
+}
+
+function getFileIconHelfer(string $mimetype): string {
+    return match (true) {
+        str_contains($mimetype, 'pdf') => '📄',
+        str_contains($mimetype, 'word') => '📝',
+        str_contains($mimetype, 'sheet') => '📊',
+        str_contains($mimetype, 'image') => '🖼️',
+        default => '📁',
+    };
+}
+
 $config = [];
 try {
     $config = getConfig();
@@ -197,6 +229,51 @@ $basePath = '../';
             cursor: not-allowed;
             font-size: var(--text-sm);
         }
+        .file-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .file-list li {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            padding: var(--space-sm) 0;
+            border-bottom: 1px solid var(--gray-100);
+        }
+        .file-list li:last-child {
+            border-bottom: none;
+        }
+        .file-icon {
+            font-size: 1.25rem;
+        }
+        .file-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .file-name {
+            font-weight: 500;
+            font-size: var(--text-sm);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .file-meta {
+            font-size: 0.7rem;
+            color: var(--gray-500);
+        }
+        .file-download {
+            padding: var(--space-xs) var(--space-sm);
+            background: var(--color-primary);
+            color: white;
+            border-radius: var(--radius-sm);
+            text-decoration: none;
+            font-size: 0.75rem;
+            white-space: nowrap;
+        }
+        .file-download:hover {
+            opacity: 0.9;
+        }
         .contact-grid {
             display: flex;
             flex-direction: column;
@@ -306,8 +383,22 @@ $basePath = '../';
 
             <section class="zugang-section">
                 <h2>Dateien</h2>
-                <p style="color: var(--gray-600); font-size: var(--text-sm); margin-bottom: var(--space-sm);">Wichtige Dokumente und Infomaterial zum Download.</p>
-                <span class="btn-disabled">Downloads folgen in Kürze</span>
+                <?php if (empty($helferDateien)): ?>
+                    <p style="color: var(--gray-600); font-size: var(--text-sm);">Noch keine Dateien verfügbar.</p>
+                <?php else: ?>
+                    <ul class="file-list">
+                        <?php foreach ($helferDateien as $d): ?>
+                            <li>
+                                <span class="file-icon"><?= getFileIconHelfer($d['mimetype']) ?></span>
+                                <div class="file-info">
+                                    <div class="file-name"><?= htmlspecialchars($d['originalname']) ?></div>
+                                    <div class="file-meta"><?= formatFileSizeHelfer((int)$d['groesse']) ?> · <?= date('d.m.Y', strtotime($d['created_at'])) ?></div>
+                                </div>
+                                <a href="file_download.php?id=<?= $d['id'] ?>&uuid=<?= urlencode($uuid) ?>" class="file-download">Download</a>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php endif; ?>
             </section>
 
             <section class="zugang-section">

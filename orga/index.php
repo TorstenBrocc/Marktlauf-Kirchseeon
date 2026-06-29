@@ -52,7 +52,6 @@ try {
                 </li>
                 <li class="nav-item">
                     <a href="dateien.php">Dateien</a>
-                    <span class="badge">Phase 2</span>
                 </li>
                 <li class="nav-item">
                     <a href="ticker.php">Live-Ticker</a>
