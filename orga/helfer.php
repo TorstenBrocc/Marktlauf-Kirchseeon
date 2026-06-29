@@ -219,7 +219,6 @@ while ($row = $slotStmt->fetch()) {
                 </li>
                 <li class="nav-item">
                     <a href="sponsoren.php">Sponsoren</a>
-                    <span class="badge">Phase 2</span>
                 </li>
                 <li class="nav-item">
                     <a href="dateien.php">Dateien</a>

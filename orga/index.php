@@ -15,6 +15,15 @@ $csrfToken = generateCsrfToken();
 $pdo = getDbConnection();
 $helferCount = (int) $pdo->query('SELECT COUNT(*) FROM helfer')->fetchColumn();
 $helferNeuCount = (int) $pdo->query("SELECT COUNT(*) FROM helfer WHERE status = 'neu'")->fetchColumn();
+
+$sponsorCount = 0;
+$sponsorSumme = 0;
+try {
+    $sponsorCount = (int) $pdo->query('SELECT COUNT(*) FROM sponsors')->fetchColumn();
+    $sponsorSumme = (float) $pdo->query("SELECT COALESCE(SUM(summe), 0) FROM sponsors WHERE status IN ('zugesagt', 'bezahlt')")->fetchColumn();
+} catch (PDOException $e) {
+    // Table may not exist yet
+}
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -40,7 +49,6 @@ $helferNeuCount = (int) $pdo->query("SELECT COUNT(*) FROM helfer WHERE status = 
                 </li>
                 <li class="nav-item">
                     <a href="sponsoren.php">Sponsoren</a>
-                    <span class="badge">Phase 2</span>
                 </li>
                 <li class="nav-item">
                     <a href="dateien.php">Dateien</a>
@@ -86,9 +94,9 @@ $helferNeuCount = (int) $pdo->query("SELECT COUNT(*) FROM helfer WHERE status = 
 
                 <article class="card">
                     <h3>Sponsoren</h3>
-                    <p class="card-stat">—</p>
-                    <p class="card-label">Sponsoren erfasst</p>
-                    <p class="card-note">Mini-CRM folgt in Phase 2</p>
+                    <p class="card-stat"><?= $sponsorCount ?></p>
+                    <p class="card-label">Sponsoren erfasst<?= $sponsorSumme > 0 ? ' (' . number_format($sponsorSumme, 0, ',', '.') . ' € zugesagt)' : '' ?></p>
+                    <a href="sponsoren.php" class="btn btn-small btn-primary" style="margin-top:0.5rem">Zur Übersicht</a>
                 </article>
 
                 <article class="card">
