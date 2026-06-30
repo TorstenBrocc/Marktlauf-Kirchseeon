@@ -109,7 +109,7 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
             border-radius: 8px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             padding: 1.5rem;
-            margin-bottom: 1.5rem;
+            margin-top: 1.5rem;
         }
         .aufgaben-section h2 {
             font-size: 1.1rem;
