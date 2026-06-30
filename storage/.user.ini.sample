@@ -1,3 +1,4 @@
 ; PHP-Einstellungen für File-Uploads
+; Kopiere diese Datei nach .user.ini und passe ggf. die Werte an
 upload_max_filesize = 10M
 post_max_size = 12M
