@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/_auth.php';
 require_once __DIR__ . '/../../src/db.php';
+require_once __DIR__ . '/../../src/logger.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: ../benutzer.php');
@@ -104,7 +105,7 @@ try {
     exit;
 
 } catch (PDOException $e) {
-    error_log('User update error: ' . $e->getMessage(), 3, __DIR__ . '/../../storage/logs/error.log');
+    logError('User update error: ' . $e->getMessage());
     $_SESSION['flash_error'] = 'Datenbankfehler.';
     header('Location: ../benutzer_edit.php?id=' . $targetUserId);
     exit;

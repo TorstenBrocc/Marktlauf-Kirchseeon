@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/_auth.php';
 require_once __DIR__ . '/../../src/db.php';
+require_once __DIR__ . '/../../src/logger.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: ../dateien.php');
@@ -117,7 +118,7 @@ try {
     $_SESSION['flash_success'] = 'Datei hochgeladen: ' . htmlspecialchars($originalName);
 } catch (PDOException $e) {
     @unlink($targetPath);
-    error_log('File upload DB error: ' . $e->getMessage(), 3, __DIR__ . '/../../storage/logs/error.log');
+    logError('File upload DB error: ' . $e->getMessage());
     $_SESSION['flash_error'] = 'Datenbankfehler beim Speichern.';
 }
 
