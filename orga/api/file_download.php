@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/_auth.php';
 require_once __DIR__ . '/../../src/db.php';
+require_once __DIR__ . '/../../src/logger.php';
 
 $fileId = (int) ($_GET['id'] ?? 0);
 
@@ -43,7 +44,7 @@ try {
     exit;
 
 } catch (PDOException $e) {
-    error_log('File download error: ' . $e->getMessage(), 3, __DIR__ . '/../../storage/logs/error.log');
+    logError('File download error: ' . $e->getMessage());
     http_response_code(500);
     exit('Serverfehler.');
 }

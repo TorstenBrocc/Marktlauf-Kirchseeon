@@ -8,6 +8,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/_auth.php';
 require_once __DIR__ . '/../../src/db.php';
+require_once __DIR__ . '/../../src/logger.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: ../sponsoren.php');
@@ -254,7 +255,7 @@ try {
     }
 
 } catch (PDOException $e) {
-    error_log('Sponsor CRUD error: ' . $e->getMessage(), 3, __DIR__ . '/../../storage/logs/error.log');
+    logError('Sponsor CRUD error: ' . $e->getMessage());
     $_SESSION['flash_error'] = 'Datenbankfehler.';
     header('Location: ../sponsoren.php');
     exit;

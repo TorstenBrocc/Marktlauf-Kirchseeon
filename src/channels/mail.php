@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../db.php';
 require_once __DIR__ . '/../mailer.php';
+require_once __DIR__ . '/../logger.php';
 
 function sendMail(string $to, string $subject, string $textBody, string $htmlBody = ''): bool {
     $mailer = getSmtpMailer();
@@ -14,7 +15,7 @@ function sendMail(string $to, string $subject, string $textBody, string $htmlBod
     if ($mailer !== null) {
         $result = $mailer->send($to, $subject, $textBody, $htmlBody);
         if (!$result) {
-            error_log('SMTP error: ' . $mailer->getLastError(), 3, __DIR__ . '/../../storage/logs/php_errors.log');
+            logError('SMTP error: ' . $mailer->getLastError());
         }
         return $result;
     }

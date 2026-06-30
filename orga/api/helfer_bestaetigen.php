@@ -8,6 +8,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/_auth.php';
 require_once __DIR__ . '/../../src/db.php';
 require_once __DIR__ . '/../../src/channels/mail.php';
+require_once __DIR__ . '/../../src/logger.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: ../helfer.php');
@@ -78,12 +79,12 @@ try {
         );
         $_SESSION['flash_success'] = 'Helfer bestätigt und E-Mail mit Zugangslink versendet.';
     } catch (Throwable $e) {
-        error_log('Mail send error (helfer_bestaetigen): ' . $e->getMessage(), 3, __DIR__ . '/../../storage/logs/php_errors.log');
+        logError('Mail send error (helfer_bestaetigen): ' . $e->getMessage());
         $_SESSION['flash_success'] = 'Helfer bestätigt. E-Mail konnte nicht gesendet werden (siehe Log).';
     }
 
 } catch (PDOException $e) {
-    error_log('DB error (helfer_bestaetigen): ' . $e->getMessage(), 3, __DIR__ . '/../../storage/logs/error.log');
+    logError('DB error (helfer_bestaetigen): ' . $e->getMessage());
     $_SESSION['flash_error'] = 'Datenbankfehler.';
 }
 

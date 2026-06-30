@@ -7,6 +7,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../src/db.php';
+require_once __DIR__ . '/../src/logger.php';
 
 $fileId = (int) ($_GET['id'] ?? 0);
 $uuid = trim($_GET['uuid'] ?? '');
@@ -54,7 +55,7 @@ try {
     exit;
 
 } catch (PDOException $e) {
-    error_log('Helfer file download error: ' . $e->getMessage(), 3, __DIR__ . '/../storage/logs/error.log');
+    logError('Helfer file download error: ' . $e->getMessage());
     http_response_code(500);
     exit('Serverfehler.');
 }

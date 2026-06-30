@@ -9,6 +9,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../../src/auth.php';
 require_once __DIR__ . '/../../src/db.php';
 require_once __DIR__ . '/../../src/channels/mail.php';
+require_once __DIR__ . '/../../src/logger.php';
 
 initSession();
 
@@ -178,7 +179,7 @@ try {
     try {
         sendHelferEingangsbestaetigung($email, $vorname . ' ' . $nachname);
     } catch (Throwable $e) {
-        error_log('Mail send error: ' . $e->getMessage(), 3, __DIR__ . '/../../storage/logs/php_errors.log');
+        logError('Mail send error: ' . $e->getMessage());
     }
 
     header('Location: ../../helfer-anmeldung.php?success=1');
@@ -193,6 +194,6 @@ try {
         redirectWithError('Diese E-Mail-Adresse ist bereits angemeldet.', $accessToken);
     }
 
-    error_log('Helfer registration error: ' . $e->getMessage(), 3, __DIR__ . '/../../storage/logs/error.log');
+    logError('Helfer registration error: ' . $e->getMessage());
     redirectWithError('Ein Fehler ist aufgetreten. Bitte versuche es später erneut.', $accessToken);
 }
