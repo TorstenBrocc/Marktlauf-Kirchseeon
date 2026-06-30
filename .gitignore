@@ -23,6 +23,8 @@ credentials.json
 *.pem
 *.key
 storage/config.php
+.user.ini
+storage/.user.ini
 migrations/00?_seed_*.sql
 
 # --- Dependencies / Build ---
