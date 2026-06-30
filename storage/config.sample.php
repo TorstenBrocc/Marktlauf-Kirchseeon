@@ -53,4 +53,7 @@ return [
         'phone'         => '',        // z.B. '08091 123456'
         'notfall_phone' => '',        // Nur am Veranstaltungstag
     ],
+
+    // Trello-Board für Orga-Aufgaben (optional)
+    'trello_board_url' => '',  // z.B. 'https://trello.com/b/BOARD_ID/marktlauf'
 ];
