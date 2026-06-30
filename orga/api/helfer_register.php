@@ -190,10 +190,6 @@ try {
         $pdo->rollBack();
     }
 
-    if ($e->getCode() === '23000' && str_contains($e->getMessage(), 'uk_helfer_email')) {
-        redirectWithError('Diese E-Mail-Adresse ist bereits angemeldet.', $accessToken);
-    }
-
     logError('Helfer registration error: ' . $e->getMessage());
     redirectWithError('Ein Fehler ist aufgetreten. Bitte versuche es später erneut.', $accessToken);
 }
