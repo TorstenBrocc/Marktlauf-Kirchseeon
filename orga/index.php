@@ -60,8 +60,8 @@ try {
                 <?php if ($isAdmin): ?>
                 <li class="nav-section">Admin</li>
                 <li class="nav-item">
-                    <a href="users.php">Benutzerverwaltung</a>
-                    <span class="badge">Phase 2</span>
+                    <a href="benutzer.php">Benutzerverwaltung</a>
+                    
                 </li>
                 <li class="nav-item">
                     <a href="settings.php">Einstellungen</a>
@@ -110,7 +110,7 @@ try {
                 <article class="card card-admin">
                     <h3>Admin-Bereich</h3>
                     <ul class="quick-links">
-                        <li><a href="users.php">Benutzer verwalten</a> <span class="badge">Phase 2</span></li>
+                        <li><a href="benutzer.php">Benutzer verwalten</a></li>
                         <li><a href="settings.php">Systemeinstellungen</a> <span class="badge">Phase 2</span></li>
                     </ul>
                 </article>
