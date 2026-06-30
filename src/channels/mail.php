@@ -86,3 +86,29 @@ TEXT;
 
     return sendMail($to, $subject, $body);
 }
+
+function sendUserInvite(string $to, string $name, string $inviteLink, string $role): bool {
+    $roleName = $role === 'admin' ? 'Administrator' : 'Orga-Mitglied';
+    $subject = '🔑 Einladung zum Marktlauf Orga-Bereich';
+    $body = <<<TEXT
+Hallo {$name},
+
+Du wurdest als {$roleName} zum Orga-Bereich des ATSV Kirchseeon Marktlaufs eingeladen!
+
+Bitte klicke auf folgenden Link, um dein Passwort festzulegen und deinen Account zu aktivieren:
+
+{$inviteLink}
+
+Dieser Link ist 7 Tage gültig.
+
+📧 Fragen? info@atsv-kirchseeon-marktlauf.de
+
+Sportliche Grüße
+Dein Marktlauf-Team
+──────────────────────────
+ATSV Kirchseeon Marktlauf
+https://atsv-kirchseeon-marktlauf.de
+TEXT;
+
+    return sendMail($to, $subject, $body);
+}

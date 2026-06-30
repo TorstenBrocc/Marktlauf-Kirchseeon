@@ -236,8 +236,8 @@ $gesamtSumme = (float) $summeStmt->fetchColumn();
                 <?php if ($isAdmin): ?>
                 <li class="nav-section">Admin</li>
                 <li class="nav-item">
-                    <a href="users.php">Benutzerverwaltung</a>
-                    <span class="badge">Phase 2</span>
+                    <a href="benutzer.php">Benutzerverwaltung</a>
+                    
                 </li>
                 <li class="nav-item">
                     <a href="settings.php">Einstellungen</a>
