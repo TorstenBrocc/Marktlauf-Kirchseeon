@@ -91,11 +91,14 @@ try {
     $appUrl = rtrim($config['app']['url'] ?? 'https://atsv-kirchseeon-marktlauf.de', '/');
     $inviteLink = $appUrl . '/orga/einladung.php?token=' . urlencode($token);
 
+    error_log('DEBUG user_invite: sending to email=' . $email, 3, __DIR__ . '/../../storage/logs/php_errors.log');
+
     try {
-        sendUserInvite($email, $name, $inviteLink, $role);
+        $mailResult = sendUserInvite($email, $name, $inviteLink, $role);
+        error_log('DEBUG user_invite: sendUserInvite returned=' . var_export($mailResult, true), 3, __DIR__ . '/../../storage/logs/php_errors.log');
         $_SESSION['flash_success'] = 'Einladung an ' . htmlspecialchars($email) . ' versendet.';
     } catch (Throwable $e) {
-        error_log('Invite mail error: ' . $e->getMessage(), 3, __DIR__ . '/../../storage/logs/error.log');
+        error_log('Invite mail error: ' . $e->getMessage(), 3, __DIR__ . '/../../storage/logs/php_errors.log');
         $_SESSION['flash_success'] = 'Benutzer angelegt. E-Mail konnte nicht gesendet werden (siehe Log).';
     }
 
@@ -106,7 +109,7 @@ try {
     if (isset($pdo) && $pdo->inTransaction()) {
         $pdo->rollBack();
     }
-    error_log('User invite error: ' . $e->getMessage(), 3, __DIR__ . '/../../storage/logs/error.log');
+    error_log('User invite error: ' . $e->getMessage(), 3, __DIR__ . '/../../storage/logs/php_errors.log');
     $_SESSION['flash_error'] = 'Datenbankfehler.';
     header('Location: ../benutzer.php');
     exit;
