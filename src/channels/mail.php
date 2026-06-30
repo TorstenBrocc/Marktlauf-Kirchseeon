@@ -115,3 +115,28 @@ TEXT;
 
     return sendMail($to, $subject, $body);
 }
+
+function sendAufgabeErinnerung(string $to, string $name, string $aufgabeTitel, string $faelligAm): bool {
+    $subject = '⏰ Erinnerung: Aufgabe fällig – ' . $aufgabeTitel;
+    $body = <<<TEXT
+Hallo {$name},
+
+Erinnerung: Die folgende Aufgabe ist heute fällig:
+
+📋 {$aufgabeTitel}
+📅 Fällig am: {$faelligAm}
+
+Bitte melde dich im Orga-Dashboard an, um die Aufgabe zu bearbeiten:
+https://atsv-kirchseeon-marktlauf.de/orga/
+
+📧 Fragen? info@atsv-kirchseeon-marktlauf.de
+
+Sportliche Grüße
+Dein Marktlauf-Team
+──────────────────────────
+ATSV Kirchseeon Marktlauf
+https://atsv-kirchseeon-marktlauf.de
+TEXT;
+
+    return sendMail($to, $subject, $body);
+}
