@@ -228,6 +228,7 @@ try {
                     <span class="user-name"><?= htmlspecialchars($user['name']) ?></span>
                     <span class="user-role"><?= htmlspecialchars(ucfirst($user['role'])) ?></span>
                 </div>
+                <a href="benutzer_edit.php" class="btn btn-small btn-secondary" style="margin-bottom:0.5rem">Mein Profil</a>
                 <a href="logout.php" class="btn btn-small btn-secondary">Abmelden</a>
             </div>
         </nav>
@@ -331,6 +332,7 @@ try {
                                 </td>
                                 <td><?= date('d.m.Y', strtotime($u['created_at'])) ?></td>
                                 <td>
+                                    <a href="benutzer_edit.php?id=<?= $u['id'] ?>" class="btn-action">Bearbeiten</a>
                                     <?php if ($u['id'] != $user['id']): ?>
                                         <?php if ($u['active']): ?>
                                             <form method="post" action="api/user_deactivate.php" class="inline-form">
@@ -347,8 +349,6 @@ try {
                                                 <button type="submit" class="btn-action btn-success">Aktivieren</button>
                                             </form>
                                         <?php endif; ?>
-                                    <?php else: ?>
-                                        <span style="color: var(--text-light); font-size: 0.75rem;">–</span>
                                     <?php endif; ?>
                                 </td>
                             </tr>
