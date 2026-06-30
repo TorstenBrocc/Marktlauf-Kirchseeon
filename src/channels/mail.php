@@ -20,6 +20,8 @@ function sendMail(string $to, string $subject, string $textBody, string $htmlBod
         return $result;
     }
 
+    logError('SMTP unavailable, falling back to mail() for: ' . $to);
+
     $config = getConfig();
     $fromAddress = $config['mail']['from_address'] ?? 'noreply@example.com';
     $fromName = $config['mail']['from_name'] ?? 'Marktlauf';
