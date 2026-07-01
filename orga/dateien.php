@@ -187,26 +187,6 @@ function getFileIcon(string $mimetype): string {
         .btn-download:hover {
             background: var(--primary-dark);
         }
-        .btn-action {
-            padding: 0.25rem 0.5rem;
-            font-size: 0.75rem;
-            background: var(--border);
-            color: var(--text);
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .btn-action:hover {
-            background: #ccc;
-        }
-        .btn-danger {
-            background: var(--error-bg);
-            color: var(--error);
-        }
-        .btn-danger:hover {
-            background: var(--error);
-            color: white;
-        }
         .empty-state {
             text-align: center;
             padding: 3rem 1rem;
