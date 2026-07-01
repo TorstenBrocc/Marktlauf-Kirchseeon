@@ -56,7 +56,17 @@ try {
     // Table may not exist yet
 }
 
-$trelloBoardUrl = $config['trello_board_url'] ?? '';
+$trelloBoardUrl = '';
+try {
+    $trelloStmt = $pdo->prepare('SELECT `value` FROM einstellungen WHERE `key` = :key');
+    $trelloStmt->execute(['key' => 'trello_board_url']);
+    $trelloBoardUrl = $trelloStmt->fetchColumn() ?: '';
+} catch (PDOException $e) {
+    // Table may not exist yet
+}
+if ($trelloBoardUrl === '') {
+    $trelloBoardUrl = $config['trello_board_url'] ?? '';
+}
 
 $flashSuccess = $_SESSION['flash_success'] ?? '';
 $flashError = $_SESSION['flash_error'] ?? '';
@@ -230,8 +240,7 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                     
                 </li>
                 <li class="nav-item">
-                    <a href="settings.php">Einstellungen</a>
-                    <span class="badge">Phase 2</span>
+                    <a href="einstellungen.php">Einstellungen</a>
                 </li>
                 <?php endif; ?>
             </ul>
@@ -308,7 +317,7 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                     <h3>Admin-Bereich</h3>
                     <ul class="quick-links">
                         <li><a href="benutzer.php">Benutzer verwalten</a></li>
-                        <li><a href="settings.php">Systemeinstellungen</a> <span class="badge">Phase 2</span></li>
+                        <li><a href="einstellungen.php">Systemeinstellungen</a></li>
                     </ul>
                 </article>
                 <?php endif; ?>
