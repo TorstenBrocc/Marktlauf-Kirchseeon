@@ -187,16 +187,23 @@ function getFileIcon(string $mimetype): string {
         .btn-download:hover {
             background: var(--primary-dark);
         }
-        .btn-delete {
+        .btn-action {
             padding: 0.25rem 0.5rem;
-            background: var(--error-bg);
-            color: var(--error);
+            font-size: 0.75rem;
+            background: var(--border);
+            color: var(--text);
             border: none;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 0.75rem;
         }
-        .btn-delete:hover {
+        .btn-action:hover {
+            background: #ccc;
+        }
+        .btn-danger {
+            background: var(--error-bg);
+            color: var(--error);
+        }
+        .btn-danger:hover {
             background: var(--error);
             color: white;
         }
@@ -326,7 +333,7 @@ function getFileIcon(string $mimetype): string {
                                                 <form method="post" action="api/file_delete.php" class="inline-form" onsubmit="return confirm('Datei wirklich löschen?');">
                                                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                                                     <input type="hidden" name="file_id" value="<?= $d['id'] ?>">
-                                                    <button type="submit" class="btn-delete">Löschen</button>
+                                                    <button type="submit" class="btn-action btn-danger">Löschen</button>
                                                 </form>
                                             <?php endif; ?>
                                         </td>
@@ -380,7 +387,7 @@ function getFileIcon(string $mimetype): string {
                                                 <form method="post" action="api/file_delete.php" class="inline-form" onsubmit="return confirm('Datei wirklich löschen?');">
                                                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                                                     <input type="hidden" name="file_id" value="<?= $d['id'] ?>">
-                                                    <button type="submit" class="btn-delete">Löschen</button>
+                                                    <button type="submit" class="btn-action btn-danger">Löschen</button>
                                                 </form>
                                             <?php endif; ?>
                                         </td>
