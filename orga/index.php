@@ -317,7 +317,7 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                     <h3>Admin-Bereich</h3>
                     <ul class="quick-links">
                         <li><a href="benutzer.php">Benutzer verwalten</a></li>
-                        <li><a href="einstellungen.php">Systemeinstellungen</a></li>
+                        <li><a href="einstellungen.php">Einstellungen</a></li>
                     </ul>
                 </article>
                 <?php endif; ?>
