@@ -210,12 +210,12 @@ body {
     background: #ccc;
 }
 
-.btn-danger {
+.btn-action.btn-danger {
     background: var(--error-bg);
     color: var(--error);
 }
 
-.btn-danger:hover {
+.btn-action.btn-danger:hover {
     background: var(--error);
     color: white;
 }
