@@ -247,8 +247,7 @@ function getFileIcon(string $mimetype): string {
                     
                 </li>
                 <li class="nav-item">
-                    <a href="settings.php">Einstellungen</a>
-                    <span class="badge">Phase 2</span>
+                    <a href="einstellungen.php">Einstellungen</a>
                 </li>
                 <?php endif; ?>
             </ul>
