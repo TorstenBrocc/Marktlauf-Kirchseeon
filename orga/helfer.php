@@ -158,12 +158,25 @@ while ($row = $slotStmt->fetch()) {
         .inline-form button:hover {
             background: var(--primary-dark);
         }
+        .btn-action {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            background: var(--border);
+            color: var(--text);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .btn-action:hover {
+            background: #ccc;
+        }
         .btn-danger {
-            background-color: #dc3545;
-            color: var(--white);
+            background: var(--error-bg);
+            color: var(--error);
         }
         .btn-danger:hover {
-            background: #b71c1c;
+            background: var(--error);
+            color: white;
         }
         .btn-confirm {
             padding: 4px 10px;
@@ -359,7 +372,7 @@ while ($row = $slotStmt->fetch()) {
                                         <form method="post" action="api/helfer_delete.php" class="inline-form" onsubmit="return confirm('Helfer wirklich löschen?');">
                                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                                             <input type="hidden" name="helfer_id" value="<?= $h['id'] ?>">
-                                            <button type="submit" class="btn-danger" title="Helfer löschen">Löschen</button>
+                                            <button type="submit" class="btn-action btn-danger" title="Helfer löschen">Löschen</button>
                                         </form>
                                     </td>
                                     <?php endif; ?>
