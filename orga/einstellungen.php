@@ -122,9 +122,7 @@ $smtpFrom = $config['smtp_from'] ?? $config['smtp_user'] ?? '–';
             margin-top: 0.75rem;
         }
         .btn-row {
-            margin-top: 1.5rem;
-            padding-top: 1rem;
-            border-top: 1px solid var(--border);
+            /* Wrapper für Formular-Buttons */
         }
         @media (max-width: 600px) {
             .form-row {
@@ -232,8 +230,10 @@ $smtpFrom = $config['smtp_from'] ?? $config['smtp_user'] ?? '–';
                     </div>
                 </div>
 
-                <div class="btn-row">
-                    <button type="submit" class="btn btn-primary">Speichern</button>
+                <div class="settings-section">
+                    <div class="btn-row">
+                        <button type="submit" class="btn btn-primary">Speichern</button>
+                    </div>
                 </div>
             </form>
 
