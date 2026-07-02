@@ -417,6 +417,25 @@ body {
     text-decoration: underline;
 }
 
+.quick-links a.btn-brand {
+    display: inline-block;
+    padding: 0.4rem 0.75rem;
+    border-radius: 4px;
+    color: #fff;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.quick-links a.btn-brand:hover {
+    text-decoration: none;
+    filter: brightness(0.9);
+}
+
+.btn-brand-raceresult { background: #C41011; }
+.btn-brand-trello { background: #0079BF; }
+.btn-brand-onedrive { background: #6264A7; }
+
 /* Responsive */
 @media (max-width: 768px) {
     .dashboard-layout {
