@@ -41,6 +41,7 @@ $veranstaltungsname = $settings['veranstaltungsname'] ?? '';
 $kontaktEmail = $settings['kontakt_email'] ?? '';
 $raceresultUrl = $settings['raceresult_url'] ?? '';
 $trelloUrl = $settings['trello_board_url'] ?? '';
+$onedriveUrl = $settings['onedrive_url'] ?? '';
 
 $smtpHost = $config['smtp_host'] ?? '–';
 $smtpPort = $config['smtp_port'] ?? '–';
@@ -221,6 +222,12 @@ $smtpFrom = $config['smtp_from'] ?? $config['smtp_user'] ?? '–';
                         <div class="form-group">
                             <label for="trello_board_url">Trello-Board-URL</label>
                             <input type="url" id="trello_board_url" name="trello_board_url" value="<?= htmlspecialchars($trelloUrl) ?>" placeholder="https://trello.com/b/...">
+                        </div>
+                    </div>
+                    <div class="form-row single">
+                        <div class="form-group">
+                            <label for="onedrive_url">Vereins-Cloud (OneDrive)</label>
+                            <input type="url" id="onedrive_url" name="onedrive_url" value="<?= htmlspecialchars($onedriveUrl) ?>" placeholder="https://onedrive.live.com/...">
                         </div>
                     </div>
                 </div>

@@ -33,6 +33,7 @@ $allowedKeys = [
     'kontakt_email',
     'raceresult_url',
     'trello_board_url',
+    'onedrive_url',
 ];
 
 $renntag = trim($_POST['renntag_datum'] ?? '');
@@ -40,6 +41,7 @@ $veranstaltungsname = trim($_POST['veranstaltungsname'] ?? '');
 $kontaktEmail = trim($_POST['kontakt_email'] ?? '');
 $raceresultUrl = trim($_POST['raceresult_url'] ?? '');
 $trelloUrl = trim($_POST['trello_board_url'] ?? '');
+$onedriveUrl = trim($_POST['onedrive_url'] ?? '');
 
 if ($veranstaltungsname !== '' && mb_strlen($veranstaltungsname) > 200) {
     $_SESSION['flash_error'] = 'Veranstaltungsname zu lang (max. 200 Zeichen).';
@@ -71,6 +73,12 @@ if ($trelloUrl !== '' && !filter_var($trelloUrl, FILTER_VALIDATE_URL)) {
     exit;
 }
 
+if ($onedriveUrl !== '' && !filter_var($onedriveUrl, FILTER_VALIDATE_URL)) {
+    $_SESSION['flash_error'] = 'Ungültige OneDrive-URL.';
+    header('Location: ../einstellungen.php');
+    exit;
+}
+
 try {
     $pdo = getDbConnection();
 
@@ -80,6 +88,7 @@ try {
         'kontakt_email'      => $kontaktEmail ?: null,
         'raceresult_url'     => $raceresultUrl ?: null,
         'trello_board_url'   => $trelloUrl ?: null,
+        'onedrive_url'       => $onedriveUrl ?: null,
     ];
 
     $stmt = $pdo->prepare('INSERT INTO einstellungen (`key`, `value`) VALUES (:key, :value) ON DUPLICATE KEY UPDATE `value` = :value2');
