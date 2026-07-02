@@ -200,21 +200,6 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
         .btn-icon:hover { background: #ccc; }
         .btn-icon.btn-danger { background: var(--error-bg); color: var(--error); }
         .btn-icon.btn-danger:hover { background: var(--error); color: white; }
-        .externe-links {
-            font-size: 0.875rem;
-            margin-bottom: 1rem;
-        }
-        .externe-links a {
-            color: var(--primary);
-            text-decoration: none;
-        }
-        .externe-links a:hover {
-            text-decoration: underline;
-        }
-        .externe-links .separator {
-            color: var(--text-light);
-            margin: 0 0.75rem;
-        }
         @media (max-width: 900px) {
             .aufgabe-form {
                 grid-template-columns: 1fr;
@@ -320,35 +305,18 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                     <h3>Schnellzugriff</h3>
                     <ul class="quick-links">
                         <li><a href="../helfer-anmeldung.php" target="_blank">Helfer-Formular (öffentlich)</a></li>
-                        <li><a href="https://www.raceresult.com/de-de/account/index" target="_blank" rel="noopener">Race Result Account</a></li>
+                        <li><a href="https://www.raceresult.com/de-de/account/index" target="_blank" rel="noopener" class="btn-brand btn-brand-raceresult">Race Result</a></li>
+                        <?php if ($trelloBoardUrl): ?>
+                        <li><a href="<?= htmlspecialchars($trelloBoardUrl) ?>" target="_blank" rel="noopener" class="btn-brand btn-brand-trello">Trello-Board</a></li>
+                        <?php endif; ?>
+                        <?php if ($onedriveUrl): ?>
+                        <li><a href="<?= htmlspecialchars($onedriveUrl) ?>" target="_blank" rel="noopener" class="btn-brand btn-brand-onedrive">Vereins-Cloud</a></li>
+                        <?php endif; ?>
                     </ul>
                 </article>
-
-                <?php if ($isAdmin): ?>
-                <article class="card card-admin">
-                    <h3>Admin-Bereich</h3>
-                    <ul class="quick-links">
-                        <li><a href="benutzer.php">Benutzer verwalten</a></li>
-                        <li><a href="einstellungen.php">Einstellungen</a></li>
-                    </ul>
-                </article>
-                <?php endif; ?>
             </section>
 
             <div class="aufgaben-section">
-                <?php if ($trelloBoardUrl || $onedriveUrl): ?>
-                <p class="externe-links">
-                    <?php if ($trelloBoardUrl): ?>
-                    <a href="<?= htmlspecialchars($trelloBoardUrl) ?>" target="_blank" rel="noopener">Zum Trello-Board</a>
-                    <?php endif; ?>
-                    <?php if ($trelloBoardUrl && $onedriveUrl): ?>
-                    <span class="separator">|</span>
-                    <?php endif; ?>
-                    <?php if ($onedriveUrl): ?>
-                    <a href="<?= htmlspecialchars($onedriveUrl) ?>" target="_blank" rel="noopener">Vereins-Cloud</a>
-                    <?php endif; ?>
-                </p>
-                <?php endif; ?>
                 <h2>Orga-Aufgaben</h2>
 
                 <?php if (!empty($orgaAufgaben)): ?>
