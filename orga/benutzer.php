@@ -164,10 +164,21 @@ try {
     </style>
 </head>
 <body>
+    <header class="mobile-header">
+        <button class="burger-btn" id="burger-btn" aria-label="Menü öffnen">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+        <h1>Orga-Dashboard</h1>
+        <img src="../assets/images/logo-final.svg" alt="Marktlauf Logo" class="header-logo">
+    </header>
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
     <div class="dashboard-layout">
-        <nav class="sidebar">
+        <nav class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <h2>Marktlauf Orga</h2>
+                <h2>Orga-Dashboard</h2>
+                <img src="../assets/images/logo-final.svg" alt="Marktlauf Logo" class="header-logo">
             </div>
             <ul class="nav-menu">
                 <li class="nav-item">
@@ -329,5 +340,28 @@ try {
             </div>
         </main>
     </div>
+    <script>
+    (function() {
+        const burger = document.getElementById('burger-btn');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+
+        function closeSidebar() {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+        burger.addEventListener('click', function() {
+            sidebar.classList.add('open');
+            overlay.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        });
+        overlay.addEventListener('click', closeSidebar);
+        sidebar.querySelectorAll('.nav-item a').forEach(function(link) {
+            link.addEventListener('click', closeSidebar);
+        });
+    })();
+    </script>
 </body>
 </html>
