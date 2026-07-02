@@ -68,6 +68,15 @@ if ($trelloBoardUrl === '') {
     $trelloBoardUrl = $config['trello_board_url'] ?? '';
 }
 
+$onedriveUrl = '';
+try {
+    $onedriveStmt = $pdo->prepare('SELECT `value` FROM einstellungen WHERE `key` = :key');
+    $onedriveStmt->execute(['key' => 'onedrive_url']);
+    $onedriveUrl = $onedriveStmt->fetchColumn() ?: '';
+} catch (PDOException $e) {
+    // Table may not exist yet
+}
+
 $flashSuccess = $_SESSION['flash_success'] ?? '';
 $flashError = $_SESSION['flash_error'] ?? '';
 unset($_SESSION['flash_success'], $_SESSION['flash_error']);
@@ -203,6 +212,18 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
             font-size: 0.875rem;
         }
         .trello-link:hover { background: #026aa7; }
+        .onedrive-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: #0078d4;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 0.875rem;
+        }
+        .onedrive-link:hover { background: #106ebe; }
         @media (max-width: 900px) {
             .aufgabe-form {
                 grid-template-columns: 1fr;
@@ -329,6 +350,11 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                     <?php if ($trelloBoardUrl): ?>
                     <a href="<?= htmlspecialchars($trelloBoardUrl) ?>" target="_blank" rel="noopener" class="trello-link">
                         📋 Zum Trello-Board
+                    </a>
+                    <?php endif; ?>
+                    <?php if ($onedriveUrl): ?>
+                    <a href="<?= htmlspecialchars($onedriveUrl) ?>" target="_blank" rel="noopener" class="onedrive-link">
+                        ☁️ Vereins-Cloud
                     </a>
                     <?php endif; ?>
                 </h2>
