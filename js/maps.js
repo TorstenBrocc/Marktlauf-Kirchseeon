@@ -12,8 +12,10 @@ function initLocationMap() {
   const container = document.getElementById("location-map");
   if (!container) return;
 
-  const lat = 48.0800825;
-  const lng = 11.8547908;
+  // Manueller Offset vom Nominatim-Rooftop-Punkt,
+  // da Start/Ziel auf der Straße liegt, nicht im Gebäude.
+  const lat = 48.08015;
+  const lng = 11.85455;
 
   const map = L.map("location-map", {
     center: [lat, lng],
