@@ -4,8 +4,33 @@
  */
 
 document.addEventListener("DOMContentLoaded", () => {
+  initLocationMap();
   initRouteMaps();
 });
+
+function initLocationMap() {
+  const container = document.getElementById("location-map");
+  if (!container) return;
+
+  const lat = 48.0726;
+  const lng = 11.8835;
+
+  const map = L.map("location-map", {
+    center: [lat, lng],
+    zoom: 15,
+    scrollWheelZoom: false,
+  });
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    maxZoom: 19,
+  }).addTo(map);
+
+  L.marker([lat, lng])
+    .addTo(map)
+    .bindPopup("<strong>ATSV Kirchseeon</strong><br>Westring 6<br>85614 Kirchseeon")
+    .openPopup();
+}
 
 const transparentIcon = L.icon({
   iconUrl: "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
