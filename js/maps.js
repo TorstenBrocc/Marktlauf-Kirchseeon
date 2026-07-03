@@ -12,8 +12,8 @@ function initLocationMap() {
   const container = document.getElementById("location-map");
   if (!container) return;
 
-  const lat = 48.0683855;
-  const lng = 11.8930566;
+  const lat = 48.0800825;
+  const lng = 11.8547908;
 
   const map = L.map("location-map", {
     center: [lat, lng],
@@ -28,7 +28,7 @@ function initLocationMap() {
 
   L.marker([lat, lng])
     .addTo(map)
-    .bindPopup("<strong>ATSV Kirchseeon</strong><br>Westring 6<br>85614 Kirchseeon")
+    .bindPopup("<strong>Start & Ziel</strong><br>Westring 6<br>85614 Kirchseeon")
     .openPopup();
 }
 
