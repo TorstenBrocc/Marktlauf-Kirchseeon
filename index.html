@@ -79,14 +79,25 @@
       .newsletter-consent {
         text-align: center;
         padding: 2rem;
-        background: #EFF2F7;
+        background: #fff;
+        border: 1px solid #ddd;
         border-radius: 8px;
+        box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.05);
       }
 
       .newsletter-consent p {
         margin-bottom: 1rem;
         color: #3C4858;
         font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+      }
+
+      .newsletter-consent p::before {
+        content: "\2709";
+        font-size: 1.2rem;
       }
 
       .newsletter-consent .btn {
@@ -95,14 +106,18 @@
         background: #009640;
         color: #fff;
         border: none;
-        border-radius: 4px;
+        border-radius: 6px;
         font-size: 1rem;
-        font-weight: 500;
+        font-weight: 600;
         cursor: pointer;
+        box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.05);
+        transition: all 0.2s ease;
       }
 
       .newsletter-consent .btn:hover {
-        background: #007a34;
+        background: #007230;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px -1px rgba(0, 0, 0, 0.1);
       }
     </style>
     <link rel="stylesheet" href="https://sibforms.com/forms/end-form/build/sib-styles.css">
