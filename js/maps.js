@@ -12,10 +12,9 @@ function initLocationMap() {
   const container = document.getElementById("location-map");
   if (!container) return;
 
-  // Manueller Offset vom Nominatim-Rooftop-Punkt,
-  // da Start/Ziel auf der Straße liegt, nicht im Gebäude.
-  const lat = 48.08015;
-  const lng = 11.85455;
+  // Manuell abgelesen von OSM: Straße "Am Westring" vor dem Vereinsheim
+  const lat = 48.080240;
+  const lng = 11.855224;
 
   const map = L.map("location-map", {
     center: [lat, lng],
