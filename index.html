@@ -75,6 +75,35 @@
         text-decoration: underline;
         color: #2BB2FC;
       }
+
+      .newsletter-consent {
+        text-align: center;
+        padding: 2rem;
+        background: #EFF2F7;
+        border-radius: 8px;
+      }
+
+      .newsletter-consent p {
+        margin-bottom: 1rem;
+        color: #3C4858;
+        font-size: 0.9rem;
+      }
+
+      .newsletter-consent .btn {
+        display: inline-block;
+        padding: 0.75rem 1.5rem;
+        background: #009640;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        font-size: 1rem;
+        font-weight: 500;
+        cursor: pointer;
+      }
+
+      .newsletter-consent .btn:hover {
+        background: #007a34;
+      }
     </style>
     <link rel="stylesheet" href="https://sibforms.com/forms/end-form/build/sib-styles.css">
     <meta property="og:type" content="website">
@@ -390,6 +419,13 @@
                                 <h3 data-i18n="newsletter.title">Bleib auf dem Laufenden!</h3>
                                 <p data-i18n="newsletter.text">Melde dich an, um Infos zum Vorverkaufsstart und Strecken-Updates zu erhalten.</p>
                                 <div class="brevo-placeholder">
+                                    <!-- Consent-Button für Newsletter -->
+                                    <div id="newsletter-consent" class="newsletter-consent">
+                                        <p>Für die Newsletter-Anmeldung wird ein externes Formular von Brevo geladen.</p>
+                                        <button type="button" class="btn btn-primary" onclick="loadBrevoForm()">Newsletter-Anmeldung laden</button>
+                                    </div>
+                                    <!-- Brevo Form Container (initially hidden) -->
+                                    <div id="brevo-form-wrapper" style="display: none;">
                                     <!-- Begin Brevo Form -->
 
 
@@ -765,14 +801,12 @@
 
 
 
-<script defer src="https://sibforms.com/forms/end-form/build/main.js"></script>
-
-
-
+<!-- Brevo script loaded on demand -->
 
 <!-- END - We recommend to place the above code in footer or bottom of your website html  -->
 
 <!-- End Brevo Form -->
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -885,5 +919,23 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
     <script src="https://unpkg.com/@raruto/leaflet-elevation/dist/leaflet-elevation.js"></script>
     <script src="js/maps.js"></script>
+
+    <!-- Brevo Form Lazy Load -->
+    <script>
+    function loadBrevoForm() {
+        var consent = document.getElementById('newsletter-consent');
+        var wrapper = document.getElementById('brevo-form-wrapper');
+
+        consent.innerHTML = '<p>Formular wird geladen...</p>';
+
+        var script = document.createElement('script');
+        script.src = 'https://sibforms.com/forms/end-form/build/main.js';
+        script.onload = function() {
+            consent.style.display = 'none';
+            wrapper.style.display = 'block';
+        };
+        document.body.appendChild(script);
+    }
+    </script>
 </body>
 </html>
