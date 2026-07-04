@@ -445,16 +445,17 @@
                 <h2 class="text-center" data-i18n="kontakt.title">Bleiben Sie in Kontakt!</h2>
                 
                 <div class="connect-tabs">
-                    <div class="tab-nav">
-                        <button class="tab-btn active" data-tab="newsletter">Newsletter</button>
-                        <button class="tab-btn" data-tab="kontakt">Kontakt</button>
-                    </div>
+                    <div class="connect-card">
+                        <div class="tab-nav">
+                            <button class="tab-btn active" data-tab="newsletter">Newsletter</button>
+                            <button class="tab-btn" data-tab="kontakt">Kontakt</button>
+                        </div>
 
-                    <div class="tab-content-wrapper">
-                        <!-- Newsletter Tab -->
-                        <div class="tab-content active" id="tab-newsletter">
-                            <div class="newsletter-box text-center">
-                                <h3 data-i18n="newsletter.title">Bleib auf dem Laufenden!</h3>
+                        <div class="tab-content-wrapper">
+                            <!-- Newsletter Tab -->
+                            <div class="tab-content active" id="tab-newsletter">
+                                <div class="newsletter-content text-center">
+                                    <h3 data-i18n="newsletter.title">Bleib auf dem Laufenden!</h3>
                                 <p data-i18n="newsletter.text">Melde dich an, um Infos zum Vorverkaufsstart und Strecken-Updates zu erhalten.</p>
                                 <!-- Newsletter Form -->
                                 <div id="newsletter-form-container">
@@ -490,14 +491,12 @@
                                     <h4>Vielen Dank!</h4>
                                     <p>Deine Anmeldung war erfolgreich. Bitte bestätige deine E-Mail-Adresse über den Link in der Bestätigungsmail.</p>
                                 </div>
+                                </div>
                             </div>
-                        </div>
 
-                        <!-- Kontakt Tab -->
+                            <!-- Kontakt Tab -->
                         <div class="tab-content" id="tab-kontakt">
-                            <div class="contact-faq-link text-center" style="margin-bottom: var(--space-lg);">
-                                <p data-i18n="kontakt.faq_text">Haben Sie eine schnelle Frage? <a href="#faq" class="text-highlight" style="font-weight: 600; text-decoration: underline;" data-i18n="kontakt.faq_link">Besuchen Sie unsere FAQ</a></p>
-                            </div>
+                            <h3 class="text-center" style="margin-bottom: var(--space-lg);" data-i18n="kontakt.faq_text">Haben Sie eine schnelle Frage? <a href="#faq" class="text-highlight" style="text-decoration: underline;" data-i18n="kontakt.faq_link">Besuchen Sie unsere FAQ</a></h3>
                             <div class="contact-wrapper">
                                 <form action="contact.php" method="POST" class="contact-form">
                                     <div class="form-group">
@@ -536,15 +535,14 @@
                                         </label>
                                     </div>
                                     
-                                    <!-- Spam Protection Placeholder -->
-                                    <div class="captcha-placeholder text-center" style="margin-bottom: var(--space-md); font-size: 0.8rem; color: var(--gray-500);" data-i18n="kontakt.captcha">
-                                        [Spamschutz: Friendly Captcha / reCAPTCHA Integration]
-                                    </div>
-                                    
+                                    <!-- Honeypot: off-screen, not display:none -->
+                                    <input type="text" name="email_address_check" value="" class="hp-field" tabindex="-1" autocomplete="off">
+
                                     <button type="submit" class="btn btn-primary btn-block" data-i18n="kontakt.form.submit">Nachricht senden</button>
                                 </form>
                             </div>
                         </div>
+                    </div>
                     </div>
                 </div>
             </div>

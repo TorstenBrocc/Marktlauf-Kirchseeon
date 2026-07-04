@@ -568,11 +568,7 @@
 }
 
 .contact-form {
-    background-color: var(--white);
-    padding: var(--space-lg);
-    border-radius: 12px;
-    border: 1px solid var(--gray-200);
-    box-shadow: var(--shadow-md);
+    padding: 0;
 }
 
 .form-group {
@@ -710,8 +706,16 @@
 
 /* Connect Tabs Section */
 .connect-tabs {
-    max-width: 800px;
+    max-width: 560px;
     margin: 0 auto;
+}
+
+.connect-card {
+    background-color: var(--white);
+    padding: var(--space-lg);
+    border-radius: 12px;
+    border: 1px solid var(--gray-200);
+    box-shadow: var(--shadow-md);
 }
 
 .tab-nav {
@@ -759,22 +763,21 @@
     display: block;
 }
 
-.newsletter-box {
-    background-color: var(--white);
-    padding: var(--space-xl) var(--space-lg);
-    border-radius: 12px;
-    border: 1px solid var(--gray-200);
-    box-shadow: var(--shadow-md);
+.newsletter-box,
+.newsletter-content {
+    padding: 0;
 }
 
-.newsletter-box h3 {
+.newsletter-box h3,
+.newsletter-content h3 {
     margin-bottom: var(--space-sm);
     color: var(--gray-900);
 }
 
-.newsletter-box p {
+.newsletter-box p,
+.newsletter-content p {
     color: var(--gray-600);
-    margin-bottom: var(--space-lg);
+    margin-bottom: var(--space-xl);
 }
 
 .brevo-placeholder {
