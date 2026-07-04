@@ -3,29 +3,193 @@
   Header, Navigation, and Footer
 */
 
+/* ==========================================================================
+   HEADER - Default State (transparent, on hero gradient)
+   ========================================================================== */
+
 .main-header {
-    position: sticky;
+    position: fixed;
     top: 0;
+    left: 0;
+    right: 0;
     z-index: 1000;
-    background-color: var(--white);
-    box-shadow: var(--shadow-sm);
-    height: 70px;
+    height: 82px;
     display: flex;
     align-items: center;
+    background: linear-gradient(180deg, rgba(12,60,35,.28), rgba(12,60,35,0));
+    transition: background-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
+/* Logo Plakette - Creme card for logos on gradient */
+.logo-plakette {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--color-cream);
+    padding: 8px 18px;
+    border-radius: 16px;
+    box-shadow: 0 8px 20px -8px rgba(0,0,0,.28);
+}
+
+.logo-plakette .logo-wordmark {
+    height: 40px;
+    width: auto;
+}
+
+.logo-plakette .logo-divider {
+    width: 1px;
+    height: 38px;
+    background: #dcdccf;
+}
+
+.logo-plakette .logo-atsv {
+    height: 46px;
+    width: auto;
+}
+
+/* Nav container */
 .nav-container {
     display: flex;
     justify-content: space-between;
     align-items: center;
     width: 100%;
+    max-width: 1360px;
+    margin: 0 auto;
+    padding: 0 44px;
 }
 
+/* Nav links - white text on gradient */
+.nav-links {
+    display: flex;
+    gap: 30px;
+    justify-content: center;
+    align-items: center;
+}
+
+.nav-link {
+    font-family: var(--font-main);
+    font-weight: 500;
+    font-size: 15px;
+    color: rgba(255,255,255,.92);
+    transition: color 0.2s ease;
+}
+
+.nav-link:hover {
+    color: var(--white);
+}
+
+/* CTA Button - Yellow pill */
+.nav-cta {
+    background-color: var(--color-accent-yellow);
+    color: var(--color-ink);
+    font-weight: 600;
+    font-size: 15px;
+    padding: 11px 22px;
+    border-radius: 999px;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.nav-cta:hover {
+    background-color: #e5aa18;
+    color: var(--color-ink);
+    transform: translateY(-1px);
+}
+
+/* Burger icon - white on gradient */
+.mobile-menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: var(--space-sm);
+}
+
+.burger-icon {
+    display: block;
+    width: 24px;
+    height: 2px;
+    background-color: var(--white);
+    position: relative;
+    transition: background-color 0.2s ease;
+}
+
+.burger-icon::before, .burger-icon::after {
+    content: '';
+    position: absolute;
+    width: 24px;
+    height: 2px;
+    background-color: var(--white);
+    left: 0;
+    transition: background-color 0.2s ease;
+}
+
+.burger-icon::before { top: -8px; }
+.burger-icon::after { top: 8px; }
+
+/* Lang switcher on gradient */
+.nav-links .lang-switcher {
+    margin-left: 0;
+}
+
+/* ==========================================================================
+   HEADER - Scrolled State (white background)
+   ========================================================================== */
+
+.main-header.scrolled {
+    position: fixed;
+    background: var(--white);
+    box-shadow: var(--shadow-sm);
+}
+
+.main-header.scrolled .nav-link {
+    color: var(--gray-600);
+}
+
+.main-header.scrolled .nav-link:hover {
+    color: var(--color-primary);
+}
+
+.main-header.scrolled .nav-cta {
+    background-color: var(--color-primary);
+    color: var(--white);
+}
+
+.main-header.scrolled .nav-cta:hover {
+    background-color: var(--color-primary-dark);
+    color: var(--white);
+}
+
+.main-header.scrolled .burger-icon,
+.main-header.scrolled .burger-icon::before,
+.main-header.scrolled .burger-icon::after {
+    background-color: var(--gray-900);
+}
+
+/* Hide plakette on scroll, show simple logos */
+.main-header.scrolled .logo-plakette {
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+    gap: var(--space-md);
+}
+
+.main-header.scrolled .logo-plakette .logo-divider {
+    display: none;
+}
+
+.main-header.scrolled .logo-plakette .logo-wordmark {
+    height: 50px;
+}
+
+.main-header.scrolled .logo-plakette .logo-atsv {
+    height: 42.5px;
+}
+
+/* Legacy classes for backwards compatibility */
 .header-logos {
     display: flex;
     align-items: center;
     gap: var(--space-md);
-    margin-right: var(--space-xl);
 }
 
 .nav-logo {
@@ -36,7 +200,7 @@
 }
 
 .atsv-logo {
-    height: 42.5px; /* 15% smaller than 50px */
+    height: 42.5px;
 }
 
 .logo-img {
@@ -52,71 +216,22 @@
     }
     .nav-container {
         gap: var(--space-xs);
+        padding: 0 var(--space-md);
+    }
+    .logo-plakette {
+        padding: 6px 12px;
+        gap: 10px;
+    }
+    .logo-plakette .logo-wordmark {
+        height: 28px;
+    }
+    .logo-plakette .logo-atsv {
+        height: 34px;
+    }
+    .logo-plakette .logo-divider {
+        height: 28px;
     }
 }
-
-.nav-links {
-    display: flex;
-    gap: var(--space-md);
-    justify-content: center;
-    align-items: center;
-}
-
-.nav-links .lang-switcher {
-    margin-left: calc(var(--space-md) * -0.5);
-}
-
-.nav-link {
-    font-weight: 600;
-    font-size: 0.9rem;
-    color: var(--gray-600);
-    transition: color 0.2s ease;
-}
-
-.nav-link:hover {
-    color: var(--color-primary);
-}
-
-.nav-cta {
-    background-color: var(--color-primary);
-    color: var(--white);
-    padding: 0.5rem 1rem;
-    border-radius: 4px;
-    transition: background-color 0.2s ease;
-}
-
-.nav-cta:hover {
-    background-color: var(--color-primary-dark);
-    color: var(--white);
-}
-
-.mobile-menu-toggle {
-    display: none;
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: var(--space-sm);
-}
-
-.burger-icon {
-    display: block;
-    width: 24px;
-    height: 2px;
-    background-color: var(--gray-900);
-    position: relative;
-}
-
-.burger-icon::before, .burger-icon::after {
-    content: '';
-    position: absolute;
-    width: 24px;
-    height: 2px;
-    background-color: var(--gray-900);
-    left: 0;
-}
-
-.burger-icon::before { top: -8px; }
-.burger-icon::after { top: 8px; }
 
 /* Footer */
 .main-footer {
@@ -205,6 +320,10 @@
 
 /* Responsive Navigation */
 @media (max-width: 768px) {
+    .main-header {
+        height: 70px;
+    }
+
     .mobile-menu-toggle {
         display: block;
     }
@@ -227,6 +346,19 @@
         transform: translateY(-150%);
         transition: transform 0.3s ease-in-out;
         box-shadow: var(--shadow-md);
+    }
+
+    .nav-links .nav-link {
+        color: var(--gray-600);
+    }
+
+    .nav-links .nav-link:hover {
+        color: var(--color-primary);
+    }
+
+    .nav-links .nav-cta {
+        background-color: var(--color-primary);
+        color: var(--white);
     }
 
     .nav-links .lang-switcher {
