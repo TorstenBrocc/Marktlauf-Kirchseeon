@@ -376,6 +376,11 @@
         top: 70px;
         left: 0;
         right: 0;
+        width: 100%;
+        box-sizing: border-box;
+        max-height: calc(100dvh - 70px);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
         background: linear-gradient(135deg, var(--hero-gradient-start) 0%, var(--hero-gradient-mid) 100%);
         flex-direction: column;
         padding: var(--space-lg);
@@ -386,8 +391,6 @@
         box-shadow: 0 8px 24px -8px rgba(0,0,0,.3);
         z-index: 999;
         visibility: hidden;
-        overflow: hidden;
-        clip-path: inset(0);
     }
 
     .nav-links .nav-link {
