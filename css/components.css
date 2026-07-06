@@ -322,8 +322,8 @@
 .hero-runner {
     position: absolute;
     bottom: 0;
-    right: 96px;
-    height: 720px;
+    right: 5%;
+    height: 90vh;
     width: auto;
     z-index: 2;
     pointer-events: none;
@@ -332,10 +332,10 @@
 /* Floating badge */
 .hero-float-badge {
     position: absolute;
-    top: 104px;
+    top: clamp(80px, 12vh, 130px);
     right: clamp(16px, 3vw, 44px);
-    width: 92px;
-    height: 92px;
+    width: clamp(60px, 6vw, 92px);
+    height: clamp(60px, 6vw, 92px);
     background: var(--white);
     border-radius: 50%;
     padding: 14px;
@@ -399,19 +399,6 @@
         padding-right: 40px;
     }
 
-    .hero-runner {
-        height: 520px;
-        right: 20px;
-    }
-
-    .hero-float-badge {
-        width: 72px;
-        height: 72px;
-        right: 24px;
-        top: 90px;
-        padding: 10px;
-    }
-
     .hero h1 {
         font-size: clamp(3rem, 8vw, 5rem);
     }
@@ -471,16 +458,6 @@
         padding: 14px 24px;
     }
 
-    .hero-runner {
-        height: 80vw;
-        right: -5vw;
-        bottom: 0;
-    }
-
-    .hero-float-badge {
-        top: 60px;
-        right: 16px;
-    }
 }
 
 /* Portrait only: Silhouette und Badge ausblenden */
@@ -491,43 +468,6 @@
 
     .hero-float-badge {
         display: none;
-    }
-}
-
-/* Landscape unter 768px: Silhouette kleiner, aber sichtbar */
-@media (max-width: 768px) and (orientation: landscape) {
-    .hero-runner {
-        height: 380px;
-        right: 10px;
-    }
-
-    .hero-float-badge {
-        width: 60px;
-        height: 60px;
-        top: 80px;
-        right: 16px;
-        padding: 8px;
-    }
-
-    .hero {
-        min-height: 100vh;
-        min-height: 100dvh;
-    }
-
-    .hero-content {
-        min-height: 100vh;
-        min-height: 100dvh;
-    }
-}
-
-/* Landscape: Header-Platz für alle Querformate */
-@media (orientation: landscape) {
-    .hero-inner {
-        padding-top: 82px;
-    }
-
-    .hero-content {
-        padding-top: 100px !important;
     }
 }
 
