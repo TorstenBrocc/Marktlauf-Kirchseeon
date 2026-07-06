@@ -318,54 +318,139 @@
     text-decoration: underline;
 }
 
-/* Responsive Navigation */
+/* ==========================================================================
+   RESPONSIVE NAVIGATION
+   ========================================================================== */
+
 @media (max-width: 768px) {
     .main-header {
         height: 70px;
     }
 
+    .nav-container {
+        padding: 0 var(--space-md);
+    }
+
     .mobile-menu-toggle {
         display: block;
+        z-index: 1001;
     }
 
     .header-logos {
         margin-right: 0;
     }
 
+    /* Logo Plakette mobile */
+    .logo-plakette {
+        padding: 6px 12px;
+        gap: 10px;
+    }
+
+    .logo-plakette .logo-wordmark {
+        height: 32px;
+    }
+
+    .logo-plakette .logo-atsv {
+        height: 38px;
+    }
+
+    .logo-plakette .logo-divider {
+        height: 30px;
+    }
+
+    /* Mobile menu dropdown */
     .nav-links {
-        position: absolute;
+        position: fixed;
         top: 70px;
         left: 0;
         right: 0;
-        background-color: var(--white);
+        background: linear-gradient(135deg, var(--hero-gradient-start) 0%, var(--hero-gradient-mid) 100%);
         flex-direction: column;
         padding: var(--space-lg);
-        gap: var(--space-lg);
+        gap: var(--space-md);
         text-align: center;
-        border-top: 1px solid var(--gray-100);
         transform: translateY(-150%);
         transition: transform 0.3s ease-in-out;
-        box-shadow: var(--shadow-md);
+        box-shadow: 0 8px 24px -8px rgba(0,0,0,.3);
+        z-index: 999;
     }
 
     .nav-links .nav-link {
-        color: var(--gray-600);
+        color: var(--white);
+        font-size: 17px;
+        font-weight: 500;
+        padding: 8px 0;
     }
 
     .nav-links .nav-link:hover {
-        color: var(--color-primary);
+        color: var(--color-accent-yellow);
     }
 
     .nav-links .nav-cta {
-        background-color: var(--color-primary);
-        color: var(--white);
+        background-color: var(--color-accent-yellow);
+        color: var(--color-ink);
+        margin-top: var(--space-sm);
+        padding: 14px 28px;
+    }
+
+    .nav-links .nav-cta:hover {
+        background-color: #e5aa18;
     }
 
     .nav-links .lang-switcher {
         margin-left: 0;
+        margin-top: var(--space-xs);
     }
 
     .nav-links.active {
         transform: translateY(0);
+    }
+
+    /* Scrolled state mobile menu */
+    .main-header.scrolled .nav-links {
+        background: var(--white);
+        border-top: 1px solid var(--gray-100);
+    }
+
+    .main-header.scrolled .nav-links .nav-link {
+        color: var(--gray-700);
+    }
+
+    .main-header.scrolled .nav-links .nav-link:hover {
+        color: var(--color-primary);
+    }
+
+    .main-header.scrolled .nav-links .nav-cta {
+        background-color: var(--color-primary);
+        color: var(--white);
+    }
+}
+
+@media (max-width: 480px) {
+    .main-header {
+        height: 60px;
+    }
+
+    .nav-links {
+        top: 60px;
+        padding: var(--space-md);
+        gap: var(--space-sm);
+    }
+
+    .nav-links .nav-link {
+        font-size: 16px;
+        padding: 6px 0;
+    }
+
+    .logo-plakette .logo-wordmark {
+        height: 26px;
+    }
+
+    .logo-plakette .logo-atsv {
+        height: 32px;
+    }
+
+    .logo-plakette .logo-divider {
+        height: 24px;
     }
 }

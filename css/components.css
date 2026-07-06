@@ -174,7 +174,7 @@
     font-family: var(--font-display);
     font-weight: 700;
     color: var(--white);
-    font-size: 96px;
+    font-size: clamp(3rem, 7vw, 96px);
     line-height: .92;
     letter-spacing: -.01em;
     text-shadow: 0 6px 24px rgba(20,60,30,.28);
@@ -348,7 +348,37 @@
     letter-spacing: 0.1em;
 }
 
-/* Responsive Hero - Desktop only in this step */
+/* ==========================================================================
+   RESPONSIVE HERO
+   ========================================================================== */
+
+/* 900px: Läufer verkleinern, Content breiter */
+@media (max-width: 900px) {
+    .hero-content {
+        max-width: 100%;
+        padding-left: 40px;
+        padding-right: 40px;
+    }
+
+    .hero-runner {
+        height: 520px;
+        right: 20px;
+    }
+
+    .hero-float-badge {
+        width: 72px;
+        height: 72px;
+        right: 24px;
+        top: 90px;
+        padding: 10px;
+    }
+
+    .hero h1 {
+        font-size: clamp(3rem, 8vw, 5rem);
+    }
+}
+
+/* 768px: Mobile Layout */
 @media (max-width: 768px) {
     .hero {
         min-height: auto;
@@ -363,18 +393,6 @@
 
     .hero h1 {
         font-size: clamp(2.5rem, 10vw, 4rem);
-    }
-
-    .hero-runner {
-        position: relative;
-        right: auto;
-        bottom: auto;
-        height: 300px;
-        margin: var(--space-lg) auto 0;
-    }
-
-    .hero-float-badge {
-        display: none;
     }
 
     .hero-year-motto {
@@ -397,6 +415,131 @@
 
     .hero-koop-badge {
         flex-wrap: wrap;
+    }
+
+    .hero-meta {
+        font-size: 16px;
+    }
+
+    .hero-kicker-text {
+        font-size: 14px;
+        letter-spacing: .1em;
+    }
+
+    .hero .btn-primary,
+    .hero .btn-secondary {
+        font-size: 16px;
+        padding: 14px 24px;
+    }
+}
+
+/* Portrait only: Silhouette und Badge ausblenden */
+@media (max-width: 768px) and (orientation: portrait) {
+    .hero-runner {
+        display: none;
+    }
+
+    .hero-float-badge {
+        display: none;
+    }
+}
+
+/* Landscape unter 768px: Silhouette kleiner, aber sichtbar */
+@media (max-width: 768px) and (orientation: landscape) {
+    .hero-runner {
+        height: 380px;
+        right: 10px;
+    }
+
+    .hero-float-badge {
+        width: 60px;
+        height: 60px;
+        top: 80px;
+        right: 16px;
+        padding: 8px;
+    }
+
+    .hero {
+        min-height: 100vh;
+        min-height: 100dvh;
+    }
+
+    .hero-content {
+        min-height: 100vh;
+        min-height: 100dvh;
+        padding-top: 80px;
+    }
+}
+
+/* 480px: Small mobile */
+@media (max-width: 480px) {
+    .hero-content {
+        padding: 80px var(--space-sm) var(--space-md);
+    }
+
+    .hero h1 {
+        font-size: clamp(2rem, 12vw, 3rem);
+    }
+
+    .hero-koop-badge {
+        padding: 6px 6px 6px 12px;
+        gap: 8px;
+    }
+
+    .hero-koop-badge .koop-text {
+        font-size: 11px;
+    }
+
+    .hero-koop-badge .koop-inner {
+        padding: 3px 8px 3px 4px;
+        gap: 5px;
+    }
+
+    .hero-koop-badge .koop-wappen {
+        width: 22px;
+        height: 22px;
+    }
+
+    .hero-koop-badge .koop-name {
+        font-size: 11px;
+    }
+
+    .hero-year {
+        font-size: 28px;
+    }
+
+    .hero-motto-chip {
+        font-size: 16px;
+        padding: 6px 14px;
+    }
+
+    .hero-meta {
+        font-size: 14px;
+        gap: 5px;
+    }
+
+    .hero-actions {
+        flex-direction: column;
+        gap: 12px;
+        width: 100%;
+    }
+
+    .hero .btn-primary,
+    .hero .btn-secondary {
+        width: 100%;
+        text-align: center;
+    }
+
+    .countdown {
+        gap: var(--space-sm);
+    }
+
+    .countdown-number {
+        font-size: clamp(1.5rem, 8vw, 2rem);
+    }
+
+    .countdown-label {
+        font-size: 0.75rem;
     }
 }
 
