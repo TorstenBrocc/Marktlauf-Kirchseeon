@@ -323,8 +323,9 @@
 .hero-runner {
     position: absolute;
     bottom: 0;
+    top: auto;
     right: 5%;
-    height: 75vh;
+    height: 70vh;
     width: auto;
     z-index: 2;
     pointer-events: none;
