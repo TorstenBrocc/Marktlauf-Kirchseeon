@@ -520,8 +520,8 @@
     }
 }
 
-/* Mobile landscape: padding-top basierend auf Höhe */
-@media (orientation: landscape) and (max-height: 500px) {
+/* Landscape: Header-Platz für alle Querformate */
+@media (orientation: landscape) {
     .hero-inner {
         padding-top: 82px;
     }
