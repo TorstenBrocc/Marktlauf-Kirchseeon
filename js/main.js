@@ -62,19 +62,10 @@ function initTabs() {
 }
 
 /**
- * Header Scroll Logic
+ * Header Scroll Logic - disabled, header always white
  */
 function initHeaderScroll() {
-    const header = document.querySelector(".main-header");
-    if (!header) return;
-
-    window.addEventListener("scroll", () => {
-        if (window.scrollY > 50) {
-            header.classList.add("scrolled");
-        } else {
-            header.classList.remove("scrolled");
-        }
-    });
+    // No longer needed - header is always in "scrolled" state
 }
 
 /**

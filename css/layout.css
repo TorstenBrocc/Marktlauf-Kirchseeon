@@ -4,7 +4,7 @@
 */
 
 /* ==========================================================================
-   HEADER - Default State (transparent, on hero gradient)
+   HEADER - Always white background
    ========================================================================== */
 
 .main-header {
@@ -16,42 +16,39 @@
     height: 82px;
     display: flex;
     align-items: center;
-    background: linear-gradient(180deg, rgba(12,60,35,.28), rgba(12,60,35,0));
-    transition: background-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    background: var(--white);
+    box-shadow: var(--shadow-sm);
 }
 
-/* Logo Plakette - Creme card for logos on gradient */
+/* Logo Plakette - simple logos on white */
 .logo-plakette {
     display: flex;
     align-items: center;
-    gap: 14px;
-    background: var(--color-cream);
-    padding: 8px 18px;
-    border-radius: 16px;
-    box-shadow: 0 8px 20px -8px rgba(0,0,0,.28);
-    overflow: hidden;
+    gap: var(--space-md);
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
+    box-shadow: none;
+    overflow: visible;
     flex-shrink: 0;
 }
 
 .logo-plakette .logo-wordmark {
-    height: 40px;
+    height: 50px;
     width: auto;
-    max-height: 40px;
+    max-height: 50px;
     flex-shrink: 0;
     object-fit: contain;
 }
 
 .logo-plakette .logo-divider {
-    width: 1px;
-    height: 38px;
-    background: #dcdccf;
-    flex-shrink: 0;
+    display: none;
 }
 
 .logo-plakette .logo-atsv {
-    height: 46px;
+    height: 42.5px;
     width: auto;
-    max-height: 46px;
+    max-height: 42.5px;
     flex-shrink: 0;
     object-fit: contain;
 }
@@ -69,7 +66,7 @@
     position: relative;
 }
 
-/* Nav links - white text on gradient */
+/* Nav links - dark text on white */
 .nav-links {
     display: flex;
     gap: 30px;
@@ -81,18 +78,18 @@
     font-family: var(--font-main);
     font-weight: 500;
     font-size: 15px;
-    color: rgba(255,255,255,.92);
+    color: var(--gray-600);
     transition: color 0.2s ease;
 }
 
 .nav-link:hover {
-    color: var(--white);
+    color: var(--color-primary);
 }
 
-/* CTA Button - Yellow pill */
+/* CTA Button - Green pill */
 .nav-cta {
-    background-color: var(--color-accent-yellow);
-    color: var(--color-ink);
+    background-color: var(--color-primary);
+    color: var(--white);
     font-weight: 600;
     font-size: 15px;
     padding: 11px 22px;
@@ -101,12 +98,12 @@
 }
 
 .nav-cta:hover {
-    background-color: #e5aa18;
-    color: var(--color-ink);
+    background-color: var(--color-primary-dark);
+    color: var(--white);
     transform: translateY(-1px);
 }
 
-/* Burger icon - white on gradient */
+/* Burger icon - dark on white */
 .mobile-menu-toggle {
     display: none;
     background: none;
@@ -119,7 +116,7 @@
     display: block;
     width: 24px;
     height: 2px;
-    background-color: var(--white);
+    background-color: var(--gray-900);
     position: relative;
     transition: background-color 0.2s ease;
 }
@@ -129,7 +126,7 @@
     position: absolute;
     width: 24px;
     height: 2px;
-    background-color: var(--white);
+    background-color: var(--gray-900);
     left: 0;
     transition: background-color 0.2s ease;
 }
@@ -137,65 +134,9 @@
 .burger-icon::before { top: -8px; }
 .burger-icon::after { top: 8px; }
 
-/* Lang switcher on gradient */
+/* Lang switcher */
 .nav-links .lang-switcher {
     margin-left: 0;
-}
-
-/* ==========================================================================
-   HEADER - Scrolled State (white background)
-   ========================================================================== */
-
-.main-header.scrolled {
-    position: fixed;
-    background: var(--white);
-    box-shadow: var(--shadow-sm);
-}
-
-.main-header.scrolled .nav-link {
-    color: var(--gray-600);
-}
-
-.main-header.scrolled .nav-link:hover {
-    color: var(--color-primary);
-}
-
-.main-header.scrolled .nav-cta {
-    background-color: var(--color-primary);
-    color: var(--white);
-}
-
-.main-header.scrolled .nav-cta:hover {
-    background-color: var(--color-primary-dark);
-    color: var(--white);
-}
-
-.main-header.scrolled .burger-icon,
-.main-header.scrolled .burger-icon::before,
-.main-header.scrolled .burger-icon::after {
-    background-color: var(--gray-900);
-}
-
-/* Hide plakette on scroll, show simple logos */
-.main-header.scrolled .logo-plakette {
-    background: transparent;
-    box-shadow: none;
-    padding: 0;
-    gap: var(--space-md);
-    overflow: visible;
-    border-radius: 0;
-}
-
-.main-header.scrolled .logo-plakette .logo-divider {
-    display: none;
-}
-
-.main-header.scrolled .logo-plakette .logo-wordmark {
-    height: 50px;
-}
-
-.main-header.scrolled .logo-plakette .logo-atsv {
-    height: 42.5px;
 }
 
 /* Legacy classes for backwards compatibility */
@@ -381,41 +322,42 @@
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
         box-sizing: border-box;
-        background: linear-gradient(135deg, var(--hero-gradient-start) 0%, var(--hero-gradient-mid) 100%);
+        background: var(--white);
+        border: 1px solid var(--gray-100);
         flex-direction: column;
         padding: 10px;
         gap: var(--space-md);
         text-align: center;
         transform: translateY(-150%);
         transition: transform 0.3s ease-in-out, visibility 0.3s;
-        box-shadow: 0 8px 24px -8px rgba(0,0,0,.3);
+        box-shadow: 0 8px 24px -8px rgba(0,0,0,.15);
         border-radius: 16px;
         z-index: 999;
         visibility: hidden;
     }
 
     .nav-links .nav-link {
-        color: #ffffff !important;
+        color: var(--gray-700) !important;
         font-size: 17px;
         font-weight: 500;
         padding: 8px 0;
     }
 
     .nav-links .nav-link:hover {
-        color: var(--color-accent-yellow) !important;
+        color: var(--color-primary) !important;
     }
 
     .nav-links .nav-cta {
-        background-color: var(--color-accent-yellow) !important;
-        color: var(--color-ink) !important;
+        background-color: var(--color-primary) !important;
+        color: var(--white) !important;
         margin-top: var(--space-sm);
         padding: 14px 28px;
         border-radius: 999px;
     }
 
     .nav-links .nav-cta:hover {
-        background-color: #e5aa18 !important;
-        color: var(--color-ink) !important;
+        background-color: var(--color-primary-dark) !important;
+        color: var(--white) !important;
     }
 
     .nav-links .lang-switcher {
@@ -426,30 +368,6 @@
     .nav-links.active {
         transform: translateY(0);
         visibility: visible;
-    }
-
-    /* Scrolled state mobile menu */
-    .main-header.scrolled .nav-links {
-        background: var(--white);
-        border-top: 1px solid var(--gray-100);
-    }
-
-    .main-header.scrolled .nav-links .nav-link {
-        color: var(--gray-700) !important;
-    }
-
-    .main-header.scrolled .nav-links .nav-link:hover {
-        color: var(--color-primary) !important;
-    }
-
-    .main-header.scrolled .nav-links .nav-cta {
-        background-color: var(--color-primary) !important;
-        color: var(--white) !important;
-    }
-
-    .main-header.scrolled .nav-links .nav-cta:hover {
-        background-color: var(--color-primary-dark) !important;
-        color: var(--white) !important;
     }
 }
 
