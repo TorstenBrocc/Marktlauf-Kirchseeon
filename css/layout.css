@@ -181,6 +181,8 @@
     box-shadow: none;
     padding: 0;
     gap: var(--space-md);
+    overflow: visible;
+    border-radius: 0;
 }
 
 .main-header.scrolled .logo-plakette .logo-divider {
