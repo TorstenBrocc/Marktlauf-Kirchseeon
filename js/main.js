@@ -26,6 +26,7 @@ function initMobileMenu() {
         menuToggle.setAttribute("aria-expanded", isActive);
         menuToggle.setAttribute("aria-label", isActive ? "Menü schließen" : "Menü öffnen");
         navLinks.classList.toggle("active");
+        document.body.style.overflow = isActive ? "hidden" : "";
     });
 
     document.querySelectorAll(".nav-link").forEach(link => {
@@ -34,6 +35,7 @@ function initMobileMenu() {
             menuToggle.setAttribute("aria-expanded", "false");
             menuToggle.setAttribute("aria-label", "Menü öffnen");
             navLinks.classList.remove("active");
+            document.body.style.overflow = "";
         });
     });
 }
