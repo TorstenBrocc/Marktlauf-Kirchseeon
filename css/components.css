@@ -517,7 +517,7 @@
     .hero-content {
         min-height: 100vh;
         min-height: 100dvh;
-        padding-top: 80px;
+        padding-top: 100px;
     }
 }
 
