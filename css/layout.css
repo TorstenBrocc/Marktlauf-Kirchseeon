@@ -29,22 +29,31 @@
     padding: 8px 18px;
     border-radius: 16px;
     box-shadow: 0 8px 20px -8px rgba(0,0,0,.28);
+    overflow: hidden;
+    flex-shrink: 0;
 }
 
 .logo-plakette .logo-wordmark {
     height: 40px;
     width: auto;
+    max-height: 40px;
+    flex-shrink: 0;
+    object-fit: contain;
 }
 
 .logo-plakette .logo-divider {
     width: 1px;
     height: 38px;
     background: #dcdccf;
+    flex-shrink: 0;
 }
 
 .logo-plakette .logo-atsv {
     height: 46px;
     width: auto;
+    max-height: 46px;
+    flex-shrink: 0;
+    object-fit: contain;
 }
 
 /* Nav container */
