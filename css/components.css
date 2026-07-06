@@ -322,10 +322,10 @@
 /* Läufer silhouette */
 .hero-runner {
     position: absolute;
-    top: 10%;
-    bottom: auto;
+    top: auto;
+    bottom: 0;
     right: 5%;
-    height: 85%;
+    height: 80%;
     width: auto;
     z-index: 2;
     pointer-events: none;
