@@ -522,6 +522,10 @@
 
 /* Mobile landscape: padding-top basierend auf Höhe */
 @media (orientation: landscape) and (max-height: 500px) {
+    .hero-inner {
+        padding-top: 82px;
+    }
+
     .hero-content {
         padding-top: 100px !important;
     }
