@@ -135,8 +135,8 @@
     top: 0;
     bottom: 0;
     height: 100%;
-    left: 0;
-    right: -100px;
+    left: -100vw;
+    right: 0;
     background: linear-gradient(90deg, rgba(0,0,0,.38) 0%, rgba(0,0,0,.32) 50%, rgba(0,0,0,.18) 80%, transparent 100%);
     pointer-events: none;
     z-index: -1;
