@@ -39,94 +39,307 @@
     box-shadow: var(--shadow-md);
 }
 
-/* Hero Section */
+/* ==========================================================================
+   HERO SECTION - Screen 1a Web Hero
+   ========================================================================== */
+
 .hero {
     position: relative;
-    min-height: 80vh;
+    min-height: 100vh;
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
-    align-items: center;
-    background-color: var(--gray-800);
-    /* background-image: url("../images/hero-bg.jpg"); -- Placeholder, Bild fehlt */
-    background-size: cover;
-    background-position: center;
+    background: linear-gradient(128deg, var(--hero-gradient-start) 0%, var(--hero-gradient-mid) 50%, var(--hero-gradient-end) 100%);
     color: var(--white);
     overflow: hidden;
-    padding: var(--space-xl) 0;
 }
 
-.hero-overlay {
+/* Decorative gradient blobs */
+.hero::before,
+.hero::after {
+    content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(
-        135deg, 
-        rgba(15, 23, 42, 0.8) 0%, 
-        rgba(0, 150, 64, 0.4) 100%
-    );
-    z-index: 1;
+    border-radius: 50%;
+    pointer-events: none;
 }
 
+.hero::before {
+    top: -160px;
+    right: -120px;
+    width: 620px;
+    height: 620px;
+    background: radial-gradient(circle at 40% 40%, rgba(244,184,30,.55), rgba(244,184,30,0) 70%);
+}
+
+.hero::after {
+    bottom: -220px;
+    left: -140px;
+    width: 640px;
+    height: 640px;
+    background: radial-gradient(circle at 50% 50%, rgba(18,168,119,.7), rgba(18,168,119,0) 70%);
+}
+
+.hero-blob-center {
+    position: absolute;
+    top: 120px;
+    left: 44%;
+    width: 360px;
+    height: 360px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,.16), rgba(255,255,255,0) 68%);
+    pointer-events: none;
+}
+
+/* Hero content wrapper */
 .hero-content {
     position: relative;
-    z-index: 2;
+    z-index: 3;
     width: 100%;
+    max-width: 760px;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    justify-content: center;
+    padding: 120px 20px 40px 60px;
+    min-height: 100vh;
+    min-height: 100dvh;
 }
 
-.hero-text {
-    max-width: 700px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+/* Contrast overlay - darkens left content area for WCAG AA compliance */
+.hero-content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -60px;
+    right: -100px;
+    bottom: 0;
+    background: linear-gradient(90deg, rgba(0,0,0,.38) 0%, rgba(0,0,0,.32) 50%, rgba(0,0,0,.18) 80%, transparent 100%);
+    pointer-events: none;
+    z-index: -1;
 }
 
-.hero-badge {
-    display: inline-block;
-    background-color: var(--color-primary);
-    color: var(--white);
-    padding: 0.25rem 0.75rem;
-    font-size: 0.875rem;
-    font-weight: 600;
-    border-radius: 100px;
-    margin-bottom: var(--space-md);
+/* Kooperations-Pille */
+.hero-koop-badge {
+    display: inline-flex;
+    align-self: flex-start;
+    align-items: center;
+    gap: 11px;
+    background: rgba(255,255,255,.94);
+    padding: 8px 8px 8px 16px;
+    border-radius: 999px;
+    margin-bottom: 26px;
+}
+
+.hero-koop-badge .koop-text {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    color: var(--color-deep-green);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
 }
 
+.hero-koop-badge .koop-inner {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: var(--white);
+    padding: 4px 12px 4px 6px;
+    border-radius: 999px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.12);
+}
+
+.hero-koop-badge .koop-wappen {
+    width: 26px;
+    height: 26px;
+}
+
+.hero-koop-badge .koop-name {
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--color-ink);
+}
+
+/* Kicker line */
+.hero-kicker {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.hero-kicker-bar {
+    width: 34px;
+    height: 3px;
+    background: var(--color-accent-yellow);
+    border-radius: 2px;
+}
+
+.hero-kicker-text {
+    font-weight: 600;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    font-size: 16px;
+    color: #fff8dd;
+}
+
+/* Main title */
 .hero h1 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 700;
     color: var(--white);
-    line-height: 1.1;
-    margin-bottom: var(--space-sm);
+    font-size: clamp(3rem, 7vw, 96px);
+    line-height: .92;
+    letter-spacing: -.01em;
+    text-shadow: 0 6px 24px rgba(20,60,30,.28);
 }
 
-.text-highlight {
-    color: var(--color-primary-light);
+/* Year + Motto row */
+.hero-year-motto {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 22px 0 8px;
 }
 
-.hero-details {
-    font-size: 1.25rem;
-    color: var(--gray-300);
-    margin-bottom: var(--space-lg);
-    font-weight: 400;
+.hero-year {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 40px;
+    color: var(--color-accent-yellow);
+    -webkit-text-stroke: 1px rgba(255,255,255,.35);
 }
 
+.hero-motto-chip {
+    background: var(--white);
+    color: var(--color-deep-green);
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 23px;
+    padding: 8px 18px;
+    border-radius: 8px;
+    transform: rotate(-2deg);
+    box-shadow: 0 6px 16px rgba(0,0,0,.14);
+}
+
+/* Meta lines */
+.hero-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin-top: 24px;
+    color: var(--white);
+    font-weight: 500;
+    font-size: 18px;
+}
+
+.hero-meta-line {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.hero-meta-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.hero-meta-dot--gold {
+    background: var(--color-accent-yellow);
+}
+
+.hero-meta-dot--white {
+    background: var(--white);
+}
+
+/* CTA buttons */
 .hero-actions {
     display: flex;
-    gap: var(--space-md);
+    gap: 16px;
+    margin-top: 34px;
     flex-wrap: wrap;
 }
 
+.hero .btn-primary {
+    background: var(--color-accent-yellow);
+    color: var(--color-ink);
+    font-weight: 600;
+    font-size: 18px;
+    padding: 16px 32px;
+    border-radius: 999px;
+    box-shadow: 0 12px 26px -8px rgba(244,184,30,.7);
+}
+
+.hero .btn-primary:hover {
+    background: #e5aa18;
+    transform: translateY(-2px);
+}
+
+.hero .btn-secondary {
+    background: rgba(255,255,255,.14);
+    border: 1.5px solid rgba(255,255,255,.7);
+    color: var(--white);
+    font-weight: 600;
+    font-size: 18px;
+    padding: 15px 30px;
+    border-radius: 999px;
+    box-shadow: none;
+}
+
+.hero .btn-secondary:hover {
+    background: rgba(255,255,255,.24);
+    transform: translateY(-2px);
+}
+
+/* Läufer silhouette */
+.hero-runner {
+    position: absolute;
+    bottom: 0;
+    right: 96px;
+    height: 720px;
+    width: auto;
+    z-index: 2;
+    pointer-events: none;
+}
+
+/* Floating badge */
+.hero-float-badge {
+    position: absolute;
+    top: 104px;
+    right: 44px;
+    width: 92px;
+    height: 92px;
+    background: var(--white);
+    border-radius: 50%;
+    padding: 14px;
+    box-shadow: 0 14px 30px -8px rgba(0,0,0,.3);
+    z-index: 3;
+    animation: ml-float 7s ease-in-out infinite;
+}
+
+.hero-float-badge img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+@keyframes ml-float {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-14px) rotate(2deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hero-float-badge {
+        animation: none;
+    }
+}
+
+/* Countdown (integrated into new hero) */
 .countdown {
     display: flex;
     gap: var(--space-md);
-    margin-bottom: var(--space-lg);
-    justify-content: center;
+    margin-top: 24px;
 }
 
 .countdown > div {
@@ -134,40 +347,212 @@
 }
 
 .countdown-number {
-    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 5vw, 3rem);
     font-weight: 700;
     color: var(--white);
     line-height: 1;
 }
 
 .countdown-label {
-    font-size: 1rem;
-    color: var(--gray-300);
+    font-size: 0.875rem;
+    color: rgba(255,255,255,.8);
     text-transform: uppercase;
     letter-spacing: 0.1em;
 }
 
-/* Responsive Hero */
+/* ==========================================================================
+   RESPONSIVE HERO
+   ========================================================================== */
+
+/* 900px: Läufer verkleinern, Content breiter */
+@media (max-width: 900px) {
+    .hero-content {
+        max-width: 100%;
+        padding-left: 40px;
+        padding-right: 40px;
+    }
+
+    .hero-runner {
+        height: 520px;
+        right: 20px;
+    }
+
+    .hero-float-badge {
+        width: 72px;
+        height: 72px;
+        right: 24px;
+        top: 90px;
+        padding: 10px;
+    }
+
+    .hero h1 {
+        font-size: clamp(3rem, 8vw, 5rem);
+    }
+}
+
+/* 768px: Mobile Layout */
 @media (max-width: 768px) {
     .hero {
-        align-items: center; /* Center content on mobile */
-        min-height: 80vh;
-        text-align: center;
+        min-height: auto;
+        padding-bottom: var(--space-lg);
     }
 
     .hero-content {
-        display: flex;
-        justify-content: center;
+        padding: 90px var(--space-md) var(--space-lg);
+        min-height: auto;
+        max-width: 100%;
     }
 
-.hero-text {
-        display: flex;
+    .hero h1 {
+        font-size: clamp(2.5rem, 10vw, 4rem);
+    }
+
+    .hero-year-motto {
         flex-direction: column;
-        align-items: center;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .hero-motto-chip {
+        font-size: 18px;
+    }
+
+    .hero-year {
+        font-size: 32px;
     }
 
     .hero-actions {
-        justify-content: center;
+        justify-content: flex-start;
+    }
+
+    .hero-koop-badge {
+        flex-wrap: wrap;
+    }
+
+    .hero-meta {
+        font-size: 16px;
+    }
+
+    .hero-kicker-text {
+        font-size: 14px;
+        letter-spacing: .1em;
+    }
+
+    .hero .btn-primary,
+    .hero .btn-secondary {
+        font-size: 16px;
+        padding: 14px 24px;
+    }
+}
+
+/* Portrait only: Silhouette und Badge ausblenden */
+@media (max-width: 768px) and (orientation: portrait) {
+    .hero-runner {
+        display: none;
+    }
+
+    .hero-float-badge {
+        display: none;
+    }
+}
+
+/* Landscape unter 768px: Silhouette kleiner, aber sichtbar */
+@media (max-width: 768px) and (orientation: landscape) {
+    .hero-runner {
+        height: 380px;
+        right: 10px;
+    }
+
+    .hero-float-badge {
+        width: 60px;
+        height: 60px;
+        top: 80px;
+        right: 16px;
+        padding: 8px;
+    }
+
+    .hero {
+        min-height: 100vh;
+        min-height: 100dvh;
+    }
+
+    .hero-content {
+        min-height: 100vh;
+        min-height: 100dvh;
+        padding-top: 80px;
+    }
+}
+
+/* 480px: Small mobile */
+@media (max-width: 480px) {
+    .hero-content {
+        padding: 80px var(--space-sm) var(--space-md);
+    }
+
+    .hero h1 {
+        font-size: clamp(2rem, 12vw, 3rem);
+    }
+
+    .hero-koop-badge {
+        padding: 6px 6px 6px 12px;
+        gap: 8px;
+    }
+
+    .hero-koop-badge .koop-text {
+        font-size: 11px;
+    }
+
+    .hero-koop-badge .koop-inner {
+        padding: 3px 8px 3px 4px;
+        gap: 5px;
+    }
+
+    .hero-koop-badge .koop-wappen {
+        width: 22px;
+        height: 22px;
+    }
+
+    .hero-koop-badge .koop-name {
+        font-size: 11px;
+    }
+
+    .hero-year {
+        font-size: 28px;
+    }
+
+    .hero-motto-chip {
+        font-size: 16px;
+        padding: 6px 14px;
+    }
+
+    .hero-meta {
+        font-size: 14px;
+        gap: 5px;
+    }
+
+    .hero-actions {
+        flex-direction: column;
+        gap: 12px;
+        width: 100%;
+    }
+
+    .hero .btn-primary,
+    .hero .btn-secondary {
+        width: 100%;
+        text-align: center;
+    }
+
+    .countdown {
+        gap: var(--space-sm);
+    }
+
+    .countdown-number {
+        font-size: clamp(1.5rem, 8vw, 2rem);
+    }
+
+    .countdown-label {
+        font-size: 0.75rem;
     }
 }
 

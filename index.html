@@ -9,7 +9,7 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     
     <!-- Styles -->
     <link rel="stylesheet" href="css/base.css">
@@ -158,16 +158,13 @@
 <body>
 
     <header class="main-header">
-        <div class="container nav-container">
-            <div class="header-logos">
-                <a href="#" class="nav-logo">
-                    <img src="assets/images/Marktlauf%20Logo%20Schrift.png" alt="ATSV Marktlauf Kirchseeon Logo" class="logo-img marktlauf-logo">
-                </a>
-                <a href="https://www.atsv-kirchseeon.de/" target="_blank" class="nav-logo-atsv">
-                     <img src="assets/images/ATSV_Logo-750x968.png" alt="ATSV Kirchseeon e.V. Logo" class="logo-img atsv-logo">
-                </a>
-            </div>
-            
+        <div class="nav-container">
+            <a href="index.html" class="logo-plakette">
+                <img src="assets/images/Marktlauf%20Logo%20Schrift.png" alt="Marktlauf Kirchseeon" class="logo-wordmark">
+                <span class="logo-divider"></span>
+                <img src="assets/images/ATSV_Logo-750x968.png" alt="ATSV Kirchseeon 1906" class="logo-atsv">
+            </a>
+
             <button class="mobile-menu-toggle" aria-label="Menü öffnen">
                 <span class="burger-icon"></span>
             </button>
@@ -177,11 +174,11 @@
                 <a href="#ablauf" class="nav-link" data-i18n="nav.zeitplan">Zeitplan</a>
                 <a href="#strecke" class="nav-link" data-i18n="nav.strecke">Strecke</a>
                 <a href="#sponsoren" class="nav-link" data-i18n="nav.sponsoren">Sponsoren</a>
-                <a href="index.html#connect" class="nav-link" data-i18n="nav.kontakt">Newsletter & Kontakt</a>
+                <a href="#connect" class="nav-link" data-i18n="nav.kontakt">Newsletter & Kontakt</a>
                 <div class="lang-switcher">
-<button id="lang-toggle" class="lang-btn" title="Sprache wechseln">
-    <img src="assets/images/allemand.png" alt="Deutsch" id="lang-flag" class="flag-icon">
-</button>
+                    <button id="lang-toggle" class="lang-btn" title="Sprache wechseln">
+                        <img src="assets/images/allemand.png" alt="Deutsch" id="lang-flag" class="flag-icon">
+                    </button>
                 </div>
                 <a href="#anmeldung" class="nav-link nav-cta" data-i18n="nav.anmeldung">Jetzt anmelden</a>
             </nav>
@@ -191,22 +188,60 @@
     <main>
         <!-- Hero Section -->
         <section id="hero" class="hero">
-            <div class="hero-overlay"></div>
-            <div class="hero-logo-container">
-                <img src="assets/images/logo-final.svg" alt="Marktlauf Logo" class="hero-logo-main">
+            <div class="hero-blob-center"></div>
+
+            <!-- Floating Marktlauf Badge -->
+            <div class="hero-float-badge">
+                <img src="assets/images/logo-final.svg" alt="Marktlauf Logo">
             </div>
-            <div class="container hero-content">
-                <div class="hero-text text-center">
-                    <span class="hero-badge" data-i18n="hero.badge">ATSV Kirchseeon präsentiert zusammen mit der Gemeinde</span>
-                    <h1 data-i18n="hero.title">Marktlauf <br><span class="text-highlight">Kirchseeon 2026</span></h1>
-                    <p class="hero-details">
-                        <time datetime="2026-09-20" data-i18n="hero.date">20. September 2026</time>
-                    </p>
-                    <div id="countdown" class="countdown"></div>
-                    <div class="hero-actions">
-                        <a href="#anmeldung" class="btn btn-primary" data-i18n="hero.cta_primary">Jetzt anmelden</a>
-                        <a href="#distanzen" class="btn btn-secondary" data-i18n="hero.cta_secondary">Alle Läufe</a>
-                    </div>
+
+            <!-- Läufer Silhouette -->
+            <img src="assets/images/laeufer.png" alt="Läufer" class="hero-runner">
+
+            <div class="hero-content">
+                <!-- Kooperations-Pille -->
+                <div class="hero-koop-badge">
+                    <span class="koop-text">In Kooperation mit</span>
+                    <span class="koop-inner">
+                        <img src="assets/images/kirchseeon-wappen.webp" alt="Wappen Markt Kirchseeon" class="koop-wappen">
+                        <span class="koop-name">Markt Kirchseeon</span>
+                    </span>
+                </div>
+
+                <!-- Kicker -->
+                <div class="hero-kicker">
+                    <span class="hero-kicker-bar"></span>
+                    <span class="hero-kicker-text">Energie- &amp; Umwelttag 2026</span>
+                </div>
+
+                <!-- Titel -->
+                <h1>Marktlauf<br>Kirchseeon</h1>
+
+                <!-- Jahr + Motto -->
+                <div class="hero-year-motto">
+                    <span class="hero-year">2026</span>
+                    <span class="hero-motto-chip">E-Mobilität &amp; Sport</span>
+                </div>
+
+                <!-- Meta-Zeilen -->
+                <div class="hero-meta">
+                    <span class="hero-meta-line">
+                        <span class="hero-meta-dot hero-meta-dot--gold"></span>
+                        <span>Sonntag, 20. September 2026 · Start 09:00 Uhr</span>
+                    </span>
+                    <span class="hero-meta-line">
+                        <span class="hero-meta-dot hero-meta-dot--white"></span>
+                        <span>Start &amp; Ziel: JEK, Westring 6, 85614 Kirchseeon</span>
+                    </span>
+                </div>
+
+                <!-- Countdown -->
+                <div id="countdown" class="countdown"></div>
+
+                <!-- CTAs -->
+                <div class="hero-actions">
+                    <a href="#anmeldung" class="btn btn-primary" data-i18n="hero.cta_primary">Jetzt anmelden</a>
+                    <a href="#distanzen" class="btn btn-secondary" data-i18n="hero.cta_secondary">Alle Läufe</a>
                 </div>
             </div>
         </section>

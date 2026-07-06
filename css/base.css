@@ -10,6 +10,17 @@
     --color-primary-light: #2ecc71;
     --color-accent: #ff6b35;
 
+    /* Hero/Kooperation Colors */
+    --hero-gradient-start: #12a877;
+    --hero-gradient-mid: #5cbd45;
+    --hero-gradient-end: #bcd531;
+    --color-accent-yellow: #f4b81e;
+    --color-deep-green: #1f7a3a;
+    --color-marktlauf-green: #2f8f3f;
+    --color-teal: #0e6f88;
+    --color-cream: #f7f5ee;
+    --color-ink: #1f2a22;
+
     /* Gray Scale */
     --gray-50: #f8fafc;
     --gray-100: #f1f5f9;
@@ -31,8 +42,9 @@
     --shadow-xl: 0 25px 50px -5px rgba(0, 0, 0, 0.2);
 
     /* Typography */
-    --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-main: 'Poppins', 'Inter', system-ui, -apple-system, sans-serif;
     --font-heading: 'Montserrat', system-ui, -apple-system, sans-serif;
+    --font-display: 'Fredoka', system-ui, -apple-system, sans-serif;
     
     /* Spacing - Increased for more breathing room */
     --space-xs: 0.5rem;
