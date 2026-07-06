@@ -51,7 +51,7 @@
     flex-direction: column;
     background: linear-gradient(128deg, var(--hero-gradient-start) 0%, var(--hero-gradient-mid) 50%, var(--hero-gradient-end) 100%);
     color: var(--white);
-    overflow-x: hidden;
+    overflow: hidden;
 }
 
 /* Decorative gradient blobs */
@@ -95,11 +95,13 @@
     position: relative;
     z-index: 3;
     width: 100%;
-    max-width: 760px;
+    max-width: 1360px;
+    margin-left: auto;
+    margin-right: auto;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding: 120px 20px 40px 44px;
+    padding: 120px 44px 40px 44px;
     min-height: 100vh;
     min-height: 100dvh;
 }
