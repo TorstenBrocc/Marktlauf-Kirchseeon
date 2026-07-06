@@ -136,7 +136,7 @@
     height: 100%;
     left: -60px;
     right: -100px;
-    background: rgba(0,0,0,.32);
+    background: linear-gradient(90deg, rgba(0,0,0,.38) 0%, rgba(0,0,0,.32) 50%, rgba(0,0,0,.18) 80%, transparent 100%);
     pointer-events: none;
     z-index: -1;
 }
