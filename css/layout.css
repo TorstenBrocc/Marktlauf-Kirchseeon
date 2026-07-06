@@ -4,7 +4,7 @@
 */
 
 /* ==========================================================================
-   HEADER - Always white background
+   HEADER - Default State (transparent, on hero gradient)
    ========================================================================== */
 
 .main-header {
@@ -16,39 +16,42 @@
     height: 82px;
     display: flex;
     align-items: center;
-    background: var(--white);
-    box-shadow: var(--shadow-sm);
+    background: linear-gradient(180deg, rgba(12,60,35,.28), rgba(12,60,35,0));
+    transition: background-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
-/* Logo Plakette - simple logos on white */
+/* Logo Plakette - Creme card for logos on gradient */
 .logo-plakette {
     display: flex;
     align-items: center;
-    gap: var(--space-md);
-    background: transparent;
-    padding: 0;
-    border-radius: 0;
-    box-shadow: none;
-    overflow: visible;
+    gap: 14px;
+    background: var(--color-cream);
+    padding: 8px 18px;
+    border-radius: 16px;
+    box-shadow: 0 8px 20px -8px rgba(0,0,0,.28);
+    overflow: hidden;
     flex-shrink: 0;
 }
 
 .logo-plakette .logo-wordmark {
-    height: 50px;
+    height: 40px;
     width: auto;
-    max-height: 50px;
+    max-height: 40px;
     flex-shrink: 0;
     object-fit: contain;
 }
 
 .logo-plakette .logo-divider {
-    display: none;
+    width: 1px;
+    height: 38px;
+    background: #dcdccf;
+    flex-shrink: 0;
 }
 
 .logo-plakette .logo-atsv {
-    height: 42.5px;
+    height: 46px;
     width: auto;
-    max-height: 42.5px;
+    max-height: 46px;
     flex-shrink: 0;
     object-fit: contain;
 }
@@ -66,7 +69,7 @@
     position: relative;
 }
 
-/* Nav links - dark text on white */
+/* Nav links - white text on gradient */
 .nav-links {
     display: flex;
     gap: 30px;
@@ -78,18 +81,18 @@
     font-family: var(--font-main);
     font-weight: 500;
     font-size: 15px;
-    color: var(--gray-600);
+    color: rgba(255,255,255,.92);
     transition: color 0.2s ease;
 }
 
 .nav-link:hover {
-    color: var(--color-primary);
+    color: var(--white);
 }
 
-/* CTA Button - Green pill */
+/* CTA Button - Yellow pill */
 .nav-cta {
-    background-color: var(--color-primary);
-    color: var(--white);
+    background-color: var(--color-accent-yellow);
+    color: var(--color-ink);
     font-weight: 600;
     font-size: 15px;
     padding: 11px 22px;
@@ -98,12 +101,12 @@
 }
 
 .nav-cta:hover {
-    background-color: var(--color-primary-dark);
-    color: var(--white);
+    background-color: #e5aa18;
+    color: var(--color-ink);
     transform: translateY(-1px);
 }
 
-/* Burger icon - dark on white */
+/* Burger icon - white on gradient */
 .mobile-menu-toggle {
     display: none;
     background: none;
@@ -116,7 +119,7 @@
     display: block;
     width: 24px;
     height: 2px;
-    background-color: var(--gray-900);
+    background-color: var(--white);
     position: relative;
     transition: background-color 0.2s ease;
 }
@@ -126,7 +129,7 @@
     position: absolute;
     width: 24px;
     height: 2px;
-    background-color: var(--gray-900);
+    background-color: var(--white);
     left: 0;
     transition: background-color 0.2s ease;
 }
@@ -134,9 +137,65 @@
 .burger-icon::before { top: -8px; }
 .burger-icon::after { top: 8px; }
 
-/* Lang switcher */
+/* Lang switcher on gradient */
 .nav-links .lang-switcher {
     margin-left: 0;
+}
+
+/* ==========================================================================
+   HEADER - Scrolled State (white background)
+   ========================================================================== */
+
+.main-header.scrolled {
+    position: fixed;
+    background: var(--white);
+    box-shadow: var(--shadow-sm);
+}
+
+.main-header.scrolled .nav-link {
+    color: var(--gray-600);
+}
+
+.main-header.scrolled .nav-link:hover {
+    color: var(--color-primary);
+}
+
+.main-header.scrolled .nav-cta {
+    background-color: var(--color-primary);
+    color: var(--white);
+}
+
+.main-header.scrolled .nav-cta:hover {
+    background-color: var(--color-primary-dark);
+    color: var(--white);
+}
+
+.main-header.scrolled .burger-icon,
+.main-header.scrolled .burger-icon::before,
+.main-header.scrolled .burger-icon::after {
+    background-color: var(--gray-900);
+}
+
+/* Hide plakette on scroll, show simple logos */
+.main-header.scrolled .logo-plakette {
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+    gap: var(--space-md);
+    overflow: visible;
+    border-radius: 0;
+}
+
+.main-header.scrolled .logo-plakette .logo-divider {
+    display: none;
+}
+
+.main-header.scrolled .logo-plakette .logo-wordmark {
+    height: 50px;
+}
+
+.main-header.scrolled .logo-plakette .logo-atsv {
+    height: 42.5px;
 }
 
 /* Legacy classes for backwards compatibility */
