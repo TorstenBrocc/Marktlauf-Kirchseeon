@@ -115,6 +115,7 @@ h3 { font-size: clamp(1.25rem, 3vw, 1.75rem); }
 
 .section-padding {
     padding: var(--space-xl) 0;
+    background-color: var(--white);
 }
 
 /* Utility Classes */
