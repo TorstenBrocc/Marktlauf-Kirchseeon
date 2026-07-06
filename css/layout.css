@@ -435,16 +435,21 @@
     }
 
     .main-header.scrolled .nav-links .nav-link {
-        color: var(--gray-700);
+        color: var(--gray-700) !important;
     }
 
     .main-header.scrolled .nav-links .nav-link:hover {
-        color: var(--color-primary);
+        color: var(--color-primary) !important;
     }
 
     .main-header.scrolled .nav-links .nav-cta {
-        background-color: var(--color-primary);
-        color: var(--white);
+        background-color: var(--color-primary) !important;
+        color: var(--white) !important;
+    }
+
+    .main-header.scrolled .nav-links .nav-cta:hover {
+        background-color: var(--color-primary-dark) !important;
+        color: var(--white) !important;
     }
 }
 
