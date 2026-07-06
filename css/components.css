@@ -50,7 +50,8 @@
     flex-direction: column;
     background: linear-gradient(128deg, var(--hero-gradient-start) 0%, var(--hero-gradient-mid) 50%, var(--hero-gradient-end) 100%);
     color: var(--white);
-    overflow: hidden;
+    isolation: isolate;
+    overflow: clip;
 }
 
 /* Decorative gradient blobs */
