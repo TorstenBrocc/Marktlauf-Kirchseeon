@@ -386,6 +386,8 @@
         box-shadow: 0 8px 24px -8px rgba(0,0,0,.3);
         z-index: 999;
         visibility: hidden;
+        overflow: hidden;
+        clip-path: inset(0);
     }
 
     .nav-links .nav-link {
