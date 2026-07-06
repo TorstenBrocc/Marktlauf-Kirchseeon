@@ -66,6 +66,7 @@
     max-width: 1360px;
     margin: 0 auto;
     padding: 0 44px;
+    position: relative;
 }
 
 /* Nav links - white text on gradient */
@@ -372,18 +373,16 @@
 
     /* Mobile menu dropdown */
     .nav-links {
-        position: fixed;
-        top: 70px;
-        left: 0;
+        position: absolute;
+        top: 100%;
         right: 0;
-        width: 100%;
+        width: max-content;
+        height: auto;
+        overflow: visible;
         box-sizing: border-box;
-        max-height: calc(100dvh - 70px);
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
         background: linear-gradient(135deg, var(--hero-gradient-start) 0%, var(--hero-gradient-mid) 100%);
         flex-direction: column;
-        padding: var(--space-lg);
+        padding: 10px;
         gap: var(--space-md);
         text-align: center;
         transform: translateY(-150%);
