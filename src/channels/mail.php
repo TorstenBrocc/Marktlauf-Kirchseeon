@@ -116,6 +116,92 @@ TEXT;
     return sendMail($to, $subject, $body);
 }
 
+/**
+ * Persönliche Anrede aus Anrede-Feld + Nachname bilden.
+ * Fallback auf "Sehr geehrte Damen und Herren," wenn kein Nachname vorliegt.
+ */
+function sponsorAnrede(string $anrede, string $nachname): string {
+    $nachname = trim($nachname);
+    if ($nachname === '') {
+        return 'Sehr geehrte Damen und Herren,';
+    }
+    if ($anrede === 'Frau') {
+        return "Sehr geehrte Frau {$nachname},";
+    }
+    if ($anrede === 'Herr') {
+        return "Sehr geehrter Herr {$nachname},";
+    }
+    return 'Sehr geehrte Damen und Herren,';
+}
+
+/**
+ * Sponsor-Anschreiben versenden (nativer SMTP-Mailer).
+ *
+ * Zwei Varianten (intern/sponsor-crm-ausbau.md §5.1):
+ *   - 'erstanschreiben' — Erstkontakt
+ *   - 'folgejahr'       — Bestandssponsor / vertrauterer Ton
+ *
+ * ┌─────────────────────────────────────────────────────────────────────┐
+ * │ PLATZHALTER-TEXTE — vor dem ersten echten Versand ersetzen!           │
+ * │ Der finale Wortlaut (aus dem bisherigen Versand-Script/OneDrive)      │
+ * │ gehört in $textErst / $textFolge unten. Struktur/Personalisierung     │
+ * │ ({anrede}, {firma}) sind bereits verdrahtet.                          │
+ * └─────────────────────────────────────────────────────────────────────┘
+ */
+function sendSponsorAnschreiben(
+    string $to,
+    string $anrede,
+    string $nachname,
+    string $firma,
+    string $typ = 'erstanschreiben'
+): bool {
+    $begruessung = sponsorAnrede($anrede, $nachname);
+    $firma = trim($firma) !== '' ? trim($firma) : 'Ihr Unternehmen';
+
+    if ($typ === 'folgejahr') {
+        $subject = 'Auch 2026 wieder dabei? – Marktlauf Kirchseeon';
+        $text = <<<TEXT
+{$begruessung}
+
+schön, dass {$firma} den Marktlauf Kirchseeon im vergangenen Jahr unterstützt hat –
+darüber haben wir uns sehr gefreut!
+
+[PLATZHALTER: Folgejahr-Anschreiben – finalen Text hier einsetzen.]
+
+Wir würden uns freuen, wenn Sie auch beim Marktlauf 2026 wieder mit an Bord wären.
+
+Sportliche Grüße
+Dein Marktlauf-Team
+──────────────────────────
+ATSV Kirchseeon Marktlauf
+info@atsv-kirchseeon-marktlauf.de
+https://atsv-kirchseeon-marktlauf.de
+TEXT;
+    } else {
+        $subject = 'Sponsoring-Anfrage – Marktlauf Kirchseeon 2026';
+        $text = <<<TEXT
+{$begruessung}
+
+der ATSV Kirchseeon veranstaltet 2026 wieder den Marktlauf – ein Laufevent für die
+ganze Region – und wir suchen dafür Unterstützerinnen und Unterstützer aus der
+lokalen Wirtschaft.
+
+[PLATZHALTER: Erstanschreiben – finalen Text hier einsetzen.]
+
+Über eine Rückmeldung von {$firma} würden wir uns sehr freuen.
+
+Sportliche Grüße
+Dein Marktlauf-Team
+──────────────────────────
+ATSV Kirchseeon Marktlauf
+info@atsv-kirchseeon-marktlauf.de
+https://atsv-kirchseeon-marktlauf.de
+TEXT;
+    }
+
+    return sendMail($to, $subject, $text);
+}
+
 function sendAufgabeErinnerung(string $to, string $name, string $aufgabeTitel, string $faelligAm): bool {
     $subject = '⏰ Erinnerung: Aufgabe fällig – ' . $aufgabeTitel;
     $body = <<<TEXT

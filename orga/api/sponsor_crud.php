@@ -9,6 +9,27 @@ declare(strict_types=1);
 require_once __DIR__ . '/_auth.php';
 require_once __DIR__ . '/../../src/db.php';
 require_once __DIR__ . '/../../src/logger.php';
+require_once __DIR__ . '/../../src/sponsor_status.php';
+
+/**
+ * prioritaet aus dem Formular (leer|1|2|3) validieren.
+ */
+function sponsorPrioritaetFromPost(mixed $raw): ?int {
+    $v = trim((string) $raw);
+    if ($v === '' || !ctype_digit($v)) {
+        return null;
+    }
+    $n = (int) $v;
+    return ($n >= 1 && $n <= 3) ? $n : null;
+}
+
+/**
+ * status aus dem Formular gegen die erlaubten Werte prüfen.
+ */
+function sponsorStatusFromPost(mixed $raw): string {
+    $v = (string) $raw;
+    return sponsorStatusValid($v) ? $v : 'neu';
+}
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: ../sponsoren.php');
@@ -100,14 +121,16 @@ try {
             }
 
             $stmt = $pdo->prepare('
-                INSERT INTO sponsors (firma, paket, summe, status, kein_kontakt, kein_kontakt_grund, kein_kontakt_wer, kein_kontakt_datum, notizen, wiedervorlage)
-                VALUES (:firma, :paket, :summe, :status, :kein_kontakt, :kein_kontakt_grund, :kein_kontakt_wer, :kein_kontakt_datum, :notizen, :wiedervorlage)
+                INSERT INTO sponsors (firma, paket, prioritaet, ort, summe, status, kein_kontakt, kein_kontakt_grund, kein_kontakt_wer, kein_kontakt_datum, notizen, wiedervorlage)
+                VALUES (:firma, :paket, :prioritaet, :ort, :summe, :status, :kein_kontakt, :kein_kontakt_grund, :kein_kontakt_wer, :kein_kontakt_datum, :notizen, :wiedervorlage)
             ');
             $stmt->execute([
                 'firma'              => $firma,
                 'paket'              => $_POST['paket'] ?: null,
+                'prioritaet'         => sponsorPrioritaetFromPost($_POST['prioritaet'] ?? ''),
+                'ort'                => trim($_POST['ort'] ?? '') ?: null,
                 'summe'              => (float) ($_POST['summe'] ?? 0) ?: null,
-                'status'             => $_POST['status'] ?? 'angefragt',
+                'status'             => sponsorStatusFromPost($_POST['status'] ?? 'neu'),
                 'kein_kontakt'       => $keinKontakt,
                 'kein_kontakt_grund' => $keinKontakt ? (trim($_POST['kein_kontakt_grund'] ?? '') ?: null) : null,
                 'kein_kontakt_wer'   => $keinKontakt ? (trim($_POST['kein_kontakt_wer'] ?? '') ?: null) : null,
@@ -180,6 +203,8 @@ try {
                 UPDATE sponsors SET
                     firma = :firma,
                     paket = :paket,
+                    prioritaet = :prioritaet,
+                    ort = :ort,
                     summe = :summe,
                     status = :status,
                     kein_kontakt = :kein_kontakt,
@@ -193,8 +218,10 @@ try {
             $stmt->execute([
                 'firma'              => $firma,
                 'paket'              => $_POST['paket'] ?: null,
+                'prioritaet'         => sponsorPrioritaetFromPost($_POST['prioritaet'] ?? ''),
+                'ort'                => trim($_POST['ort'] ?? '') ?: null,
                 'summe'              => (float) ($_POST['summe'] ?? 0) ?: null,
-                'status'             => $_POST['status'] ?? 'angefragt',
+                'status'             => sponsorStatusFromPost($_POST['status'] ?? 'neu'),
                 'kein_kontakt'       => $keinKontakt,
                 'kein_kontakt_grund' => $keinKontaktGrund,
                 'kein_kontakt_wer'   => $keinKontaktWer,
