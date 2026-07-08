@@ -307,6 +307,16 @@ body {
     font-weight: 500;
 }
 
+/* Noch nicht gebautes Nav-Ziel (z. B. Live-Ticker, Phase 3): sichtbar, aber nicht klickbar */
+.nav-item .nav-disabled {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    color: var(--text-light);
+    cursor: default;
+}
+
 .nav-section {
     padding: 1rem 1.5rem 0.5rem;
     font-size: 0.75rem;

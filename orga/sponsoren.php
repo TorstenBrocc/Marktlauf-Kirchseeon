@@ -240,7 +240,7 @@ $gesamtSumme = (float) $summeStmt->fetchColumn();
                     <a href="dateien.php">Dateien</a>
                 </li>
                 <li class="nav-item">
-                    <a href="ticker.php">Live-Ticker</a>
+                    <span class="nav-disabled">Live-Ticker</span>
                     <span class="badge">Phase 3</span>
                 </li>
                 <?php if ($isAdmin): ?>
