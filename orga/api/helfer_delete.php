@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/_auth.php';
 require_once __DIR__ . '/../../src/db.php';
+require_once __DIR__ . '/../../src/logger.php';
 
 if (!isAdminFromGuard()) {
     http_response_code(403);
@@ -39,6 +40,7 @@ try {
     $stmt->execute(['id' => $helferId]);
     $_SESSION['flash_success'] = 'Helfer gelöscht.';
 } catch (PDOException $e) {
+    logError('helfer_delete: ' . $e->getMessage());
     $_SESSION['flash_error'] = 'Datenbankfehler.';
 }
 
