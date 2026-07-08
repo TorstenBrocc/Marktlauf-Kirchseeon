@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/api/_auth.php';
 require_once __DIR__ . '/../src/db.php';
+require_once __DIR__ . '/../src/sponsor_status.php';
 
 $user = getCurrentUserFromGuard();
 $isAdmin = isAdminFromGuard();
@@ -14,7 +15,8 @@ $csrfToken = generateCsrfToken();
 
 $flashSuccess = $_SESSION['flash_success'] ?? '';
 $flashError = $_SESSION['flash_error'] ?? '';
-unset($_SESSION['flash_success'], $_SESSION['flash_error']);
+$importReport = $_SESSION['import_report'] ?? [];
+unset($_SESSION['flash_success'], $_SESSION['flash_error'], $_SESSION['import_report']);
 
 $filterStatus = $_GET['status'] ?? '';
 $filterPaket = $_GET['paket'] ?? '';
@@ -25,7 +27,7 @@ $sql = 'SELECT * FROM sponsors';
 $where = [];
 $params = [];
 
-if ($filterStatus !== '' && in_array($filterStatus, ['angefragt', 'zugesagt', 'abgelehnt', 'bezahlt'], true)) {
+if ($filterStatus !== '' && sponsorStatusValid($filterStatus)) {
     $where[] = 'status = :status';
     $params['status'] = $filterStatus;
 }
@@ -136,6 +138,117 @@ $gesamtSumme = (float) $summeStmt->fetchColumn();
         .status-zugesagt { background: #d4edda; color: #155724; }
         .status-abgelehnt { background: var(--error-bg); color: var(--error); }
         .status-bezahlt { background: var(--success-bg); color: var(--success); }
+        /* Ampel-Status (Lebenszyklus) */
+        .ampel {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.8rem;
+            white-space: nowrap;
+        }
+        .ampel-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex: 0 0 auto;
+        }
+        .ampel-grau  .ampel-dot { background: #9aa0a6; }
+        .ampel-blau  .ampel-dot { background: #2b7de9; }
+        .ampel-gelb  .ampel-dot { background: #f4b400; }
+        .ampel-gruen .ampel-dot { background: var(--primary); }
+        .ampel-rot   .ampel-dot { background: var(--error); }
+        /* Import-/Export-Toolbar */
+        .crm-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+        .crm-toolbar form {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        .crm-toolbar input[type="file"] {
+            font-size: 0.8rem;
+        }
+        .toolbar-sep {
+            width: 1px;
+            align-self: stretch;
+            background: var(--border);
+        }
+        /* Versand-Leiste */
+        .versand-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding: 0.75rem 1rem;
+            background: #eef6ff;
+            border: 1px solid #cfe2ff;
+            border-radius: 8px;
+        }
+        .versand-bar label {
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .versand-bar select {
+            padding: 0.4rem;
+        }
+        .versand-count {
+            font-size: 0.8rem;
+            color: var(--text-light);
+        }
+        .import-report {
+            font-size: 0.8rem;
+            background: #fff8f8;
+            border: 1px solid #f5c6cb;
+            border-radius: 6px;
+            padding: 0.5rem 0.75rem;
+            margin-bottom: 1rem;
+            max-height: 180px;
+            overflow-y: auto;
+        }
+        .import-report ul { margin: 0.25rem 0 0 1rem; }
+        .notiz-form {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        .notiz-form textarea {
+            width: 180px;
+            font-size: 0.75rem;
+            padding: 0.35rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            resize: vertical;
+        }
+        .notiz-save {
+            display: none;
+            align-self: flex-start;
+        }
+        .notiz-form.dirty .notiz-save {
+            display: inline-block;
+        }
+        .col-check { width: 32px; text-align: center; }
+        .prio-badge {
+            display: inline-block;
+            font-size: 0.6rem;
+            padding: 0.05rem 0.3rem;
+            border-radius: 3px;
+            margin-left: 0.4rem;
+            vertical-align: middle;
+            color: #fff;
+        }
+        .prio-1 { background: var(--error); }
+        .prio-2 { background: #f4b400; color: #333; }
+        .prio-3 { background: #9aa0a6; }
         .paket-badge {
             display: inline-block;
             padding: 0.25rem 0.5rem;
@@ -277,15 +390,40 @@ $gesamtSumme = (float) $summeStmt->fetchColumn();
                 <div class="alert alert-error"><?= htmlspecialchars($flashError) ?></div>
             <?php endif; ?>
 
+            <?php if (!empty($importReport)): ?>
+                <div class="import-report">
+                    <strong>Import-Hinweise:</strong>
+                    <ul>
+                        <?php foreach ($importReport as $line): ?>
+                            <li><?= htmlspecialchars($line) ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            <?php endif; ?>
+
+            <?php $exportQuery = http_build_query(array_filter(['status' => $filterStatus, 'paket' => $filterPaket])); ?>
+            <div class="crm-toolbar">
+                <form method="post" action="api/sponsor_import.php" enctype="multipart/form-data"
+                      onsubmit="return confirm('CSV jetzt importieren? Dubletten (Firma + E-Mail) werden übersprungen.');">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                    <label for="csv_datei" style="font-weight:600; font-size:0.8rem;">CSV-Import</label>
+                    <input type="file" id="csv_datei" name="csv_datei" accept=".csv,text/csv" required>
+                    <button type="submit" class="btn btn-small btn-secondary">Importieren</button>
+                </form>
+                <div class="toolbar-sep"></div>
+                <a href="api/sponsor_export.php<?= $exportQuery ? '?' . $exportQuery : '' ?>" class="btn btn-small btn-secondary">
+                    CSV-Export<?= ($filterStatus || $filterPaket) ? ' (gefiltert)' : '' ?>
+                </a>
+            </div>
+
             <form method="get" class="filter-bar">
                 <div class="form-group">
                     <label>Status</label>
                     <select name="status" onchange="this.form.submit()">
                         <option value="">Alle</option>
-                        <option value="angefragt" <?= $filterStatus === 'angefragt' ? 'selected' : '' ?>>Angefragt</option>
-                        <option value="zugesagt" <?= $filterStatus === 'zugesagt' ? 'selected' : '' ?>>Zugesagt</option>
-                        <option value="abgelehnt" <?= $filterStatus === 'abgelehnt' ? 'selected' : '' ?>>Abgelehnt</option>
-                        <option value="bezahlt" <?= $filterStatus === 'bezahlt' ? 'selected' : '' ?>>Bezahlt</option>
+                        <?php foreach (SPONSOR_STATUS as $key => $meta): ?>
+                            <option value="<?= $key ?>" <?= $filterStatus === $key ? 'selected' : '' ?>><?= htmlspecialchars($meta['label']) ?></option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
                 <div class="form-group">
@@ -308,38 +446,67 @@ $gesamtSumme = (float) $summeStmt->fetchColumn();
                 <span>Zusagen gesamt: <span class="stat-value"><?= number_format($gesamtSumme, 2, ',', '.') ?> €</span></span>
             </div>
 
+            <form id="versand-form" method="post" action="api/sponsor_versand.php"
+                  class="versand-bar" onsubmit="return confirmVersand();">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                <label for="anschreiben_typ">Anschreiben:</label>
+                <select id="anschreiben_typ" name="anschreiben_typ">
+                    <option value="erstanschreiben">Erstanschreiben</option>
+                    <option value="folgejahr">Folgejahr / Bestandssponsor</option>
+                </select>
+                <button type="submit" class="btn btn-small btn-primary">Ausgewählte anschreiben</button>
+                <span class="versand-count" id="versand-count">0 ausgewählt</span>
+            </form>
+
             <div class="table-wrap">
                 <table class="data-table">
                     <thead>
                         <tr>
+                            <th class="col-check"><input type="checkbox" id="check-all" title="Alle auswählen"></th>
                             <th>Firma</th>
                             <th>Ansprechpartner</th>
                             <th>Paket</th>
                             <th>Summe</th>
                             <th>Status</th>
                             <th>Wiedervorlage</th>
+                            <th>Notiz</th>
                             <th>Aktion</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if (empty($sponsoren)): ?>
                             <tr>
-                                <td colspan="7">Keine Sponsoren gefunden.</td>
+                                <td colspan="9">Keine Sponsoren gefunden.</td>
                             </tr>
                         <?php else: ?>
+                            <?php
+                            $prioMeta = [1 => ['Hoch', 'prio-1'], 2 => ['Mittel', 'prio-2'], 3 => ['Niedrig', 'prio-3']];
+                            ?>
                             <?php foreach ($sponsoren as $s): ?>
                                 <?php
                                 $apList = $ansprechpartnerBySponsor[$s['id']] ?? [];
                                 $apCount = count($apList);
                                 $firstAp = $apList[0] ?? null;
+                                $prio = (int) ($s['prioritaet'] ?? 0);
                                 ?>
                                 <tr class="<?= $s['kein_kontakt'] ? 'kein-kontakt-row' : '' ?>">
+                                    <td class="col-check">
+                                        <?php if (!$s['kein_kontakt']): ?>
+                                            <input type="checkbox" class="row-check" name="sponsor_ids[]" value="<?= $s['id'] ?>" form="versand-form">
+                                        <?php endif; ?>
+                                    </td>
                                     <td class="firma-cell">
                                         <a href="sponsor_form.php?id=<?= $s['id'] ?>">
                                             <strong><?= htmlspecialchars($s['firma']) ?></strong>
                                         </a>
+                                        <?php if (isset($prioMeta[$prio])): ?>
+                                            <span class="prio-badge <?= $prioMeta[$prio][1] ?>" title="Priorität"><?= $prioMeta[$prio][0] ?></span>
+                                        <?php endif; ?>
                                         <?php if ($s['kein_kontakt']): ?>
                                             <span class="kein-kontakt-badge">Kein Kontakt</span>
+                                        <?php endif; ?>
+                                        <?php if (!empty($s['ort'])): ?>
+                                            <div class="ap-email"><?= htmlspecialchars($s['ort']) ?></div>
                                         <?php endif; ?>
                                     </td>
                                     <td>
@@ -368,7 +535,9 @@ $gesamtSumme = (float) $summeStmt->fetchColumn();
                                     </td>
                                     <td><?= $s['summe'] ? number_format((float)$s['summe'], 2, ',', '.') . ' €' : '–' ?></td>
                                     <td>
-                                        <span class="status-badge status-<?= $s['status'] ?>"><?= ucfirst($s['status']) ?></span>
+                                        <span class="ampel ampel-<?= sponsorStatusAmpel($s['status']) ?>">
+                                            <span class="ampel-dot"></span><?= htmlspecialchars(sponsorStatusLabel($s['status'])) ?>
+                                        </span>
                                     </td>
                                     <td>
                                         <?php if ($s['wiedervorlage']): ?>
@@ -376,6 +545,15 @@ $gesamtSumme = (float) $summeStmt->fetchColumn();
                                         <?php else: ?>
                                             –
                                         <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <form method="post" action="api/sponsor_notiz.php" class="notiz-form">
+                                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                                            <input type="hidden" name="sponsor_id" value="<?= $s['id'] ?>">
+                                            <textarea name="notizen" rows="2" placeholder="Notiz…"
+                                                      oninput="this.closest('.notiz-form').classList.add('dirty')"><?= htmlspecialchars($s['notizen'] ?? '') ?></textarea>
+                                            <button type="submit" class="btn-icon notiz-save">Speichern</button>
+                                        </form>
                                     </td>
                                     <td>
                                         <a href="sponsor_form.php?id=<?= $s['id'] ?>" class="btn-icon" title="Bearbeiten">Bearbeiten</a>
@@ -404,6 +582,50 @@ $gesamtSumme = (float) $summeStmt->fetchColumn();
         </main>
     </div>
     <script>
+    // Sponsor-Auswahl + Versand
+    (function() {
+        const checkAll = document.getElementById('check-all');
+        const countLabel = document.getElementById('versand-count');
+
+        function rowChecks() {
+            return Array.prototype.slice.call(document.querySelectorAll('.row-check'));
+        }
+        function selectedCount() {
+            return rowChecks().filter(function(c) { return c.checked; }).length;
+        }
+        function updateCount() {
+            if (countLabel) {
+                countLabel.textContent = selectedCount() + ' ausgewählt';
+            }
+        }
+
+        if (checkAll) {
+            checkAll.addEventListener('change', function() {
+                rowChecks().forEach(function(c) { c.checked = checkAll.checked; });
+                updateCount();
+            });
+        }
+        rowChecks().forEach(function(c) {
+            c.addEventListener('change', updateCount);
+        });
+        updateCount();
+
+        window.confirmVersand = function() {
+            const n = selectedCount();
+            if (n === 0) {
+                alert('Bitte zuerst mindestens einen Sponsor auswählen.');
+                return false;
+            }
+            const typ = document.getElementById('anschreiben_typ');
+            const typLabel = typ && typ.value === 'folgejahr' ? 'Folgejahr-Anschreiben' : 'Erstanschreiben';
+            if (n === 1) {
+                return confirm('1 Empfänger auswählt.\n\n' + typLabel + ' jetzt sofort senden?');
+            }
+            return confirm(n + ' Empfänger ausgewählt.\n\n' + typLabel + ' in die Sende-Queue stellen? '
+                + 'Der Versand läuft anschließend über das CLI-Script (15 Sek. Abstand pro Mail).');
+        };
+    })();
+
     (function() {
         const burger = document.getElementById('burger-btn');
         const sidebar = document.getElementById('sidebar');

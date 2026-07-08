@@ -36,6 +36,10 @@ return [
     'smtp_from'      => '',  // Absender-Adresse (oder leer = smtp_user)
     'smtp_from_name' => 'ATSV Kirchseeon Marktlauf',
 
+    // Sponsor-Versand: Pause (Sekunden) zwischen zwei Mails im CLI-Queue-Lauf
+    // (bin/sponsor_versand.php), damit Strato nicht drosselt.
+    'sponsor_versand_delay' => 15,
+
     'security' => [
         'login_max_attempts'        => 5,
         'login_max_attempts_per_ip' => 20,

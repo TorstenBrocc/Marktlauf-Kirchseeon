@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/api/_auth.php';
 require_once __DIR__ . '/../src/db.php';
+require_once __DIR__ . '/../src/sponsor_status.php';
 
 $user = getCurrentUserFromGuard();
 $isAdmin = isAdminFromGuard();
@@ -460,12 +461,29 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
 
                         <div class="form-row">
                             <div class="form-group">
+                                <label for="prioritaet">Priorität</label>
+                                <select id="prioritaet" name="prioritaet">
+                                    <option value="" <?= ($sponsor['prioritaet'] ?? null) === null ? 'selected' : '' ?>>– Keine –</option>
+                                    <option value="1" <?= (string) ($sponsor['prioritaet'] ?? '') === '1' ? 'selected' : '' ?>>Hoch</option>
+                                    <option value="2" <?= (string) ($sponsor['prioritaet'] ?? '') === '2' ? 'selected' : '' ?>>Mittel</option>
+                                    <option value="3" <?= (string) ($sponsor['prioritaet'] ?? '') === '3' ? 'selected' : '' ?>>Niedrig</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="ort">Ort</label>
+                                <input type="text" id="ort" name="ort" maxlength="120"
+                                       value="<?= htmlspecialchars($sponsor['ort'] ?? '') ?>">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
                                 <label for="status">Status</label>
                                 <select id="status" name="status">
-                                    <option value="angefragt" <?= ($sponsor['status'] ?? 'angefragt') === 'angefragt' ? 'selected' : '' ?>>Angefragt</option>
-                                    <option value="zugesagt" <?= ($sponsor['status'] ?? '') === 'zugesagt' ? 'selected' : '' ?>>Zugesagt</option>
-                                    <option value="abgelehnt" <?= ($sponsor['status'] ?? '') === 'abgelehnt' ? 'selected' : '' ?>>Abgelehnt</option>
-                                    <option value="bezahlt" <?= ($sponsor['status'] ?? '') === 'bezahlt' ? 'selected' : '' ?>>Bezahlt</option>
+                                    <?php $currentStatus = $sponsor['status'] ?? 'neu'; ?>
+                                    <?php foreach (SPONSOR_STATUS as $key => $meta): ?>
+                                        <option value="<?= $key ?>" <?= $currentStatus === $key ? 'selected' : '' ?>><?= htmlspecialchars($meta['label']) ?></option>
+                                    <?php endforeach; ?>
                                 </select>
                             </div>
                             <div class="form-group">
@@ -474,6 +492,16 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                                        value="<?= $sponsor['wiedervorlage'] ?? '' ?>">
                             </div>
                         </div>
+
+                        <?php if ($isEdit && !empty($sponsor['gesendet_am'])): ?>
+                        <p style="font-size:0.8rem; color: var(--text-light); margin-top:0.5rem;">
+                            Zuletzt angeschrieben:
+                            <?= date('d.m.Y H:i', strtotime($sponsor['gesendet_am'])) ?>
+                            <?php if (!empty($sponsor['anschreiben_typ'])): ?>
+                                (<?= $sponsor['anschreiben_typ'] === 'folgejahr' ? 'Folgejahr' : 'Erstanschreiben' ?>)
+                            <?php endif; ?>
+                        </p>
+                        <?php endif; ?>
                     </div>
 
                     <div class="form-card">
