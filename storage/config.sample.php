@@ -40,6 +40,13 @@ return [
     // (bin/sponsor_versand.php), damit Strato nicht drosselt.
     'sponsor_versand_delay' => 15,
 
+    // Signatur der Sponsor-Anschreiben (Name/Telefon bewusst NICHT im Repo).
+    'sponsor_mail' => [
+        'sender_name'  => '',  // z.B. 'Vorname Nachname (ATSV Orga-Team Marktlauf)'
+        'sender_role'  => 'Sponsoring · Marktlauf Kirchseeon, ATSV Kirchseeon e.V.',
+        'sender_phone' => '',  // z.B. '+49 172 1234567' (leer = nicht anzeigen)
+    ],
+
     'security' => [
         'login_max_attempts'        => 5,
         'login_max_attempts_per_ip' => 20,

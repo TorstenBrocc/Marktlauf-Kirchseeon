@@ -30,6 +30,7 @@ CREATE TABLE sponsor_versand_queue (
   anrede          VARCHAR(16) NOT NULL DEFAULT '',
   nachname        VARCHAR(128) NOT NULL DEFAULT '',
   firma           VARCHAR(255) NOT NULL DEFAULT '',
+  paket           VARCHAR(20) NULL,
   anschreiben_typ ENUM('erstanschreiben','folgejahr') NOT NULL DEFAULT 'erstanschreiben',
   status          ENUM('offen','gesendet','fehler') NOT NULL DEFAULT 'offen',
   fehler_text     TEXT NULL,

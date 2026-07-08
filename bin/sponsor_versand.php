@@ -32,7 +32,7 @@ try {
     $pdo = getDbConnection();
 
     $stmt = $pdo->query("
-        SELECT id, sponsor_id, email, anrede, nachname, firma, anschreiben_typ
+        SELECT id, sponsor_id, email, anrede, nachname, firma, paket, anschreiben_typ
         FROM sponsor_versand_queue
         WHERE status = 'offen'
         ORDER BY id ASC
@@ -62,7 +62,8 @@ try {
                 (string) $job['anrede'],
                 (string) $job['nachname'],
                 (string) $job['firma'],
-                $job['anschreiben_typ']
+                $job['anschreiben_typ'],
+                (string) ($job['paket'] ?? '')
             );
 
             if ($ok) {
