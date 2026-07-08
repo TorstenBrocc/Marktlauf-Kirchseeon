@@ -198,58 +198,7 @@ while ($row = $slotStmt->fetch()) {
     </style>
 </head>
 <body>
-    <header class="mobile-header">
-        <button class="burger-btn" id="burger-btn" aria-label="Menü öffnen">
-            <span></span>
-            <span></span>
-            <span></span>
-        </button>
-        <h1>Orga-Dashboard</h1>
-        <img src="../assets/images/logo-final.svg" alt="Marktlauf Logo" class="header-logo">
-    </header>
-    <div class="sidebar-overlay" id="sidebar-overlay"></div>
-    <div class="dashboard-layout">
-        <nav class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <h2>Orga-Dashboard</h2>
-                <img src="../assets/images/logo-final.svg" alt="Marktlauf Logo" class="header-logo">
-            </div>
-            <ul class="nav-menu">
-                <li class="nav-item">
-                    <a href="index.php">Dashboard</a>
-                </li>
-                <li class="nav-item active">
-                    <a href="helfer.php">Helfer</a>
-                </li>
-                <li class="nav-item">
-                    <a href="sponsoren.php">Sponsoren</a>
-                </li>
-                <li class="nav-item">
-                    <a href="dateien.php">Dateien</a>
-                </li>
-                <li class="nav-item">
-                    <span class="nav-disabled">Live-Ticker</span>
-                    <span class="badge">Phase 3</span>
-                </li>
-                <?php if ($isAdmin): ?>
-                <li class="nav-section">Admin</li>
-                <li class="nav-item">
-                    <a href="benutzer.php">Benutzerverwaltung</a>
-                    
-                </li>
-                <li class="nav-item">
-                    <a href="einstellungen.php">Einstellungen</a>
-                </li>
-                <?php endif; ?>
-            </ul>
-            <div class="sidebar-footer">
-                <div class="user-info">
-                    <span class="user-name"><?= htmlspecialchars($user['name']) ?></span>
-                    <span class="user-role"><?= htmlspecialchars(ucfirst($user['role'])) ?></span>
-                </div>
-                <a href="logout.php" class="btn btn-small btn-secondary">Abmelden</a>
-            </div>
-        </nav>
+<?php $activeNav = 'helfer'; require __DIR__ . '/_sidebar.php'; ?>
 
         <main class="main-content">
             <header class="content-header">
