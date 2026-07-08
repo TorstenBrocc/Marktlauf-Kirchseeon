@@ -1,0 +1,9 @@
+{
+  "name": "marktlauf-visual-tests",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Optik-/Regressions-Check oeffentlicher Seiten (A-3) via Playwright",
+  "devDependencies": {
+    "@playwright/test": "1.48.2"
+  }
+}
