@@ -58,7 +58,7 @@ try {
     $pdo = getDbConnection();
 
     $placeholders = implode(',', array_fill(0, count($ids), '?'));
-    $stmt = $pdo->prepare("SELECT id, firma, kein_kontakt FROM sponsors WHERE id IN ($placeholders)");
+    $stmt = $pdo->prepare("SELECT id, firma, paket, kein_kontakt FROM sponsors WHERE id IN ($placeholders)");
     $stmt->execute($ids);
     $sponsoren = [];
     foreach ($stmt->fetchAll() as $row) {
@@ -104,6 +104,7 @@ try {
             'anrede'     => (string) $ap['anrede'],
             'nachname'   => (string) $ap['nachname'],
             'firma'      => (string) $sponsor['firma'],
+            'paket'      => (string) ($sponsor['paket'] ?? ''),
         ];
     }
 
@@ -125,7 +126,7 @@ try {
     if (count($recipients) === 1) {
         $r = $recipients[0];
         try {
-            $ok = sendSponsorAnschreiben($r['email'], $r['anrede'], $r['nachname'], $r['firma'], $typ);
+            $ok = sendSponsorAnschreiben($r['email'], $r['anrede'], $r['nachname'], $r['firma'], $typ, $r['paket']);
         } catch (Throwable $e) {
             $ok = false;
             logError('Sponsor-Versand (einzeln) Exception: ' . $e->getMessage());
@@ -143,8 +144,8 @@ try {
 
     // --- Mehrfachauswahl: in Sende-Queue stellen ---
     $insert = $pdo->prepare('
-        INSERT INTO sponsor_versand_queue (sponsor_id, email, anrede, nachname, firma, anschreiben_typ, angefordert_von)
-        VALUES (:sponsor_id, :email, :anrede, :nachname, :firma, :typ, :von)
+        INSERT INTO sponsor_versand_queue (sponsor_id, email, anrede, nachname, firma, paket, anschreiben_typ, angefordert_von)
+        VALUES (:sponsor_id, :email, :anrede, :nachname, :firma, :paket, :typ, :von)
     ');
     $queued = 0;
     foreach ($recipients as $r) {
@@ -154,6 +155,7 @@ try {
             'anrede'     => $r['anrede'],
             'nachname'   => $r['nachname'],
             'firma'      => $r['firma'],
+            'paket'      => $r['paket'] ?: null,
             'typ'        => $typ,
             'von'        => $user['id'] ?? null,
         ]);
