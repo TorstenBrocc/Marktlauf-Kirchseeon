@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/src/logger.php';
+
 // 1. Einstellungen (nur hier, nicht im HTML)
 $empfaenger = "info@atsv-kirchseeon-marktlauf.de";          // deine Zieladresse
 $zeichenkodierung = "UTF-8";
@@ -44,6 +46,7 @@ if ($email && $nachricht) {
         echo "<p style='font-family: sans-serif; text-align: center;'>Vielen Dank für Ihre Nachricht.</p>";
         echo "<p style='font-family: sans-serif; text-align: center;'><a href='index.html'>Zurück zur Webseite</a></p>";
     } else {
+        logError('contact.php: mail() fehlgeschlagen (Empfaenger ' . $empfaenger . ')');
         echo "<h1 style='font-family: sans-serif; text-align: center; margin-top: 50px;'>Fehler beim Senden</h1>";
         echo "<p style='font-family: sans-serif; text-align: center;'>Die Nachricht konnte nicht versandt werden. Bitte versuchen Sie es später erneut oder kontaktieren Sie uns direkt per E-Mail.</p>";
         echo "<p style='font-family: sans-serif; text-align: center;'><a href='index.html'>Zurück zur Webseite</a></p>";

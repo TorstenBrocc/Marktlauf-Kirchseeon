@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/_auth.php';
 require_once __DIR__ . '/../../src/db.php';
+require_once __DIR__ . '/../../src/logger.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: ../helfer.php');
@@ -37,6 +38,7 @@ try {
     $stmt->execute(['notiz' => $notiz ?: null, 'id' => $helferId]);
     $_SESSION['flash_success'] = 'Notiz gespeichert.';
 } catch (PDOException $e) {
+    logError('helfer_notiz: ' . $e->getMessage());
     $_SESSION['flash_error'] = 'Datenbankfehler.';
 }
 
