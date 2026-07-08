@@ -22,4 +22,4 @@ jobs:
         TARGET: ${{ secrets.SFTP_REMOTE_PATH }}
         SOURCE: "./"
         ARGS: "-rlgoDzvc -i --delete"
-        EXCLUDE: ".git/, .github/, .vscode/, node_modules/, .clinerules, .memory/, .gitignore, .DS_Store, storage/config.php, storage/logs/, .user.ini, .env, venv/"
+        EXCLUDE: ".git/, .github/, .vscode/, node_modules/, .clinerules, .memory/, .gitignore, .DS_Store, storage/config.php, storage/logs/, .user.ini, .env, venv/, tests/"
