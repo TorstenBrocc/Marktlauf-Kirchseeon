@@ -1,0 +1,34 @@
+name: Uptime Check
+
+# Prüft die Erreichbarkeit der Live-Seite (B-7). Bei Fehlschlag schickt
+# GitHub automatisch eine E-Mail an den Repo-Owner (Actions-Fehler-Notification).
+# Hinweis: geplante Workflows können unter Last verzögert starten und werden
+# nach 60 Tagen Repo-Inaktivität deaktiviert.
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'   # alle 15 Minuten
+  workflow_dispatch:          # manuell auslösbar
+
+jobs:
+  check:
+    name: HTTP 200 der Kernseiten
+    runs-on: ubuntu-latest
+    steps:
+      - name: Seiten prüfen
+        run: |
+          urls=(
+            "https://atsv-kirchseeon-marktlauf.de/"
+            "https://atsv-kirchseeon-marktlauf.de/helfer-anmeldung.php"
+            "https://atsv-kirchseeon-marktlauf.de/orga/"
+          )
+          fail=0
+          for u in "${urls[@]}"; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" -m 25 -L "$u" || echo "000")
+            echo "$u -> $code"
+            if [ "$code" != "200" ]; then
+              echo "::error::$u lieferte HTTP $code (erwartet 200)"
+              fail=1
+            fi
+          done
+          exit $fail
