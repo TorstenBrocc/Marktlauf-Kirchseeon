@@ -52,6 +52,20 @@
     --space-md: 1.5rem;
     --space-lg: 3rem;
     --space-xl: 6rem;
+    --space-xxl: 8rem;
+
+    /* Border-Radius (u.a. Formularseiten login/einladung/helfer) */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+
+    /* Schriftgrößen (u.a. Formularseiten login/einladung/helfer) */
+    --text-sm: 0.875rem;
+    --text-base: 1rem;
+    --text-2xl: 1.5rem;
+
+    /* Alias: Formularseiten nutzen --primary, laden aber nicht orga.css */
+    --primary: var(--color-primary);
 }
 
 /* Modern CSS Reset */
