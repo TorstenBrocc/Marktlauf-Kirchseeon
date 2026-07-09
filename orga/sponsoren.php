@@ -62,6 +62,15 @@ $totalCount = (int) $countStmt->fetchColumn();
 
 $summeStmt = $pdo->query('SELECT SUM(summe) FROM sponsors WHERE status IN ("zugesagt", "bezahlt")');
 $gesamtSumme = (float) $summeStmt->fetchColumn();
+
+$merkfeld = '';
+try {
+    $merkStmt = $pdo->prepare('SELECT `value` FROM einstellungen WHERE `key` = :key');
+    $merkStmt->execute(['key' => 'sponsor_merkfeld']);
+    $merkfeld = (string) ($merkStmt->fetchColumn() ?: '');
+} catch (PDOException $e) {
+    // Table may not exist yet
+}
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -83,9 +92,71 @@ $gesamtSumme = (float) $summeStmt->fetchColumn();
         .filter-bar {
             display: flex;
             gap: 1rem;
-            margin-bottom: 1.5rem;
+            margin-bottom: 0;
             flex-wrap: wrap;
             align-items: flex-end;
+        }
+        /* Filter links, Merkfeld rechts */
+        .filter-merk-row {
+            display: flex;
+            gap: 1.5rem;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+        .filter-merk-row .filter-bar {
+            flex: 0 0 auto;
+        }
+        .merkfeld-card {
+            flex: 1 1 320px;
+            min-width: 280px;
+            max-width: 480px;
+            margin-left: auto;
+            background: #fffbea;
+            border: 1px solid #f0e2a8;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+        }
+        .merkfeld-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 0.5rem;
+            margin-bottom: 0.4rem;
+        }
+        .merkfeld-head label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin: 0;
+        }
+        .merkfeld-status {
+            font-size: 0.7rem;
+            color: var(--text-light);
+            white-space: nowrap;
+        }
+        .merkfeld-card textarea {
+            width: 100%;
+            box-sizing: border-box;
+            font-family: inherit;
+            font-size: 0.8rem;
+            line-height: 1.45;
+            padding: 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            resize: vertical;
+        }
+        .merkfeld-card.locked textarea {
+            background: #f6f6f4;
+            color: var(--text);
+            cursor: default;
+        }
+        @media (max-width: 640px) {
+            .merkfeld-card {
+                flex-basis: 100%;
+                min-width: 0;
+                max-width: none;
+                margin-left: 0;
+            }
         }
         .filter-bar .form-group {
             margin-bottom: 0;
@@ -365,30 +436,41 @@ $gesamtSumme = (float) $summeStmt->fetchColumn();
                 </a>
             </div>
 
-            <form method="get" class="filter-bar">
-                <div class="form-group">
-                    <label>Status</label>
-                    <select name="status" onchange="this.form.submit()">
-                        <option value="">Alle</option>
-                        <?php foreach (SPONSOR_STATUS as $key => $meta): ?>
-                            <option value="<?= $key ?>" <?= $filterStatus === $key ? 'selected' : '' ?>><?= htmlspecialchars($meta['label']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
+            <div class="filter-merk-row">
+                <form method="get" class="filter-bar">
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select name="status" onchange="this.form.submit()">
+                            <option value="">Alle</option>
+                            <?php foreach (SPONSOR_STATUS as $key => $meta): ?>
+                                <option value="<?= $key ?>" <?= $filterStatus === $key ? 'selected' : '' ?>><?= htmlspecialchars($meta['label']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Paket</label>
+                        <select name="paket" onchange="this.form.submit()">
+                            <option value="">Alle</option>
+                            <option value="hauptsponsor" <?= $filterPaket === 'hauptsponsor' ? 'selected' : '' ?>>Hauptsponsor</option>
+                            <option value="gold" <?= $filterPaket === 'gold' ? 'selected' : '' ?>>Gold</option>
+                            <option value="silber" <?= $filterPaket === 'silber' ? 'selected' : '' ?>>Silber</option>
+                            <option value="bronze" <?= $filterPaket === 'bronze' ? 'selected' : '' ?>>Bronze</option>
+                        </select>
+                    </div>
+                    <?php if ($filterStatus || $filterPaket): ?>
+                        <a href="sponsoren.php" class="btn btn-small btn-secondary">Filter zurücksetzen</a>
+                    <?php endif; ?>
+                </form>
+
+                <div class="merkfeld-card" id="merkfeld-wrap">
+                    <div class="merkfeld-head">
+                        <label for="merkfeld-text">📌 Merkfeld <span style="font-weight:400;color:var(--text-light)">(Bankverbindung, Vereins-/Steuernummer …)</span></label>
+                        <span class="merkfeld-status" id="merkfeld-status"></span>
+                    </div>
+                    <textarea id="merkfeld-text" rows="6" data-csrf="<?= htmlspecialchars($csrfToken) ?>"
+                              placeholder="Freitext … Doppelklick sperrt &amp; speichert, erneuter Doppelklick entsperrt."><?= htmlspecialchars($merkfeld) ?></textarea>
                 </div>
-                <div class="form-group">
-                    <label>Paket</label>
-                    <select name="paket" onchange="this.form.submit()">
-                        <option value="">Alle</option>
-                        <option value="hauptsponsor" <?= $filterPaket === 'hauptsponsor' ? 'selected' : '' ?>>Hauptsponsor</option>
-                        <option value="gold" <?= $filterPaket === 'gold' ? 'selected' : '' ?>>Gold</option>
-                        <option value="silber" <?= $filterPaket === 'silber' ? 'selected' : '' ?>>Silber</option>
-                        <option value="bronze" <?= $filterPaket === 'bronze' ? 'selected' : '' ?>>Bronze</option>
-                    </select>
-                </div>
-                <?php if ($filterStatus || $filterPaket): ?>
-                    <a href="sponsoren.php" class="btn btn-small btn-secondary">Filter zurücksetzen</a>
-                <?php endif; ?>
-            </form>
+            </div>
 
             <div class="stats">
                 <span><?= count($sponsoren) ?> von <?= $totalCount ?> Sponsoren</span>
@@ -573,6 +655,59 @@ $gesamtSumme = (float) $summeStmt->fetchColumn();
             return confirm(n + ' Empfänger ausgewählt.\n\n' + typLabel + ' in die Sende-Queue stellen? '
                 + 'Der Versand läuft anschließend über das CLI-Script (15 Sek. Abstand pro Mail).');
         };
+    })();
+
+    // Merkfeld: Doppelklick sperrt & speichert, erneuter Doppelklick entsperrt
+    (function() {
+        const wrap = document.getElementById('merkfeld-wrap');
+        if (!wrap) return;
+        const ta = document.getElementById('merkfeld-text');
+        const status = document.getElementById('merkfeld-status');
+        const csrf = ta.dataset.csrf;
+        let locked = false;
+
+        function setLocked(v) {
+            locked = v;
+            ta.readOnly = v;
+            wrap.classList.toggle('locked', v);
+            status.textContent = v
+                ? '🔒 gesperrt — Doppelklick zum Bearbeiten'
+                : '✏️ Doppelklick sperrt & speichert';
+        }
+
+        function save() {
+            const body = new URLSearchParams();
+            body.set('csrf_token', csrf);
+            body.set('merkfeld', ta.value);
+            status.textContent = '… speichern';
+            fetch('api/sponsor_merkfeld.php', {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'fetch' },
+                body: body
+            })
+                .then(function(r) { return r.json(); })
+                .then(function(d) {
+                    if (d && d.ok) {
+                        setLocked(true);
+                        status.textContent = '🔒 gespeichert';
+                    } else {
+                        status.textContent = '⚠️ ' + ((d && d.message) || 'Fehler beim Speichern');
+                    }
+                })
+                .catch(function() { status.textContent = '⚠️ Fehler beim Speichern'; });
+        }
+
+        ta.addEventListener('dblclick', function() {
+            if (locked) {
+                setLocked(false);
+                ta.focus();
+            } else {
+                save();
+            }
+        });
+
+        // Startzustand: mit Inhalt = gesperrt, leer = direkt beschreibbar
+        setLocked(ta.value.trim() !== '');
     })();
 
     (function() {
