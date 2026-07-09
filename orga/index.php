@@ -266,6 +266,7 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                     <ul class="quick-links">
                         <li><a href="../helfer-anmeldung.php" target="_blank">Helfer-Formular (öffentlich)</a></li>
                         <li><a href="https://www.raceresult.com/de-de/account/index" target="_blank" rel="noopener" class="btn-brand btn-brand-raceresult">Race Result</a></li>
+                        <li><a href="https://github.com/TorstenBrocc/Marktlauf-Kirchseeon" target="_blank" rel="noopener" class="btn-brand btn-brand-github">GitHub-Repo (Website)</a></li>
                         <?php if ($trelloBoardUrl): ?>
                         <li><a href="<?= htmlspecialchars($trelloBoardUrl) ?>" target="_blank" rel="noopener" class="btn-brand btn-brand-trello">Trello-Board</a></li>
                         <?php endif; ?>
