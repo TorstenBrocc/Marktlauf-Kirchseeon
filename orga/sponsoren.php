@@ -113,26 +113,10 @@ try {
             max-width: 480px;
             margin-left: auto;
         }
-        .merkfeld-head {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            gap: 0.5rem;
-            margin-bottom: 0.4rem;
-        }
-        .merkfeld-head label {
-            font-size: 0.8rem;
-            font-weight: 600;
-            margin: 0;
-        }
-        .merkfeld-status {
-            font-size: 0.7rem;
-            color: var(--text-light);
-            white-space: nowrap;
-        }
         .merkfeld-card textarea {
             width: 100%;
             box-sizing: border-box;
+            min-height: 240px;
             font-family: inherit;
             font-size: 0.8rem;
             line-height: 1.45;
@@ -459,11 +443,8 @@ try {
                 </form>
 
                 <div class="merkfeld-card" id="merkfeld-wrap">
-                    <div class="merkfeld-head">
-                        <label for="merkfeld-text">📌 Merkfeld <span style="font-weight:400;color:var(--text-light)">(Bankverbindung, Vereins-/Steuernummer …)</span></label>
-                        <span class="merkfeld-status" id="merkfeld-status"></span>
-                    </div>
-                    <textarea id="merkfeld-text" rows="6" data-csrf="<?= htmlspecialchars($csrfToken) ?>"><?= htmlspecialchars($merkfeld) ?></textarea>
+                    <textarea id="merkfeld-text" rows="10" data-csrf="<?= htmlspecialchars($csrfToken) ?>"
+                              placeholder="📌 Merkfeld — Bankverbindung, Vereins-/Steuernummer …&#10;Doppelklick sperrt &amp; speichert, erneuter Doppelklick entsperrt."><?= htmlspecialchars($merkfeld) ?></textarea>
                 </div>
             </div>
 
@@ -657,7 +638,6 @@ try {
         const wrap = document.getElementById('merkfeld-wrap');
         if (!wrap) return;
         const ta = document.getElementById('merkfeld-text');
-        const status = document.getElementById('merkfeld-status');
         const csrf = ta.dataset.csrf;
         let locked = false;
 
@@ -665,7 +645,7 @@ try {
             locked = v;
             ta.readOnly = v;
             wrap.classList.toggle('locked', v);
-            status.textContent = v
+            ta.title = v
                 ? '🔒 gesperrt — Doppelklick zum Bearbeiten'
                 : '✏️ Doppelklick sperrt & speichert';
         }
@@ -674,7 +654,7 @@ try {
             const body = new URLSearchParams();
             body.set('csrf_token', csrf);
             body.set('merkfeld', ta.value);
-            status.textContent = '… speichern';
+            ta.title = '… speichern';
             fetch('api/sponsor_merkfeld.php', {
                 method: 'POST',
                 headers: { 'X-Requested-With': 'fetch' },
@@ -684,12 +664,12 @@ try {
                 .then(function(d) {
                     if (d && d.ok) {
                         setLocked(true);
-                        status.textContent = '🔒 gespeichert';
+                        ta.title = '🔒 gespeichert';
                     } else {
-                        status.textContent = '⚠️ ' + ((d && d.message) || 'Fehler beim Speichern');
+                        ta.title = '⚠️ ' + ((d && d.message) || 'Fehler beim Speichern');
                     }
                 })
-                .catch(function() { status.textContent = '⚠️ Fehler beim Speichern'; });
+                .catch(function() { ta.title = '⚠️ Fehler beim Speichern'; });
         }
 
         ta.addEventListener('dblclick', function() {
