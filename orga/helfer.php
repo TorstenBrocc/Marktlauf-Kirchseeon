@@ -25,10 +25,13 @@ $pdo = getDbConnection();
 $sql = '
     SELECT h.*,
            GROUP_CONCAT(DISTINCT CONCAT(hs.tag, " ", hs.zeitfenster) ORDER BY hs.tag SEPARATOR ", ") AS slots,
-           GROUP_CONCAT(DISTINCT CONCAT(hb.typ, COALESCE(CONCAT(": ", hb.freitext), "")) SEPARATOR ", ") AS beitraege
+           GROUP_CONCAT(DISTINCT CONCAT(hb.typ, COALESCE(CONCAT(": ", hb.freitext), "")) SEPARATOR ", ") AS beitraege,
+           GROUP_CONCAT(DISTINCT sc.titel ORDER BY sc.titel SEPARATOR ", ") AS schichten
     FROM helfer h
     LEFT JOIN helfer_slots hs ON h.id = hs.helfer_id
     LEFT JOIN helfer_beitrag hb ON h.id = hb.helfer_id
+    LEFT JOIN schicht_zuteilung sz ON h.id = sz.helfer_id
+    LEFT JOIN schichten sc ON sc.id = sz.schicht_id
 ';
 
 $where = [];
@@ -260,6 +263,7 @@ while ($row = $slotStmt->fetch()) {
                             <th>Status</th>
                             <th>Slots</th>
                             <th>Beitrag</th>
+                            <th>Einsatz</th>
                             <th>Anmeldung</th>
                             <th>Notiz</th>
                             <?php if ($isAdmin): ?><th>Aktion</th><?php endif; ?>
@@ -268,7 +272,7 @@ while ($row = $slotStmt->fetch()) {
                     <tbody>
                         <?php if (empty($helfer)): ?>
                             <tr>
-                                <td colspan="<?= $isAdmin ? 9 : 8 ?>">Keine Helfer gefunden.</td>
+                                <td colspan="<?= $isAdmin ? 10 : 9 ?>">Keine Helfer gefunden.</td>
                             </tr>
                         <?php else: ?>
                             <?php foreach ($helfer as $h): ?>
@@ -298,6 +302,7 @@ while ($row = $slotStmt->fetch()) {
                                     </td>
                                     <td class="cell-small"><?= htmlspecialchars($h['slots'] ?? '-') ?></td>
                                     <td class="cell-small"><?= htmlspecialchars($h['beitraege'] ?? '-') ?></td>
+                                    <td class="cell-small"><?= htmlspecialchars($h['schichten'] ?? '') ?: '-' ?></td>
                                     <td class="cell-small"><?= date('d.m.Y H:i', strtotime($h['created_at'])) ?></td>
                                     <td class="notiz-cell">
                                         <form method="post" action="api/helfer_notiz.php" class="inline-form">
