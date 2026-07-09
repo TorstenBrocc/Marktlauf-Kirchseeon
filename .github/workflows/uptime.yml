@@ -9,6 +9,11 @@ on:
   schedule:
     - cron: '*/15 * * * *'   # alle 15 Minuten
   workflow_dispatch:          # manuell auslösbar
+    inputs:
+      test_alert:
+        description: 'Absichtlich fehlschlagen (Test der Fehler-Benachrichtigung)'
+        type: boolean
+        default: false
 
 jobs:
   check:
@@ -17,6 +22,10 @@ jobs:
     steps:
       - name: Seiten prüfen
         run: |
+          if [ "${{ inputs.test_alert }}" = "true" ]; then
+            echo "::error::Test-Alarm — absichtlicher Fehlschlag zur Pruefung der Benachrichtigung."
+            exit 1
+          fi
           urls=(
             "https://atsv-kirchseeon-marktlauf.de/"
             "https://atsv-kirchseeon-marktlauf.de/helfer-anmeldung.php"
