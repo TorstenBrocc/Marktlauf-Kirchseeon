@@ -96,18 +96,25 @@ try {
             flex-wrap: wrap;
             align-items: flex-end;
         }
-        /* Filter links, Merkfeld rechts */
+        /* Filter+Stats links, Merkfeld rechts (gleich hohe Spalten) */
         .filter-merk-row {
             display: flex;
             gap: 1.5rem;
-            align-items: flex-start;
+            align-items: stretch;
             flex-wrap: wrap;
             margin-bottom: 1.5rem;
         }
-        .filter-merk-row .filter-bar {
+        .filter-col {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
             flex: 0 0 auto;
         }
+        .filter-col .stats {
+            margin-bottom: 0;
+        }
         .merkfeld-card {
+            display: flex;
             flex: 1 1 320px;
             min-width: 280px;
             max-width: 480px;
@@ -122,7 +129,8 @@ try {
             padding: 0.5rem;
             border: 1px solid var(--border);
             border-radius: 6px;
-            resize: vertical;
+            resize: none;
+            overflow: hidden;
         }
         .merkfeld-card.locked textarea {
             background: #f6f6f4;
@@ -416,6 +424,7 @@ try {
             </div>
 
             <div class="filter-merk-row">
+                <div class="filter-col">
                 <form method="get" class="filter-bar">
                     <div class="form-group">
                         <label>Status</label>
@@ -441,15 +450,16 @@ try {
                     <?php endif; ?>
                 </form>
 
+                    <div class="stats">
+                        <span><?= count($sponsoren) ?> von <?= $totalCount ?> Sponsoren</span>
+                        <span>Zusagen gesamt: <span class="stat-value"><?= number_format($gesamtSumme, 2, ',', '.') ?> €</span></span>
+                    </div>
+                </div>
+
                 <div class="merkfeld-card" id="merkfeld-wrap">
                     <textarea id="merkfeld-text" rows="6" data-csrf="<?= htmlspecialchars($csrfToken) ?>"
                               placeholder="📌 Merkfeld — Bankverbindung, Vereins-/Steuernummer …&#10;Doppelklick sperrt &amp; speichert, erneuter Doppelklick entsperrt."><?= htmlspecialchars($merkfeld) ?></textarea>
                 </div>
-            </div>
-
-            <div class="stats">
-                <span><?= count($sponsoren) ?> von <?= $totalCount ?> Sponsoren</span>
-                <span>Zusagen gesamt: <span class="stat-value"><?= number_format($gesamtSumme, 2, ',', '.') ?> €</span></span>
             </div>
 
             <form id="versand-form" method="post" action="api/sponsor_versand.php"
@@ -637,8 +647,19 @@ try {
         const wrap = document.getElementById('merkfeld-wrap');
         if (!wrap) return;
         const ta = document.getElementById('merkfeld-text');
+        const leftCol = document.querySelector('.filter-col');
         const csrf = ta.dataset.csrf;
         let locked = false;
+
+        // Höhe: mind. so hoch wie das Umfeld (Filter+Stats), wächst mit dem Inhalt
+        function autosize() {
+            ta.style.height = 'auto';
+            let h = ta.scrollHeight;
+            if (leftCol && window.matchMedia('(min-width: 641px)').matches) {
+                h = Math.max(h, leftCol.offsetHeight);
+            }
+            ta.style.height = h + 'px';
+        }
 
         function setLocked(v) {
             locked = v;
@@ -647,6 +668,7 @@ try {
             ta.title = v
                 ? '🔒 gesperrt — Doppelklick zum Bearbeiten'
                 : '✏️ Doppelklick sperrt & speichert';
+            autosize();
         }
 
         function save() {
@@ -680,8 +702,12 @@ try {
             }
         });
 
+        ta.addEventListener('input', autosize);
+        window.addEventListener('resize', autosize);
+
         // Startzustand: mit Inhalt = gesperrt, leer = direkt beschreibbar
         setLocked(ta.value.trim() !== '');
+        autosize();
     })();
 
     (function() {
