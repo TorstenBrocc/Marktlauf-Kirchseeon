@@ -36,6 +36,9 @@ $activeNav = $activeNav ?? '';
                 <li class="nav-item<?= $activeNav === 'helfer' ? ' active' : '' ?>">
                     <a href="helfer.php">Helfer</a>
                 </li>
+                <li class="nav-item<?= $activeNav === 'schichten' ? ' active' : '' ?>">
+                    <a href="schichten.php">Einsatzplan</a>
+                </li>
                 <li class="nav-item<?= $activeNav === 'sponsoren' ? ' active' : '' ?>">
                     <a href="sponsoren.php">Sponsoren</a>
                 </li>

@@ -60,6 +60,39 @@ if (!$error) {
     }
 }
 
+$einsaetze = [];
+if (!$error) {
+    try {
+        $pdo = getDbConnection();
+        $einsatzStmt = $pdo->prepare('
+            SELECT sc.titel, sc.beschreibung, sc.ort, sc.tag, sc.von, sc.bis
+            FROM schicht_zuteilung sz
+            JOIN schichten sc ON sc.id = sz.schicht_id
+            WHERE sz.helfer_id = :id
+            ORDER BY (sc.tag IS NULL), sc.tag, (sc.von IS NULL), sc.von, sc.titel
+        ');
+        $einsatzStmt->execute(['id' => $helfer['id']]);
+        $einsaetze = $einsatzStmt->fetchAll();
+    } catch (PDOException $e) {
+        // Table may not exist yet
+    }
+}
+
+function formatEinsatzZeit(array $s): string {
+    $parts = [];
+    if (!empty($s['tag'])) {
+        $parts[] = date('l, d.m.Y', strtotime($s['tag']));
+    }
+    if (!empty($s['von'])) {
+        $zeit = substr($s['von'], 0, 5);
+        if (!empty($s['bis'])) {
+            $zeit .= '–' . substr($s['bis'], 0, 5);
+        }
+        $parts[] = $zeit . ' Uhr';
+    }
+    return implode(' · ', $parts);
+}
+
 function formatFileSizeHelfer(int $bytes): string {
     if ($bytes >= 1048576) {
         return number_format($bytes / 1048576, 1, ',', '.') . ' MB';
@@ -220,6 +253,34 @@ $basePath = '../';
         .placeholder-notice p:last-child {
             margin-bottom: 0;
         }
+        .einsatz-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-sm);
+        }
+        .einsatz-item {
+            padding: var(--space-md);
+            background: var(--gray-50);
+            border-left: 3px solid var(--primary);
+            border-radius: var(--radius-md);
+        }
+        .einsatz-titel {
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+        .einsatz-meta {
+            font-size: var(--text-sm);
+            color: var(--gray-600);
+            margin-top: 2px;
+        }
+        .einsatz-desc {
+            font-size: var(--text-sm);
+            color: var(--gray-700);
+            margin-top: var(--space-xs);
+        }
         .btn-disabled {
             display: inline-block;
             padding: var(--space-sm) var(--space-md);
@@ -375,10 +436,28 @@ $basePath = '../';
 
             <section class="zugang-section">
                 <h2>Einsatzplan</h2>
+                <?php if (empty($einsaetze)): ?>
                 <div class="placeholder-notice">
                     <p>Der Einsatzplan wird noch erstellt.</p>
                     <p>Du erhältst eine Benachrichtigung, sobald dein Einsatzort feststeht.</p>
                 </div>
+                <?php else: ?>
+                <ul class="einsatz-list">
+                    <?php foreach ($einsaetze as $e): ?>
+                        <?php $zeit = formatEinsatzZeit($e); ?>
+                        <li class="einsatz-item">
+                            <div class="einsatz-titel"><?= htmlspecialchars($e['titel']) ?></div>
+                            <div class="einsatz-meta">
+                                <?php if ($zeit !== ''): ?><?= htmlspecialchars($zeit) ?><?php endif; ?>
+                                <?php if (!empty($e['ort'])): ?><?= $zeit !== '' ? ' · ' : '' ?><?= htmlspecialchars($e['ort']) ?><?php endif; ?>
+                            </div>
+                            <?php if (!empty($e['beschreibung'])): ?>
+                                <div class="einsatz-desc"><?= nl2br(htmlspecialchars($e['beschreibung'])) ?></div>
+                            <?php endif; ?>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+                <?php endif; ?>
             </section>
 
             <section class="zugang-section">
