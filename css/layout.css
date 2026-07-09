@@ -376,9 +376,10 @@
         position: absolute;
         top: 100%;
         right: var(--space-md);
-        width: min(80vw, 300px);
+        width: max-content;
         max-width: calc(100vw - 2 * var(--space-md));
-        max-height: calc(100vh - 82px);
+        max-height: calc(100vh - 84px);
+        max-height: calc(100dvh - 84px);
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
         box-sizing: border-box;
