@@ -8,6 +8,15 @@ RewriteRule ^ https://%1%{REQUEST_URI} [L,R=301]
 RewriteCond %{HTTPS} off
 RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
+# Kanonische Startseite: /index.html -> / (vermeidet Duplicate Content)
+RewriteCond %{THE_REQUEST} \s/+index\.html[\s?] [NC]
+RewriteRule ^index\.html$ / [L,R=301]
+
+# Gzip/Deflate-Kompression fuer Text-Assets
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/javascript application/javascript application/json image/svg+xml text/xml application/xml
+</IfModule>
+
 <IfModule mod_headers.c>
   Header always set X-Content-Type-Options "nosniff"
   Header always set X-Frame-Options "SAMEORIGIN"
