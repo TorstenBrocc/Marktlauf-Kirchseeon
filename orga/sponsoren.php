@@ -116,7 +116,6 @@ try {
         .merkfeld-card textarea {
             width: 100%;
             box-sizing: border-box;
-            min-height: 240px;
             font-family: inherit;
             font-size: 0.8rem;
             line-height: 1.45;
@@ -443,7 +442,7 @@ try {
                 </form>
 
                 <div class="merkfeld-card" id="merkfeld-wrap">
-                    <textarea id="merkfeld-text" rows="10" data-csrf="<?= htmlspecialchars($csrfToken) ?>"
+                    <textarea id="merkfeld-text" rows="6" data-csrf="<?= htmlspecialchars($csrfToken) ?>"
                               placeholder="📌 Merkfeld — Bankverbindung, Vereins-/Steuernummer …&#10;Doppelklick sperrt &amp; speichert, erneuter Doppelklick entsperrt."><?= htmlspecialchars($merkfeld) ?></textarea>
                 </div>
             </div>
