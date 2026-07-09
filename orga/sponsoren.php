@@ -112,10 +112,6 @@ try {
             min-width: 280px;
             max-width: 480px;
             margin-left: auto;
-            background: #fffbea;
-            border: 1px solid #f0e2a8;
-            border-radius: 8px;
-            padding: 0.75rem 1rem;
         }
         .merkfeld-head {
             display: flex;
@@ -467,8 +463,7 @@ try {
                         <label for="merkfeld-text">📌 Merkfeld <span style="font-weight:400;color:var(--text-light)">(Bankverbindung, Vereins-/Steuernummer …)</span></label>
                         <span class="merkfeld-status" id="merkfeld-status"></span>
                     </div>
-                    <textarea id="merkfeld-text" rows="6" data-csrf="<?= htmlspecialchars($csrfToken) ?>"
-                              placeholder="Freitext … Doppelklick sperrt &amp; speichert, erneuter Doppelklick entsperrt."><?= htmlspecialchars($merkfeld) ?></textarea>
+                    <textarea id="merkfeld-text" rows="6" data-csrf="<?= htmlspecialchars($csrfToken) ?>"><?= htmlspecialchars($merkfeld) ?></textarea>
                 </div>
             </div>
 
