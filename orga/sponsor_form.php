@@ -346,6 +346,10 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                                     <input type="text" name="ap_funktion[]">
                                 </div>
                                 <div>
+                                    <label>Telefon</label>
+                                    <input type="tel" name="ap_telefon[]">
+                                </div>
+                                <div>
                                     <label>E-Mail</label>
                                     <input type="email" name="ap_email[]">
                                 </div>
@@ -374,6 +378,10 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                                     <div>
                                         <label>Funktion</label>
                                         <input type="text" name="ap_funktion[]" value="<?= htmlspecialchars($ap['funktion']) ?>">
+                                    </div>
+                                    <div>
+                                        <label>Telefon</label>
+                                        <input type="tel" name="ap_telefon[]" value="<?= htmlspecialchars($ap['telefon'] ?? '') ?>">
                                     </div>
                                     <div>
                                         <label>E-Mail</label>
@@ -584,6 +592,10 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                 <div>
                     <label>Funktion</label>
                     <input type="text" name="ap_funktion[]">
+                </div>
+                <div>
+                    <label>Telefon</label>
+                    <input type="tel" name="ap_telefon[]">
                 </div>
                 <div>
                     <label>E-Mail</label>

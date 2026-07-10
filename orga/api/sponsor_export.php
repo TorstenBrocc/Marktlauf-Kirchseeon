@@ -42,7 +42,7 @@ $sponsoren = $stmt->fetchAll();
 // Ersten Ansprechpartner je Sponsor vorladen
 $apBySponsor = [];
 try {
-    $apStmt = $pdo->query('SELECT sponsor_id, anrede, nachname, email FROM sponsor_ansprechpartner ORDER BY sponsor_id, id');
+    $apStmt = $pdo->query('SELECT sponsor_id, anrede, nachname, telefon, email FROM sponsor_ansprechpartner ORDER BY sponsor_id, id');
     while ($row = $apStmt->fetch()) {
         if (!isset($apBySponsor[$row['sponsor_id']])) {
             $apBySponsor[$row['sponsor_id']] = $row;
@@ -77,7 +77,7 @@ $out = fopen('php://output', 'w');
 // BOM für Excel (UTF-8)
 fwrite($out, "\xEF\xBB\xBF");
 
-$columns = ['COMPANY', 'TIER_VORSCHLAG', 'EMAIL', 'ANREDE', 'LASTNAME', 'PRIORITAET', 'ORT', 'GESENDET', 'STATUS', 'SUMME', 'NOTIZEN'];
+$columns = ['COMPANY', 'TIER_VORSCHLAG', 'EMAIL', 'TELEFON', 'ANREDE', 'LASTNAME', 'PRIORITAET', 'ORT', 'GESENDET', 'STATUS', 'SUMME', 'NOTIZEN'];
 fputcsv($out, $columns, ';');
 
 foreach ($sponsoren as $s) {
@@ -86,6 +86,7 @@ foreach ($sponsoren as $s) {
         $s['firma'],
         $paketLabel($s['paket']),
         $ap['email'] ?? '',
+        $ap['telefon'] ?? '',
         $ap['anrede'] ?? '',
         $ap['nachname'] ?? '',
         $prioLabel($s['prioritaet'] ?? null),
