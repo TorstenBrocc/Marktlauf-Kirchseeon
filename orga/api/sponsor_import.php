@@ -7,6 +7,7 @@
  *   COMPANY        → sponsors.firma
  *   TIER_VORSCHLAG → sponsors.paket (gold/silber/bronze/hauptsponsor)
  *   EMAIL          → sponsor_ansprechpartner.email
+ *   TELEFON        → sponsor_ansprechpartner.telefon (optional)
  *   ANREDE         → sponsor_ansprechpartner.anrede
  *   LASTNAME       → sponsor_ansprechpartner.nachname
  *   PRIORITAET     → sponsors.prioritaet (Hoch=1/Mittel=2/Niedrig=3 oder Zahl)
@@ -177,8 +178,8 @@ try {
         VALUES (:firma, :paket, :prioritaet, :ort, :status, :gesendet_am)
     ');
     $insertAp = $pdo->prepare('
-        INSERT INTO sponsor_ansprechpartner (sponsor_id, anrede, nachname, email)
-        VALUES (:sponsor_id, :anrede, :nachname, :email)
+        INSERT INTO sponsor_ansprechpartner (sponsor_id, anrede, nachname, telefon, email)
+        VALUES (:sponsor_id, :anrede, :nachname, :telefon, :email)
     ');
 
     $zeile = 1; // Header war Zeile 1
@@ -221,11 +222,13 @@ try {
             $sponsorId = (int) $pdo->lastInsertId();
 
             $nachname = $get($row, $col, 'LASTNAME');
+            $telefon = $get($row, $col, 'TELEFON');
             if ($email !== '' || $nachname !== '') {
                 $insertAp->execute([
                     'sponsor_id' => $sponsorId,
                     'anrede'     => $mapAnrede($get($row, $col, 'ANREDE')),
                     'nachname'   => $nachname,
+                    'telefon'    => $telefon,
                     'email'      => $email,
                 ]);
             }

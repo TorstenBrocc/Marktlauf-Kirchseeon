@@ -73,13 +73,14 @@ function saveAnsprechpartner(PDO $pdo, int $sponsorId, array $post): void {
     $vornamen = $post['ap_vorname'] ?? [];
     $nachnamen = $post['ap_nachname'] ?? [];
     $funktionen = $post['ap_funktion'] ?? [];
+    $telefone = $post['ap_telefon'] ?? [];
     $emails = $post['ap_email'] ?? [];
 
     if (!is_array($anreden)) return;
 
     $stmt = $pdo->prepare('
-        INSERT INTO sponsor_ansprechpartner (sponsor_id, anrede, vorname, nachname, funktion, email)
-        VALUES (:sponsor_id, :anrede, :vorname, :nachname, :funktion, :email)
+        INSERT INTO sponsor_ansprechpartner (sponsor_id, anrede, vorname, nachname, funktion, telefon, email)
+        VALUES (:sponsor_id, :anrede, :vorname, :nachname, :funktion, :telefon, :email)
     ');
 
     for ($i = 0; $i < count($anreden); $i++) {
@@ -97,6 +98,7 @@ function saveAnsprechpartner(PDO $pdo, int $sponsorId, array $post): void {
             'vorname'    => $vorname,
             'nachname'   => $nachname,
             'funktion'   => trim($funktionen[$i] ?? ''),
+            'telefon'    => trim($telefone[$i] ?? ''),
             'email'      => $email,
         ]);
     }

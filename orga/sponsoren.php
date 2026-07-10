@@ -49,7 +49,7 @@ $sponsoren = $stmt->fetchAll();
 
 $ansprechpartnerBySponsor = [];
 try {
-    $apStmt = $pdo->query('SELECT sponsor_id, anrede, vorname, nachname, email FROM sponsor_ansprechpartner ORDER BY sponsor_id, id');
+    $apStmt = $pdo->query('SELECT sponsor_id, anrede, vorname, nachname, email, telefon FROM sponsor_ansprechpartner ORDER BY sponsor_id, id');
     while ($row = $apStmt->fetch()) {
         $ansprechpartnerBySponsor[$row['sponsor_id']][] = $row;
     }
@@ -215,52 +215,43 @@ try {
         .ampel-gelb  .ampel-dot { background: #f4b400; }
         .ampel-gruen .ampel-dot { background: var(--primary); }
         .ampel-rot   .ampel-dot { background: var(--error); }
-        /* Import-/Export-Toolbar */
-        .crm-toolbar {
+        /* Kompakte Aktionsleiste (Import/Export + Versand in einer Zeile) */
+        .action-bar {
             display: flex;
             flex-wrap: wrap;
-            gap: 1rem;
+            gap: 0.5rem 1.25rem;
             align-items: center;
-            margin-bottom: 1.5rem;
-            padding: 1rem;
+            margin-bottom: 1.25rem;
+            padding: 0.6rem 0.875rem;
             background: var(--white);
             border: 1px solid var(--border);
             border-radius: 8px;
-        }
-        .crm-toolbar form {
-            display: flex;
-            gap: 0.5rem;
-            align-items: center;
-        }
-        .crm-toolbar input[type="file"] {
             font-size: 0.8rem;
         }
-        .toolbar-sep {
+        .action-bar form {
+            display: flex;
+            gap: 0.4rem;
+            align-items: center;
+        }
+        .action-bar input[type="file"] {
+            font-size: 0.78rem;
+        }
+        .action-bar-sep {
             width: 1px;
             align-self: stretch;
+            min-height: 1.5rem;
             background: var(--border);
         }
-        /* Versand-Leiste */
-        .versand-bar {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.75rem;
-            align-items: center;
-            margin-bottom: 1rem;
-            padding: 0.75rem 1rem;
-            background: #eef6ff;
-            border: 1px solid #cfe2ff;
-            border-radius: 8px;
-        }
-        .versand-bar label {
+        .action-bar label {
             font-size: 0.8rem;
             font-weight: 600;
         }
-        .versand-bar select {
-            padding: 0.4rem;
+        .action-bar select {
+            padding: 0.3rem 0.4rem;
+            font-size: 0.8rem;
         }
         .versand-count {
-            font-size: 0.8rem;
+            font-size: 0.78rem;
             color: var(--text-light);
         }
         .import-report {
@@ -374,7 +365,8 @@ try {
         .ap-name {
             font-size: 0.875rem;
         }
-        .ap-email {
+        .ap-email,
+        .ap-tel {
             font-size: 0.75rem;
             color: var(--text-light);
         }
@@ -409,18 +401,30 @@ try {
             <?php endif; ?>
 
             <?php $exportQuery = http_build_query(array_filter(['status' => $filterStatus, 'paket' => $filterPaket])); ?>
-            <div class="crm-toolbar">
+            <div class="action-bar">
                 <form method="post" action="api/sponsor_import.php" enctype="multipart/form-data"
                       onsubmit="return confirm('CSV jetzt importieren? Dubletten (Firma + E-Mail) werden übersprungen.');">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                    <label for="csv_datei" style="font-weight:600; font-size:0.8rem;">CSV-Import</label>
+                    <label for="csv_datei">CSV-Import</label>
                     <input type="file" id="csv_datei" name="csv_datei" accept=".csv,text/csv" required>
                     <button type="submit" class="btn btn-small btn-secondary">Importieren</button>
                 </form>
-                <div class="toolbar-sep"></div>
+                <div class="action-bar-sep"></div>
                 <a href="api/sponsor_export.php<?= $exportQuery ? '?' . $exportQuery : '' ?>" class="btn btn-small btn-secondary">
                     CSV-Export<?= ($filterStatus || $filterPaket) ? ' (gefiltert)' : '' ?>
                 </a>
+                <div class="action-bar-sep"></div>
+                <form id="versand-form" method="post" action="api/sponsor_versand.php"
+                      onsubmit="return confirmVersand();" style="display:contents;">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                    <label for="anschreiben_typ">Anschreiben:</label>
+                    <select id="anschreiben_typ" name="anschreiben_typ">
+                        <option value="erstanschreiben">Erstanschreiben</option>
+                        <option value="folgejahr">Folgejahr / Bestandssponsor</option>
+                    </select>
+                    <button type="submit" class="btn btn-small btn-primary">Ausgewählte anschreiben</button>
+                    <span class="versand-count" id="versand-count">0 ausgewählt</span>
+                </form>
             </div>
 
             <div class="filter-merk-row">
@@ -461,18 +465,6 @@ try {
                               placeholder="📌 Merkfeld — Bankverbindung, Vereins-/Steuernummer …&#10;Doppelklick sperrt &amp; speichert, erneuter Doppelklick entsperrt."><?= htmlspecialchars($merkfeld) ?></textarea>
                 </div>
             </div>
-
-            <form id="versand-form" method="post" action="api/sponsor_versand.php"
-                  class="versand-bar" onsubmit="return confirmVersand();">
-                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                <label for="anschreiben_typ">Anschreiben:</label>
-                <select id="anschreiben_typ" name="anschreiben_typ">
-                    <option value="erstanschreiben">Erstanschreiben</option>
-                    <option value="folgejahr">Folgejahr / Bestandssponsor</option>
-                </select>
-                <button type="submit" class="btn btn-small btn-primary">Ausgewählte anschreiben</button>
-                <span class="versand-count" id="versand-count">0 ausgewählt</span>
-            </form>
 
             <div class="table-wrap">
                 <table class="data-table">
@@ -533,6 +525,11 @@ try {
                                                     <span class="ap-count">+<?= $apCount - 1 ?> weitere</span>
                                                 <?php endif; ?>
                                             </div>
+                                            <?php if (!empty($firstAp['telefon'])): ?>
+                                                <div class="ap-tel">
+                                                    <a href="tel:<?= htmlspecialchars(preg_replace('/\s+/', '', $firstAp['telefon'])) ?>"><?= htmlspecialchars($firstAp['telefon']) ?></a>
+                                                </div>
+                                            <?php endif; ?>
                                             <?php if ($firstAp['email']): ?>
                                                 <div class="ap-email">
                                                     <a href="mailto:<?= htmlspecialchars($firstAp['email']) ?>"><?= htmlspecialchars($firstAp['email']) ?></a>
