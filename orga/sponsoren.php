@@ -309,6 +309,31 @@ try {
         .paket-gold { background: #ffd700; color: #333; }
         .paket-silber { background: #c0c0c0; color: #333; }
         .paket-bronze { background: #cd7f32; color: white; }
+        /* Inline-Dropdowns (Paket/Status direkt in der Tabelle ändern) */
+        .inline-select {
+            padding: 0.25rem 0.4rem;
+            font-size: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background: var(--white);
+            cursor: pointer;
+            max-width: 130px;
+        }
+        .inline-select.saving { opacity: 0.5; }
+        .inline-select.saved { border-color: var(--primary); }
+        /* Paket-Dropdown übernimmt die Badge-Farbe */
+        .paket-select.paket-hauptsponsor { background: linear-gradient(135deg, #ff6b35, #f7931e); color: white; border: none; }
+        .paket-select.paket-gold { background: #ffd700; color: #333; border-color: #e6c200; }
+        .paket-select.paket-silber { background: #c0c0c0; color: #333; border-color: #a8a8a8; }
+        .paket-select.paket-bronze { background: #cd7f32; color: white; border: none; }
+        .paket-select.paket-none { color: var(--text-light); }
+        /* Status-Dropdown: farbiger Rand nach Ampel */
+        .status-select { border-left-width: 4px; }
+        .status-select.ampel-grau  { border-left-color: #9aa0a6; }
+        .status-select.ampel-blau  { border-left-color: #2b7de9; }
+        .status-select.ampel-gelb  { border-left-color: #f4b400; }
+        .status-select.ampel-gruen { border-left-color: var(--primary); }
+        .status-select.ampel-rot   { border-left-color: var(--error); }
         .kein-kontakt-row {
             background: #f9f9f9;
         }
@@ -540,17 +565,22 @@ try {
                                         <?php endif; ?>
                                     </td>
                                     <td>
-                                        <?php if ($s['paket']): ?>
-                                            <span class="paket-badge paket-<?= $s['paket'] ?>"><?= ucfirst($s['paket']) ?></span>
-                                        <?php else: ?>
-                                            –
-                                        <?php endif; ?>
+                                        <select class="inline-select paket-select paket-<?= $s['paket'] ?: 'none' ?>"
+                                                data-id="<?= $s['id'] ?>" data-field="paket" title="Paket ändern">
+                                            <option value="" <?= !$s['paket'] ? 'selected' : '' ?>>–</option>
+                                            <?php foreach (['hauptsponsor' => 'Hauptsponsor', 'gold' => 'Gold', 'silber' => 'Silber', 'bronze' => 'Bronze'] as $pk => $pl): ?>
+                                                <option value="<?= $pk ?>" <?= $s['paket'] === $pk ? 'selected' : '' ?>><?= $pl ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
                                     </td>
                                     <td><?= $s['summe'] ? number_format((float)$s['summe'], 2, ',', '.') . ' €' : '–' ?></td>
                                     <td>
-                                        <span class="ampel ampel-<?= sponsorStatusAmpel($s['status']) ?>">
-                                            <span class="ampel-dot"></span><?= htmlspecialchars(sponsorStatusLabel($s['status'])) ?>
-                                        </span>
+                                        <select class="inline-select status-select ampel-<?= sponsorStatusAmpel($s['status']) ?>"
+                                                data-id="<?= $s['id'] ?>" data-field="status" title="Status ändern">
+                                            <?php foreach (SPONSOR_STATUS as $key => $meta): ?>
+                                                <option value="<?= $key ?>" <?= $s['status'] === $key ? 'selected' : '' ?>><?= htmlspecialchars($meta['label']) ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
                                     </td>
                                     <td>
                                         <?php if ($s['wiedervorlage']): ?>
@@ -705,6 +735,57 @@ try {
         // Startzustand: mit Inhalt = gesperrt, leer = direkt beschreibbar
         setLocked(ta.value.trim() !== '');
         autosize();
+    })();
+
+    // Inline-Dropdowns: Paket/Status direkt aus der Übersicht speichern
+    (function() {
+        const csrf = <?= json_encode($csrfToken) ?>;
+        const ampelClasses = ['ampel-grau', 'ampel-blau', 'ampel-gelb', 'ampel-gruen', 'ampel-rot'];
+        const paketClasses = ['paket-hauptsponsor', 'paket-gold', 'paket-silber', 'paket-bronze', 'paket-none'];
+
+        function applyClass(sel, keep, cls) {
+            keep.forEach(function(c) { sel.classList.remove(c); });
+            if (cls) sel.classList.add(cls);
+        }
+
+        document.querySelectorAll('.inline-select').forEach(function(sel) {
+            sel.addEventListener('change', function() {
+                const body = new URLSearchParams();
+                body.set('action', 'inline_update');
+                body.set('csrf_token', csrf);
+                body.set('sponsor_id', sel.dataset.id);
+                body.set('field', sel.dataset.field);
+                body.set('value', sel.value);
+
+                sel.classList.add('saving');
+                sel.classList.remove('saved');
+
+                fetch('api/sponsor_crud.php', {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'fetch' },
+                    body: body
+                })
+                    .then(function(r) { return r.json(); })
+                    .then(function(d) {
+                        sel.classList.remove('saving');
+                        if (d && d.ok) {
+                            if (sel.dataset.field === 'status') {
+                                applyClass(sel, ampelClasses, 'ampel-' + d.ampel);
+                            } else if (sel.dataset.field === 'paket') {
+                                applyClass(sel, paketClasses, 'paket-' + (d.paket || 'none'));
+                            }
+                            sel.classList.add('saved');
+                            setTimeout(function() { sel.classList.remove('saved'); }, 1200);
+                        } else {
+                            alert((d && d.message) || 'Fehler beim Speichern.');
+                        }
+                    })
+                    .catch(function() {
+                        sel.classList.remove('saving');
+                        alert('Fehler beim Speichern.');
+                    });
+            });
+        });
     })();
 
     (function() {
