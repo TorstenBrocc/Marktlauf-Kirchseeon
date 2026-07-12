@@ -15,6 +15,8 @@
  *   GESENDET=Ja    → status=angefragt + gesendet_am gesetzt
  *
  * Dubletten-Check in PHP (kein Unique-Index): firma+email normalisiert.
+ * Bei einer erkannten Dublette wird nicht neu angelegt, aber eine fehlende
+ * Telefonnummer aus der CSV nachgetragen (vorhandene Nummern bleiben unangetastet).
  */
 
 declare(strict_types=1);
@@ -167,21 +169,34 @@ $getAny = static function (array $row, array $col, array $names) use ($get): str
 
 $neu = 0;
 $uebersprungen = 0;
+$ergaenzt = 0;
 $fehler = 0;
 $fehlerZeilen = [];
 
 try {
     $pdo = getDbConnection();
 
-    // Bestehende Dubletten-Keys laden (firma|email, beide normalisiert)
+    // Bestehende Datensätze laden (firma|email, beide normalisiert).
+    // Zusätzlich zur reinen Dubletten-Erkennung merken wir uns die Ansprechpartner-ID
+    // und die vorhandene Telefonnummer, um bei einem erneuten Import fehlende Nummern
+    // nachzutragen (ohne bereits vorhandene je zu überschreiben).
     $seen = [];
+    $existingAp = [];
     $existing = $pdo->query('
-        SELECT s.firma, ap.email
+        SELECT s.firma, ap.id AS ap_id, ap.email, ap.telefon
         FROM sponsors s
         LEFT JOIN sponsor_ansprechpartner ap ON ap.sponsor_id = s.id
     ');
     while ($e = $existing->fetch()) {
-        $seen[$normalize((string) $e['firma']) . '|' . $normalize((string) ($e['email'] ?? ''))] = true;
+        $key = $normalize((string) $e['firma']) . '|' . $normalize((string) ($e['email'] ?? ''));
+        $seen[$key] = true;
+        // Nur den ersten passenden AP-Datensatz je Schlüssel als Ziel für die Anreicherung merken
+        if ($e['ap_id'] !== null && !isset($existingAp[$key])) {
+            $existingAp[$key] = [
+                'ap_id'   => (int) $e['ap_id'],
+                'telefon' => trim((string) ($e['telefon'] ?? '')),
+            ];
+        }
     }
 
     $insertSponsor = $pdo->prepare('
@@ -192,6 +207,12 @@ try {
         INSERT INTO sponsor_ansprechpartner (sponsor_id, anrede, nachname, telefon, email)
         VALUES (:sponsor_id, :anrede, :nachname, :telefon, :email)
     ');
+    // Telefonnummer nur setzen, wenn bislang keine hinterlegt ist (kein Überschreiben)
+    $updateTelefon = $pdo->prepare("
+        UPDATE sponsor_ansprechpartner
+        SET telefon = :telefon
+        WHERE id = :id AND (telefon IS NULL OR telefon = '')
+    ");
 
     $zeile = 1; // Header war Zeile 1
     while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
@@ -213,8 +234,22 @@ try {
 
         $email = $get($row, $col, 'EMAIL');
         $key = $normalize($firma) . '|' . $normalize($email);
+        $telefonCsv = $getAny($row, $col, ['TELEFONNUMMER', 'TELEFON']);
 
         if (isset($seen[$key])) {
+            // Bekannter Sponsor: keine Neuanlage, aber ggf. fehlende Telefonnummer nachtragen.
+            if ($telefonCsv !== '' && isset($existingAp[$key]) && $existingAp[$key]['telefon'] === '') {
+                try {
+                    $updateTelefon->execute(['telefon' => $telefonCsv, 'id' => $existingAp[$key]['ap_id']]);
+                    if ($updateTelefon->rowCount() > 0) {
+                        $existingAp[$key]['telefon'] = $telefonCsv; // im Lauf gesetzt, kein Doppel-Update
+                        $ergaenzt++;
+                        continue;
+                    }
+                } catch (PDOException $e) {
+                    logError("Sponsor-Import Zeile {$zeile} (Telefon-Ergänzung): " . $e->getMessage());
+                }
+            }
             $uebersprungen++;
             continue;
         }
@@ -233,13 +268,12 @@ try {
             $sponsorId = (int) $pdo->lastInsertId();
 
             $nachname = $get($row, $col, 'LASTNAME');
-            $telefon = $getAny($row, $col, ['TELEFONNUMMER', 'TELEFON']);
             if ($email !== '' || $nachname !== '') {
                 $insertAp->execute([
                     'sponsor_id' => $sponsorId,
                     'anrede'     => $mapAnrede($get($row, $col, 'ANREDE')),
                     'nachname'   => $nachname,
-                    'telefon'    => $telefon,
+                    'telefon'    => $telefonCsv,
                     'email'      => $email,
                 ]);
             }
@@ -257,7 +291,7 @@ try {
 
     fclose($handle);
 
-    $_SESSION['flash_success'] = "Import abgeschlossen: {$neu} neu, {$uebersprungen} Dubletten übersprungen, {$fehler} Fehler.";
+    $_SESSION['flash_success'] = "Import abgeschlossen: {$neu} neu, {$ergaenzt} Telefonnummern ergänzt, {$uebersprungen} Dubletten übersprungen, {$fehler} Fehler.";
     if (!empty($fehlerZeilen)) {
         $_SESSION['import_report'] = $fehlerZeilen;
     }
