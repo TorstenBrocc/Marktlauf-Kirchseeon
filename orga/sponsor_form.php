@@ -182,7 +182,7 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
         }
         .ap-row {
             display: grid;
-            grid-template-columns: 100px 1fr 1fr 1fr 1fr 1fr 40px;
+            grid-template-columns: 100px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) 40px;
             gap: 0.5rem;
             align-items: end;
             margin-bottom: 0.75rem;
@@ -192,7 +192,13 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
         .ap-row:last-of-type {
             border-bottom: none;
         }
+        .ap-row > div {
+            min-width: 0;
+        }
         .ap-row input, .ap-row select {
+            width: 100%;
+            box-sizing: border-box;
+            min-width: 0;
             padding: 0.5rem;
             border: 1px solid var(--border);
             border-radius: 4px;

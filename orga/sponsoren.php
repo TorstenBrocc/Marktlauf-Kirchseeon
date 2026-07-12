@@ -334,6 +334,8 @@ try {
         .status-select.ampel-gelb  { border-left-color: #f4b400; }
         .status-select.ampel-gruen { border-left-color: var(--primary); }
         .status-select.ampel-rot   { border-left-color: var(--error); }
+        /* Zugesagte Sponsoren: ganze Zeile hell transparent grün */
+        .status-zugesagt-row { background: rgba(76, 175, 80, 0.12); }
         .kein-kontakt-row {
             background: #f9f9f9;
         }
@@ -522,7 +524,7 @@ try {
                                 $firstAp = $apList[0] ?? null;
                                 $prio = (int) ($s['prioritaet'] ?? 0);
                                 ?>
-                                <tr class="<?= $s['kein_kontakt'] ? 'kein-kontakt-row' : '' ?>">
+                                <tr class="<?= $s['kein_kontakt'] ? 'kein-kontakt-row' : ($s['status'] === 'zugesagt' ? 'status-zugesagt-row' : '') ?>">
                                     <td class="col-check">
                                         <?php if (!$s['kein_kontakt']): ?>
                                             <input type="checkbox" class="row-check" name="sponsor_ids[]" value="<?= $s['id'] ?>" form="versand-form">
@@ -771,6 +773,10 @@ try {
                         if (d && d.ok) {
                             if (sel.dataset.field === 'status') {
                                 applyClass(sel, ampelClasses, 'ampel-' + d.ampel);
+                                const row = sel.closest('tr');
+                                if (row && !row.classList.contains('kein-kontakt-row')) {
+                                    row.classList.toggle('status-zugesagt-row', sel.value === 'zugesagt');
+                                }
                             } else if (sel.dataset.field === 'paket') {
                                 applyClass(sel, paketClasses, 'paket-' + (d.paket || 'none'));
                             }
