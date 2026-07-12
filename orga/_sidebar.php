@@ -42,6 +42,9 @@ $activeNav = $activeNav ?? '';
                 <li class="nav-item<?= $activeNav === 'sponsoren' ? ' active' : '' ?>">
                     <a href="sponsoren.php">Sponsoren</a>
                 </li>
+                <li class="nav-item<?= $activeNav === 'sponsor_briefe' ? ' active' : '' ?>">
+                    <a href="sponsor_briefe.php">Sponsorenbriefe</a>
+                </li>
                 <li class="nav-item<?= $activeNav === 'dateien' ? ' active' : '' ?>">
                     <a href="dateien.php">Dateien</a>
                 </li>
