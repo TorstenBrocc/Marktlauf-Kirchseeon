@@ -130,22 +130,25 @@ TEXT;
 function sendSponsorAnschreiben(
     string $to,
     string $anrede,
+    string $vorname,
     string $nachname,
     string $firma,
     string $typ = 'erstanschreiben',
-    string $paket = ''
+    string $paket = '',
+    int $userId = 0
 ): bool {
     if (!sponsorBriefSlugValid($typ)) {
         $typ = 'erstanschreiben';
     }
-
-    $vorlage = sponsorBriefLoad(getDbConnection(), $typ);
-    $ctx = sponsorBriefContext($anrede, $nachname, $firma, $paket);
-
+    if ($userId === 0) {
+        $userId = (int) ($_SESSION['user_id'] ?? 0);
+    }
+    $pdo      = getDbConnection();
+    $vorlage  = sponsorBriefLoad($pdo, $typ);
+    $ctx      = sponsorBriefContext($pdo, $userId, $anrede, $vorname, $nachname, $firma, $paket);
     $subject  = sponsorBriefBetreff($vorlage['betreff'], $ctx);
     $htmlBody = sponsorBriefRenderHtml($vorlage['koerper_md'], $ctx);
     $textBody = sponsorBriefRenderText($vorlage['koerper_md'], $ctx);
-
     return sendMail($to, $subject, $textBody, $htmlBody);
 }
 

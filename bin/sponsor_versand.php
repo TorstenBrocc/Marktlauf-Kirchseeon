@@ -32,7 +32,7 @@ try {
     $pdo = getDbConnection();
 
     $stmt = $pdo->query("
-        SELECT id, sponsor_id, email, anrede, nachname, firma, paket, anschreiben_typ
+        SELECT id, sponsor_id, email, anrede, vorname, nachname, firma, paket, anschreiben_typ, angefordert_von
         FROM sponsor_versand_queue
         WHERE status = 'offen'
         ORDER BY id ASC
@@ -59,11 +59,13 @@ try {
         try {
             $ok = sendSponsorAnschreiben(
                 $job['email'],
-                (string) $job['anrede'],
-                (string) $job['nachname'],
-                (string) $job['firma'],
+                $job['anrede'],
+                (string) ($job['vorname'] ?? ''),
+                $job['nachname'],
+                $job['firma'],
                 $job['anschreiben_typ'],
-                (string) ($job['paket'] ?? '')
+                (string) ($job['paket'] ?? ''),
+                (int) ($job['angefordert_von'] ?? 0)
             );
 
             if ($ok) {

@@ -10,6 +10,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/_auth.php';
 require_once __DIR__ . '/../../src/sponsor_brief.php';
+require_once __DIR__ . '/../../src/db.php';
 
 header('Content-Type: text/html; charset=utf-8');
 
@@ -24,6 +25,8 @@ if (!verifyCsrfToken($_POST['csrf_token'] ?? '')) {
 }
 
 $md = (string) ($_POST['koerper_md'] ?? '');
-$ctx = sponsorBriefBeispielContext();
+$pdo = getDbConnection();
+$previewUser = getCurrentUserFromGuard();
+$ctx = sponsorBriefBeispielContext($pdo, (int) ($previewUser['id'] ?? 0));
 
 echo sponsorBriefRenderHtml($md, $ctx);
