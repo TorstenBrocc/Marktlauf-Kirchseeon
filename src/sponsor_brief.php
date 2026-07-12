@@ -27,9 +27,14 @@ if (is_file(__DIR__ . '/Parsedown.php')) {
     require_once __DIR__ . '/Parsedown.php';
 }
 
-/** Feste Event-Eckdaten (bei Jahres-/Terminwechsel hier anpassen). */
-const SPONSOR_BRIEF_EVENT_DATUM = '20. September 2026';
-const SPONSOR_BRIEF_ANTWORT_BIS = '30. August 2026';
+/** Datum von Y-m-d in deutsches Format (z. B. "20. September 2026"). */
+function sponsorFormatDatum(string $ymd, string $fallback): string {
+    $d = DateTimeImmutable::createFromFormat('Y-m-d', $ymd);
+    if (!$d) return $fallback;
+    static $months = ['Januar','Februar','März','April','Mai','Juni',
+                      'Juli','August','September','Oktober','November','Dezember'];
+    return (int)$d->format('j') . '. ' . $months[(int)$d->format('n') - 1] . ' ' . $d->format('Y');
+}
 
 /** Gültige Vorlagen-Slugs (= Anschreiben-Typen). */
 function sponsorBriefSlugs(): array {
@@ -117,13 +122,18 @@ MD;
 /** Liste der verfügbaren Platzhalter für die Editor-Referenz. */
 function sponsorBriefPlatzhalterHilfe(): array {
     return [
-        '{{anrede}}'        => 'Persönliche Anrede (Sehr geehrte Frau …)',
+        '{{anrede}}'        => "Persönliche Anrede – wird automatisch generiert:\n"
+                               . "• Frau + Nachname → \"Sehr geehrte Frau Jost,\"\n"
+                               . "• Herr + Nachname → \"Sehr geehrter Herr Müller,\"\n"
+                               . "• kein Nachname + Firma → \"Sehr geehrte Damen und Herren der Muster GmbH,\"\n"
+                               . "• sonst → \"Sehr geehrte Damen und Herren,\"",
+        '{{vorname}}'       => 'Vorname des Ansprechpartners',
         '{{firma}}'         => 'Firmenname des Sponsors',
-        '{{paket_text}}'    => 'Paketabhängiger Textbaustein (Gold/Silber/Bronze)',
-        '{{paket_tabelle}}' => 'Tabelle aller Sponsoring-Pakete mit Preisen',
-        '{{signatur}}'      => 'Signatur-Block (Name, Rolle, Kontakt)',
-        '{{event_datum}}'   => 'Datum des Marktlaufs (' . SPONSOR_BRIEF_EVENT_DATUM . ')',
-        '{{antwort_bis}}'   => 'Rückmeldefrist (' . SPONSOR_BRIEF_ANTWORT_BIS . ')',
+        '{{paket_text}}'    => 'Paketname (Hauptsponsor / Gold-Sponsor / Silber-Sponsor / Bronze-Sponsor)',
+        '{{paket_tabelle}}' => 'Tabelle aller Sponsoring-Pakete mit Preisen und Highlights',
+        '{{signatur}}'      => 'Signatur-Block (Name, Aufgabe, Telefon, E-Mail)',
+        '{{event_datum}}'   => 'Datum des Marktlaufs (aus Einstellungen)',
+        '{{antwort_bis}}'   => 'Rückmeldefrist (aus Einstellungen)',
     ];
 }
 
@@ -173,108 +183,156 @@ function sponsorAnrede(string $anrede, string $nachname, string $firma = ''): st
     return 'Sehr geehrte Damen und Herren,';
 }
 
-/** Paketabhängiger Textbaustein. */
+/** Paketname. */
 function sponsorLevelText(string $paket): string {
     return match ($paket) {
-        'gold', 'hauptsponsor' =>
-            'Als führender regionaler Akteur würden wir uns besonders freuen, '
-            . 'Sie als Gold-Sponsor auf unserer zentralen Bühne präsentieren zu dürfen.',
-        'silber' =>
-            'Mit einem Silber-Sponsoring sichern Sie sich hervorragende Sichtbarkeit '
-            . 'direkt auf den Laufshirts und Startnummern unserer Teilnehmer.',
-        default =>
-            'Schon mit unserem Bronze-Paket leisten Sie einen wertvollen Beitrag '
-            . 'für die Gemeinschaft und sind auf allen digitalen Kanälen präsent.',
+        'hauptsponsor' => 'Hauptsponsor',
+        'gold'         => 'Gold-Sponsor',
+        'silber'       => 'Silber-Sponsor',
+        default        => 'Bronze-Sponsor',
     };
 }
 
-/**
- * Signatur-Block aus der Config (nicht im Repo — enthält Name/Telefon).
- * @return array{name:string, role:string, phone:string}
- */
-function sponsorSignatur(): array {
+function sponsorSignatur(PDO $pdo, int $userId): array {
+    if ($userId > 0) {
+        try {
+            $stmt = $pdo->prepare('SELECT name, email, telefon, aufgabe FROM users WHERE id = :id AND active = 1');
+            $stmt->execute(['id' => $userId]);
+            $u = $stmt->fetch();
+            if ($u) {
+                return [
+                    'name'  => (string) $u['name'],
+                    'role'  => (string) ($u['aufgabe'] ?? ''),
+                    'phone' => (string) ($u['telefon'] ?? ''),
+                    'email' => (string) $u['email'],
+                ];
+            }
+        } catch (PDOException $e) {}
+    }
     $cfg = getConfig()['sponsor_mail'] ?? [];
     return [
-        'name'  => $cfg['sender_name'] ?? 'Orga-Team Marktlauf Kirchseeon',
-        'role'  => $cfg['sender_role'] ?? 'Sponsoring · Marktlauf Kirchseeon, ATSV Kirchseeon e.V.',
+        'name'  => $cfg['sender_name']  ?? 'Orga-Team Marktlauf Kirchseeon',
+        'role'  => $cfg['sender_role']  ?? 'Sponsoring · Marktlauf Kirchseeon, ATSV Kirchseeon e.V.',
         'phone' => $cfg['sender_phone'] ?? '',
+        'email' => $cfg['smtp_from']    ?? '',
     ];
 }
 
-function sponsorBriefPaketTabelleHtml(): string {
-    return <<<HTML
-<h3>Unsere Sponsoring-Pakete im Überblick:</h3>
-<table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-    <tr style="background-color: #f2f2f2;">
-        <th style="border: 1px solid #dddddd; text-align: left; padding: 8px;">Paket</th>
-        <th style="border: 1px solid #dddddd; text-align: left; padding: 8px;">Investition</th>
-        <th style="border: 1px solid #dddddd; text-align: left; padding: 8px;">Highlights</th>
-    </tr>
-    <tr>
-        <td style="border: 1px solid #dddddd; padding: 8px;"><strong>Bronze</strong></td>
-        <td style="border: 1px solid #dddddd; padding: 8px;">250 &euro;</td>
-        <td style="border: 1px solid #dddddd; padding: 8px;">Logo auf Website, Startet&uuml;ten-Branding, Urkunde, Dankesschreiben</td>
-    </tr>
-    <tr style="background-color: #fafafa;">
-        <td style="border: 1px solid #dddddd; padding: 8px;"><strong>Silber</strong></td>
-        <td style="border: 1px solid #dddddd; padding: 8px;">500 &euro;</td>
-        <td style="border: 1px solid #dddddd; padding: 8px;">+ Logo auf Startnummer &amp; Streckenbanner, Namensnennung Presse, Logo auf Lauf-Shirt, 3 Startpl&auml;tze</td>
-    </tr>
-    <tr>
-        <td style="border: 1px solid #dddddd; padding: 8px;"><strong>Gold</strong></td>
-        <td style="border: 1px solid #dddddd; padding: 8px;">1.000 &euro;</td>
-        <td style="border: 1px solid #dddddd; padding: 8px;">+ Banner zentral im Start-/Zielbereich, eigener Stand inkl. Fl&auml;che, 5 Startpl&auml;tze, Moderations-Erw&auml;hnungen</td>
-    </tr>
-</table>
-HTML;
+/** @return array<int,array{key:string,name:string,investition:string,highlights:string}> */
+function sponsorBriefPaketeDefault(): array {
+    return [
+        ['key'=>'hauptsponsor','name'=>'Hauptsponsor','investition'=>'auf Anfrage',
+         'highlights'=>'Zentraler Partner des Events, maximale Sichtbarkeit auf allen Kanälen'],
+        ['key'=>'gold','name'=>'Gold','investition'=>'1.000 €',
+         'highlights'=>'Banner zentral im Start-/Zielbereich, eigener Stand inkl. Fläche, 5 Startplätze, Moderations-Erwähnungen'],
+        ['key'=>'silber','name'=>'Silber','investition'=>'500 €',
+         'highlights'=>'Logo auf Startnummer & Streckenbanner, Namensnennung Presse, Logo auf Lauf-Shirt, 3 Startplätze'],
+        ['key'=>'bronze','name'=>'Bronze','investition'=>'250 €',
+         'highlights'=>'Logo auf Website, Startetüten-Branding, Urkunde, Dankesschreiben'],
+    ];
 }
 
-function sponsorBriefPaketTextListe(): string {
-    return "Sponsoring-Pakete:\n"
-        . "- Bronze (250 €): Logo auf Website, Startetüten-Branding, Urkunde, Dankesschreiben\n"
-        . "- Silber (500 €): + Logo auf Startnummer & Streckenbanner, Namensnennung Presse, Logo auf Lauf-Shirt, 3 Startplätze\n"
-        . "- Gold (1.000 €): + Banner zentral im Start-/Zielbereich, eigener Stand, 5 Startplätze, Moderations-Erwähnungen";
+function sponsorBriefPaketeAusDb(PDO $pdo): array {
+    try {
+        $stmt = $pdo->prepare("SELECT `value` FROM einstellungen WHERE `key` = 'sponsoring_pakete'");
+        $stmt->execute();
+        $json = $stmt->fetchColumn();
+        if ($json) {
+            $data = json_decode((string) $json, true);
+            if (is_array($data) && count($data) > 0) return $data;
+        }
+    } catch (PDOException $e) {}
+    return sponsorBriefPaketeDefault();
+}
+
+function sponsorBriefPaketTabelleHtml(PDO $pdo): string {
+    $pakete = sponsorBriefPaketeAusDb($pdo);
+    $rows = '';
+    foreach ($pakete as $i => $p) {
+        $bg = $i % 2 !== 0 ? ' style="background-color: #fafafa;"' : '';
+        $rows .= '<tr' . $bg . '>'
+            . '<td style="border: 1px solid #dddddd; padding: 8px;"><strong>' . htmlspecialchars((string) ($p['name'] ?? '')) . '</strong></td>'
+            . '<td style="border: 1px solid #dddddd; padding: 8px;">' . htmlspecialchars((string) ($p['investition'] ?? '')) . '</td>'
+            . '<td style="border: 1px solid #dddddd; padding: 8px;">' . htmlspecialchars((string) ($p['highlights'] ?? '')) . '</td>'
+            . '</tr>';
+    }
+    return '<h3>Unsere Sponsoring-Pakete im Überblick:</h3>'
+        . '<table style="width: 100%; border-collapse: collapse; margin: 20px 0;">'
+        . '<tr style="background-color: #f2f2f2;">'
+        . '<th style="border: 1px solid #dddddd; text-align: left; padding: 8px;">Paket</th>'
+        . '<th style="border: 1px solid #dddddd; text-align: left; padding: 8px;">Investition</th>'
+        . '<th style="border: 1px solid #dddddd; text-align: left; padding: 8px;">Highlights</th>'
+        . '</tr>' . $rows . '</table>';
+}
+
+function sponsorBriefPaketTextListe(PDO $pdo): string {
+    $pakete = sponsorBriefPaketeAusDb($pdo);
+    $lines = "Sponsoring-Pakete:\n";
+    foreach ($pakete as $p) {
+        $lines .= '- ' . ($p['name'] ?? '') . ' (' . ($p['investition'] ?? '') . '): ' . ($p['highlights'] ?? '') . "\n";
+    }
+    return rtrim($lines);
 }
 
 /**
  * Platzhalter-Kontext aufbauen.
  * @return array{inline:array<string,string>, blocksHtml:array<string,string>, blocksText:array<string,string>}
  */
-function sponsorBriefContext(string $anrede, string $nachname, string $firma, string $paket): array {
-    $firmaText = trim($firma) !== '' ? trim($firma) : 'Ihr Unternehmen';
-    $sig = sponsorSignatur();
+function sponsorBriefContext(PDO $pdo, int $userId, string $anrede, string $vorname, string $nachname, string $firma, string $paket): array {
+    $firmaText  = trim($firma) !== '' ? trim($firma) : 'Ihr Unternehmen';
+    $sig        = sponsorSignatur($pdo, $userId);
+    $eventDatum = '20. September 2026';
+    $antwortBis = '30. August 2026';
+    try {
+        $stmt = $pdo->query("SELECT `key`, `value` FROM einstellungen WHERE `key` IN ('sponsor_brief_event_datum','sponsor_brief_antwort_bis')");
+        foreach ($stmt->fetchAll() as $row) {
+            if ($row['key'] === 'sponsor_brief_event_datum' && (string) $row['value'] !== '') {
+                $eventDatum = sponsorFormatDatum((string) $row['value'], $eventDatum);
+            } elseif ($row['key'] === 'sponsor_brief_antwort_bis' && (string) $row['value'] !== '') {
+                $antwortBis = sponsorFormatDatum((string) $row['value'], $antwortBis);
+            }
+        }
+    } catch (PDOException $e) {}
 
-    $sigPhoneHtml = $sig['phone'] !== '' ? 'T: ' . htmlspecialchars($sig['phone']) . ' | ' : '';
+    $sigRoleHtml  = $sig['role']  !== '' ? htmlspecialchars($sig['role'])  . '<br>' : '';
+    $sigPhoneHtml = $sig['phone'] !== '' ? 'T: ' . htmlspecialchars($sig['phone']) : '';
+    $sigEmailHtml = $sig['email'] !== '' ? ($sigPhoneHtml !== '' ? ' | ' : '') . 'M: <a href="mailto:' . htmlspecialchars($sig['email']) . '">' . htmlspecialchars($sig['email']) . '</a>' : '';
     $sigHtml = '<p>Herzliche Grüße<br><br>'
         . '<strong>' . htmlspecialchars($sig['name']) . '</strong><br>'
-        . htmlspecialchars($sig['role']) . '<br>'
-        . $sigPhoneHtml . 'W: <a href="https://atsv-kirchseeon-marktlauf.de">atsv-kirchseeon-marktlauf.de</a></p>';
-    $sigPhoneText = $sig['phone'] !== '' ? "T: {$sig['phone']} | " : '';
-    $sigText = "Herzliche Grüße\n\n{$sig['name']}\n{$sig['role']}\n"
-        . "{$sigPhoneText}W: atsv-kirchseeon-marktlauf.de";
+        . $sigRoleHtml
+        . ($sigPhoneHtml . $sigEmailHtml !== '' ? $sigPhoneHtml . $sigEmailHtml . '<br>' : '')
+        . 'W: <a href="https://atsv-kirchseeon-marktlauf.de">atsv-kirchseeon-marktlauf.de</a></p>';
+
+    $sigParts = [];
+    if ($sig['phone'] !== '') $sigParts[] = 'T: ' . $sig['phone'];
+    if ($sig['email'] !== '') $sigParts[] = 'M: ' . $sig['email'];
+    $sigParts[] = 'W: atsv-kirchseeon-marktlauf.de';
+    $sigRoleText = $sig['role'] !== '' ? $sig['role'] . "\n" : '';
+    $sigText = "Herzliche Grüße\n\n{$sig['name']}\n{$sigRoleText}" . implode(' | ', $sigParts);
 
     return [
         'inline' => [
             '{{anrede}}'      => sponsorAnrede($anrede, $nachname, $firma),
+            '{{vorname}}'     => trim($vorname),
             '{{firma}}'       => $firmaText,
             '{{paket_text}}'  => sponsorLevelText($paket),
-            '{{event_datum}}' => SPONSOR_BRIEF_EVENT_DATUM,
-            '{{antwort_bis}}' => SPONSOR_BRIEF_ANTWORT_BIS,
+            '{{event_datum}}' => $eventDatum,
+            '{{antwort_bis}}' => $antwortBis,
         ],
         'blocksHtml' => [
-            'paket_tabelle' => sponsorBriefPaketTabelleHtml(),
+            'paket_tabelle' => sponsorBriefPaketTabelleHtml($pdo),
             'signatur'      => $sigHtml,
         ],
         'blocksText' => [
-            'paket_tabelle' => sponsorBriefPaketTextListe(),
+            'paket_tabelle' => sponsorBriefPaketTextListe($pdo),
             'signatur'      => $sigText,
         ],
     ];
 }
 
 /** Beispiel-Kontext für die Editor-Vorschau (keine echten Empfängerdaten nötig). */
-function sponsorBriefBeispielContext(): array {
-    return sponsorBriefContext('Frau', 'Musterfrau', 'Muster GmbH', 'gold');
+function sponsorBriefBeispielContext(PDO $pdo, int $userId = 0): array {
+    return sponsorBriefContext($pdo, $userId, 'Frau', 'Erika', 'Musterfrau', 'Muster GmbH', 'gold');
 }
 
 /* ---- Rendering ----------------------------------------------------------- */

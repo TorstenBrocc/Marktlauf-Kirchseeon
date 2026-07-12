@@ -126,6 +126,21 @@ $pageTitle = $isSelf ? 'Mein Profil' : 'Benutzer bearbeiten';
                                    value="<?= htmlspecialchars($targetUser['email']) ?>">
                         </div>
 
+                        <div class="form-group">
+                            <label for="telefon">Telefon</label>
+                            <input type="tel" id="telefon" name="telefon"
+                                   value="<?= htmlspecialchars((string) ($targetUser['telefon'] ?? '')) ?>"
+                                   placeholder="+49 172 ...">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="aufgabe">Aufgabe / Funktion</label>
+                            <input type="text" id="aufgabe" name="aufgabe" maxlength="150"
+                                   value="<?= htmlspecialchars((string) ($targetUser['aufgabe'] ?? '')) ?>"
+                                   placeholder="z.B. Sponsoringbeauftragte ATSV Marktlauf Kirchseeon">
+                            <p class="role-info">Erscheint in der Signatur der Sponsorenbriefe.</p>
+                        </div>
+
                         <?php if ($isAdmin && !$isSelf): ?>
                         <div class="form-group">
                             <label for="role">Rolle</label>

@@ -67,7 +67,7 @@ try {
 
     // Ersten Ansprechpartner mit E-Mail je Sponsor holen
     $apStmt = $pdo->prepare("
-        SELECT sponsor_id, anrede, nachname, email
+        SELECT sponsor_id, anrede, vorname, nachname, email
         FROM sponsor_ansprechpartner
         WHERE sponsor_id IN ($placeholders) AND email <> ''
         ORDER BY sponsor_id, id
@@ -102,6 +102,7 @@ try {
             'sponsor_id' => $id,
             'email'      => trim((string) $ap['email']),
             'anrede'     => (string) $ap['anrede'],
+            'vorname'    => (string) $ap['vorname'],
             'nachname'   => (string) $ap['nachname'],
             'firma'      => (string) $sponsor['firma'],
             'paket'      => (string) ($sponsor['paket'] ?? ''),
@@ -126,7 +127,7 @@ try {
     if (count($recipients) === 1) {
         $r = $recipients[0];
         try {
-            $ok = sendSponsorAnschreiben($r['email'], $r['anrede'], $r['nachname'], $r['firma'], $typ, $r['paket']);
+            $ok = sendSponsorAnschreiben($r['email'], $r['anrede'], $r['vorname'], $r['nachname'], $r['firma'], $typ, $r['paket'], (int)($user['id'] ?? 0));
         } catch (Throwable $e) {
             $ok = false;
             logError('Sponsor-Versand (einzeln) Exception: ' . $e->getMessage());
@@ -144,8 +145,8 @@ try {
 
     // --- Mehrfachauswahl: in Sende-Queue stellen ---
     $insert = $pdo->prepare('
-        INSERT INTO sponsor_versand_queue (sponsor_id, email, anrede, nachname, firma, paket, anschreiben_typ, angefordert_von)
-        VALUES (:sponsor_id, :email, :anrede, :nachname, :firma, :paket, :typ, :von)
+        INSERT INTO sponsor_versand_queue (sponsor_id, email, anrede, nachname, vorname, firma, paket, anschreiben_typ, angefordert_von)
+        VALUES (:sponsor_id, :email, :anrede, :nachname, :vorname, :firma, :paket, :typ, :von)
     ');
     $queued = 0;
     foreach ($recipients as $r) {
@@ -154,6 +155,7 @@ try {
             'email'      => $r['email'],
             'anrede'     => $r['anrede'],
             'nachname'   => $r['nachname'],
+            'vorname'    => $r['vorname'],
             'firma'      => $r['firma'],
             'paket'      => $r['paket'] ?: null,
             'typ'        => $typ,
