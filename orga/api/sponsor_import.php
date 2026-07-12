@@ -4,10 +4,10 @@
  * Grundlage: intern/sponsor-crm-ausbau.md §3
  *
  * Spalten-Mapping (CSV → DB):
- *   COMPANY        → sponsors.firma
+ *   FIRMENNAME     → sponsors.firma (Alias: COMPANY)
  *   TIER_VORSCHLAG → sponsors.paket (gold/silber/bronze/hauptsponsor)
  *   EMAIL          → sponsor_ansprechpartner.email
- *   TELEFON        → sponsor_ansprechpartner.telefon (optional)
+ *   TELEFONNUMMER  → sponsor_ansprechpartner.telefon (Alias: TELEFON, optional)
  *   ANREDE         → sponsor_ansprechpartner.anrede
  *   LASTNAME       → sponsor_ansprechpartner.nachname
  *   PRIORITAET     → sponsors.prioritaet (Hoch=1/Mittel=2/Niedrig=3 oder Zahl)
@@ -141,15 +141,26 @@ foreach ($header as $i => $name) {
     $col[strtoupper(trim((string) $name))] = $i;
 }
 
-if (!isset($col['COMPANY'])) {
+if (!isset($col['FIRMENNAME']) && !isset($col['COMPANY'])) {
     fclose($handle);
-    $_SESSION['flash_error'] = 'Pflichtspalte COMPANY fehlt im CSV-Header.';
+    $_SESSION['flash_error'] = 'Pflichtspalte FIRMENNAME fehlt im CSV-Header.';
     header('Location: ../sponsoren.php');
     exit;
 }
 
 $get = static function (array $row, array $col, string $name): string {
     return isset($col[$name]) ? trim((string) ($row[$col[$name]] ?? '')) : '';
+};
+
+// Wert über mehrere mögliche Spaltennamen holen (deutscher Name zuerst, engl. Alias als Fallback)
+$getAny = static function (array $row, array $col, array $names) use ($get): string {
+    foreach ($names as $name) {
+        $v = $get($row, $col, $name);
+        if ($v !== '') {
+            return $v;
+        }
+    }
+    return '';
 };
 
 // ---- Import ----------------------------------------------------------------
@@ -191,11 +202,11 @@ try {
             continue;
         }
 
-        $firma = $get($row, $col, 'COMPANY');
+        $firma = $getAny($row, $col, ['FIRMENNAME', 'COMPANY']);
         if ($firma === '') {
             $fehler++;
             if (count($fehlerZeilen) < 20) {
-                $fehlerZeilen[] = "Zeile {$zeile}: COMPANY leer";
+                $fehlerZeilen[] = "Zeile {$zeile}: FIRMENNAME leer";
             }
             continue;
         }
@@ -222,7 +233,7 @@ try {
             $sponsorId = (int) $pdo->lastInsertId();
 
             $nachname = $get($row, $col, 'LASTNAME');
-            $telefon = $get($row, $col, 'TELEFON');
+            $telefon = $getAny($row, $col, ['TELEFONNUMMER', 'TELEFON']);
             if ($email !== '' || $nachname !== '') {
                 $insertAp->execute([
                     'sponsor_id' => $sponsorId,
