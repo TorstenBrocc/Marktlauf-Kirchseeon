@@ -85,6 +85,7 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
             display: flex;
             gap: 1rem;
             margin-top: 1.5rem;
+            margin-bottom: 1.5rem;
         }
         .checkbox-single {
             display: flex;
@@ -181,7 +182,7 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
         }
         .ap-row {
             display: grid;
-            grid-template-columns: 100px 1fr 1fr 1fr 1fr 40px;
+            grid-template-columns: 100px 1fr 1fr 1fr 1fr 1fr 40px;
             gap: 0.5rem;
             align-items: end;
             margin-bottom: 0.75rem;
@@ -251,7 +252,7 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
             .ap-row {
                 grid-template-columns: 1fr 1fr;
             }
-            .ap-row > div:nth-child(5) {
+            .ap-row > div:nth-child(6) {
                 grid-column: 1 / -1;
             }
             .ap-row > button {

@@ -36,6 +36,62 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+/**
+ * Inline-Schnellbearbeitung aus der Sponsoren-Übersicht (Paket/Status per Dropdown).
+ * Antwortet immer als JSON und wird per fetch() aufgerufen.
+ */
+if (($_POST['action'] ?? '') === 'inline_update') {
+    header('Content-Type: application/json');
+
+    if (!verifyCsrfToken($_POST['csrf_token'] ?? '')) {
+        echo json_encode(['ok' => false, 'message' => 'Ungültige Anfrage.']);
+        exit;
+    }
+
+    $sponsorId = (int) ($_POST['sponsor_id'] ?? 0);
+    $field = (string) ($_POST['field'] ?? '');
+    $value = (string) ($_POST['value'] ?? '');
+
+    if ($sponsorId <= 0) {
+        echo json_encode(['ok' => false, 'message' => 'Ungültige Sponsor-ID.']);
+        exit;
+    }
+
+    try {
+        $pdo = getDbConnection();
+
+        if ($field === 'status') {
+            if (!sponsorStatusValid($value)) {
+                echo json_encode(['ok' => false, 'message' => 'Ungültiger Status.']);
+                exit;
+            }
+            $pdo->prepare('UPDATE sponsors SET status = :v WHERE id = :id')
+                ->execute(['v' => $value, 'id' => $sponsorId]);
+            echo json_encode([
+                'ok'    => true,
+                'ampel' => sponsorStatusAmpel($value),
+                'label' => sponsorStatusLabel($value),
+            ]);
+            exit;
+        }
+
+        if ($field === 'paket') {
+            $paket = in_array($value, ['hauptsponsor', 'gold', 'silber', 'bronze'], true) ? $value : null;
+            $pdo->prepare('UPDATE sponsors SET paket = :v WHERE id = :id')
+                ->execute(['v' => $paket, 'id' => $sponsorId]);
+            echo json_encode(['ok' => true, 'paket' => $paket]);
+            exit;
+        }
+
+        echo json_encode(['ok' => false, 'message' => 'Ungültiges Feld.']);
+        exit;
+    } catch (PDOException $e) {
+        logError('Sponsor inline_update error: ' . $e->getMessage());
+        echo json_encode(['ok' => false, 'message' => 'Datenbankfehler.']);
+        exit;
+    }
+}
+
 $csrfToken = $_POST['csrf_token'] ?? '';
 if (!verifyCsrfToken($csrfToken)) {
     $_SESSION['flash_error'] = 'Ungültige Anfrage.';
