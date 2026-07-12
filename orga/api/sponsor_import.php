@@ -17,6 +17,8 @@
  * Dubletten-Check in PHP (kein Unique-Index): firma+email normalisiert.
  * Bei einer erkannten Dublette wird nicht neu angelegt, aber eine fehlende
  * Telefonnummer aus der CSV nachgetragen (vorhandene Nummern bleiben unangetastet).
+ * Hat ein bekannter Sponsor (gleiche Firma) noch gar keinen Ansprechpartner,
+ * wird die Kontaktzeile aus der CSV am vorhandenen Sponsor ergänzt statt neu angelegt.
  */
 
 declare(strict_types=1);
@@ -182,20 +184,35 @@ try {
     // nachzutragen (ohne bereits vorhandene je zu überschreiben).
     $seen = [];
     $existingAp = [];
+    $sponsorIdByFirma = []; // normFirma => sponsor_id (erster Treffer)
+    $sponsorHasAp = [];     // sponsor_id => bool (existiert mind. ein Ansprechpartner?)
     $existing = $pdo->query('
-        SELECT s.firma, ap.id AS ap_id, ap.email, ap.telefon
+        SELECT s.id AS sponsor_id, s.firma, ap.id AS ap_id, ap.email, ap.telefon
         FROM sponsors s
         LEFT JOIN sponsor_ansprechpartner ap ON ap.sponsor_id = s.id
     ');
     while ($e = $existing->fetch()) {
-        $key = $normalize((string) $e['firma']) . '|' . $normalize((string) ($e['email'] ?? ''));
+        $sid = (int) $e['sponsor_id'];
+        $normFirma = $normalize((string) $e['firma']);
+        $key = $normFirma . '|' . $normalize((string) ($e['email'] ?? ''));
         $seen[$key] = true;
+
+        if (!isset($sponsorIdByFirma[$normFirma])) {
+            $sponsorIdByFirma[$normFirma] = $sid;
+        }
+        if (!isset($sponsorHasAp[$sid])) {
+            $sponsorHasAp[$sid] = false;
+        }
+
         // Nur den ersten passenden AP-Datensatz je Schlüssel als Ziel für die Anreicherung merken
-        if ($e['ap_id'] !== null && !isset($existingAp[$key])) {
-            $existingAp[$key] = [
-                'ap_id'   => (int) $e['ap_id'],
-                'telefon' => trim((string) ($e['telefon'] ?? '')),
-            ];
+        if ($e['ap_id'] !== null) {
+            $sponsorHasAp[$sid] = true;
+            if (!isset($existingAp[$key])) {
+                $existingAp[$key] = [
+                    'ap_id'   => (int) $e['ap_id'],
+                    'telefon' => trim((string) ($e['telefon'] ?? '')),
+                ];
+            }
         }
     }
 
@@ -233,12 +250,16 @@ try {
         }
 
         $email = $get($row, $col, 'EMAIL');
-        $key = $normalize($firma) . '|' . $normalize($email);
+        $normFirma = $normalize($firma);
+        $key = $normFirma . '|' . $normalize($email);
         $telefonCsv = $getAny($row, $col, ['TELEFONNUMMER', 'TELEFON']);
+        $nachname = $get($row, $col, 'LASTNAME');
+        $anrede = $mapAnrede($get($row, $col, 'ANREDE'));
 
-        if (isset($seen[$key])) {
-            // Bekannter Sponsor: keine Neuanlage, aber ggf. fehlende Telefonnummer nachtragen.
-            if ($telefonCsv !== '' && isset($existingAp[$key]) && $existingAp[$key]['telefon'] === '') {
+        // 1) Exakte Dublette (firma+email) mit vorhandenem Ansprechpartner:
+        //    keine Neuanlage, aber fehlende Telefonnummer nachtragen.
+        if (isset($seen[$key]) && isset($existingAp[$key])) {
+            if ($telefonCsv !== '' && $existingAp[$key]['telefon'] === '') {
                 try {
                     $updateTelefon->execute(['telefon' => $telefonCsv, 'id' => $existingAp[$key]['ap_id']]);
                     if ($updateTelefon->rowCount() > 0) {
@@ -250,6 +271,40 @@ try {
                     logError("Sponsor-Import Zeile {$zeile} (Telefon-Ergänzung): " . $e->getMessage());
                 }
             }
+            $uebersprungen++;
+            continue;
+        }
+
+        // 2) Bekannter Sponsor (gleiche Firma), der noch gar keinen Ansprechpartner hat:
+        //    Kontaktzeile am vorhandenen Sponsor anlegen statt neu anzulegen.
+        if (isset($sponsorIdByFirma[$normFirma]) && empty($sponsorHasAp[$sponsorIdByFirma[$normFirma]])) {
+            $sid = $sponsorIdByFirma[$normFirma];
+            if ($email !== '' || $nachname !== '' || $telefonCsv !== '') {
+                try {
+                    $insertAp->execute([
+                        'sponsor_id' => $sid,
+                        'anrede'     => $anrede,
+                        'nachname'   => $nachname,
+                        'telefon'    => $telefonCsv,
+                        'email'      => $email,
+                    ]);
+                    $sponsorHasAp[$sid] = true;
+                    $seen[$key] = true;
+                    $existingAp[$key] = ['ap_id' => (int) $pdo->lastInsertId(), 'telefon' => $telefonCsv];
+                    $ergaenzt++;
+                } catch (PDOException $e) {
+                    logError("Sponsor-Import Zeile {$zeile} (Ansprechpartner-Ergänzung): " . $e->getMessage());
+                    $uebersprungen++;
+                }
+            } else {
+                $uebersprungen++;
+            }
+            continue;
+        }
+
+        // 3) Sonstige Dublette (firma+email bereits bekannt, Sponsor hat aber schon AP mit anderer Mail):
+        //    unverändert überspringen.
+        if (isset($seen[$key])) {
             $uebersprungen++;
             continue;
         }
@@ -267,18 +322,26 @@ try {
             ]);
             $sponsorId = (int) $pdo->lastInsertId();
 
-            $nachname = $get($row, $col, 'LASTNAME');
-            if ($email !== '' || $nachname !== '') {
+            $hatAp = ($email !== '' || $nachname !== '' || $telefonCsv !== '');
+            if ($hatAp) {
                 $insertAp->execute([
                     'sponsor_id' => $sponsorId,
-                    'anrede'     => $mapAnrede($get($row, $col, 'ANREDE')),
+                    'anrede'     => $anrede,
                     'nachname'   => $nachname,
                     'telefon'    => $telefonCsv,
                     'email'      => $email,
                 ]);
             }
 
+            // Neuen Sponsor registrieren, damit weitere CSV-Zeilen derselben Firma andocken
             $seen[$key] = true;
+            if (!isset($sponsorIdByFirma[$normFirma])) {
+                $sponsorIdByFirma[$normFirma] = $sponsorId;
+            }
+            $sponsorHasAp[$sponsorId] = $hatAp;
+            if ($hatAp) {
+                $existingAp[$key] = ['ap_id' => (int) $pdo->lastInsertId(), 'telefon' => $telefonCsv];
+            }
             $neu++;
         } catch (PDOException $e) {
             $fehler++;
@@ -291,7 +354,7 @@ try {
 
     fclose($handle);
 
-    $_SESSION['flash_success'] = "Import abgeschlossen: {$neu} neu, {$ergaenzt} Telefonnummern ergänzt, {$uebersprungen} Dubletten übersprungen, {$fehler} Fehler.";
+    $_SESSION['flash_success'] = "Import abgeschlossen: {$neu} neu, {$ergaenzt} ergänzt (Telefon/Kontakt), {$uebersprungen} Dubletten übersprungen, {$fehler} Fehler.";
     if (!empty($fehlerZeilen)) {
         $_SESSION['import_report'] = $fehlerZeilen;
     }
