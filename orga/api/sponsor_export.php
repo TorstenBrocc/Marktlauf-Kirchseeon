@@ -77,7 +77,7 @@ $out = fopen('php://output', 'w');
 // BOM für Excel (UTF-8)
 fwrite($out, "\xEF\xBB\xBF");
 
-$columns = ['COMPANY', 'TIER_VORSCHLAG', 'EMAIL', 'TELEFON', 'ANREDE', 'LASTNAME', 'PRIORITAET', 'ORT', 'GESENDET', 'STATUS', 'SUMME', 'NOTIZEN'];
+$columns = ['FIRMENNAME', 'TIER_VORSCHLAG', 'EMAIL', 'TELEFONNUMMER', 'ANREDE', 'LASTNAME', 'PRIORITAET', 'ORT', 'GESENDET', 'STATUS', 'SUMME', 'NOTIZEN'];
 fputcsv($out, $columns, ';');
 
 foreach ($sponsoren as $s) {
