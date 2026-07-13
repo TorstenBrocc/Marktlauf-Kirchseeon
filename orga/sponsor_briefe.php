@@ -155,7 +155,6 @@ if (!empty($briefSettings['sponsoring_pakete'])) {
                 </div>
             </form>
 
-            <?php if ($isAdmin): ?>
             <form method="post" action="api/sponsor_brief_settings_save.php">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                 <input type="hidden" name="slug" value="<?= htmlspecialchars($slug) ?>">
@@ -216,7 +215,6 @@ if (!empty($briefSettings['sponsoring_pakete'])) {
                     </div>
                 </div>
             </form>
-            <?php endif; ?>
 
         </main>
     </div>
