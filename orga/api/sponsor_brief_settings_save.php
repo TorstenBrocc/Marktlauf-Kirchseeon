@@ -21,11 +21,6 @@ if (!verifyCsrfToken($_POST['csrf_token'] ?? '')) {
     exit;
 }
 
-if (!isAdminFromGuard()) {
-    $_SESSION['flash_error'] = 'Nur Admins können diese Einstellungen ändern.';
-    header('Location: ../sponsor_briefe.php');
-    exit;
-}
 
 $briefEventDatum = trim($_POST['sponsor_brief_event_datum'] ?? '');
 $briefAntwortBis = trim($_POST['sponsor_brief_antwort_bis'] ?? '');
