@@ -67,4 +67,8 @@ return [
 
     // Trello-Board für Orga-Aufgaben (optional)
     'trello_board_url' => '',  // z.B. 'https://trello.com/b/BOARD_ID/marktlauf'
+
+    // LLM-Provider für Social-Media-Content-Erstellung (Gemini oder Mistral)
+    'gemini_api_key'  => '',  // Google AI Studio → https://aistudio.google.com/app/apikey
+    'mistral_api_key' => '',  // Mistral → https://console.mistral.ai/api-keys
 ];
