@@ -29,6 +29,33 @@ $vorlage = sponsorBriefLoad($pdo, $slug);
 $defaults = sponsorBriefDefaults();
 $default = $defaults[$slug];
 $platzhalter = sponsorBriefPlatzhalterHilfe();
+
+// Einstellungen für den Admin-Bereich laden
+$briefSettings = [];
+try {
+    $stmt = $pdo->query("SELECT `key`, `value` FROM einstellungen WHERE `key` IN ('sponsor_brief_event_datum','sponsor_brief_antwort_bis','sponsoring_pakete')");
+    while ($row = $stmt->fetch()) { $briefSettings[$row['key']] = $row['value']; }
+} catch (PDOException $e) {}
+
+$briefEventDatum = $briefSettings['sponsor_brief_event_datum'] ?? '';
+$briefAntwortBis = $briefSettings['sponsor_brief_antwort_bis'] ?? '';
+$paketeDefaults = [
+    ['key'=>'hauptsponsor','name'=>'Hauptsponsor','investition'=>'auf Anfrage',
+     'highlights'=>'Zentraler Partner des Events, maximale Sichtbarkeit auf allen Kanälen'],
+    ['key'=>'gold','name'=>'Gold','investition'=>'1.000 €',
+     'highlights'=>'Banner zentral im Start-/Zielbereich, eigener Stand inkl. Fläche, 5 Startplätze, Moderations-Erwähnungen'],
+    ['key'=>'silber','name'=>'Silber','investition'=>'500 €',
+     'highlights'=>'Logo auf Startnummer & Streckenbanner, Namensnennung Presse, Logo auf Lauf-Shirt, 3 Startplätze'],
+    ['key'=>'bronze','name'=>'Bronze','investition'=>'250 €',
+     'highlights'=>'Logo auf Website, Startetüten-Branding, Urkunde, Dankesschreiben'],
+];
+$paketeMap = [];
+if (!empty($briefSettings['sponsoring_pakete'])) {
+    $decoded = json_decode($briefSettings['sponsoring_pakete'], true);
+    if (is_array($decoded)) {
+        foreach ($decoded as $p) { if (isset($p['key'])) $paketeMap[$p['key']] = $p; }
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -127,6 +154,70 @@ $platzhalter = sponsorBriefPlatzhalterHilfe();
                     </div>
                 </div>
             </form>
+
+            <?php if ($isAdmin): ?>
+            <form method="post" action="api/sponsor_brief_settings_save.php">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                <input type="hidden" name="slug" value="<?= htmlspecialchars($slug) ?>">
+                <div class="brief-card" style="margin-top:1.5rem">
+                    <h3 style="font-size:0.95rem;margin:0 0 1rem">Platzhalter-Einstellungen</h3>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.25rem">
+                        <div>
+                            <label style="display:block;font-size:0.85rem;color:var(--text-light);margin-bottom:0.35rem">
+                                Event-Datum <code style="font-size:0.8rem">{{event_datum}}</code>
+                            </label>
+                            <input type="date" name="sponsor_brief_event_datum"
+                                   value="<?= htmlspecialchars($briefEventDatum) ?>"
+                                   style="padding:0.4rem 0.6rem;border:1px solid var(--border);border-radius:6px;font-size:0.9rem;width:100%;box-sizing:border-box">
+                        </div>
+                        <div>
+                            <label style="display:block;font-size:0.85rem;color:var(--text-light);margin-bottom:0.35rem">
+                                Rückmeldefrist <code style="font-size:0.8rem">{{antwort_bis}}</code>
+                            </label>
+                            <input type="date" name="sponsor_brief_antwort_bis"
+                                   value="<?= htmlspecialchars($briefAntwortBis) ?>"
+                                   style="padding:0.4rem 0.6rem;border:1px solid var(--border);border-radius:6px;font-size:0.9rem;width:100%;box-sizing:border-box">
+                        </div>
+                    </div>
+                    <h3 style="font-size:0.95rem;margin:0 0 0.6rem">
+                        Sponsoring-Pakete <code style="font-size:0.8rem">{{paket_tabelle}}</code>
+                    </h3>
+                    <table style="width:100%;border-collapse:collapse;font-size:0.875rem;margin-bottom:1rem">
+                        <thead>
+                            <tr style="background:var(--bg)">
+                                <th style="text-align:left;padding:0.4rem 0.5rem;border-bottom:1px solid var(--border);width:110px">Paket</th>
+                                <th style="text-align:left;padding:0.4rem 0.5rem;border-bottom:1px solid var(--border);width:140px">Investition</th>
+                                <th style="text-align:left;padding:0.4rem 0.5rem;border-bottom:1px solid var(--border)">Highlights</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ($paketeDefaults as $pd):
+                            $pVals = $paketeMap[$pd['key']] ?? $pd; ?>
+                            <tr>
+                                <td style="padding:0.4rem 0.5rem;font-weight:500;white-space:nowrap"><?= htmlspecialchars($pd['name']) ?></td>
+                                <td style="padding:0.4rem 0.5rem">
+                                    <input type="text" name="paket_<?= htmlspecialchars($pd['key']) ?>_investition"
+                                           value="<?= htmlspecialchars((string)($pVals['investition'] ?? $pd['investition'])) ?>"
+                                           maxlength="60"
+                                           style="width:100%;padding:0.35rem;border:1px solid var(--border);border-radius:4px;box-sizing:border-box">
+                                </td>
+                                <td style="padding:0.4rem 0.5rem">
+                                    <input type="text" name="paket_<?= htmlspecialchars($pd['key']) ?>_highlights"
+                                           value="<?= htmlspecialchars((string)($pVals['highlights'] ?? $pd['highlights'])) ?>"
+                                           maxlength="255"
+                                           style="width:100%;padding:0.35rem;border:1px solid var(--border);border-radius:4px;box-sizing:border-box">
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                    <div class="brief-actions">
+                        <button type="submit" class="btn btn-secondary">Einstellungen speichern</button>
+                    </div>
+                </div>
+            </form>
+            <?php endif; ?>
+
         </main>
     </div>
     <script>
