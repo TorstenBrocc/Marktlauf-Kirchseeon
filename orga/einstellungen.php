@@ -43,28 +43,6 @@ $raceresultUrl = $settings['raceresult_url'] ?? '';
 $trelloUrl = $settings['trello_board_url'] ?? '';
 $onedriveUrl = $settings['onedrive_url'] ?? '';
 
-$briefEventDatum = $settings['sponsor_brief_event_datum'] ?? '';
-$briefAntwortBis = $settings['sponsor_brief_antwort_bis'] ?? '';
-$paketeDefaults = [
-    ['key'=>'hauptsponsor','name'=>'Hauptsponsor','investition'=>'auf Anfrage',
-     'highlights'=>'Zentraler Partner des Events, maximale Sichtbarkeit auf allen Kanälen'],
-    ['key'=>'gold','name'=>'Gold','investition'=>'1.000 €',
-     'highlights'=>'Banner zentral im Start-/Zielbereich, eigener Stand inkl. Fläche, 5 Startplätze, Moderations-Erwähnungen'],
-    ['key'=>'silber','name'=>'Silber','investition'=>'500 €',
-     'highlights'=>'Logo auf Startnummer & Streckenbanner, Namensnennung Presse, Logo auf Lauf-Shirt, 3 Startplätze'],
-    ['key'=>'bronze','name'=>'Bronze','investition'=>'250 €',
-     'highlights'=>'Logo auf Website, Startetüten-Branding, Urkunde, Dankesschreiben'],
-];
-$paketeMap = [];
-if (!empty($settings['sponsoring_pakete'])) {
-    $decoded = json_decode($settings['sponsoring_pakete'], true);
-    if (is_array($decoded)) {
-        foreach ($decoded as $p) {
-            if (isset($p['key'])) $paketeMap[$p['key']] = $p;
-        }
-    }
-}
-
 $smtpHost = $config['smtp_host'] ?? '–';
 $smtpPort = $config['smtp_port'] ?? '–';
 $smtpFrom = $config['smtp_from'] ?? $config['smtp_user'] ?? '–';
@@ -212,53 +190,6 @@ $smtpFrom = $config['smtp_from'] ?? $config['smtp_user'] ?? '–';
                             <input type="url" id="onedrive_url" name="onedrive_url" value="<?= htmlspecialchars($onedriveUrl) ?>" placeholder="https://onedrive.live.com/...">
                         </div>
                     </div>
-                </div>
-
-                <div class="settings-section">
-                    <h2>Sponsorenbriefe</h2>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="sponsor_brief_event_datum">Event-Datum <small>({{event_datum}})</small></label>
-                            <input type="date" id="sponsor_brief_event_datum" name="sponsor_brief_event_datum"
-                                   value="<?= htmlspecialchars($briefEventDatum) ?>">
-                        </div>
-                        <div class="form-group">
-                            <label for="sponsor_brief_antwort_bis">Rückmeldefrist <small>({{antwort_bis}})</small></label>
-                            <input type="date" id="sponsor_brief_antwort_bis" name="sponsor_brief_antwort_bis"
-                                   value="<?= htmlspecialchars($briefAntwortBis) ?>">
-                        </div>
-                    </div>
-                    <h3 style="font-size: 0.95rem; margin: 1.25rem 0 0.5rem;">Sponsoring-Pakete <small style="font-weight:normal;color:var(--text-light)">({{paket_tabelle}})</small></h3>
-                    <table style="width:100%;border-collapse:collapse;font-size:0.875rem;">
-                        <thead>
-                            <tr style="background:var(--bg);">
-                                <th style="text-align:left;padding:0.4rem 0.5rem;border-bottom:1px solid var(--border);width:110px;">Paket</th>
-                                <th style="text-align:left;padding:0.4rem 0.5rem;border-bottom:1px solid var(--border);width:140px;">Investition</th>
-                                <th style="text-align:left;padding:0.4rem 0.5rem;border-bottom:1px solid var(--border);">Highlights</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        <?php foreach ($paketeDefaults as $pd):
-                            $pVals = $paketeMap[$pd['key']] ?? $pd;
-                        ?>
-                            <tr>
-                                <td style="padding:0.4rem 0.5rem;font-weight:500;white-space:nowrap;"><?= htmlspecialchars($pd['name']) ?></td>
-                                <td style="padding:0.4rem 0.5rem;">
-                                    <input type="text" name="paket_<?= htmlspecialchars($pd['key']) ?>_investition"
-                                           value="<?= htmlspecialchars((string) ($pVals['investition'] ?? $pd['investition'])) ?>"
-                                           class="form-group input" style="width:100%;padding:0.35rem;border:1px solid var(--border);border-radius:4px;box-sizing:border-box;"
-                                           maxlength="60">
-                                </td>
-                                <td style="padding:0.4rem 0.5rem;">
-                                    <input type="text" name="paket_<?= htmlspecialchars($pd['key']) ?>_highlights"
-                                           value="<?= htmlspecialchars((string) ($pVals['highlights'] ?? $pd['highlights'])) ?>"
-                                           style="width:100%;padding:0.35rem;border:1px solid var(--border);border-radius:4px;box-sizing:border-box;"
-                                           maxlength="255">
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                        </tbody>
-                    </table>
                 </div>
 
                 <div class="settings-section">
