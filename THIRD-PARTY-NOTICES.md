@@ -7,6 +7,17 @@ Standardmäßig geschieht das über einen **projekteigenen, abhängigkeitsfreien
 Minimal-Konverter** (`sponsorMiniMarkdown()`) — er beherrscht Absätze, Zeilenumbrüche,
 Fett/Kursiv, Überschriften, Listen und Links. Kein externer Code nötig.
 
+## Share-Card-Rendering (Social-Media-Orchestrator)
+
+`orga/social_orchestrator.php` lädt **html2canvas** per CDN zur clientseitigen PNG-Erzeugung.
+
+- **Version:** 1.4.1
+- **Lizenz:** MIT (Niklas von Hertzen)
+- **Quelle:** https://github.com/niklasvh/html2canvas
+- **CDN:** https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js
+
+---
+
 ### Optional: Parsedown (voller Markdown-Umfang)
 
 Ist die Datei `src/Parsedown.php` vorhanden, wird sie automatisch bevorzugt
