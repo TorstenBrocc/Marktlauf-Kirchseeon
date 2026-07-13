@@ -37,6 +37,7 @@ $allowedKeys = [
     'sponsor_brief_event_datum',
     'sponsor_brief_antwort_bis',
     'sponsoring_pakete',
+    'llm_provider',
 ];
 
 $renntag = trim($_POST['renntag_datum'] ?? '');
