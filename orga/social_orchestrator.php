@@ -28,6 +28,16 @@ $last = $pdo->query(
        FROM post_race_contents
       ORDER BY id DESC LIMIT 1'
 )->fetch(PDO::FETCH_ASSOC);
+
+// Vereinsweites Social-Media-Merkfeld (Freitext, wie Sponsoren-Merkfeld)
+$socialMerkfeld = '';
+try {
+    $merkStmt = $pdo->prepare('SELECT `value` FROM einstellungen WHERE `key` = :key');
+    $merkStmt->execute(['key' => 'social_merkfeld']);
+    $socialMerkfeld = (string) ($merkStmt->fetchColumn() ?: '');
+} catch (PDOException $e) {
+    // Tabelle existiert evtl. noch nicht
+}
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -38,6 +48,26 @@ $last = $pdo->query(
     <title>Social Media | ATSV Kirchseeon Marktlauf</title>
     <link rel="stylesheet" href="css/orga.css">
     <style>
+        /* Kopf: Titel links, Notiz + Meta-Business-Button rechts oben */
+        .so-header-row {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            gap: 1.5rem; flex-wrap: wrap;
+        }
+        .so-header-tools { display: flex; align-items: stretch; gap: 0.75rem; }
+        .so-merk-card textarea {
+            width: 300px; height: 100%; box-sizing: border-box;
+            font-family: inherit; font-size: 0.82rem; line-height: 1.4;
+            padding: 0.5rem 0.6rem; border: 1px solid var(--border); border-radius: 6px;
+            resize: none; overflow: hidden; text-align: right;
+        }
+        .so-merk-card.locked textarea { background: #f6f6f4; color: var(--text); cursor: default; }
+        .so-fb-btn { display: inline-flex; align-items: center; white-space: nowrap; }
+        @media (max-width: 720px) {
+            .so-header-tools { width: 100%; }
+            .so-merk-card { flex: 1 1 auto; }
+            .so-merk-card textarea { width: 100%; }
+        }
+
         .so-card {
             background: var(--white); border-radius: 8px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
@@ -116,8 +146,21 @@ $last = $pdo->query(
 
     <main class="main-content">
         <header class="content-header">
-            <h1>Social Media</h1>
-            <p class="content-subtitle">KI-Nachbericht aus Raceresult-Ergebnissen (Phase 1: Mock-Daten)</p>
+            <div class="so-header-row">
+                <div>
+                    <h1>Social Media</h1>
+                    <p class="content-subtitle">KI-Nachbericht aus Raceresult-Ergebnissen (Phase 1: Mock-Daten)</p>
+                </div>
+                <div class="so-header-tools">
+                    <div class="so-merk-card" id="so-merk-wrap">
+                        <textarea id="so-merk-text" rows="2" data-csrf="<?= htmlspecialchars($csrf) ?>"
+                                  placeholder="Notiz …&#10;Doppelklick sperrt &amp; speichert, erneuter Doppelklick entsperrt."><?= htmlspecialchars($socialMerkfeld) ?></textarea>
+                    </div>
+                    <a class="btn btn-primary so-fb-btn"
+                       href="https://business.facebook.com/latest/home?nav_ref=bm_home_redirect&amp;asset_id=1236742862857199"
+                       target="_blank" rel="noopener noreferrer">Meta Business ↗</a>
+                </div>
+            </div>
         </header>
 
         <!-- Section A: Generieren -->
@@ -414,6 +457,58 @@ document.getElementById('so-render-card').addEventListener('click', async () => 
         btn.textContent = 'Grafik erzeugen';
     }
 });
+
+// Social-Merkfeld: Doppelklick sperrt & speichert, erneuter Doppelklick entsperrt
+(function() {
+    const wrap = document.getElementById('so-merk-wrap');
+    if (!wrap) return;
+    const ta = document.getElementById('so-merk-text');
+    const token = ta.dataset.csrf;
+    let locked = false;
+
+    function setLocked(v) {
+        locked = v;
+        ta.readOnly = v;
+        wrap.classList.toggle('locked', v);
+        ta.title = v
+            ? '🔒 gesperrt — Doppelklick zum Bearbeiten'
+            : '✏️ Doppelklick sperrt & speichert';
+    }
+
+    function save() {
+        const body = new URLSearchParams();
+        body.set('csrf_token', token);
+        body.set('merkfeld', ta.value);
+        ta.title = '… speichern';
+        fetch('api/social_merkfeld.php', {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'fetch' },
+            body: body
+        })
+            .then(function(r) { return r.json(); })
+            .then(function(d) {
+                if (d && d.ok) {
+                    setLocked(true);
+                    ta.title = '🔒 gespeichert';
+                } else {
+                    ta.title = '⚠️ ' + ((d && d.message) || 'Fehler beim Speichern');
+                }
+            })
+            .catch(function() { ta.title = '⚠️ Fehler beim Speichern'; });
+    }
+
+    ta.addEventListener('dblclick', function() {
+        if (locked) {
+            setLocked(false);
+            ta.focus();
+        } else {
+            save();
+        }
+    });
+
+    // Startzustand: mit Inhalt = gesperrt, leer = direkt beschreibbar
+    setLocked(ta.value.trim() !== '');
+})();
 
 // Burger-Menü (wie alle anderen Orga-Seiten)
 const burgerBtn      = document.getElementById('burger-btn');
