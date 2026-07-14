@@ -51,6 +51,9 @@ $activeNav = $activeNav ?? '';
                 <li class="nav-item<?= $activeNav === 'dateien' ? ' active' : '' ?>">
                     <a href="dateien.php">Dateien</a>
                 </li>
+                <li class="nav-item<?= $activeNav === 'ci' ? ' active' : '' ?>">
+                    <a href="ci.php">CI &amp; Design</a>
+                </li>
                 <li class="nav-item">
                     <span class="nav-disabled">Live-Ticker</span>
                     <span class="badge">Phase 3</span>
