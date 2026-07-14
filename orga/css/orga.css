@@ -1,4 +1,10 @@
 /* ATSV Kirchseeon Marktlauf - Orga Dashboard CSS */
+/*
+ * KOMPAKT-PASS (2026-07-14): Das Dashboard ist Verwaltungssoftware, keine
+ * Marketing-Website. Design-Prinzip = "density-first": kompakte Controls mit
+ * einheitlicher Hoehe, dezente Abstaende, Farbe als Signal (nicht als Flaeche).
+ * Details/Prinzipien: intern/dashboard-ui-prinzipien.md
+ */
 
 :root {
     --primary: #009640;
@@ -13,6 +19,10 @@
     --error-bg: #fdecea;
     --success: #2e7d32;
     --success-bg: #e8f5e9;
+    /* Kompakt-Skala (Admin-Dichte) */
+    --radius: 5px;
+    --control-pad-y: 0.45rem;
+    --control-pad-x: 0.9rem;
 }
 
 * {
@@ -23,7 +33,7 @@
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-    font-size: 16px;
+    font-size: 15px;
     line-height: 1.5;
     color: var(--text);
     background: var(--bg);
@@ -64,12 +74,12 @@ body {
 
 /* Forms */
 .form-group {
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
 }
 
 .form-group label {
     display: block;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.35rem;
     font-weight: 500;
 }
 
@@ -77,10 +87,11 @@ body {
 .form-group select,
 .form-group textarea {
     width: 100%;
-    padding: 0.75rem;
+    padding: var(--control-pad-y) 0.6rem;
     border: 1px solid var(--border);
-    border-radius: 4px;
-    font-size: 1rem;
+    border-radius: var(--radius);
+    font-size: 0.9rem;
+    font-family: inherit;
 }
 
 .form-group input:focus,
@@ -92,7 +103,7 @@ body {
 }
 
 .form-hint {
-    font-size: 0.875rem;
+    font-size: 0.8rem;
     color: var(--text-light);
     margin-top: 0.25rem;
 }
@@ -154,18 +165,21 @@ body {
     height: 20px;
 }
 
-/* Buttons */
+/* Buttons — kompakt, einheitliche Hoehe mit Inputs/Selects */
 .btn {
-    display: inline-block;
-    padding: 0.75rem 1.5rem;
-    border: none;
-    border-radius: 4px;
-    font-size: 1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--control-pad-y) var(--control-pad-x);
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+    font-size: 0.875rem;
     font-weight: 500;
+    line-height: 1.4;
     cursor: pointer;
     text-decoration: none;
     text-align: center;
-    transition: background-color 0.2s;
+    transition: background-color 0.2s, border-color 0.2s, filter 0.2s;
 }
 
 .btn-primary {
@@ -177,18 +191,20 @@ body {
     background: var(--primary-dark);
 }
 
+/* Sekundaer = ruhig (Outline), nicht gefuellt — cleaner im Admin-UI */
 .btn-secondary {
-    background: var(--border);
+    background: var(--white);
     color: var(--text);
+    border-color: var(--border);
 }
 
 .btn-secondary:hover {
-    background: #ccc;
+    background: var(--bg);
 }
 
 .btn-small {
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
+    padding: 0.3rem 0.65rem;
+    font-size: 0.8rem;
 }
 
 .btn-block {
@@ -197,22 +213,25 @@ body {
 }
 
 .btn-action {
+    display: inline-flex;
+    align-items: center;
     padding: 0.25rem 0.5rem;
     font-size: 0.75rem;
-    background: var(--border);
+    background: var(--white);
     color: var(--text);
-    border: none;
+    border: 1px solid var(--border);
     border-radius: 4px;
     cursor: pointer;
 }
 
 .btn-action:hover {
-    background: #ccc;
+    background: var(--bg);
 }
 
 .btn-action.btn-danger {
     background: var(--error-bg);
     color: var(--error);
+    border-color: transparent;
 }
 
 .btn-action.btn-danger:hover {
@@ -223,6 +242,7 @@ body {
 .btn-success {
     background: var(--success-bg);
     color: var(--success);
+    border-color: transparent;
 }
 
 .btn-success:hover {
@@ -232,9 +252,10 @@ body {
 
 /* Alerts */
 .alert {
-    padding: 0.75rem 1rem;
-    border-radius: 4px;
+    padding: 0.65rem 0.9rem;
+    border-radius: var(--radius);
     margin-bottom: 1rem;
+    font-size: 0.9rem;
 }
 
 .alert-error {
@@ -254,7 +275,7 @@ body {
 }
 
 .sidebar {
-    width: 250px;
+    width: 230px;
     background: var(--white);
     border-right: 1px solid var(--border);
     display: flex;
@@ -262,7 +283,7 @@ body {
 }
 
 .sidebar-header {
-    padding: 1rem 1.5rem;
+    padding: 1rem 1.25rem;
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
@@ -271,19 +292,19 @@ body {
 }
 
 .sidebar-header h2 {
-    font-size: 1.1rem;
+    font-size: 1.05rem;
     color: var(--primary);
     margin: 0;
 }
 
 .sidebar-header .header-logo {
-    height: 2.5rem;
+    height: 2.25rem;
     width: auto;
 }
 
 .nav-menu {
     list-style: none;
-    padding: 1rem 0;
+    padding: 0.75rem 0;
     flex: 1;
 }
 
@@ -291,9 +312,10 @@ body {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.75rem 1.5rem;
+    padding: 0.5rem 1.25rem;
     color: var(--text);
     text-decoration: none;
+    font-size: 0.9rem;
     transition: background-color 0.2s;
 }
 
@@ -312,14 +334,15 @@ body {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.75rem 1.5rem;
+    padding: 0.5rem 1.25rem;
     color: var(--text-light);
+    font-size: 0.9rem;
     cursor: default;
 }
 
 .nav-section {
-    padding: 1rem 1.5rem 0.5rem;
-    font-size: 0.75rem;
+    padding: 0.9rem 1.25rem 0.4rem;
+    font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--text-light);
@@ -335,7 +358,7 @@ body {
 }
 
 .sidebar-footer {
-    padding: 1rem 1.5rem;
+    padding: 1rem 1.25rem;
     border-top: 1px solid var(--border);
 }
 
@@ -357,41 +380,41 @@ body {
 /* Main Content */
 .main-content {
     flex: 1;
-    padding: 2rem;
+    padding: 1.5rem;
     overflow-y: auto;
 }
 
 .content-header {
-    margin-bottom: 2rem;
+    margin-bottom: 1.25rem;
 }
 
 .content-header h1 {
-    font-size: 1.5rem;
+    font-size: 1.35rem;
     color: var(--text);
 }
 
 /* Dashboard Grid */
 .dashboard-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1rem;
 }
 
 .card {
     background: var(--white);
-    padding: 1.5rem;
-    border-radius: 8px;
+    padding: 1.15rem;
+    border-radius: 6px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 .card h3 {
-    font-size: 1rem;
+    font-size: 0.95rem;
     color: var(--text-light);
     margin-bottom: 0.5rem;
 }
 
 .card-stat {
-    font-size: 2rem;
+    font-size: 1.6rem;
     font-weight: 600;
     color: var(--primary);
 }
@@ -439,10 +462,10 @@ body {
 
 .quick-links a.btn-brand {
     display: inline-block;
-    padding: 0.4rem 0.75rem;
-    border-radius: 4px;
+    padding: 0.35rem 0.7rem;
+    border-radius: var(--radius);
     color: #fff;
-    font-size: 0.875rem;
+    font-size: 0.85rem;
     font-weight: 500;
     text-decoration: none;
 }
