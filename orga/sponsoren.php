@@ -440,6 +440,10 @@ try {
                 <a href="api/sponsor_export.php<?= $exportQuery ? '?' . $exportQuery : '' ?>" class="btn btn-small btn-secondary">
                     CSV-Export<?= ($filterStatus || $filterPaket) ? ' (gefiltert)' : '' ?>
                 </a>
+                <a href="api/sponsor_vcard_export.php<?= $exportQuery ? '?' . $exportQuery : '' ?>" class="btn btn-small btn-secondary"
+                   title="Ansprechpartner als vCard (.vcf) für die Handy-Kontakte">
+                    vCard-Export<?= ($filterStatus || $filterPaket) ? ' (gefiltert)' : '' ?>
+                </a>
                 <div class="action-bar-sep"></div>
                 <form id="versand-form" method="post" action="api/sponsor_versand.php"
                       onsubmit="return confirmVersand();" style="display:contents;">
