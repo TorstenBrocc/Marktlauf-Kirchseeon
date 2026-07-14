@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/api/_auth.php';
 require_once __DIR__ . '/../src/db.php';
+require_once __DIR__ . '/_dateien_kategorien.php';
 
 $user = getCurrentUserFromGuard();
 $isAdmin = isAdminFromGuard();
@@ -202,6 +203,45 @@ function getFileIcon(string $mimetype): string {
         .inline-form {
             display: inline;
         }
+        .upload-form select {
+            padding: 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 0.875rem;
+            background: var(--white);
+        }
+        .kategorie-filter {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+            color: var(--text-light);
+        }
+        .kategorie-filter select {
+            padding: 0.4rem 0.6rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 0.875rem;
+            background: var(--white);
+            color: var(--text);
+        }
+        .kat-badge {
+            display: inline-block;
+            padding: 0.15rem 0.55rem;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            background: rgba(0, 150, 64, 0.1);
+            color: var(--primary-dark);
+            white-space: nowrap;
+        }
+        .kategorie-empty {
+            text-align: center;
+            padding: 2rem 1rem;
+            color: var(--text-light);
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -236,6 +276,7 @@ function getFileIcon(string $mimetype): string {
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                     <input type="hidden" name="bereich" value="orga">
                     <input type="file" name="datei" required accept=".pdf,.docx,.xlsx,.png,.jpg,.jpeg">
+                    <select name="kategorie" aria-label="Kategorie"><?= dateiKategorieOptions('allgemein') ?></select>
                     <button type="submit" class="btn btn-primary btn-small">Hochladen</button>
                     <span class="upload-hint">Erlaubt: PDF, DOCX, XLSX, PNG, JPG — max. 10 MB. Nur für Orga-Team sichtbar.</span>
                 </form>
@@ -246,11 +287,19 @@ function getFileIcon(string $mimetype): string {
                         <p>Noch keine Orga-Dateien hochgeladen.</p>
                     </div>
                 <?php else: ?>
+                    <div class="kategorie-filter">
+                        <label for="filter-orga">Kategorie filtern:</label>
+                        <select id="filter-orga" class="kategorie-filter-select" data-target="orga">
+                            <option value="">Alle Kategorien</option>
+                            <?= dateiKategorieOptions('') ?>
+                        </select>
+                    </div>
                     <div class="table-wrap">
                         <table class="data-table">
                             <thead>
                                 <tr>
                                     <th>Datei</th>
+                                    <th>Kategorie</th>
                                     <th>Größe</th>
                                     <th>Hochgeladen von</th>
                                     <th>Datum</th>
@@ -259,11 +308,13 @@ function getFileIcon(string $mimetype): string {
                             </thead>
                             <tbody>
                                 <?php foreach ($orgaDateien as $d): ?>
-                                    <tr>
+                                    <?php $kat = dateiKategorieNormalisieren($d['kategorie'] ?? 'allgemein'); ?>
+                                    <tr data-kategorie="<?= htmlspecialchars($kat) ?>">
                                         <td>
                                             <span class="file-icon"><?= getFileIcon($d['mimetype']) ?></span>
                                             <span class="file-name"><?= htmlspecialchars($d['originalname']) ?></span>
                                         </td>
+                                        <td><span class="kat-badge"><?= htmlspecialchars(dateiKategorieLabel($kat)) ?></span></td>
                                         <td class="file-meta"><?= formatFileSize((int)$d['groesse']) ?></td>
                                         <td class="file-meta"><?= htmlspecialchars($d['uploader_name']) ?></td>
                                         <td class="file-meta"><?= date('d.m.Y H:i', strtotime($d['created_at'])) ?></td>
@@ -282,6 +333,7 @@ function getFileIcon(string $mimetype): string {
                             </tbody>
                         </table>
                     </div>
+                    <div class="kategorie-empty" data-target="orga">Keine Dateien in dieser Kategorie.</div>
                 <?php endif; ?>
             </div>
 
@@ -290,6 +342,7 @@ function getFileIcon(string $mimetype): string {
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                     <input type="hidden" name="bereich" value="helfer">
                     <input type="file" name="datei" required accept=".pdf,.docx,.xlsx,.png,.jpg,.jpeg">
+                    <select name="kategorie" aria-label="Kategorie"><?= dateiKategorieOptions('allgemein') ?></select>
                     <button type="submit" class="btn btn-primary btn-small">Hochladen</button>
                     <span class="upload-hint">Erlaubt: PDF, DOCX, XLSX, PNG, JPG — max. 10 MB. Für alle bestätigten Helfer sichtbar.</span>
                 </form>
@@ -300,11 +353,19 @@ function getFileIcon(string $mimetype): string {
                         <p>Noch keine Helfer-Dateien hochgeladen.</p>
                     </div>
                 <?php else: ?>
+                    <div class="kategorie-filter">
+                        <label for="filter-helfer">Kategorie filtern:</label>
+                        <select id="filter-helfer" class="kategorie-filter-select" data-target="helfer">
+                            <option value="">Alle Kategorien</option>
+                            <?= dateiKategorieOptions('') ?>
+                        </select>
+                    </div>
                     <div class="table-wrap">
                         <table class="data-table">
                             <thead>
                                 <tr>
                                     <th>Datei</th>
+                                    <th>Kategorie</th>
                                     <th>Größe</th>
                                     <th>Hochgeladen von</th>
                                     <th>Datum</th>
@@ -313,11 +374,13 @@ function getFileIcon(string $mimetype): string {
                             </thead>
                             <tbody>
                                 <?php foreach ($helferDateien as $d): ?>
-                                    <tr>
+                                    <?php $kat = dateiKategorieNormalisieren($d['kategorie'] ?? 'allgemein'); ?>
+                                    <tr data-kategorie="<?= htmlspecialchars($kat) ?>">
                                         <td>
                                             <span class="file-icon"><?= getFileIcon($d['mimetype']) ?></span>
                                             <span class="file-name"><?= htmlspecialchars($d['originalname']) ?></span>
                                         </td>
+                                        <td><span class="kat-badge"><?= htmlspecialchars(dateiKategorieLabel($kat)) ?></span></td>
                                         <td class="file-meta"><?= formatFileSize((int)$d['groesse']) ?></td>
                                         <td class="file-meta"><?= htmlspecialchars($d['uploader_name']) ?></td>
                                         <td class="file-meta"><?= date('d.m.Y H:i', strtotime($d['created_at'])) ?></td>
@@ -336,6 +399,7 @@ function getFileIcon(string $mimetype): string {
                             </tbody>
                         </table>
                     </div>
+                    <div class="kategorie-empty" data-target="helfer">Keine Dateien in dieser Kategorie.</div>
                 <?php endif; ?>
             </div>
         </main>
@@ -360,6 +424,23 @@ function getFileIcon(string $mimetype): string {
         overlay.addEventListener('click', closeSidebar);
         sidebar.querySelectorAll('.nav-item a').forEach(function(link) {
             link.addEventListener('click', closeSidebar);
+        });
+
+        // Kategorie-Filter (client-seitig, pro Tab)
+        document.querySelectorAll('.kategorie-filter-select').forEach(function(select) {
+            select.addEventListener('change', function() {
+                var target = select.dataset.target;
+                var value = select.value;
+                var rows = document.querySelectorAll('#tab-' + target + ' .data-table tbody tr');
+                var visible = 0;
+                rows.forEach(function(row) {
+                    var match = value === '' || row.dataset.kategorie === value;
+                    row.style.display = match ? '' : 'none';
+                    if (match) visible++;
+                });
+                var emptyMsg = document.querySelector('.kategorie-empty[data-target="' + target + '"]');
+                if (emptyMsg) emptyMsg.style.display = visible === 0 ? 'block' : 'none';
+            });
         });
     })();
     </script>
