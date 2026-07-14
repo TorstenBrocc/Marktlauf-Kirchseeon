@@ -166,7 +166,7 @@ function ci_card(array $t, array $tokens): string
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
     <title>CI &amp; Design-Tokens | ATSV Kirchseeon Marktlauf</title>
-    <link rel="stylesheet" href="css/orga.css">
+    <link rel="stylesheet" href="css/orga.css?v=<?= @filemtime(__DIR__ . '/css/orga.css') ?>">
     <style>
         .ci-intro {
             color: var(--text-light);

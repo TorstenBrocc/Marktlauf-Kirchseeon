@@ -58,7 +58,7 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
     <title><?= $pageTitle ?> | ATSV Kirchseeon Marktlauf</title>
-    <link rel="stylesheet" href="css/orga.css">
+    <link rel="stylesheet" href="css/orga.css?v=<?= @filemtime(__DIR__ . '/css/orga.css') ?>">
     <style>
         .form-container {
             max-width: 800px;

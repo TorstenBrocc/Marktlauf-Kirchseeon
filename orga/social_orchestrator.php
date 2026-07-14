@@ -46,7 +46,7 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
     <title>Social Media | ATSV Kirchseeon Marktlauf</title>
-    <link rel="stylesheet" href="css/orga.css">
+    <link rel="stylesheet" href="css/orga.css?v=<?= @filemtime(__DIR__ . '/css/orga.css') ?>">
     <style>
         /* Kopf: Titel links, Notiz + Meta-Business-Button rechts oben */
         .so-header-row {
