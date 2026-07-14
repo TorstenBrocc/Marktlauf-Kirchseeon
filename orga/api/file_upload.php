@@ -8,6 +8,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/_auth.php';
 require_once __DIR__ . '/../../src/db.php';
 require_once __DIR__ . '/../../src/logger.php';
+require_once __DIR__ . '/../_dateien_kategorien.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: ../dateien.php');
@@ -29,6 +30,8 @@ if (!in_array($bereich, ['orga', 'helfer'], true)) {
     header('Location: ../dateien.php');
     exit;
 }
+
+$kategorie = dateiKategorieNormalisieren($_POST['kategorie'] ?? null);
 
 if (!isset($_FILES['datei']) || $_FILES['datei']['error'] !== UPLOAD_ERR_OK) {
     $errorMessages = [
@@ -103,11 +106,12 @@ if (!move_uploaded_file($tmpPath, $targetPath)) {
 try {
     $pdo = getDbConnection();
     $stmt = $pdo->prepare('
-        INSERT INTO dateien (bereich, dateiname, originalname, mimetype, groesse, hochgeladen_von)
-        VALUES (:bereich, :dateiname, :originalname, :mimetype, :groesse, :hochgeladen_von)
+        INSERT INTO dateien (bereich, kategorie, dateiname, originalname, mimetype, groesse, hochgeladen_von)
+        VALUES (:bereich, :kategorie, :dateiname, :originalname, :mimetype, :groesse, :hochgeladen_von)
     ');
     $stmt->execute([
         'bereich'         => $bereich,
+        'kategorie'       => $kategorie,
         'dateiname'       => $serverFilename,
         'originalname'    => $originalName,
         'mimetype'        => $detectedMime,
