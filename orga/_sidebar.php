@@ -12,6 +12,26 @@
 declare(strict_types=1);
 
 $activeNav = $activeNav ?? '';
+$navItems  = require __DIR__ . '/_nav.php';
+
+/**
+ * Ein Navigations-Item rendern (Link oder deaktivierter Hinweis inkl. Badge).
+ */
+$renderNavItem = static function (array $item, string $activeNav): void {
+    $isActive = ($item['key'] ?? '') === $activeNav;
+    $badge    = isset($item['badge'])
+        ? ' <span class="badge">' . htmlspecialchars($item['badge']) . '</span>'
+        : '';
+    if (empty($item['href'])) {
+        echo '<li class="nav-item">'
+            . '<span class="nav-disabled">' . htmlspecialchars($item['label']) . '</span>'
+            . $badge . '</li>';
+        return;
+    }
+    echo '<li class="nav-item' . ($isActive ? ' active' : '') . '">'
+        . '<a href="' . htmlspecialchars($item['href']) . '">' . htmlspecialchars($item['label']) . $badge . '</a>'
+        . '</li>';
+};
 ?>
     <header class="mobile-header">
         <button class="burger-btn" id="burger-btn" aria-label="Menü öffnen">
@@ -30,42 +50,16 @@ $activeNav = $activeNav ?? '';
                 <img src="../assets/images/logo-final.svg" alt="Marktlauf Logo" class="header-logo">
             </div>
             <ul class="nav-menu">
-                <li class="nav-item<?= $activeNav === 'dashboard' ? ' active' : '' ?>">
-                    <a href="index.php">Dashboard</a>
-                </li>
-                <li class="nav-item<?= $activeNav === 'helfer' ? ' active' : '' ?>">
-                    <a href="helfer.php">Helfer</a>
-                </li>
-                <li class="nav-item<?= $activeNav === 'schichten' ? ' active' : '' ?>">
-                    <a href="schichten.php">Einsatzplan</a>
-                </li>
-                <li class="nav-item<?= $activeNav === 'sponsoren' ? ' active' : '' ?>">
-                    <a href="sponsoren.php">Sponsoren</a>
-                </li>
-                <li class="nav-item<?= $activeNav === 'sponsor_briefe' ? ' active' : '' ?>">
-                    <a href="sponsor_briefe.php">Sponsorenbriefe</a>
-                </li>
-                <li class="nav-item<?= $activeNav === 'social_media' ? ' active' : '' ?>">
-                    <a href="social_orchestrator.php">Social Media</a>
-                </li>
-                <li class="nav-item<?= $activeNav === 'dateien' ? ' active' : '' ?>">
-                    <a href="dateien.php">Dateien</a>
-                </li>
-                <li class="nav-item<?= $activeNav === 'ci' ? ' active' : '' ?>">
-                    <a href="ci.php">CI &amp; Design</a>
-                </li>
-                <li class="nav-item">
-                    <span class="nav-disabled">Live-Ticker</span>
-                    <span class="badge">Phase 3</span>
-                </li>
+                <?php foreach ($navItems as $item): ?>
+                    <?php if (!empty($item['admin'])) { continue; } ?>
+                    <?php $renderNavItem($item, $activeNav); ?>
+                <?php endforeach; ?>
                 <?php if ($isAdmin): ?>
                 <li class="nav-section">Admin</li>
-                <li class="nav-item<?= $activeNav === 'benutzer' ? ' active' : '' ?>">
-                    <a href="benutzer.php">Benutzerverwaltung</a>
-                </li>
-                <li class="nav-item<?= $activeNav === 'einstellungen' ? ' active' : '' ?>">
-                    <a href="einstellungen.php">Einstellungen</a>
-                </li>
+                    <?php foreach ($navItems as $item): ?>
+                        <?php if (empty($item['admin'])) { continue; } ?>
+                        <?php $renderNavItem($item, $activeNav); ?>
+                    <?php endforeach; ?>
                 <?php endif; ?>
             </ul>
             <div class="sidebar-footer">

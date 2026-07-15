@@ -435,6 +435,45 @@ body {
     border-left: 3px solid var(--accent);
 }
 
+/* Dashboard-Kacheln: klickbarer Absprung je Sidebar-Tool mit Ampel-Signal.
+   Signal steckt im linken Rand (Farbe als Signal, nicht als Fläche):
+   grün = ok/erledigt, orange = braucht Aufmerksamkeit, grau = neutral. */
+.card-tile {
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    color: inherit;
+    border-left: 3px solid var(--border);
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+a.card-tile:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14);
+    transform: translateY(-1px);
+}
+
+.card-tile.signal-ok { border-left-color: var(--primary); }
+.card-tile.signal-attention { border-left-color: var(--accent); }
+.card-tile.signal-neutral { border-left-color: var(--border); }
+.card-tile.signal-attention .card-stat { color: var(--accent); }
+
+.card-tile-open {
+    margin-top: 0.25rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--primary);
+}
+
+.card-tile-disabled {
+    opacity: 0.7;
+}
+
+.card-tile-disabled h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
 .quick-links {
     list-style: none;
 }
