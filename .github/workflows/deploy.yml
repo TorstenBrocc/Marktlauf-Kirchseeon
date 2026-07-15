@@ -13,6 +13,22 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
+    - name: Stamp asset versions (cache-busting)
+      run: |
+        V="${GITHUB_SHA::8}"
+        for f in *.html; do
+          [ -e "$f" ] || continue
+          sed -i \
+            -e "s|href=\"css/base.css\"|href=\"css/base.css?v=$V\"|g" \
+            -e "s|href=\"css/layout.css\"|href=\"css/layout.css?v=$V\"|g" \
+            -e "s|href=\"css/components.css\"|href=\"css/components.css?v=$V\"|g" \
+            -e "s|src=\"js/main.js\"|src=\"js/main.js?v=$V\"|g" \
+            -e "s|src=\"js/maps.js\"|src=\"js/maps.js?v=$V\"|g" \
+            "$f"
+        done
+        sed -i "s|/lang/\${lang}.json|/lang/\${lang}.json?v=$V|g" js/main.js
+        echo "Assets gestempelt mit v=$V"
+
     - name: SSH Deploy
       uses: easingthemes/ssh-deploy@v5.1.0
       with:
