@@ -103,6 +103,12 @@ if (!move_uploaded_file($tmpPath, $targetPath)) {
     exit;
 }
 
+// Bilder auf sinnvolle Maximalkante verkleinern (spart Speicher, keine Vollgröße-Dauerablage)
+if ($detectedMime === 'image/png' || $detectedMime === 'image/jpeg') {
+    downscaleImage($targetPath, $detectedMime, 2000);
+    $size = @filesize($targetPath) ?: $size;
+}
+
 try {
     $pdo = getDbConnection();
     $stmt = $pdo->prepare('
@@ -128,3 +134,42 @@ try {
 
 header('Location: ../dateien.php?tab=' . $bereich);
 exit;
+
+/**
+ * Verkleinert ein Bild in-place auf eine maximale Kantenlänge (proportional).
+ * Ohne GD oder bei Fehlern bleibt die Datei unverändert.
+ */
+function downscaleImage(string $path, string $mime, int $maxEdge): void
+{
+    if (!function_exists('imagecreatetruecolor')) {
+        return; // GD nicht verfügbar -> Original behalten
+    }
+    $info = @getimagesize($path);
+    if ($info === false) {
+        return;
+    }
+    [$w, $h] = $info;
+    if ($w <= $maxEdge && $h <= $maxEdge) {
+        return; // schon klein genug
+    }
+    $ratio = min($maxEdge / $w, $maxEdge / $h);
+    $nw = max(1, (int) round($w * $ratio));
+    $nh = max(1, (int) round($h * $ratio));
+
+    $src = $mime === 'image/png' ? @imagecreatefrompng($path) : @imagecreatefromjpeg($path);
+    if (!$src) {
+        return;
+    }
+    $dst = imagecreatetruecolor($nw, $nh);
+    if ($mime === 'image/png') {
+        imagealphablending($dst, false);
+        imagesavealpha($dst, true);
+    }
+    imagecopyresampled($dst, $src, 0, 0, 0, 0, $nw, $nh, $w, $h);
+    if ($mime === 'image/png') {
+        imagepng($dst, $path, 6);
+    } else {
+        imagejpeg($dst, $path, 85);
+    }
+    // imagedestroy() entfällt: seit PHP 8.0 wirkungslos, ab 8.5 deprecated (GC übernimmt)
+}
