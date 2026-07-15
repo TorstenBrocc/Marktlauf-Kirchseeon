@@ -195,7 +195,7 @@
                 <div class="hero-content">
                     <!-- Kooperations-Pille -->
                     <div class="hero-koop-badge">
-                        <span class="koop-text">In Kooperation mit</span>
+                        <span class="koop-text" data-i18n="hero.koop">In Kooperation mit</span>
                         <span class="koop-inner">
                             <img src="assets/images/kirchseeon-wappen.webp" alt="Wappen Markt Kirchseeon" class="koop-wappen">
                             <span class="koop-name">Markt Kirchseeon</span>
@@ -205,7 +205,7 @@
                     <!-- Kicker -->
                     <div class="hero-kicker">
                         <span class="hero-kicker-bar"></span>
-                        <span class="hero-kicker-text">Energie- &amp; Umwelttag 2026</span>
+                        <span class="hero-kicker-text" data-i18n="hero.kicker">Energie- &amp; Umwelttag 2026</span>
                     </div>
 
                     <!-- Titel -->
@@ -214,18 +214,18 @@
                     <!-- Jahr + Motto -->
                     <div class="hero-year-motto">
                         <span class="hero-year">2026</span>
-                        <span class="hero-motto-chip">E-Mobilität &amp; Sport</span>
+                        <span class="hero-motto-chip" data-i18n="hero.motto">E-Mobilität &amp; Sport</span>
                     </div>
 
                     <!-- Meta-Zeilen -->
                     <div class="hero-meta">
                         <span class="hero-meta-line">
                             <span class="hero-meta-dot hero-meta-dot--gold"></span>
-                            <span>Sonntag, 20. September 2026 · Start 09:00 Uhr</span>
+                            <span data-i18n="hero.meta_date">Sonntag, 20. September 2026 · Start 09:00 Uhr</span>
                         </span>
                         <span class="hero-meta-line">
                             <span class="hero-meta-dot hero-meta-dot--white"></span>
-                            <span>Start &amp; Ziel: JEK, Westring 6, 85614 Kirchseeon</span>
+                            <span data-i18n="hero.meta_location">Start &amp; Ziel: JEK, Westring 6, 85614 Kirchseeon</span>
                         </span>
                     </div>
 
@@ -251,12 +251,34 @@
 
         <!-- Über den Marktlauf (SEO-Content / Einführung) -->
         <section id="ueber" class="section-padding">
+            <style>
+                #ueber { background: var(--gray-50, #f8fafc); }
+                #ueber .ueber-inner { max-width: 760px; margin: 0 auto; text-align: center; }
+                #ueber h2 { margin-bottom: 1rem; }
+                #ueber h2::after {
+                    content: ""; display: block; width: 64px; height: 4px;
+                    background: var(--color-primary, #009640); border-radius: 2px;
+                    margin: 0.9rem auto 0;
+                }
+                #ueber .ueber-lead {
+                    font-size: 1.2rem; font-weight: 500; line-height: 1.7;
+                    color: var(--gray-800, #1f2937); margin-bottom: 1.5rem;
+                }
+                #ueber .ueber-body { text-align: left; }
+                #ueber .ueber-body p {
+                    line-height: 1.8; margin-bottom: 1.1rem;
+                    color: var(--gray-600, #475569);
+                }
+                #ueber .ueber-body p:last-child { margin-bottom: 0; }
+            </style>
             <div class="container">
-                <h2 class="text-center" data-i18n="ueber.title">Über den Marktlauf Kirchseeon</h2>
-                <div class="ueber-text" style="max-width: 780px; margin: 0 auto; line-height: 1.7;">
-                    <p data-i18n="ueber.p1">Der Marktlauf Kirchseeon ist das jährliche Laufevent des ATSV Kirchseeon 1906 e. V. Er lockt jedes Jahr Läuferinnen und Läufer aus Kirchseeon und weit darüber hinaus an die Startlinie. Jedes Jahr im September verwandelt sich das Kirchseeoner Umland erneut in eine Laufstrecke für alle Generationen – vom Bambini-Lauf über die Schülerläufe bis zur anspruchsvollen 10-km-Distanz für ambitionierte Freizeit- und Wettkampfläufer.</p>
-                    <p data-i18n="ueber.p2" style="margin-top: 1rem;">Der Marktlauf ist mehr als ein Wettkampf: Als Teil des Energie- &amp; Umwelttags verbindet er Sport, Familie und Nachhaltigkeit zu einem Fest für die ganze Region. Vereine und lokale Sponsoren sorgen für Stimmung und Verpflegung, im Ziel warten Urkunden und Medaillen auf alle Finisher.</p>
-                    <p data-i18n="ueber.p3" style="margin-top: 1rem;">Ob erfahrener Wettkampfläufer oder Familie mit Laufeinsteigern – beim Marktlauf Kirchseeon findet jeder die passende Distanz. Melde dich jetzt an und sei dabei, wenn Kirchseeon läuft.</p>
+                <div class="ueber-inner">
+                    <h2 data-i18n="ueber.title">Über den Marktlauf Kirchseeon</h2>
+                    <p class="ueber-lead" data-i18n="ueber.p1">Der Marktlauf Kirchseeon ist das jährliche Laufevent des ATSV Kirchseeon 1906 e. V. Er lockt jedes Jahr Läuferinnen und Läufer aus Kirchseeon und weit darüber hinaus an die Startlinie. Jedes Jahr im September verwandelt sich das Kirchseeoner Umland erneut in eine Laufstrecke für alle Generationen – vom Bambini-Lauf über die Schülerläufe bis zur anspruchsvollen 10-km-Distanz für ambitionierte Freizeit- und Wettkampfläufer.</p>
+                    <div class="ueber-body">
+                        <p data-i18n="ueber.p2">Der Marktlauf ist mehr als ein Wettkampf: Als Teil des Energie- &amp; Umwelttags verbindet er Sport, Familie und Nachhaltigkeit zu einem Fest für die ganze Region. Vereine und lokale Sponsoren sorgen für Stimmung und Verpflegung, im Ziel warten Urkunden und Medaillen auf alle Finisher.</p>
+                        <p data-i18n="ueber.p3">Ob erfahrener Wettkampfläufer oder Familie mit Laufeinsteigern – beim Marktlauf Kirchseeon findet jeder die passende Distanz. Melde dich jetzt an und sei dabei, wenn Kirchseeon läuft.</p>
+                    </div>
                 </div>
             </div>
         </section>
