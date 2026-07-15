@@ -149,9 +149,9 @@
     display: inline-flex;
     align-self: flex-start;
     align-items: center;
-    gap: 11px;
+    gap: 12px;
     background: rgba(255,255,255,.94);
-    padding: 8px 8px 8px 16px;
+    padding: 8px 18px;
     border-radius: 999px;
     margin-bottom: 26px;
 }
@@ -183,6 +183,19 @@
     font-weight: 700;
     font-size: 13px;
     color: var(--color-ink);
+}
+
+.hero-koop-badge .koop-divider {
+    width: 1px;
+    align-self: stretch;
+    margin: 3px 0;
+    background: rgba(0,0,0,.14);
+}
+
+.hero-koop-badge .koop-logo {
+    height: 46px;
+    width: auto;
+    display: block;
 }
 
 /* Kicker line */
@@ -1185,4 +1198,10 @@
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
+}
+
+/* Kooperations-Logo (Markt Kirchseeon) — mobil kompakter */
+@media (max-width: 600px) {
+    .hero-koop-badge .koop-logo { height: 36px; }
+    .hero-koop-badge .koop-divider { display: none; }
 }
