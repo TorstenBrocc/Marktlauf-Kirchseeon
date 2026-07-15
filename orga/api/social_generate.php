@@ -10,7 +10,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/_auth.php';
 require_once __DIR__ . '/../../src/db.php';
 require_once __DIR__ . '/../../src/logger.php';
-require_once __DIR__ . '/../../src/raceresult_mock.php';
+require_once __DIR__ . '/../../src/raceresult_client.php';
 require_once __DIR__ . '/../../src/llm_client.php';
 
 header('Content-Type: application/json; charset=utf-8');
@@ -32,7 +32,7 @@ if ($provider !== null && !in_array($provider, ['gemini', 'mistral'], true)) {
     $provider = null;
 }
 
-$data   = raceResultMock();
+$data   = raceResultData(getDbConnection());
 $userInput = raceResultToPromptText($data);
 
 $article = llmGenerate(llmPromptPress(),  $userInput, $provider);
