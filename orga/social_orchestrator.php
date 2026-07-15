@@ -158,7 +158,7 @@ try {
                     </div>
                     <a class="btn btn-primary so-fb-btn"
                        href="https://business.facebook.com/latest/home?nav_ref=bm_home_redirect&amp;asset_id=1236742862857199"
-                       target="_blank" rel="noopener noreferrer">Meta Business ↗</a>
+                       target="_blank" rel="noopener noreferrer">Meta Business Account ↗</a>
                 </div>
             </div>
         </header>
