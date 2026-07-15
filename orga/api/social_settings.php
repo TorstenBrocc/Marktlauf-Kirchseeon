@@ -32,7 +32,7 @@ if (!verifyCsrfToken($_POST['csrf_token'] ?? '')) {
 }
 
 $key = $_POST['key'] ?? '';
-$allowed = ['raceresult_url', 'social_hashtags'];
+$allowed = ['raceresult_api_url', 'social_hashtags'];
 if (!in_array($key, $allowed, true)) {
     http_response_code(422);
     socialSettingsJson(false, 'Unbekannter Schlüssel.');
@@ -41,8 +41,8 @@ if (!in_array($key, $allowed, true)) {
 $value = trim($_POST['value'] ?? '');
 $value = mb_substr($value, 0, 2000);
 
-// raceresult_url: leere Eingabe erlaubt (löscht); sonst URL-Validierung
-if ($key === 'raceresult_url' && $value !== '' && !filter_var($value, FILTER_VALIDATE_URL)) {
+// raceresult_api_url: leere Eingabe erlaubt (löscht); sonst URL-Validierung
+if ($key === 'raceresult_api_url' && $value !== '' && !filter_var($value, FILTER_VALIDATE_URL)) {
     http_response_code(422);
     socialSettingsJson(false, 'Bitte eine gültige URL eingeben.');
 }
