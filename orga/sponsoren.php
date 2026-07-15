@@ -336,6 +336,8 @@ try {
         .status-select.ampel-rot   { border-left-color: var(--error); }
         /* Zugesagte Sponsoren: ganze Zeile hell transparent grün */
         .status-zugesagt-row { background: rgba(76, 175, 80, 0.12); }
+        /* Abgelehnte Sponsoren: ganze Zeile hell transparent rot (analog zu zugesagt) */
+        .status-abgelehnt-row { background: rgba(211, 47, 47, 0.12); }
         .kein-kontakt-row {
             background: #f9f9f9;
         }
@@ -529,7 +531,7 @@ try {
                                 $firstAp = $apList[0] ?? null;
                                 $prio = (int) ($s['prioritaet'] ?? 0);
                                 ?>
-                                <tr class="<?= $s['kein_kontakt'] ? 'kein-kontakt-row' : ($s['status'] === 'zugesagt' ? 'status-zugesagt-row' : '') ?>">
+                                <tr class="<?= $s['kein_kontakt'] ? 'kein-kontakt-row' : ($s['status'] === 'zugesagt' ? 'status-zugesagt-row' : ($s['status'] === 'abgelehnt' ? 'status-abgelehnt-row' : '')) ?>">
                                     <td class="col-check">
                                         <?php if (!$s['kein_kontakt']): ?>
                                             <input type="checkbox" class="row-check" name="sponsor_ids[]" value="<?= $s['id'] ?>" form="versand-form">
