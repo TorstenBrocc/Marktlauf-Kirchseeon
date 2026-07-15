@@ -168,16 +168,10 @@ $raceresultConfigured = $raceresultApiUrl !== '';
         .so-guide-tools .so-merk-card { flex: 1 1 240px; }
         .so-guide-tools .so-merk-card textarea { width: 100%; }
 
-        /* Share-Card-Wrapper: skalierter Container damit der 1080px-Div nicht scrollt */
-        .share-card-wrap {
-            width: 360px; height: 360px; overflow: hidden;
-            border: 1px solid var(--border); border-radius: 8px;
-            margin-bottom: 1rem; background: #009640;
-        }
-        /* Die eigentliche Render-Card — 1080×1080px, runterskaliert auf 1/3 */
+        /* Die eigentliche Render-Card (off-screen, echte Pixelgröße) — Höhe wird
+           je Format per JS gesetzt (1080×1080 / 1080×1350 / 1080×1920). */
         #social-share-card {
             width: 1080px; height: 1080px;
-            transform: scale(0.3333); transform-origin: top left;
             background: linear-gradient(145deg, #009640 0%, #007230 100%);
             display: flex; flex-direction: column;
             justify-content: space-between; padding: 80px;
@@ -210,21 +204,8 @@ $raceresultConfigured = $raceresultApiUrl !== '';
 
     <main class="main-content">
         <header class="content-header">
-            <div class="so-header-row">
-                <div>
-                    <h1>Social Media</h1>
-                    <p class="content-subtitle">Zentrale KI-gestützte Content-Produktion für Instagram, Facebook &amp; Newsletter</p>
-                </div>
-                <div class="so-header-tools">
-                    <div class="so-merk-card" id="so-merk-wrap">
-                        <textarea class="so-merk-text" rows="1" data-csrf="<?= htmlspecialchars($csrf) ?>"
-                                  placeholder="Notiz … (Doppelklick sperrt &amp; speichert)"><?= htmlspecialchars($socialMerkfeld) ?></textarea>
-                    </div>
-                    <a class="btn so-mba-btn so-fb-btn"
-                       href="https://business.facebook.com/latest/home?nav_ref=bm_home_redirect&amp;asset_id=1236742862857199"
-                       target="_blank" rel="noopener noreferrer">Meta Business Account ↗</a>
-                </div>
-            </div>
+            <h1>Social Media</h1>
+            <p class="content-subtitle">Zentrale KI-gestützte Content-Produktion für Instagram, Facebook &amp; Newsletter</p>
         </header>
 
         <!-- Modul 1: Inhalt generieren (allgemein) -->
@@ -329,8 +310,9 @@ $raceresultConfigured = $raceresultApiUrl !== '';
             </div>
         </details>
 
-        <!-- Share-Card: versteckter Render-Div (off-layout, aber im DOM) -->
-        <div style="position:absolute;left:-9999px;top:-9999px;width:1080px;height:1080px;overflow:hidden" aria-hidden="true">
+        <!-- Share-Card: versteckter Render-Div (off-layout, aber im DOM). Höhe unbegrenzt,
+             damit höhere Formate (Portrait/Story) nicht abgeschnitten werden. -->
+        <div style="position:absolute;left:-9999px;top:0;width:1080px;overflow:visible" aria-hidden="true">
             <div id="social-share-card">
                 <img class="sc-logo" id="sc-logo-img" src="../assets/images/ATSV_Logo-750x968.png" alt="">
                 <div>
@@ -373,16 +355,24 @@ $raceresultConfigured = $raceresultApiUrl !== '';
         <div class="so-card">
             <h2>3 · Grafik &amp; Formate</h2>
             <p class="so-notice">
-                Erzeugt aktuell eine <strong>1080×1080 px</strong> (quadratische) PNG-Grafik mit Ergebnis-Highlights.
-                Portrait (1080×1350) und Story (1080×1920) folgen im nächsten Ausbauschritt.
+                PNG-Grafik mit Ergebnis-Highlights in drei Formaten: <strong>Quadratisch 1080×1080</strong> (Feed),
+                <strong>Portrait 1080×1350</strong> (Instagram-Feed, füllt am meisten) und <strong>Story 1080×1920</strong>.
             </p>
-            <div class="so-actions" style="margin-top:0.75rem">
+            <div class="so-actions" style="margin-top:0.75rem;align-items:flex-end">
+                <div class="so-field" style="margin-bottom:0;max-width:230px">
+                    <label for="so-card-format">Format</label>
+                    <select id="so-card-format">
+                        <option value="portrait">Portrait 1080×1350 (Feed)</option>
+                        <option value="square">Quadratisch 1080×1080</option>
+                        <option value="story">Story 1080×1920</option>
+                    </select>
+                </div>
                 <button class="btn btn-secondary" id="so-render-card">Grafik erzeugen</button>
                 <button class="btn btn-secondary" id="so-download-card" style="display:none">PNG herunterladen</button>
             </div>
             <div id="so-card-error"></div>
             <div id="so-card-preview">
-                <p style="font-size:.82rem;color:var(--text-light);margin:0.5rem 0 0.4rem">Vorschau (1080×1080 px):</p>
+                <p style="font-size:.82rem;color:var(--text-light);margin:0.5rem 0 0.4rem" id="so-card-caption">Vorschau:</p>
                 <img id="so-card-img" src="" alt="Share-Card Vorschau">
             </div>
 
@@ -399,9 +389,9 @@ $raceresultConfigured = $raceresultApiUrl !== '';
 
                     <h3>1 · Formate (Bildgröße)</h3>
                     <ul>
-                        <li><strong>Portrait 1080×1350 (4:5)</strong> — empfohlen fürs Instagram-Feed, füllt am meisten Platz. <em>Grafik-Ausbau folgt.</em></li>
-                        <li><strong>Quadratisch 1080×1080 (1:1)</strong> — sicher überall (Feed IG + FB). <em>Wird aktuell erzeugt.</em></li>
-                        <li><strong>Story 1080×1920 (9:16)</strong> — für Instagram-/Facebook-Stories. <em>Grafik-Ausbau folgt.</em></li>
+                        <li><strong>Portrait 1080×1350 (4:5)</strong> — empfohlen fürs Instagram-Feed, füllt am meisten Platz.</li>
+                        <li><strong>Quadratisch 1080×1080 (1:1)</strong> — sicher überall (Feed IG + FB).</li>
+                        <li><strong>Story 1080×1920 (9:16)</strong> — für Instagram-/Facebook-Stories.</li>
                         <li>Das Instagram-Profil-Grid schneidet neuerdings auf <strong>3:4</strong> — Logo/Text/Gesichter mittig halten.</li>
                         <li><strong>PNG</strong> für Text/Grafik (scharf), <strong>JPG</strong> für Fotos (kleiner).</li>
                     </ul>
@@ -633,14 +623,27 @@ function fillShareCard(data) {
     document.getElementById('sc-highlight').textContent = data.highlight || '';
 }
 
+const CARD_FORMATS = {
+    square:   { w: 1080, h: 1080, label: 'Quadratisch 1080×1080' },
+    portrait: { w: 1080, h: 1350, label: 'Portrait 1080×1350' },
+    story:    { w: 1080, h: 1920, label: 'Story 1080×1920' },
+};
+
 document.getElementById('so-render-card').addEventListener('click', async () => {
     const btn    = document.getElementById('so-render-card');
     const errEl  = document.getElementById('so-card-error');
+    const fmtKey = document.getElementById('so-card-format').value;
+    const fmt    = CARD_FORMATS[fmtKey] || CARD_FORMATS.square;
     btn.disabled = true;
     btn.textContent = '⏳ Rendert …';
     errEl.style.display = 'none';
 
     fillShareCard(mockData);
+
+    // Karte auf das gewählte Format bringen (echte Pixelgröße)
+    const card = document.getElementById('social-share-card');
+    card.style.width  = fmt.w + 'px';
+    card.style.height = fmt.h + 'px';
 
     // Logo vorab laden damit html2canvas es findet
     const logoImg = document.getElementById('sc-logo-img');
@@ -649,9 +652,9 @@ document.getElementById('so-render-card').addEventListener('click', async () => 
     });
 
     try {
-        const canvas = await html2canvas(document.getElementById('social-share-card'), {
-            width:        1080,
-            height:       1080,
+        const canvas = await html2canvas(card, {
+            width:        fmt.w,
+            height:       fmt.h,
             scale:        1,
             useCORS:      false,
             allowTaint:   false,
@@ -660,6 +663,7 @@ document.getElementById('so-render-card').addEventListener('click', async () => 
         });
         const dataUrl = canvas.toDataURL('image/png');
         document.getElementById('so-card-img').src = dataUrl;
+        document.getElementById('so-card-caption').textContent = 'Vorschau (' + fmt.label + '):';
         document.getElementById('so-card-preview').style.display = 'block';
 
         const dlBtn = document.getElementById('so-download-card');
@@ -667,7 +671,7 @@ document.getElementById('so-render-card').addEventListener('click', async () => 
         dlBtn.onclick = () => {
             const a = document.createElement('a');
             a.href     = dataUrl;
-            a.download = 'marktlauf2026-social.png';
+            a.download = 'marktlauf2026-' + fmtKey + '.png';
             a.click();
         };
     } catch (e) {
