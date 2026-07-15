@@ -149,19 +149,31 @@
     display: inline-flex;
     align-self: flex-start;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
     background: rgba(255,255,255,.94);
-    padding: 8px 18px;
+    padding: 10px 20px;
     border-radius: 999px;
     margin-bottom: 26px;
 }
 
+.hero-koop-badge .koop-ctx {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.25;
+}
+
 .hero-koop-badge .koop-text {
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: .04em;
-    color: var(--color-deep-green);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    color: #64748b;
     text-transform: uppercase;
+}
+
+.hero-koop-badge .koop-event {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--color-ink);
 }
 
 .hero-koop-badge .koop-inner {
@@ -193,7 +205,7 @@
 }
 
 .hero-koop-badge .koop-logo {
-    height: 46px;
+    height: 56px;
     width: auto;
     display: block;
 }
@@ -1202,6 +1214,6 @@
 
 /* Kooperations-Logo (Markt Kirchseeon) — mobil kompakter */
 @media (max-width: 600px) {
-    .hero-koop-badge .koop-logo { height: 36px; }
-    .hero-koop-badge .koop-divider { display: none; }
+    .hero-koop-badge .koop-logo { height: 44px; }
+    .hero-koop-badge .koop-event { font-size: 14px; }
 }
