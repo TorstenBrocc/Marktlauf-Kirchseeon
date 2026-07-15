@@ -221,19 +221,33 @@
       font-size: 0.8rem;
     }
 
-    /* ── Footer ────────────────────────────────────────────── */
-    footer {
-      text-align: center;
-      padding: 1.5rem;
-      font-size: 0.8rem;
-      color: var(--c-muted);
-      border-top: 1px solid var(--c-border);
+    /* ── Footer (site-einheitlich) ─────────────────────────── */
+    .main-footer {
+      background-color: #0f172a;
+      color: #cbd5e1;
+      padding: 3rem 0 1.5rem;
+      font-size: 0.875rem;
     }
-
-    footer a {
-      color: var(--c-accent-dk);
-      text-decoration: none;
+    .main-footer .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
     }
+    .footer-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 2rem;
+      margin-bottom: 2.5rem;
+      text-align: left;
+    }
+    .footer-col h4 { color: #fff; margin-bottom: 1rem; font-size: 1.1rem; }
+    .footer-links { display: flex; flex-direction: column; gap: 0.75rem; }
+    .footer-link { color: #94a3b8; text-decoration: none; transition: color 0.2s ease; }
+    .footer-link:hover { color: #2ecc71; }
+    .footer-bottom { text-align: center; color: #64748b; }
+    .footer-bottom a { color: inherit; }
+    .footer-credits { font-size: 0.75rem; margin-top: 0.25rem; color: #64748b; }
+    .footer-credits-link { color: inherit; text-decoration: none; opacity: 0.7; }
 
     /* ── Responsive ────────────────────────────────────────── */
     @media (max-width: 560px) {
@@ -384,14 +398,39 @@
 </main>
 
 <!-- ── Footer ───────────────────────────────────────────────── -->
-<footer>
-  <span data-i18n="footer.copyright">© 2026 ATSV Kirchseeon e.V.</span> &nbsp;·&nbsp;
-  <a href="/">Startseite</a> &nbsp;·&nbsp;
-  <a href="mailto:atsv@atsv-kirchseeon.de">atsv@atsv-kirchseeon.de</a>
-  <div class="lang-switcher" style="display:inline-block; margin-left: 1rem;">
-      <button id="lang-toggle" class="lang-btn" title="Sprache wechseln" style="background:none;border:none;cursor:pointer;">
-          <img src="assets/images/anglais.png" alt="English" id="lang-flag" class="flag-icon" style="width:20px; vertical-align:middle;">
-      </button>
+<footer class="main-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <h4 data-i18n="footer.title">Marktlauf 2026</h4>
+        <p style="color:#94a3b8; line-height:1.6;" data-i18n="footer.text">Ein sportliches Highlight in Kirchseeon für die ganze Familie. Wir freuen uns auf euch!</p>
+      </div>
+      <div class="footer-col">
+        <h4 data-i18n="footer.links_title">Quick Links</h4>
+        <div class="footer-links">
+          <a href="/#distanzen" class="footer-link" data-i18n="nav.laeufe">Die Läufe</a>
+          <a href="/#ablauf" class="footer-link" data-i18n="nav.zeitplan">Zeitplan</a>
+          <a href="/#strecke" class="footer-link" data-i18n="nav.strecke">Die Strecke</a>
+          <a href="/#anmeldung" class="footer-link" data-i18n="nav.anmeldung">Anmeldung</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4 data-i18n="footer.legal_title">Rechtliches</h4>
+        <div class="footer-links">
+          <a href="impressum.html" class="footer-link" data-i18n="footer.legal.impressum">Impressum</a>
+          <a href="datenschutz.html" class="footer-link" data-i18n="footer.legal.privacy">Datenschutz</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p data-i18n="footer.copyright">&copy; 2026 ATS Kirchseeon e.V. | Alle Rechte vorbehalten.</p>
+      <p class="footer-credits" data-i18n="footer.realized_by">Realisiert durch <a href="/humans.txt" rel="author" class="footer-credits-link">Torsten Tyras</a></p>
+      <div class="lang-switcher" style="display:inline-block; margin-top:0.75rem;">
+          <button id="lang-toggle" class="lang-btn" title="Sprache wechseln" style="background:none;border:none;cursor:pointer;">
+              <img src="assets/images/anglais.png" alt="English" id="lang-flag" class="flag-icon" style="width:20px; vertical-align:middle;">
+          </button>
+      </div>
+    </div>
   </div>
 </footer>
 
