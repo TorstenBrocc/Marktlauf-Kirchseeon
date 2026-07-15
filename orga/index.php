@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/api/_auth.php';
 require_once __DIR__ . '/../src/db.php';
+require_once __DIR__ . '/../src/logger.php';
 
 $user = getCurrentUserFromGuard();
 $isAdmin = isAdminFromGuard();
@@ -15,16 +16,25 @@ $csrfToken = generateCsrfToken();
 $pdo = getDbConnection();
 $config = getConfig();
 
-$helferCount = (int) $pdo->query('SELECT COUNT(*) FROM helfer')->fetchColumn();
-$helferNeuCount = (int) $pdo->query("SELECT COUNT(*) FROM helfer WHERE status = 'neu'")->fetchColumn();
-
-$sponsorCount = 0;
-$sponsorSumme = 0;
-try {
-    $sponsorCount = (int) $pdo->query('SELECT COUNT(*) FROM sponsors')->fetchColumn();
-    $sponsorSumme = (float) $pdo->query("SELECT COALESCE(SUM(summe), 0) FROM sponsors WHERE status IN ('zugesagt', 'bezahlt')")->fetchColumn();
-} catch (PDOException $e) {
-    // Table may not exist yet
+// Dashboard-Kacheln aus der Modul-Registry (Single Source mit der Sidebar,
+// siehe orga/_nav.php). Je Modul optional eine KPI-Closure; jede läuft in
+// try/catch, damit eine (noch) fehlende Tabelle nur die Kennzahl weglässt
+// statt das ganze Dashboard mit einem Fehler abzuschießen.
+$navItems = require __DIR__ . '/_nav.php';
+$dashboardTiles = [];
+foreach ($navItems as $item) {
+    if (($item['tile'] ?? true) === false || !empty($item['admin'])) {
+        continue;
+    }
+    $kpi = null;
+    if (isset($item['kpi']) && is_callable($item['kpi'])) {
+        try {
+            $kpi = ($item['kpi'])($pdo);
+        } catch (PDOException $e) {
+            logError('Dashboard-KPI (' . ($item['key'] ?? '?') . '): ' . $e->getMessage());
+        }
+    }
+    $dashboardTiles[] = ['item' => $item, 'kpi' => $kpi];
 }
 
 $meineAufgaben = [];
@@ -247,19 +257,25 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
             <?php endif; ?>
 
             <section class="dashboard-grid">
-                <article class="card">
-                    <h3>Helfer-Anmeldungen</h3>
-                    <p class="card-stat"><?= $helferCount ?></p>
-                    <p class="card-label">Anmeldungen eingegangen<?= $helferNeuCount > 0 ? " ({$helferNeuCount} neu)" : '' ?></p>
-                    <a href="helfer.php" class="btn btn-small btn-primary" style="margin-top:0.5rem">Zur Übersicht</a>
-                </article>
-
-                <article class="card">
-                    <h3>Sponsoren</h3>
-                    <p class="card-stat"><?= $sponsorCount ?></p>
-                    <p class="card-label">Sponsoren erfasst<?= $sponsorSumme > 0 ? ' (' . number_format($sponsorSumme, 0, ',', '.') . ' € zugesagt)' : '' ?></p>
-                    <a href="sponsoren.php" class="btn btn-small btn-primary" style="margin-top:0.5rem">Zur Übersicht</a>
-                </article>
+                <?php foreach ($dashboardTiles as $tile): ?>
+                    <?php $item = $tile['item']; $kpi = $tile['kpi']; ?>
+                    <?php if (empty($item['href'])): // deaktiviertes Modul (z. B. Live-Ticker, Phase 3) ?>
+                        <div class="card card-tile card-tile-disabled">
+                            <h3><?= htmlspecialchars($item['label']) ?><?= isset($item['badge']) ? ' <span class="badge">' . htmlspecialchars($item['badge']) . '</span>' : '' ?></h3>
+                            <p class="card-label">Noch nicht verfügbar</p>
+                        </div>
+                    <?php else: ?>
+                        <a class="card card-tile signal-<?= htmlspecialchars($kpi['signal'] ?? 'neutral') ?>" href="<?= htmlspecialchars($item['href']) ?>">
+                            <h3><?= htmlspecialchars($item['label']) ?></h3>
+                            <?php if ($kpi !== null): ?>
+                                <p class="card-stat"><?= htmlspecialchars($kpi['value']) ?></p>
+                                <p class="card-label"><?= htmlspecialchars($kpi['label']) ?></p>
+                            <?php else: ?>
+                                <p class="card-tile-open">Öffnen →</p>
+                            <?php endif; ?>
+                        </a>
+                    <?php endif; ?>
+                <?php endforeach; ?>
 
                 <article class="card">
                     <h3>Schnellzugriff</h3>
