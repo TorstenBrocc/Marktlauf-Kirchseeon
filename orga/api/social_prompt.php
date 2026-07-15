@@ -1,9 +1,10 @@
 <?php
 /**
- * Themenbasierten Prompt speichern (POST + CSRF), JSON-Antwort.
- * Speichert je Anlass einen wiederverwendbaren Prompt-Text in `einstellungen`
- * unter dem Key `social_prompts` (ein JSON-Objekt {anlass: prompt}).
- * Read-modify-write, damit die anderen Anlässe erhalten bleiben.
+ * Themenbasierten Prompt UND Fakten speichern (POST + CSRF), JSON-Antwort.
+ * Speichert je Anlass Prompt + Fakten in `einstellungen` unter dem Key
+ * `social_prompts` (JSON {anlass: {prompt, fakten}}). Nur übergebene Felder
+ * werden aktualisiert; Read-modify-write hält die anderen Anlässe/Felder erhalten.
+ * Alt-Format (reiner Prompt-String je Anlass) wird beim Schreiben migriert.
  */
 
 declare(strict_types=1);
@@ -34,8 +35,11 @@ if (!in_array($anlass, $validAnlass, true)) {
     http_response_code(422);
     socialPromptJson(false, 'Unbekannter Anlass.');
 }
-$prompt = trim($_POST['prompt'] ?? '');
-$prompt = mb_substr($prompt, 0, 3000);
+// prompt und/oder fakten (nur übergebene Felder werden aktualisiert)
+$hasPrompt = array_key_exists('prompt', $_POST);
+$hasFakten = array_key_exists('fakten', $_POST);
+$prompt = mb_substr(trim($_POST['prompt'] ?? ''), 0, 3000);
+$fakten = mb_substr(trim($_POST['fakten'] ?? ''), 0, 4000);
 
 try {
     $pdo = getDbConnection();
@@ -43,18 +47,29 @@ try {
     $stmt = $pdo->prepare('SELECT `value` FROM einstellungen WHERE `key` = :key');
     $stmt->execute(['key' => 'social_prompts']);
     $raw = (string) ($stmt->fetchColumn() ?: '');
-    $prompts = $raw !== '' ? json_decode($raw, true) : [];
-    if (!is_array($prompts)) {
-        $prompts = [];
+    $store = $raw !== '' ? json_decode($raw, true) : [];
+    if (!is_array($store)) {
+        $store = [];
     }
 
-    if ($prompt === '') {
-        unset($prompts[$anlass]);
+    // Bestehenden Eintrag normalisieren (Alt-Format = reiner Prompt-String)
+    $entry = $store[$anlass] ?? [];
+    if (is_string($entry)) {
+        $entry = ['prompt' => $entry, 'fakten' => ''];
+    } elseif (!is_array($entry)) {
+        $entry = [];
+    }
+    if ($hasPrompt) { $entry['prompt'] = $prompt; }
+    if ($hasFakten) { $entry['fakten'] = $fakten; }
+    $entry = array_filter($entry, static fn ($v) => $v !== '' && $v !== null);
+
+    if ($entry === []) {
+        unset($store[$anlass]);
     } else {
-        $prompts[$anlass] = $prompt;
+        $store[$anlass] = $entry;
     }
 
-    $encoded = $prompts === [] ? null : json_encode($prompts, JSON_UNESCAPED_UNICODE);
+    $encoded = $store === [] ? null : json_encode($store, JSON_UNESCAPED_UNICODE);
     $up = $pdo->prepare(
         'INSERT INTO einstellungen (`key`, `value`) VALUES (:key, :value)
          ON DUPLICATE KEY UPDATE `value` = :value2'

@@ -33,7 +33,7 @@ $last = $pdo->query(
 $socialMerkfeld = '';
 $socialHashtags = '';
 $raceresultApiUrl = '';
-$socialPrompts  = [];
+$socialContent  = []; // {anlass: {prompt, fakten}}
 try {
     $stmt = $pdo->query(
         "SELECT `key`, `value` FROM einstellungen
@@ -45,27 +45,24 @@ try {
         if ($k === 'raceresult_api_url') { $raceresultApiUrl = (string) ($v ?? ''); }
         if ($k === 'social_prompts') {
             $decoded = json_decode((string) ($v ?? ''), true);
-            $socialPrompts = is_array($decoded) ? $decoded : [];
+            if (is_array($decoded)) {
+                foreach ($decoded as $anlassKey => $entry) {
+                    if (is_string($entry)) {
+                        $socialContent[$anlassKey] = ['prompt' => $entry, 'fakten' => ''];
+                    } elseif (is_array($entry)) {
+                        $socialContent[$anlassKey] = [
+                            'prompt' => (string) ($entry['prompt'] ?? ''),
+                            'fakten' => (string) ($entry['fakten'] ?? ''),
+                        ];
+                    }
+                }
+            }
         }
     }
 } catch (PDOException $e) {
     // Tabelle/Spalten existieren evtl. noch nicht
 }
 $raceresultConfigured = $raceresultApiUrl !== '';
-
-// Kuratierte Repo-Logos/Marken für die Grafik (Vordergrund-Logo)
-$repoLogos = [];
-foreach ([
-    'ATSV_Logo-750x968.png'         => 'ATSV-Logo',
-    'Marktlauf Logo Schrift.png'    => 'Marktlauf-Schriftzug',
-    'Wort-u-Bildmarke-Gemeinde.png' => 'Gemeinde-Marke',
-    'kirchseeon-wappen.webp'        => 'Kirchseeon-Wappen',
-] as $fileName => $label) {
-    $path = __DIR__ . '/../assets/images/' . $fileName;
-    if (is_file($path)) {
-        $repoLogos[] = ['label' => $label, 'url' => '../assets/images/' . rawurlencode($fileName)];
-    }
-}
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -280,7 +277,7 @@ foreach ([
                     </div>
                 </div>
                 <div class="so-field" id="so-fakten-field">
-                    <label for="so-stichpunkte">Fakten / Stichpunkte</label>
+                    <label for="so-stichpunkte">Fakten / Stichpunkte <span style="font-weight:400">(pro Anlass gespeichert)</span> <span class="so-saved" id="so-ft-msg">✓ gespeichert</span></label>
                     <textarea id="so-stichpunkte" placeholder="z. B. Datum, Uhrzeit, Distanzen, Anmeldeschluss, Besonderheiten …"></textarea>
                 </div>
             </div>
@@ -424,11 +421,14 @@ foreach ([
                         <option value="akzent">Akzent (Orange)</option>
                     </select>
                 </div>
-                <div class="so-field">
-                    <label for="so-card-logo">Logo (Repo)</label>
-                    <select id="so-card-logo"></select>
-                </div>
             </div>
+            <div class="so-photo-row">
+                <span style="font-size:0.85rem;color:var(--text-light)">Logo:</span>
+                <button class="btn btn-small btn-secondary" id="so-pick-logo">Aus Datei-Ablage wählen</button>
+                <span id="so-logo-name" style="font-size:0.82rem;color:var(--text-light)">ATSV-Logo (Standard)</span>
+                <button class="btn btn-small btn-secondary" id="so-reset-logo" style="display:none">Standard</button>
+            </div>
+            <div class="so-photo-picker" id="so-logo-picker" style="display:none"></div>
             <div class="so-photo-row">
                 <span style="font-size:0.85rem;color:var(--text-light)">Hintergrundfoto:</span>
                 <button class="btn btn-small btn-secondary" id="so-pick-photo">Aus Datei-Ablage wählen</button>
@@ -519,13 +519,28 @@ foreach ([
         <!-- Modul 5: Veröffentlichen -->
         <div class="so-card">
             <h2>5 · Veröffentlichen</h2>
-            <div class="so-actions">
-                <button class="btn btn-secondary" id="so-copy-article">Presse-Text kopieren</button>
-                <button class="btn btn-secondary" id="so-copy-social">Social-Post kopieren</button>
+            <p class="so-notice" style="margin-bottom:0.9rem">
+                Ein <strong>Social-Post = Bild + Text</strong>: das <strong>Bild</strong> lädst du in Modul 3 als PNG herunter
+                (Format wählbar), den <strong>Text</strong> hier. Kopieren ist praktisch zum direkten Einfügen in die
+                Meta Business Suite, Download als Datei zum Aufheben/Weitergeben.
+            </p>
+            <div class="so-field" style="margin-bottom:0.6rem">
+                <label>Presse-Artikel</label>
+                <div class="so-save-row">
+                    <button class="btn btn-small btn-secondary" id="so-copy-article">Text kopieren</button>
+                    <button class="btn btn-small btn-secondary" id="so-dl-article">Als .txt herunterladen</button>
+                </div>
             </div>
-            <p class="so-notice" style="margin-top:0.75rem">
+            <div class="so-field" style="margin-bottom:0">
+                <label>Social-Media-Post (Body-Text)</label>
+                <div class="so-save-row">
+                    <button class="btn btn-small btn-secondary" id="so-copy-social">Text kopieren</button>
+                    <button class="btn btn-small btn-secondary" id="so-dl-social">Als .txt herunterladen</button>
+                    <span style="font-size:0.8rem;color:var(--text-light)">Bild → Modul 3 (PNG)</span>
+                </div>
+            </div>
+            <p class="so-notice" style="margin-top:0.9rem">
                 Auto-Posting (Instagram/Facebook via Meta Graph API) ist für eine spätere Phase geplant.
-                Bis dahin: Text/Grafik kopieren bzw. herunterladen und manuell posten (siehe Spickzettel oben).
             </p>
         </div>
     </main>
@@ -535,7 +550,7 @@ foreach ([
 <script>
 const csrf     = <?= json_encode($csrf) ?>;
 const mockData = <?= $mockDataJson ?>;
-const socialPrompts = <?= json_encode((object) ($socialPrompts ?: []), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?>;
+const socialContent = <?= json_encode((object) ($socialContent ?: []), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?>;
 let currentId = <?= $last ? (int)$last['id'] : 'null' ?>;
 
 // Provider automatisch speichern bei Auswahl (kein Extra-Button nötig)
@@ -554,36 +569,46 @@ document.getElementById('so-provider').addEventListener('change', () => {
     });
 });
 
-// Prompt: pro Anlass laden + speichern, Höhe wächst mit dem Inhalt
+// Prompt + Fakten pro Anlass laden/speichern (bleiben bis zur nächsten Änderung).
+// Prompt: explizit per Button. Fakten: automatisch beim Verlassen des Feldes. Prompt wächst mit Inhalt.
 (function() {
     const anlassSel = document.getElementById('so-anlass');
     const promptEl  = document.getElementById('so-prompt');
+    const faktenEl  = document.getElementById('so-stichpunkte');
+
     function autoGrow() {
         promptEl.style.height = 'auto';
         promptEl.style.height = (promptEl.scrollHeight + 2) + 'px';
     }
     function loadForAnlass() {
-        promptEl.value = socialPrompts[anlassSel.value] || '';
+        const c = socialContent[anlassSel.value] || {};
+        promptEl.value = c.prompt || '';
+        faktenEl.value = c.fakten || '';
         autoGrow();
     }
-    anlassSel.addEventListener('change', loadForAnlass);
-    promptEl.addEventListener('input', autoGrow);
-    document.getElementById('so-save-prompt').addEventListener('click', (e) => {
+    function persist(field, value, msgEl) {
         const anlass = anlassSel.value;
-        const prompt = promptEl.value;
-        const msg = document.getElementById('so-pr-msg');
-        e.currentTarget.disabled = true;
-        fetch('api/social_prompt.php', {
+        const body = new URLSearchParams({csrf_token: csrf, anlass});
+        body.set(field, value);
+        return fetch('api/social_prompt.php', {
             method: 'POST',
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: new URLSearchParams({csrf_token: csrf, anlass, prompt}),
+            body,
         }).then(r => r.json()).then(d => {
-            if (d.ok) { socialPrompts[anlass] = prompt; msg.textContent = 'Gespeichert'; msg.style.color = '#16a34a'; }
-            else { msg.textContent = '⚠️ ' + (d.message || 'Fehler'); msg.style.color = '#dc2626'; }
-            msg.style.display = 'inline';
-            setTimeout(() => { msg.style.display = 'none'; }, 2500);
-        }).catch(() => { msg.textContent = '⚠️ Netzwerkfehler'; msg.style.color = '#dc2626'; msg.style.display = 'inline'; })
-          .finally(() => { e.currentTarget.disabled = false; });
+            if (d.ok) {
+                if (!socialContent[anlass]) socialContent[anlass] = {prompt: '', fakten: ''};
+                socialContent[anlass][field] = value;
+                if (msgEl) { msgEl.textContent = '✓ gespeichert'; msgEl.style.color = '#16a34a'; msgEl.style.display = 'inline'; setTimeout(() => { msgEl.style.display = 'none'; }, 2000); }
+            } else if (msgEl) { msgEl.textContent = '⚠️ ' + (d.message || 'Fehler'); msgEl.style.color = '#dc2626'; msgEl.style.display = 'inline'; }
+        }).catch(() => { if (msgEl) { msgEl.textContent = '⚠️ Netzwerkfehler'; msgEl.style.color = '#dc2626'; msgEl.style.display = 'inline'; } });
+    }
+
+    anlassSel.addEventListener('change', loadForAnlass);
+    promptEl.addEventListener('input', autoGrow);
+    faktenEl.addEventListener('blur', () => persist('fakten', faktenEl.value, document.getElementById('so-ft-msg')));
+    document.getElementById('so-save-prompt').addEventListener('click', (e) => {
+        e.currentTarget.disabled = true;
+        persist('prompt', promptEl.value, document.getElementById('so-pr-msg')).finally(() => { e.currentTarget.disabled = false; });
     });
     loadForAnlass(); // Startzustand
 })();
@@ -675,6 +700,19 @@ function copyText(id) {
 document.getElementById('so-copy-article').addEventListener('click', () => copyText('so-article'));
 document.getElementById('so-copy-social').addEventListener('click',  () => copyText('so-social'));
 
+// Text-Downloads (Body-Text als .txt); das Bild kommt als PNG aus Modul 3
+function downloadText(filename, id) {
+    const val = document.getElementById(id).value || '';
+    if (!val.trim()) return;
+    const blob = new Blob([val], {type: 'text/plain;charset=utf-8'});
+    const url  = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+document.getElementById('so-dl-article').addEventListener('click', () => downloadText('marktlauf-presse.txt', 'so-article'));
+document.getElementById('so-dl-social').addEventListener('click',  () => downloadText('marktlauf-social.txt', 'so-social'));
+
 // Share-Card befüllen und rendern
 function fillShareCard(data) {
     const rennen10 = (data.rennen || []).find(r => r.kategorie && r.kategorie.includes('10'));
@@ -698,9 +736,9 @@ const CARD_FORMATS = {
     portrait: { w: 1080, h: 1350, label: 'Portrait 1080×1350' },
     story:    { w: 1080, h: 1920, label: 'Story 1080×1920' },
 };
-const repoLogos = <?= json_encode($repoLogos, JSON_UNESCAPED_UNICODE) ?>;
-let selectedPhotoUrl  = '';
-let selectedPhotoName = '';
+const DEFAULT_LOGO = <?= json_encode('../assets/images/ATSV_Logo-750x968.png') ?>;
+let selectedPhotoUrl = '';
+let logoUrl = DEFAULT_LOGO;
 
 // Markenfarben aus den CI-Tokens (orga.css :root) lesen — eine Quelle, kein Drift
 function cssVar(name, fallback) {
@@ -721,16 +759,6 @@ function schemeColors(key) {
     return [primary, dark]; // gruen (Marke)
 }
 
-// Logo-Auswahl aus Repo-Assets füllen
-(function() {
-    const sel = document.getElementById('so-card-logo');
-    repoLogos.forEach(function(l) {
-        const o = document.createElement('option');
-        o.value = l.url; o.textContent = l.label;
-        sel.appendChild(o);
-    });
-})();
-
 // Karte nach Auswahl (Logo, Schema, Anordnung, Foto) stylen
 function applyCardStyle(fmt) {
     const card    = document.getElementById('social-share-card');
@@ -742,7 +770,6 @@ function applyCardStyle(fmt) {
     card.style.width  = fmt.w + 'px';
     card.style.height = fmt.h + 'px';
 
-    const logoUrl = document.getElementById('so-card-logo').value;
     if (logoUrl) { logo.src = logoUrl; }
 
     const [c1, c2] = schemeColors(document.getElementById('so-card-scheme').value);
@@ -771,41 +798,54 @@ function waitImg(img) {
     });
 }
 
-// Foto-Picker (Datei-Ablage)
-document.getElementById('so-pick-photo').addEventListener('click', async () => {
-    const panel = document.getElementById('so-photo-picker');
-    if (panel.style.display !== 'none') { panel.style.display = 'none'; return; }
-    panel.innerHTML = '<span style="font-size:.85rem;color:var(--text-light)">lädt …</span>';
-    panel.style.display = 'flex';
-    try {
-        const r = await fetch('api/dateien_images.php');
-        const d = await r.json();
-        panel.innerHTML = '';
-        if (!d.ok || !d.images.length) {
-            panel.innerHTML = '<span style="font-size:.85rem;color:var(--text-light)">Keine Bilder in der Datei-Ablage.</span>';
-            return;
-        }
-        d.images.forEach(function(img) {
-            const t = document.createElement('div');
-            t.className = 'so-thumb';
-            t.innerHTML = '<img src="' + img.url + '" alt=""><span>' + img.name + '</span>';
-            t.addEventListener('click', function() {
-                selectedPhotoUrl  = img.url;
-                selectedPhotoName = img.name;
-                document.getElementById('so-photo-name').textContent = img.name;
-                document.getElementById('so-clear-photo').style.display = 'inline-flex';
-                panel.style.display = 'none';
+// Bild-Picker aus der Datei-Ablage — wiederverwendbar für Hintergrundfoto und Logo
+function attachPicker(btnId, panelId, onPick) {
+    const panel = document.getElementById(panelId);
+    document.getElementById(btnId).addEventListener('click', async () => {
+        if (panel.style.display !== 'none') { panel.style.display = 'none'; return; }
+        panel.textContent = 'lädt …';
+        panel.style.display = 'flex';
+        try {
+            const r = await fetch('api/dateien_images.php');
+            const d = await r.json();
+            panel.innerHTML = '';
+            if (!d.ok || !d.images.length) {
+                panel.textContent = 'Keine Bilder in der Datei-Ablage.';
+                return;
+            }
+            d.images.forEach(function(img) {
+                const t   = document.createElement('div');
+                t.className = 'so-thumb';
+                const im  = document.createElement('img'); im.src = img.url; im.alt = '';
+                const nm  = document.createElement('span'); nm.textContent = img.name; // kein innerHTML -> kein XSS
+                t.appendChild(im); t.appendChild(nm);
+                t.addEventListener('click', function() { onPick(img); panel.style.display = 'none'; });
+                panel.appendChild(t);
             });
-            panel.appendChild(t);
-        });
-    } catch (e) {
-        panel.innerHTML = '<span style="font-size:.85rem;color:#dc2626">Fehler beim Laden.</span>';
-    }
+        } catch (e) {
+            panel.textContent = 'Fehler beim Laden.';
+        }
+    });
+}
+attachPicker('so-pick-photo', 'so-photo-picker', function(img) {
+    selectedPhotoUrl = img.url;
+    document.getElementById('so-photo-name').textContent = img.name;
+    document.getElementById('so-clear-photo').style.display = 'inline-flex';
+});
+attachPicker('so-pick-logo', 'so-logo-picker', function(img) {
+    logoUrl = img.url;
+    document.getElementById('so-logo-name').textContent = img.name;
+    document.getElementById('so-reset-logo').style.display = 'inline-flex';
 });
 document.getElementById('so-clear-photo').addEventListener('click', () => {
-    selectedPhotoUrl = ''; selectedPhotoName = '';
+    selectedPhotoUrl = '';
     document.getElementById('so-photo-name').textContent = 'kein Foto';
     document.getElementById('so-clear-photo').style.display = 'none';
+});
+document.getElementById('so-reset-logo').addEventListener('click', () => {
+    logoUrl = DEFAULT_LOGO;
+    document.getElementById('so-logo-name').textContent = 'ATSV-Logo (Standard)';
+    document.getElementById('so-reset-logo').style.display = 'none';
 });
 
 document.getElementById('so-render-card').addEventListener('click', async () => {
