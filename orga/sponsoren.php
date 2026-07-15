@@ -30,6 +30,10 @@ $params = [];
 if ($filterStatus !== '' && sponsorStatusValid($filterStatus)) {
     $where[] = 'status = :status';
     $params['status'] = $filterStatus;
+} else {
+    // Standard-Ansicht: abgelehnte Sponsoren ausblenden. Sie erscheinen nur,
+    // wenn im Statusfilter explizit "Abgelehnt" gewählt wird (Zweig oben).
+    $where[] = "status != 'abgelehnt'";
 }
 
 if ($filterPaket !== '' && in_array($filterPaket, ['hauptsponsor', 'gold', 'silber', 'bronze'], true)) {
@@ -467,7 +471,7 @@ try {
                     <div class="form-group">
                         <label>Status</label>
                         <select name="status" onchange="this.form.submit()">
-                            <option value="">Alle</option>
+                            <option value="">Alle (ohne Abgelehnt)</option>
                             <?php foreach (SPONSOR_STATUS as $key => $meta): ?>
                                 <option value="<?= $key ?>" <?= $filterStatus === $key ? 'selected' : '' ?>><?= htmlspecialchars($meta['label']) ?></option>
                             <?php endforeach; ?>
