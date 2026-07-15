@@ -32,8 +32,34 @@ if ($provider !== null && !in_array($provider, ['gemini', 'mistral'], true)) {
     $provider = null;
 }
 
-$data   = raceResultData(getDbConnection());
-$userInput = raceResultToPromptText($data);
+// Allgemeiner Generator: Anlass + eigener Prompt + Stichpunkte + optional Renntag-Daten
+$anlassLabels = [
+    'renntag'       => 'Nachbericht zum Renntag (Ergebnisdaten siehe unten)',
+    'ankuendigung'  => 'Ankündigung des Events (Vorschau, Aufruf zur Anmeldung)',
+    'countdown'     => 'Countdown / Vorfreude vor dem Event',
+    'sponsoren_dank' => 'Dank an Sponsoren und Partner',
+    'helfer'        => 'Helfer-Aufruf / Dank an Helfer',
+    'allgemein'     => 'Allgemeiner Vereins-/Event-Beitrag',
+];
+$anlass = $_POST['anlass'] ?? 'allgemein';
+if (!isset($anlassLabels[$anlass])) {
+    $anlass = 'allgemein';
+}
+$stichpunkte = trim($_POST['stichpunkte'] ?? '');
+$userPrompt  = trim($_POST['prompt'] ?? '');
+$hashtags    = trim($_POST['hashtags'] ?? '');
+
+$parts = ['Anlass: ' . $anlassLabels[$anlass]];
+if ($anlass === 'renntag') {
+    $parts[] = "Ergebnisdaten:\n" . raceResultToPromptText(raceResultData(getDbConnection()));
+}
+if ($stichpunkte !== '') {
+    $parts[] = "Fakten/Stichpunkte:\n" . $stichpunkte;
+}
+if ($userPrompt !== '') {
+    $parts[] = "Zusätzliche Anweisung des Nutzers:\n" . $userPrompt;
+}
+$userInput = implode("\n\n", $parts);
 
 $article = llmGenerate(llmPromptPress(),  $userInput, $provider);
 $social  = llmGenerate(llmPromptSocial(), $userInput, $provider);
@@ -42,6 +68,11 @@ if ($article === '' && $social === '') {
     http_response_code(502);
     echo json_encode(['error' => 'KI-Antwort leer — API-Key prüfen oder Provider wechseln.']);
     exit;
+}
+
+// Hashtags an den Social-Post hängen (falls gepflegt und noch nicht enthalten)
+if ($hashtags !== '' && $social !== '' && !str_contains($social, $hashtags)) {
+    $social = rtrim($social) . "\n\n" . $hashtags;
 }
 
 echo json_encode(['article' => $article, 'social' => $social], JSON_UNESCAPED_UNICODE);

@@ -182,22 +182,28 @@ function llmCurlPost(string $url, string $body, array $headers): ?string
 function llmPromptPress(): string
 {
     return <<<PROMPT
-Du bist Redakteur einer lokalen Tageszeitung im Landkreis Ebersberg (Bayern).
-Schreibe einen sachlichen, informativen Nachbericht über einen Laufevent.
+Du bist Redakteur einer lokalen Tageszeitung im Landkreis Ebersberg (Bayern) und
+schreibst für den ATSV Kirchseeon (Marktlauf Kirchseeon). Verfasse einen sachlichen,
+informativen Beitrag passend zum unten genannten Anlass und den Fakten/Stichpunkten.
 Stil: neutral-journalistisch, kurze Sätze, keine Werbung, keine Ausrufezeichen.
 Länge: ca. 150–200 Wörter.
 Sprache: Deutsch.
-Beginne direkt mit dem Bericht, ohne Einleitung oder Überschrift.
+Beachte zusätzliche Anweisungen des Nutzers, falls vorhanden.
+Beginne direkt mit dem Text, ohne Einleitung oder Überschrift.
 PROMPT;
 }
 
 function llmPromptSocial(): string
 {
     return <<<PROMPT
-Du schreibst Social-Media-Posts für Instagram und Facebook eines kleinen Sportvereins (ATSV Kirchseeon).
+Du schreibst Social-Media-Posts für Instagram und Facebook des ATSV Kirchseeon
+(Marktlauf Kirchseeon). Verfasse einen Post passend zum unten genannten Anlass und den
+Fakten/Stichpunkten.
 Stil: kurz, emotional, lokal, ein paar passende Emojis, kein Werbe-Spam.
 Länge: max. 5 Sätze / ca. 80 Wörter.
 Sprache: Deutsch.
+Beachte zusätzliche Anweisungen des Nutzers, falls vorhanden.
+Hänge KEINE Hashtags an (die werden separat ergänzt), es sei denn, der Nutzer verlangt es.
 Beginne direkt mit dem Post-Text, ohne Einleitung oder Erklärung.
 PROMPT;
 }

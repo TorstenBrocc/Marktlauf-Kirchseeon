@@ -29,15 +29,24 @@ $last = $pdo->query(
       ORDER BY id DESC LIMIT 1'
 )->fetch(PDO::FETCH_ASSOC);
 
-// Vereinsweites Social-Media-Merkfeld (Freitext, wie Sponsoren-Merkfeld)
+// Vereinsweite Einstellungen der Social-Seite laden (Merkfeld, Hashtags, RR-URL)
 $socialMerkfeld = '';
+$socialHashtags = '';
+$raceresultUrl  = '';
 try {
-    $merkStmt = $pdo->prepare('SELECT `value` FROM einstellungen WHERE `key` = :key');
-    $merkStmt->execute(['key' => 'social_merkfeld']);
-    $socialMerkfeld = (string) ($merkStmt->fetchColumn() ?: '');
+    $stmt = $pdo->query(
+        "SELECT `key`, `value` FROM einstellungen
+          WHERE `key` IN ('social_merkfeld', 'social_hashtags', 'raceresult_url')"
+    );
+    foreach ($stmt->fetchAll(PDO::FETCH_KEY_PAIR) as $k => $v) {
+        if ($k === 'social_merkfeld') { $socialMerkfeld = (string) ($v ?? ''); }
+        if ($k === 'social_hashtags') { $socialHashtags = (string) ($v ?? ''); }
+        if ($k === 'raceresult_url')  { $raceresultUrl  = (string) ($v ?? ''); }
+    }
 } catch (PDOException $e) {
-    // Tabelle existiert evtl. noch nicht
+    // Tabelle/Spalten existieren evtl. noch nicht
 }
+$raceresultConfigured = $raceresultUrl !== '';
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -104,6 +113,36 @@ try {
         #so-error { display: none; color: #dc2626; font-size: 0.88rem; margin-top: 0.5rem; }
         #so-saved-msg { display: none; color: #16a34a; font-size: 0.88rem; }
 
+        /* Eingabefelder (Anlass, Prompt, Stichpunkte, Hashtags, RR-URL, Newsletter) */
+        .so-field { margin-bottom: 0.9rem; }
+        .so-field label { display: block; font-size: 0.85rem; color: var(--text-light); margin-bottom: 0.35rem; }
+        .so-field input[type="text"], .so-field input[type="url"], .so-field textarea, .so-field select {
+            width: 100%; padding: 0.5rem 0.6rem; border: 1px solid var(--border);
+            border-radius: 6px; font-size: 0.9rem; font-family: inherit; box-sizing: border-box; background: var(--white);
+        }
+        .so-field textarea { resize: vertical; min-height: 70px; line-height: 1.5; }
+        .so-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        @media (max-width: 860px) { .so-grid2 { grid-template-columns: 1fr; } }
+        .so-save-row { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+        .so-saved { display: none; color: #16a34a; font-size: 0.8rem; }
+        /* Einklappbares RaceResult-Modul */
+        .so-collapse { border: 1px solid var(--border); border-radius: 8px; background: var(--white); box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 0.75rem 1.25rem; margin-bottom: 1.25rem; }
+        .so-collapse > summary { cursor: pointer; font-size: 1rem; font-weight: 600; padding: 0.4rem 0; list-style: revert; }
+        .so-collapse[open] > summary { margin-bottom: 0.75rem; border-bottom: 1px solid var(--border); }
+        .so-badge-ok { font-size: 0.72rem; font-weight: 500; padding: 0.1rem 0.5rem; border-radius: 10px; background: #d1fae5; color: #065f46; }
+        .so-badge-off { font-size: 0.72rem; font-weight: 500; padding: 0.1rem 0.5rem; border-radius: 10px; background: var(--bg); color: var(--text-light); border: 1px solid var(--border); }
+        /* Spickzettel */
+        .so-guide { font-size: 0.86rem; line-height: 1.55; }
+        .so-guide h3 { font-size: 0.9rem; margin: 0.9rem 0 0.3rem; }
+        .so-guide ul { margin: 0 0 0.5rem 1.1rem; padding: 0; }
+        .so-guide code { background: var(--bg); padding: 0.05rem 0.3rem; border-radius: 3px; }
+        /* Newsletter */
+        .so-nl-preview { width: 100%; height: 420px; border: 1px solid var(--border); border-radius: 6px; background: #fff; }
+        .so-subjects { list-style: none; padding: 0; margin: 0.5rem 0 0; display: flex; flex-direction: column; gap: 0.4rem; }
+        .so-subjects li { display: flex; gap: 0.5rem; align-items: center; font-size: 0.9rem; }
+        #so-nl-error, #so-rr-msg, #so-ht-msg { font-size: 0.82rem; margin-top: 0.4rem; }
+        #so-nl-error { display: none; color: #dc2626; }
+
         /* Share-Card-Wrapper: skalierter Container damit der 1080px-Div nicht scrollt */
         .share-card-wrap {
             width: 360px; height: 360px; overflow: hidden;
@@ -149,7 +188,7 @@ try {
             <div class="so-header-row">
                 <div>
                     <h1>Social Media</h1>
-                    <p class="content-subtitle">KI-Nachbericht aus Raceresult-Ergebnissen (Phase 1: Mock-Daten)</p>
+                    <p class="content-subtitle">Zentrale KI-gestützte Content-Produktion für Instagram, Facebook &amp; Newsletter</p>
                 </div>
                 <div class="so-header-tools">
                     <div class="so-merk-card" id="so-merk-wrap">
@@ -163,9 +202,9 @@ try {
             </div>
         </header>
 
-        <!-- Section A: Generieren -->
+        <!-- Modul 1: Inhalt generieren (allgemein) -->
         <div class="so-card">
-            <h2>Schritt 1 — Ergebnisse laden &amp; KI starten</h2>
+            <h2>1 · Inhalt generieren</h2>
             <div class="so-provider-row">
                 <label for="so-provider">KI-Anbieter:</label>
                 <select id="so-provider">
@@ -175,23 +214,44 @@ try {
                 <button class="btn btn-small btn-secondary" id="so-save-provider">Anbieter speichern</button>
                 <span id="so-provider-saved" style="display:none;font-size:.8rem;color:#16a34a">Gespeichert</span>
             </div>
-            <p class="so-notice">
-                Phase 1 nutzt Mock-Ergebnisdaten des Marktlauf Kirchseeon 2026.
-                Der echte Raceresult-Abruf wird nach dem Renntag (20.09.) eingebunden.
-            </p>
+
+            <div class="so-grid2">
+                <div class="so-field">
+                    <label for="so-anlass">Anlass / Thema</label>
+                    <select id="so-anlass">
+                        <option value="allgemein">Allgemeiner Beitrag</option>
+                        <option value="ankuendigung">Ankündigung des Events</option>
+                        <option value="countdown">Countdown / Vorfreude</option>
+                        <option value="sponsoren_dank">Dank an Sponsoren &amp; Partner</option>
+                        <option value="helfer">Helfer-Aufruf / -Dank</option>
+                        <option value="renntag">Renntag-Nachbericht (nutzt RaceResult-Daten)</option>
+                    </select>
+                </div>
+                <div class="so-field">
+                    <label for="so-hashtags">Standard-Hashtags <span style="font-weight:400">(werden an den Social-Post gehängt)</span></label>
+                    <div class="so-save-row">
+                        <input type="text" id="so-hashtags" value="<?= htmlspecialchars($socialHashtags) ?>" placeholder="#marktlauf #kirchseeon #atsv" style="flex:1 1 200px">
+                        <button class="btn btn-small btn-secondary" id="so-save-hashtags">Speichern</button>
+                        <span class="so-saved" id="so-ht-msg">Gespeichert</span>
+                    </div>
+                </div>
+            </div>
+            <div class="so-field">
+                <label for="so-stichpunkte">Fakten / Stichpunkte</label>
+                <textarea id="so-stichpunkte" placeholder="z. B. Datum, Uhrzeit, Distanzen, Anmeldeschluss, Besonderheiten …"></textarea>
+            </div>
+            <div class="so-field">
+                <label for="so-prompt">Eigener Prompt / zusätzliche Anweisung <span style="font-weight:400">(optional)</span></label>
+                <textarea id="so-prompt" placeholder="z. B. „locker und jugendlich formulieren, max. 3 Sätze, Frage am Ende“"></textarea>
+            </div>
+
             <div class="so-actions">
-                <button class="btn btn-primary" id="so-generate-btn">
-                    Entwürfe generieren
-                </button>
+                <button class="btn btn-primary" id="so-generate-btn">Entwürfe generieren</button>
                 <span class="so-spinner active" id="so-spinner" style="display:none">⏳ KI läuft …</span>
             </div>
             <div id="so-error"></div>
-        </div>
 
-        <!-- Section B: Editieren & Speichern -->
-        <div class="so-card">
-            <h2>Schritt 2 — Entwürfe bearbeiten &amp; freigeben</h2>
-            <div class="so-textareas">
+            <div class="so-textareas" style="margin-top:1.25rem">
                 <div>
                     <label for="so-article">Presse-Artikel (Lokalzeitung)</label>
                     <textarea id="so-article" placeholder="Entwurf erscheint nach dem KI-Aufruf …"><?=
@@ -205,7 +265,6 @@ try {
                     ?></textarea>
                 </div>
             </div>
-
             <div class="so-actions">
                 <button class="btn btn-secondary" id="so-save-draft">Als Entwurf speichern</button>
                 <button class="btn btn-primary"    id="so-save-approved">Freigeben</button>
@@ -218,6 +277,26 @@ try {
                 <span id="so-saved-msg">Gespeichert.</span>
             </div>
         </div>
+
+        <!-- Modul 2: Zusatzquelle Renntag (RaceResult) -->
+        <details class="so-collapse" <?= $raceresultConfigured ? '' : 'open' ?>>
+            <summary>2 · Zusatzquelle Renntag · RaceResult
+                <?php if ($raceresultConfigured): ?><span class="so-badge-ok">verbunden</span><?php else: ?><span class="so-badge-off">nicht verbunden</span><?php endif; ?>
+            </summary>
+            <p class="so-notice" style="margin-bottom:0.9rem">
+                Optionale Zusatzquelle: liefert am Renntag echte Ergebnisdaten für den Anlass
+                „Renntag-Nachbericht" (Modul 1). Solange der Link fehlt oder das Event noch keine Daten hat,
+                werden automatisch Beispiel-Daten genutzt.
+            </p>
+            <div class="so-field" style="margin-bottom:0">
+                <label for="so-rr-url">RaceResult SimpleAPI-Link (Freigabe-Typ „Liste")</label>
+                <div class="so-save-row">
+                    <input type="url" id="so-rr-url" value="<?= htmlspecialchars($raceresultUrl) ?>" placeholder="https://events.raceresult.com/377952/…" style="flex:1 1 320px">
+                    <button class="btn btn-small btn-secondary" id="so-save-rr">Speichern</button>
+                    <span class="so-saved" id="so-rr-msg">Gespeichert</span>
+                </div>
+            </div>
+        </details>
 
         <!-- Share-Card: versteckter Render-Div (off-layout, aber im DOM) -->
         <div style="position:absolute;left:-9999px;top:-9999px;width:1080px;height:1080px;overflow:hidden" aria-hidden="true">
@@ -259,12 +338,12 @@ try {
             </div>
         </div>
 
-        <!-- Section C: Grafik -->
+        <!-- Modul 3: Grafik & Formate -->
         <div class="so-card">
-            <h2>Schritt 3 — Share-Grafik erzeugen</h2>
+            <h2>3 · Grafik &amp; Formate</h2>
             <p class="so-notice">
-                Erzeugt eine 1080×1080 px PNG-Grafik mit den Ergebnis-Highlights — ideal für Instagram &amp; Facebook.
-                Für beste Ergebnisse zuerst Entwürfe generieren (Schritt 1), dann hier rendern.
+                Erzeugt aktuell eine <strong>1080×1080 px</strong> (quadratische) PNG-Grafik mit Ergebnis-Highlights.
+                Portrait (1080×1350) und Story (1080×1920) folgen im nächsten Ausbauschritt.
             </p>
             <div class="so-actions" style="margin-top:0.75rem">
                 <button class="btn btn-secondary" id="so-render-card">Grafik erzeugen</button>
@@ -275,18 +354,70 @@ try {
                 <p style="font-size:.82rem;color:var(--text-light);margin:0.5rem 0 0.4rem">Vorschau (1080×1080 px):</p>
                 <img id="so-card-img" src="" alt="Share-Card Vorschau">
             </div>
+
+            <details class="so-collapse" style="margin-top:1rem">
+                <summary>ⓘ Spickzettel: Welches Format wofür &amp; wie posten</summary>
+                <div class="so-guide">
+                    <h3>Formate</h3>
+                    <ul>
+                        <li><strong>Quadratisch 1080×1080</strong> — sicher überall (Feed Instagram + Facebook).</li>
+                        <li><strong>Portrait 1080×1350 (4:5)</strong> — nimmt im Instagram-Feed am meisten Platz ein (IG schneidet auf max. 4:5). <em>Nächster Ausbauschritt.</em></li>
+                        <li><strong>Story 1080×1920 (9:16)</strong> — für Instagram-/Facebook-Stories. <em>Nächster Ausbauschritt.</em></li>
+                        <li><strong>PNG</strong> für Text/Grafik (scharf), <strong>JPG</strong> für Fotos (kleiner).</li>
+                    </ul>
+                    <h3>So kommt's in die Meta Business Suite</h3>
+                    <ul>
+                        <li>PNG herunterladen → <code>business.facebook.com</code> → „Beiträge &amp; Reels" → Beitrag erstellen.</li>
+                        <li>Kanäle Instagram + Facebook anhaken → Grafik als Foto hochladen, Caption (Social-Post aus Modul 1) einfügen → Vorschau → veröffentlichen oder terminieren.</li>
+                    </ul>
+                    <h3>Wichtig: Links verhalten sich je Kanal anders</h3>
+                    <ul>
+                        <li><strong>Instagram-Feed:</strong> kein klickbarer Link — Domain aufs Bild + „Link in Bio".</li>
+                        <li><strong>Facebook-Feed:</strong> Link darf direkt in die Caption (dort klickbar).</li>
+                        <li><strong>Story (Instagram):</strong> Link-Sticker über die aufgemalte Domain legen — der ist echt klickbar.</li>
+                    </ul>
+                </div>
+            </details>
         </div>
 
-        <!-- Section D: Copy / Download (Dispatch Phase 1) -->
+        <!-- Modul 4: Newsletter -->
         <div class="so-card">
-            <h2>Schritt 4 — Veröffentlichen (manuell)</h2>
+            <h2>4 · Newsletter</h2>
+            <p class="so-notice">
+                Fakten eingeben → KI erzeugt einen fertigen HTML-Newsletter + 3 Betreffzeilen (nutzt den KI-Anbieter aus Modul 1).
+                Danach kopieren und im Newsletter-Tool (Brevo) einfügen.
+            </p>
+            <div class="so-field" style="margin-top:0.75rem">
+                <label for="so-nl-fakten">Fakten / Inhalte für diese Ausgabe</label>
+                <textarea id="so-nl-fakten" placeholder="z. B. Anmeldung gestartet, neue Strecke, Sponsoren-News, Termine, Danksagungen …" style="min-height:110px"></textarea>
+            </div>
+            <div class="so-actions">
+                <button class="btn btn-primary" id="so-nl-generate">Newsletter generieren</button>
+                <span class="so-spinner" id="so-nl-spinner" style="display:none">⏳ KI läuft …</span>
+            </div>
+            <div id="so-nl-error"></div>
+            <div id="so-nl-result" style="display:none;margin-top:1rem">
+                <label style="display:block;font-size:0.85rem;color:var(--text-light);margin-bottom:0.35rem">Betreffzeilen-Vorschläge</label>
+                <ul class="so-subjects" id="so-nl-subjects"></ul>
+                <label style="display:block;font-size:0.85rem;color:var(--text-light);margin:1rem 0 0.35rem">Vorschau</label>
+                <iframe class="so-nl-preview" id="so-nl-preview" title="Newsletter-Vorschau"></iframe>
+                <div class="so-actions">
+                    <button class="btn btn-secondary" id="so-nl-copy-html">HTML kopieren</button>
+                    <span id="so-nl-copied" class="so-saved">Kopiert</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modul 5: Veröffentlichen -->
+        <div class="so-card">
+            <h2>5 · Veröffentlichen</h2>
             <div class="so-actions">
                 <button class="btn btn-secondary" id="so-copy-article">Presse-Text kopieren</button>
                 <button class="btn btn-secondary" id="so-copy-social">Social-Post kopieren</button>
             </div>
             <p class="so-notice" style="margin-top:0.75rem">
-                Auto-Posting (Instagram/Facebook via Meta Graph API) ist für Phase 2 nach dem Renntag geplant.
-                Bis dahin: Text kopieren und manuell posten.
+                Auto-Posting (Instagram/Facebook via Meta Graph API) ist für eine spätere Phase geplant.
+                Bis dahin: Text/Grafik kopieren bzw. herunterladen und manuell posten (siehe Spickzettel oben).
             </p>
         </div>
     </main>
@@ -329,7 +460,14 @@ document.getElementById('so-generate-btn').addEventListener('click', async () =>
         const r = await fetch('api/social_generate.php', {
             method: 'POST',
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: new URLSearchParams({csrf_token: csrf, provider}),
+            body: new URLSearchParams({
+                csrf_token:  csrf,
+                provider,
+                anlass:      document.getElementById('so-anlass').value,
+                stichpunkte: document.getElementById('so-stichpunkte').value,
+                prompt:      document.getElementById('so-prompt').value,
+                hashtags:    document.getElementById('so-hashtags').value,
+            }),
         });
         const d = await r.json();
         if (d.error) {
@@ -509,6 +647,103 @@ document.getElementById('so-render-card').addEventListener('click', async () => 
     // Startzustand: mit Inhalt = gesperrt, leer = direkt beschreibbar
     setLocked(ta.value.trim() !== '');
 })();
+
+// Vereinsweite Einstellungen speichern (Hashtags, RaceResult-URL)
+function saveSetting(key, value, msgEl, btn) {
+    if (btn) btn.disabled = true;
+    return fetch('api/social_settings.php', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: new URLSearchParams({csrf_token: csrf, key, value}),
+    }).then(r => r.json()).then(d => {
+        if (d.ok) {
+            msgEl.textContent = 'Gespeichert';
+            msgEl.style.color = '#16a34a';
+        } else {
+            msgEl.textContent = '⚠️ ' + (d.message || 'Fehler');
+            msgEl.style.color = '#dc2626';
+        }
+        msgEl.style.display = 'inline';
+        setTimeout(() => { msgEl.style.display = 'none'; }, 2500);
+    }).catch(() => {
+        msgEl.textContent = '⚠️ Netzwerkfehler';
+        msgEl.style.color = '#dc2626';
+        msgEl.style.display = 'inline';
+    }).finally(() => { if (btn) btn.disabled = false; });
+}
+
+document.getElementById('so-save-hashtags').addEventListener('click', (e) => {
+    saveSetting('social_hashtags', document.getElementById('so-hashtags').value,
+        document.getElementById('so-ht-msg'), e.currentTarget);
+});
+document.getElementById('so-save-rr').addEventListener('click', (e) => {
+    saveSetting('raceresult_url', document.getElementById('so-rr-url').value,
+        document.getElementById('so-rr-msg'), e.currentTarget);
+});
+
+// Newsletter generieren
+document.getElementById('so-nl-generate').addEventListener('click', async (e) => {
+    const btn     = e.currentTarget;
+    const spinner = document.getElementById('so-nl-spinner');
+    const errEl   = document.getElementById('so-nl-error');
+    const provider = document.getElementById('so-provider').value;
+    const fakten  = document.getElementById('so-nl-fakten').value;
+
+    errEl.style.display = 'none';
+    if (!fakten.trim()) {
+        errEl.textContent = 'Bitte zuerst Fakten/Inhalte eingeben.';
+        errEl.style.display = 'block';
+        return;
+    }
+    btn.disabled = true;
+    spinner.style.display = 'inline';
+    try {
+        const r = await fetch('api/newsletter_generate.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: new URLSearchParams({csrf_token: csrf, provider, fakten}),
+        });
+        const d = await r.json();
+        if (d.error) {
+            errEl.textContent = d.error;
+            errEl.style.display = 'block';
+        } else {
+            const subs = document.getElementById('so-nl-subjects');
+            subs.innerHTML = '';
+            (d.subjects || []).forEach(s => {
+                const li = document.createElement('li');
+                const span = document.createElement('span');
+                span.textContent = s;
+                span.style.flex = '1 1 auto';
+                const cp = document.createElement('button');
+                cp.className = 'btn btn-small btn-secondary';
+                cp.textContent = 'Kopieren';
+                cp.addEventListener('click', () => navigator.clipboard.writeText(s));
+                li.appendChild(span); li.appendChild(cp);
+                subs.appendChild(li);
+            });
+            document.getElementById('so-nl-preview').srcdoc = d.html || '';
+            document.getElementById('so-nl-result').dataset.html = d.html || '';
+            document.getElementById('so-nl-result').style.display = 'block';
+        }
+    } catch (err) {
+        errEl.textContent = 'Netzwerkfehler.';
+        errEl.style.display = 'block';
+    } finally {
+        btn.disabled = false;
+        spinner.style.display = 'none';
+    }
+});
+
+document.getElementById('so-nl-copy-html').addEventListener('click', () => {
+    const html = document.getElementById('so-nl-result').dataset.html || '';
+    if (!html) return;
+    navigator.clipboard.writeText(html).then(() => {
+        const m = document.getElementById('so-nl-copied');
+        m.style.display = 'inline';
+        setTimeout(() => { m.style.display = 'none'; }, 2000);
+    });
+});
 
 // Burger-Menü (wie alle anderen Orga-Seiten)
 const burgerBtn      = document.getElementById('burger-btn');
