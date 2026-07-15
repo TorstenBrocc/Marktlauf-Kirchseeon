@@ -9,7 +9,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/api/_auth.php';
 require_once __DIR__ . '/../src/db.php';
 require_once __DIR__ . '/../src/llm_client.php';
-require_once __DIR__ . '/../src/raceresult_mock.php';
+require_once __DIR__ . '/../src/raceresult_client.php';
 
 $user    = getCurrentUserFromGuard();
 $isAdmin = isAdminFromGuard();
@@ -19,7 +19,7 @@ $pdo      = getDbConnection();
 $provider = llmActiveProvider($pdo);
 
 // Mock-Daten für JS-Share-Card
-$mockData    = raceResultMock();
+$mockData    = raceResultData($pdo);
 $mockDataJson = json_encode($mockData, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP);
 
 // Letzten gespeicherten Entwurf laden (neuester draft/approved)
