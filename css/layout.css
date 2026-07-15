@@ -299,6 +299,28 @@
     color: var(--color-primary-light);
 }
 
+.footer-social {
+    display: flex;
+    gap: var(--space-sm);
+}
+
+.footer-social-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    color: var(--gray-300);
+    background-color: rgba(255, 255, 255, 0.06);
+    transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.footer-social-link:hover {
+    color: var(--white);
+    background-color: var(--color-primary);
+}
+
 .footer-bottom {
     text-align: center;
     color: var(--gray-500);
