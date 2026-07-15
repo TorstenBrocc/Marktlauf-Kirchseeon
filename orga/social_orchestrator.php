@@ -52,6 +52,20 @@ try {
     // Tabelle/Spalten existieren evtl. noch nicht
 }
 $raceresultConfigured = $raceresultApiUrl !== '';
+
+// Kuratierte Repo-Logos/Marken für die Grafik (Vordergrund-Logo)
+$repoLogos = [];
+foreach ([
+    'ATSV_Logo-750x968.png'         => 'ATSV-Logo',
+    'Marktlauf Logo Schrift.png'    => 'Marktlauf-Schriftzug',
+    'Wort-u-Bildmarke-Gemeinde.png' => 'Gemeinde-Marke',
+    'kirchseeon-wappen.webp'        => 'Kirchseeon-Wappen',
+] as $fileName => $label) {
+    $path = __DIR__ . '/../assets/images/' . $fileName;
+    if (is_file($path)) {
+        $repoLogos[] = ['label' => $label, 'url' => '../assets/images/' . rawurlencode($fileName)];
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -167,18 +181,43 @@ $raceresultConfigured = $raceresultApiUrl !== '';
         .so-guide-tools { display: flex; gap: 0.75rem; align-items: stretch; flex-wrap: wrap; margin-bottom: 1rem; }
         .so-guide-tools .so-merk-card { flex: 1 1 240px; }
         .so-guide-tools .so-merk-card textarea { width: 100%; }
+        /* Grafik-Steuerung Modul 3 */
+        .so-card-controls {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 0.75rem 1rem; margin-top: 0.75rem;
+        }
+        .so-card-controls .so-field { margin-bottom: 0; }
+        .so-photo-row { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; margin-top: 0.9rem; }
+        .so-photo-picker {
+            margin-top: 0.75rem; padding: 0.75rem; border: 1px solid var(--border);
+            border-radius: 6px; background: var(--bg);
+            display: flex; gap: 0.6rem; flex-wrap: wrap; max-height: 260px; overflow-y: auto;
+        }
+        .so-thumb {
+            width: 92px; cursor: pointer; border: 2px solid transparent; border-radius: 6px;
+            background: var(--white); padding: 3px; text-align: center;
+        }
+        .so-thumb:hover { border-color: var(--primary); }
+        .so-thumb img { width: 100%; height: 68px; object-fit: cover; border-radius: 4px; display: block; }
+        .so-thumb span { font-size: 0.66rem; color: var(--text-light); display: block; margin-top: 2px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
         /* Die eigentliche Render-Card (off-screen, echte Pixelgröße) — Höhe wird
            je Format per JS gesetzt (1080×1080 / 1080×1350 / 1080×1920). */
         #social-share-card {
             width: 1080px; height: 1080px;
-            background: linear-gradient(145deg, #009640 0%, #007230 100%);
+            background: #007230; /* Fallback; sichtbare Fläche liefern Overlay/Foto */
             display: flex; flex-direction: column;
             justify-content: space-between; padding: 80px;
             box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             color: #ffffff; position: relative; overflow: hidden;
         }
-        .sc-logo { width: 140px; height: auto; position: absolute; top: 60px; right: 60px; }
+        /* Hintergrund-Foto (Vollfläche) + Farb-Overlay darüber; Inhalt darüber */
+        .sc-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+        .sc-overlay { position: absolute; inset: 0; z-index: 1;
+            background: linear-gradient(145deg, #009640 0%, #007230 100%); }
+        #social-share-card > *:not(.sc-bg):not(.sc-overlay) { position: relative; z-index: 2; }
+        .sc-logo { width: 140px; height: auto; position: absolute; top: 60px; right: 60px; z-index: 3; }
         .sc-event { font-size: 28px; font-weight: 400; opacity: 0.85; margin-bottom: 16px; }
         .sc-headline { font-size: 72px; font-weight: 700; line-height: 1.1; margin-bottom: 0; }
         .sc-metrics { display: flex; flex-direction: column; gap: 36px; }
@@ -314,6 +353,8 @@ $raceresultConfigured = $raceresultApiUrl !== '';
              damit höhere Formate (Portrait/Story) nicht abgeschnitten werden. -->
         <div style="position:absolute;left:-9999px;top:0;width:1080px;overflow:visible" aria-hidden="true">
             <div id="social-share-card">
+                <img class="sc-bg" id="sc-bg" alt="" style="display:none">
+                <div class="sc-overlay" id="sc-overlay"></div>
                 <img class="sc-logo" id="sc-logo-img" src="../assets/images/ATSV_Logo-750x968.png" alt="">
                 <div>
                     <div class="sc-event" id="sc-event">Marktlauf Kirchseeon · 20. September 2026</div>
@@ -358,8 +399,8 @@ $raceresultConfigured = $raceresultApiUrl !== '';
                 PNG-Grafik mit Ergebnis-Highlights in drei Formaten: <strong>Quadratisch 1080×1080</strong> (Feed),
                 <strong>Portrait 1080×1350</strong> (Instagram-Feed, füllt am meisten) und <strong>Story 1080×1920</strong>.
             </p>
-            <div class="so-actions" style="margin-top:0.75rem;align-items:flex-end">
-                <div class="so-field" style="margin-bottom:0;max-width:230px">
+            <div class="so-card-controls">
+                <div class="so-field">
                     <label for="so-card-format">Format</label>
                     <select id="so-card-format">
                         <option value="portrait">Portrait 1080×1350 (Feed)</option>
@@ -367,6 +408,35 @@ $raceresultConfigured = $raceresultApiUrl !== '';
                         <option value="story">Story 1080×1920</option>
                     </select>
                 </div>
+                <div class="so-field">
+                    <label for="so-card-layout">Anordnung</label>
+                    <select id="so-card-layout">
+                        <option value="freiraum">Oben gebündelt + Freiraum</option>
+                        <option value="zentriert">Vertikal zentriert</option>
+                        <option value="verteilt">Verteilt (Poster)</option>
+                    </select>
+                </div>
+                <div class="so-field">
+                    <label for="so-card-scheme">Farb-Schema</label>
+                    <select id="so-card-scheme">
+                        <option value="gruen">Grün (Marke)</option>
+                        <option value="dunkel">Dunkelgrün</option>
+                        <option value="akzent">Akzent (Orange)</option>
+                    </select>
+                </div>
+                <div class="so-field">
+                    <label for="so-card-logo">Logo (Repo)</label>
+                    <select id="so-card-logo"></select>
+                </div>
+            </div>
+            <div class="so-photo-row">
+                <span style="font-size:0.85rem;color:var(--text-light)">Hintergrundfoto:</span>
+                <button class="btn btn-small btn-secondary" id="so-pick-photo">Aus Datei-Ablage wählen</button>
+                <span id="so-photo-name" style="font-size:0.82rem;color:var(--text-light)">kein Foto</span>
+                <button class="btn btn-small btn-secondary" id="so-clear-photo" style="display:none">entfernen</button>
+            </div>
+            <div class="so-photo-picker" id="so-photo-picker" style="display:none"></div>
+            <div class="so-actions" style="margin-top:0.75rem">
                 <button class="btn btn-secondary" id="so-render-card">Grafik erzeugen</button>
                 <button class="btn btn-secondary" id="so-download-card" style="display:none">PNG herunterladen</button>
             </div>
@@ -628,6 +698,115 @@ const CARD_FORMATS = {
     portrait: { w: 1080, h: 1350, label: 'Portrait 1080×1350' },
     story:    { w: 1080, h: 1920, label: 'Story 1080×1920' },
 };
+const repoLogos = <?= json_encode($repoLogos, JSON_UNESCAPED_UNICODE) ?>;
+let selectedPhotoUrl  = '';
+let selectedPhotoName = '';
+
+// Markenfarben aus den CI-Tokens (orga.css :root) lesen — eine Quelle, kein Drift
+function cssVar(name, fallback) {
+    const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return v || fallback;
+}
+function hexToRgba(hex, a) {
+    const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex.trim());
+    if (!m) return 'rgba(0,86,42,' + a + ')';
+    return 'rgba(' + parseInt(m[1],16) + ',' + parseInt(m[2],16) + ',' + parseInt(m[3],16) + ',' + a + ')';
+}
+function schemeColors(key) {
+    const primary = cssVar('--primary', '#009640');
+    const dark    = cssVar('--primary-dark', '#007230');
+    const accent  = cssVar('--accent', '#ff6b35');
+    if (key === 'dunkel') return ['#0d4a2b', '#062a18'];
+    if (key === 'akzent') return [accent, dark];
+    return [primary, dark]; // gruen (Marke)
+}
+
+// Logo-Auswahl aus Repo-Assets füllen
+(function() {
+    const sel = document.getElementById('so-card-logo');
+    repoLogos.forEach(function(l) {
+        const o = document.createElement('option');
+        o.value = l.url; o.textContent = l.label;
+        sel.appendChild(o);
+    });
+})();
+
+// Karte nach Auswahl (Logo, Schema, Anordnung, Foto) stylen
+function applyCardStyle(fmt) {
+    const card    = document.getElementById('social-share-card');
+    const overlay = document.getElementById('so-overlay') || document.getElementById('sc-overlay');
+    const bg      = document.getElementById('sc-bg');
+    const logo    = document.getElementById('sc-logo-img');
+    const footer  = card.querySelector('.sc-footer');
+
+    card.style.width  = fmt.w + 'px';
+    card.style.height = fmt.h + 'px';
+
+    const logoUrl = document.getElementById('so-card-logo').value;
+    if (logoUrl) { logo.src = logoUrl; }
+
+    const [c1, c2] = schemeColors(document.getElementById('so-card-scheme').value);
+    const hasPhoto = !!selectedPhotoUrl;
+    card.classList.toggle('has-photo', hasPhoto);
+    if (hasPhoto) {
+        bg.src = selectedPhotoUrl;
+        bg.style.display = 'block';
+        // dunkles Overlay für Lesbarkeit, unten in Markenfarbe auslaufend
+        overlay.style.background = 'linear-gradient(160deg, rgba(0,0,0,0.28) 0%, ' + hexToRgba(c2, 0.78) + ' 100%)';
+    } else {
+        bg.style.display = 'none';
+        overlay.style.background = 'linear-gradient(145deg, ' + c1 + ' 0%, ' + c2 + ' 100%)';
+    }
+
+    const layout = document.getElementById('so-card-layout').value;
+    if (layout === 'zentriert')      { card.style.justifyContent = 'center';       footer.style.marginTop = '0'; }
+    else if (layout === 'verteilt')  { card.style.justifyContent = 'space-between'; footer.style.marginTop = '0'; }
+    else /* freiraum */              { card.style.justifyContent = 'flex-start';    footer.style.marginTop = 'auto'; }
+}
+
+function waitImg(img) {
+    return new Promise(function(resolve) {
+        if (!img.getAttribute('src') || (img.complete && img.naturalWidth)) { resolve(); return; }
+        img.onload = resolve; img.onerror = resolve;
+    });
+}
+
+// Foto-Picker (Datei-Ablage)
+document.getElementById('so-pick-photo').addEventListener('click', async () => {
+    const panel = document.getElementById('so-photo-picker');
+    if (panel.style.display !== 'none') { panel.style.display = 'none'; return; }
+    panel.innerHTML = '<span style="font-size:.85rem;color:var(--text-light)">lädt …</span>';
+    panel.style.display = 'flex';
+    try {
+        const r = await fetch('api/dateien_images.php');
+        const d = await r.json();
+        panel.innerHTML = '';
+        if (!d.ok || !d.images.length) {
+            panel.innerHTML = '<span style="font-size:.85rem;color:var(--text-light)">Keine Bilder in der Datei-Ablage.</span>';
+            return;
+        }
+        d.images.forEach(function(img) {
+            const t = document.createElement('div');
+            t.className = 'so-thumb';
+            t.innerHTML = '<img src="' + img.url + '" alt=""><span>' + img.name + '</span>';
+            t.addEventListener('click', function() {
+                selectedPhotoUrl  = img.url;
+                selectedPhotoName = img.name;
+                document.getElementById('so-photo-name').textContent = img.name;
+                document.getElementById('so-clear-photo').style.display = 'inline-flex';
+                panel.style.display = 'none';
+            });
+            panel.appendChild(t);
+        });
+    } catch (e) {
+        panel.innerHTML = '<span style="font-size:.85rem;color:#dc2626">Fehler beim Laden.</span>';
+    }
+});
+document.getElementById('so-clear-photo').addEventListener('click', () => {
+    selectedPhotoUrl = ''; selectedPhotoName = '';
+    document.getElementById('so-photo-name').textContent = 'kein Foto';
+    document.getElementById('so-clear-photo').style.display = 'none';
+});
 
 document.getElementById('so-render-card').addEventListener('click', async () => {
     const btn    = document.getElementById('so-render-card');
@@ -639,17 +818,14 @@ document.getElementById('so-render-card').addEventListener('click', async () => 
     errEl.style.display = 'none';
 
     fillShareCard(mockData);
+    applyCardStyle(fmt);
 
-    // Karte auf das gewählte Format bringen (echte Pixelgröße)
     const card = document.getElementById('social-share-card');
-    card.style.width  = fmt.w + 'px';
-    card.style.height = fmt.h + 'px';
-
-    // Logo vorab laden damit html2canvas es findet
-    const logoImg = document.getElementById('sc-logo-img');
-    await new Promise(resolve => {
-        if (logoImg.complete) { resolve(); } else { logoImg.onload = resolve; logoImg.onerror = resolve; }
-    });
+    // Logo + optionales Hintergrundfoto vorab laden, damit html2canvas sie findet
+    await Promise.all([
+        waitImg(document.getElementById('sc-logo-img')),
+        selectedPhotoUrl ? waitImg(document.getElementById('sc-bg')) : Promise.resolve(),
+    ]);
 
     try {
         const canvas = await html2canvas(card, {
@@ -658,7 +834,7 @@ document.getElementById('so-render-card').addEventListener('click', async () => 
             scale:        1,
             useCORS:      false,
             allowTaint:   false,
-            backgroundColor: '#009640',
+            backgroundColor: '#007230',
             logging:      false,
         });
         const dataUrl = canvas.toDataURL('image/png');

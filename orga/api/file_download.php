@@ -34,8 +34,14 @@ try {
         exit('Datei nicht auf Server gefunden.');
     }
 
+    // inline=1: Bild direkt anzeigen (z. B. als <img>-Quelle für die Share-Grafik),
+    // sonst weiterhin als Download-Anhang ausliefern.
+    $inline = isset($_GET['inline']) && $_GET['inline'] === '1'
+        && str_starts_with((string) $file['mimetype'], 'image/');
+    $disposition = $inline ? 'inline' : 'attachment';
+
     header('Content-Type: ' . $file['mimetype']);
-    header('Content-Disposition: attachment; filename="' . addslashes($file['originalname']) . '"');
+    header('Content-Disposition: ' . $disposition . '; filename="' . addslashes($file['originalname']) . '"');
     header('Content-Length: ' . $file['groesse']);
     header('Cache-Control: no-cache, must-revalidate');
     header('Pragma: no-cache');
