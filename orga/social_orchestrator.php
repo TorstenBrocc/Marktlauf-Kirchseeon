@@ -29,24 +29,29 @@ $last = $pdo->query(
       ORDER BY id DESC LIMIT 1'
 )->fetch(PDO::FETCH_ASSOC);
 
-// Vereinsweite Einstellungen der Social-Seite laden (Merkfeld, Hashtags, RR-URL)
+// Vereinsweite Einstellungen der Social-Seite laden
 $socialMerkfeld = '';
 $socialHashtags = '';
-$raceresultUrl  = '';
+$raceresultApiUrl = '';
+$socialPrompts  = [];
 try {
     $stmt = $pdo->query(
         "SELECT `key`, `value` FROM einstellungen
-          WHERE `key` IN ('social_merkfeld', 'social_hashtags', 'raceresult_url')"
+          WHERE `key` IN ('social_merkfeld', 'social_hashtags', 'raceresult_api_url', 'social_prompts')"
     );
     foreach ($stmt->fetchAll(PDO::FETCH_KEY_PAIR) as $k => $v) {
-        if ($k === 'social_merkfeld') { $socialMerkfeld = (string) ($v ?? ''); }
-        if ($k === 'social_hashtags') { $socialHashtags = (string) ($v ?? ''); }
-        if ($k === 'raceresult_url')  { $raceresultUrl  = (string) ($v ?? ''); }
+        if ($k === 'social_merkfeld')    { $socialMerkfeld   = (string) ($v ?? ''); }
+        if ($k === 'social_hashtags')    { $socialHashtags   = (string) ($v ?? ''); }
+        if ($k === 'raceresult_api_url') { $raceresultApiUrl = (string) ($v ?? ''); }
+        if ($k === 'social_prompts') {
+            $decoded = json_decode((string) ($v ?? ''), true);
+            $socialPrompts = is_array($decoded) ? $decoded : [];
+        }
     }
 } catch (PDOException $e) {
     // Tabelle/Spalten existieren evtl. noch nicht
 }
-$raceresultConfigured = $raceresultUrl !== '';
+$raceresultConfigured = $raceresultApiUrl !== '';
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -143,6 +148,26 @@ $raceresultConfigured = $raceresultUrl !== '';
         #so-nl-error, #so-rr-msg, #so-ht-msg { font-size: 0.82rem; margin-top: 0.4rem; }
         #so-nl-error { display: none; color: #dc2626; }
 
+        /* Facebook-blauer Meta-Business-Button */
+        .so-mba-btn { background: #1877F2; color: #fff; }
+        .so-mba-btn:hover { background: #1461c9; color: #fff; }
+        /* Eingabe-Layout Modul 1: Anlass + Hashtags links, Fakten rechts auf gleicher Höhe */
+        .so-input-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 0 1rem;
+            grid-template-areas: "anlass fakten" "hashtags fakten";
+        }
+        #so-anlass-field   { grid-area: anlass; }
+        #so-hashtags-field { grid-area: hashtags; }
+        #so-fakten-field   { grid-area: fakten; display: flex; flex-direction: column; }
+        #so-fakten-field textarea { flex: 1 1 auto; min-height: 120px; }
+        @media (max-width: 860px) {
+            .so-input-grid { grid-template-columns: 1fr; grid-template-areas: "anlass" "hashtags" "fakten"; }
+        }
+        /* Werkzeuge in der Posting-Anleitung (Button + Notiz) */
+        .so-guide-tools { display: flex; gap: 0.75rem; align-items: stretch; flex-wrap: wrap; margin-bottom: 1rem; }
+        .so-guide-tools .so-merk-card { flex: 1 1 240px; }
+        .so-guide-tools .so-merk-card textarea { width: 100%; }
+
         /* Share-Card-Wrapper: skalierter Container damit der 1080px-Div nicht scrollt */
         .share-card-wrap {
             width: 360px; height: 360px; overflow: hidden;
@@ -192,10 +217,10 @@ $raceresultConfigured = $raceresultUrl !== '';
                 </div>
                 <div class="so-header-tools">
                     <div class="so-merk-card" id="so-merk-wrap">
-                        <textarea id="so-merk-text" rows="2" data-csrf="<?= htmlspecialchars($csrf) ?>"
-                                  placeholder="Notiz …&#10;Doppelklick sperrt &amp; speichert, erneuter Doppelklick entsperrt."><?= htmlspecialchars($socialMerkfeld) ?></textarea>
+                        <textarea class="so-merk-text" rows="1" data-csrf="<?= htmlspecialchars($csrf) ?>"
+                                  placeholder="Notiz … (Doppelklick sperrt &amp; speichert)"><?= htmlspecialchars($socialMerkfeld) ?></textarea>
                     </div>
-                    <a class="btn btn-primary so-fb-btn"
+                    <a class="btn so-mba-btn so-fb-btn"
                        href="https://business.facebook.com/latest/home?nav_ref=bm_home_redirect&amp;asset_id=1236742862857199"
                        target="_blank" rel="noopener noreferrer">Meta Business Account ↗</a>
                 </div>
@@ -211,12 +236,11 @@ $raceresultConfigured = $raceresultUrl !== '';
                     <option value="gemini"  <?= $provider === 'gemini'  ? 'selected' : '' ?>>Google Gemini (Free)</option>
                     <option value="mistral" <?= $provider === 'mistral' ? 'selected' : '' ?>>Mistral Small</option>
                 </select>
-                <button class="btn btn-small btn-secondary" id="so-save-provider">Anbieter speichern</button>
-                <span id="so-provider-saved" style="display:none;font-size:.8rem;color:#16a34a">Gespeichert</span>
+                <span id="so-provider-saved" style="display:none;font-size:.8rem;color:#16a34a">✓ gespeichert</span>
             </div>
 
-            <div class="so-grid2">
-                <div class="so-field">
+            <div class="so-input-grid">
+                <div class="so-field" id="so-anlass-field">
                     <label for="so-anlass">Anlass / Thema</label>
                     <select id="so-anlass">
                         <option value="allgemein">Allgemeiner Beitrag</option>
@@ -227,22 +251,26 @@ $raceresultConfigured = $raceresultUrl !== '';
                         <option value="renntag">Renntag-Nachbericht (nutzt RaceResult-Daten)</option>
                     </select>
                 </div>
-                <div class="so-field">
+                <div class="so-field" id="so-hashtags-field">
                     <label for="so-hashtags">Standard-Hashtags <span style="font-weight:400">(werden an den Social-Post gehängt)</span></label>
-                    <div class="so-save-row">
-                        <input type="text" id="so-hashtags" value="<?= htmlspecialchars($socialHashtags) ?>" placeholder="#marktlauf #kirchseeon #atsv" style="flex:1 1 200px">
-                        <button class="btn btn-small btn-secondary" id="so-save-hashtags">Speichern</button>
+                    <textarea id="so-hashtags" rows="2" placeholder="#marktlauf #kirchseeon #atsv"><?= htmlspecialchars($socialHashtags) ?></textarea>
+                    <div class="so-save-row" style="margin-top:0.4rem">
+                        <button class="btn btn-small btn-secondary" id="so-save-hashtags">Hashtags speichern</button>
                         <span class="so-saved" id="so-ht-msg">Gespeichert</span>
                     </div>
                 </div>
+                <div class="so-field" id="so-fakten-field">
+                    <label for="so-stichpunkte">Fakten / Stichpunkte</label>
+                    <textarea id="so-stichpunkte" placeholder="z. B. Datum, Uhrzeit, Distanzen, Anmeldeschluss, Besonderheiten …"></textarea>
+                </div>
             </div>
             <div class="so-field">
-                <label for="so-stichpunkte">Fakten / Stichpunkte</label>
-                <textarea id="so-stichpunkte" placeholder="z. B. Datum, Uhrzeit, Distanzen, Anmeldeschluss, Besonderheiten …"></textarea>
-            </div>
-            <div class="so-field">
-                <label for="so-prompt">Eigener Prompt / zusätzliche Anweisung <span style="font-weight:400">(optional)</span></label>
+                <label for="so-prompt">Eigener Prompt / zusätzliche Anweisung <span style="font-weight:400">(pro Anlass speicherbar, optional)</span></label>
                 <textarea id="so-prompt" placeholder="z. B. „locker und jugendlich formulieren, max. 3 Sätze, Frage am Ende“"></textarea>
+                <div class="so-save-row" style="margin-top:0.4rem">
+                    <button class="btn btn-small btn-secondary" id="so-save-prompt">Prompt für diesen Anlass speichern</button>
+                    <span class="so-saved" id="so-pr-msg">Gespeichert</span>
+                </div>
             </div>
 
             <div class="so-actions">
@@ -253,15 +281,15 @@ $raceresultConfigured = $raceresultUrl !== '';
 
             <div class="so-textareas" style="margin-top:1.25rem">
                 <div>
-                    <label for="so-article">Presse-Artikel (Lokalzeitung)</label>
-                    <textarea id="so-article" placeholder="Entwurf erscheint nach dem KI-Aufruf …"><?=
-                        htmlspecialchars($last['llm_text_article'] ?? '')
-                    ?></textarea>
-                </div>
-                <div>
                     <label for="so-social">Social-Media-Post (Instagram / Facebook)</label>
                     <textarea id="so-social" placeholder="Entwurf erscheint nach dem KI-Aufruf …"><?=
                         htmlspecialchars($last['llm_text_social'] ?? '')
+                    ?></textarea>
+                </div>
+                <div>
+                    <label for="so-article">Presse-Artikel (Lokalzeitung)</label>
+                    <textarea id="so-article" placeholder="Entwurf erscheint nach dem KI-Aufruf …"><?=
+                        htmlspecialchars($last['llm_text_article'] ?? '')
                     ?></textarea>
                 </div>
             </div>
@@ -281,17 +309,20 @@ $raceresultConfigured = $raceresultUrl !== '';
         <!-- Modul 2: Zusatzquelle Renntag (RaceResult) -->
         <details class="so-collapse" <?= $raceresultConfigured ? '' : 'open' ?>>
             <summary>2 · Zusatzquelle Renntag · RaceResult
-                <?php if ($raceresultConfigured): ?><span class="so-badge-ok">verbunden</span><?php else: ?><span class="so-badge-off">nicht verbunden</span><?php endif; ?>
+                <?php if ($raceresultConfigured): ?><span class="so-badge-ok">Link hinterlegt</span><?php else: ?><span class="so-badge-off">kein Link</span><?php endif; ?>
             </summary>
             <p class="so-notice" style="margin-bottom:0.9rem">
-                Optionale Zusatzquelle: liefert am Renntag echte Ergebnisdaten für den Anlass
-                „Renntag-Nachbericht" (Modul 1). Solange der Link fehlt oder das Event noch keine Daten hat,
-                werden automatisch Beispiel-Daten genutzt.
+                <strong>Wofür:</strong> optionale Datenquelle für den Anlass „Renntag-Nachbericht" (Modul 1).
+                Ist ein SimpleAPI-Link hinterlegt, liest das Dashboard daraus beim Generieren die Ergebnisse
+                (Sieger:innen, Zeiten, Teilnehmerzahlen) und füttert damit die KI-Texte <em>und</em> die
+                Ergebnis-Grafik (Modul 3). Die Daten werden dabei <strong>nur live gelesen, nicht gespeichert</strong>.
+                Ohne Link oder solange das Event (Testmodus) keine Daten liefert, werden automatisch Beispiel-Daten verwendet.
+                <br><em>„Link hinterlegt" bedeutet nur: eine URL ist gespeichert — nicht, dass sie bereits Daten liefert (das lässt sich erst mit echten Renndaten prüfen).</em>
             </p>
             <div class="so-field" style="margin-bottom:0">
-                <label for="so-rr-url">RaceResult SimpleAPI-Link (Freigabe-Typ „Liste")</label>
+                <label for="so-rr-url">RaceResult SimpleAPI-Link — in RaceResult unter „Zugriffsrechte/Freigabe → Freigabe (SimpleAPI)", Typ „Liste" anlegen und den erzeugten Link hier einfügen</label>
                 <div class="so-save-row">
-                    <input type="url" id="so-rr-url" value="<?= htmlspecialchars($raceresultUrl) ?>" placeholder="https://events.raceresult.com/377952/…" style="flex:1 1 320px">
+                    <input type="url" id="so-rr-url" value="<?= htmlspecialchars($raceresultApiUrl) ?>" placeholder="https://my.raceresult.com/377952/RRPublish/data/list?..." style="flex:1 1 320px">
                     <button class="btn btn-small btn-secondary" id="so-save-rr">Speichern</button>
                     <span class="so-saved" id="so-rr-msg">Gespeichert</span>
                 </div>
@@ -356,25 +387,42 @@ $raceresultConfigured = $raceresultUrl !== '';
             </div>
 
             <details class="so-collapse" style="margin-top:1rem">
-                <summary>ⓘ Spickzettel: Welches Format wofür &amp; wie posten</summary>
+                <summary>⚠️ Anleitung zum Posten im Meta Business Account</summary>
                 <div class="so-guide">
-                    <h3>Formate</h3>
+                    <div class="so-guide-tools">
+                        <a class="btn so-mba-btn" href="https://business.facebook.com/latest/home?nav_ref=bm_home_redirect&amp;asset_id=1236742862857199" target="_blank" rel="noopener noreferrer">Meta Business Account öffnen ↗</a>
+                        <div class="so-merk-card" id="so-merk-wrap2">
+                            <textarea class="so-merk-text" rows="1" data-csrf="<?= htmlspecialchars($csrf) ?>"
+                                      placeholder="Notiz … (Doppelklick sperrt &amp; speichert)"><?= htmlspecialchars($socialMerkfeld) ?></textarea>
+                        </div>
+                    </div>
+
+                    <h3>1 · Formate (Bildgröße)</h3>
                     <ul>
-                        <li><strong>Quadratisch 1080×1080</strong> — sicher überall (Feed Instagram + Facebook).</li>
-                        <li><strong>Portrait 1080×1350 (4:5)</strong> — nimmt im Instagram-Feed am meisten Platz ein (IG schneidet auf max. 4:5). <em>Nächster Ausbauschritt.</em></li>
-                        <li><strong>Story 1080×1920 (9:16)</strong> — für Instagram-/Facebook-Stories. <em>Nächster Ausbauschritt.</em></li>
+                        <li><strong>Portrait 1080×1350 (4:5)</strong> — empfohlen fürs Instagram-Feed, füllt am meisten Platz. <em>Grafik-Ausbau folgt.</em></li>
+                        <li><strong>Quadratisch 1080×1080 (1:1)</strong> — sicher überall (Feed IG + FB). <em>Wird aktuell erzeugt.</em></li>
+                        <li><strong>Story 1080×1920 (9:16)</strong> — für Instagram-/Facebook-Stories. <em>Grafik-Ausbau folgt.</em></li>
+                        <li>Das Instagram-Profil-Grid schneidet neuerdings auf <strong>3:4</strong> — Logo/Text/Gesichter mittig halten.</li>
                         <li><strong>PNG</strong> für Text/Grafik (scharf), <strong>JPG</strong> für Fotos (kleiner).</li>
                     </ul>
-                    <h3>So kommt's in die Meta Business Suite</h3>
+
+                    <h3>2 · Posten via Meta Business Suite</h3>
                     <ul>
-                        <li>PNG herunterladen → <code>business.facebook.com</code> → „Beiträge &amp; Reels" → Beitrag erstellen.</li>
-                        <li>Kanäle Instagram + Facebook anhaken → Grafik als Foto hochladen, Caption (Social-Post aus Modul 1) einfügen → Vorschau → veröffentlichen oder terminieren.</li>
+                        <li>Grafik herunterladen (Modul 3) → oben „Meta Business Account öffnen" → „Beiträge &amp; Reels" → Beitrag erstellen.</li>
+                        <li>Kanäle Instagram + Facebook anhaken → Grafik als Foto hochladen → Caption (Social-Post aus Modul 1) einfügen → Vorschau → veröffentlichen oder terminieren.</li>
+                        <li>Für eine <strong>Story</strong>: im Composer „Story" wählen → Story-Grafik hochladen.</li>
                     </ul>
-                    <h3>Wichtig: Links verhalten sich je Kanal anders</h3>
+
+                    <h3>3 · Links — je Kanal unterschiedlich (Stand 2026)</h3>
                     <ul>
-                        <li><strong>Instagram-Feed:</strong> kein klickbarer Link — Domain aufs Bild + „Link in Bio".</li>
-                        <li><strong>Facebook-Feed:</strong> Link darf direkt in die Caption (dort klickbar).</li>
-                        <li><strong>Story (Instagram):</strong> Link-Sticker über die aufgemalte Domain legen — der ist echt klickbar.</li>
+                        <li><strong>Instagram-Feed:</strong> für normale Accounts <em>kein</em> klickbarer Link in der Caption → Domain aufs Bild + „Link in Bio". (Klickbare Caption-Links testet Meta nur für Meta-Verified-Creator.)</li>
+                        <li><strong>Facebook-Feed:</strong> Link in der Caption ist in der Regel klickbar.</li>
+                        <li><strong>Story (Instagram):</strong> Link-Sticker über die aufgemalte Domain legen — für alle öffentlichen Accounts verfügbar, <strong>ein</strong> Link pro Story.</li>
+                    </ul>
+
+                    <h3>4 · Renntag-Daten (RaceResult)</h3>
+                    <ul>
+                        <li>Beim Anlass „Renntag-Nachbericht" zieht das Dashboard die Ergebnisse aus dem in Modul 2 hinterlegten RaceResult-Link und nutzt sie für Text + Ergebnis-Grafik. Ohne Link/Daten werden Beispiel-Daten verwendet.</li>
                     </ul>
                 </div>
             </details>
@@ -427,10 +475,11 @@ $raceresultConfigured = $raceresultUrl !== '';
 <script>
 const csrf     = <?= json_encode($csrf) ?>;
 const mockData = <?= $mockDataJson ?>;
+const socialPrompts = <?= json_encode((object) ($socialPrompts ?: []), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?>;
 let currentId = <?= $last ? (int)$last['id'] : 'null' ?>;
 
-// Provider speichern
-document.getElementById('so-save-provider').addEventListener('click', () => {
+// Provider automatisch speichern bei Auswahl (kein Extra-Button nötig)
+document.getElementById('so-provider').addEventListener('change', () => {
     const provider = document.getElementById('so-provider').value;
     fetch('api/social_provider.php', {
         method: 'POST',
@@ -444,6 +493,40 @@ document.getElementById('so-save-provider').addEventListener('click', () => {
         }
     });
 });
+
+// Prompt: pro Anlass laden + speichern, Höhe wächst mit dem Inhalt
+(function() {
+    const anlassSel = document.getElementById('so-anlass');
+    const promptEl  = document.getElementById('so-prompt');
+    function autoGrow() {
+        promptEl.style.height = 'auto';
+        promptEl.style.height = (promptEl.scrollHeight + 2) + 'px';
+    }
+    function loadForAnlass() {
+        promptEl.value = socialPrompts[anlassSel.value] || '';
+        autoGrow();
+    }
+    anlassSel.addEventListener('change', loadForAnlass);
+    promptEl.addEventListener('input', autoGrow);
+    document.getElementById('so-save-prompt').addEventListener('click', (e) => {
+        const anlass = anlassSel.value;
+        const prompt = promptEl.value;
+        const msg = document.getElementById('so-pr-msg');
+        e.currentTarget.disabled = true;
+        fetch('api/social_prompt.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: new URLSearchParams({csrf_token: csrf, anlass, prompt}),
+        }).then(r => r.json()).then(d => {
+            if (d.ok) { socialPrompts[anlass] = prompt; msg.textContent = 'Gespeichert'; msg.style.color = '#16a34a'; }
+            else { msg.textContent = '⚠️ ' + (d.message || 'Fehler'); msg.style.color = '#dc2626'; }
+            msg.style.display = 'inline';
+            setTimeout(() => { msg.style.display = 'none'; }, 2500);
+        }).catch(() => { msg.textContent = '⚠️ Netzwerkfehler'; msg.style.color = '#dc2626'; msg.style.display = 'inline'; })
+          .finally(() => { e.currentTarget.disabled = false; });
+    });
+    loadForAnlass(); // Startzustand
+})();
 
 // Entwürfe generieren
 document.getElementById('so-generate-btn').addEventListener('click', async () => {
@@ -596,28 +679,26 @@ document.getElementById('so-render-card').addEventListener('click', async () => 
     }
 });
 
-// Social-Merkfeld: Doppelklick sperrt & speichert, erneuter Doppelklick entsperrt
+// Social-Merkfeld (Header + Anleitung, synchron): Doppelklick sperrt & speichert
 (function() {
-    const wrap = document.getElementById('so-merk-wrap');
-    if (!wrap) return;
-    const ta = document.getElementById('so-merk-text');
-    const token = ta.dataset.csrf;
-    let locked = false;
+    const fields = Array.from(document.querySelectorAll('.so-merk-text'));
+    if (!fields.length) return;
+    const token = fields[0].dataset.csrf;
 
-    function setLocked(v) {
-        locked = v;
+    function setLocked(ta, v) {
         ta.readOnly = v;
-        wrap.classList.toggle('locked', v);
-        ta.title = v
-            ? '🔒 gesperrt — Doppelklick zum Bearbeiten'
-            : '✏️ Doppelklick sperrt & speichert';
+        const card = ta.closest('.so-merk-card');
+        if (card) card.classList.toggle('locked', v);
+        ta.title = v ? '🔒 gesperrt — Doppelklick zum Bearbeiten' : '✏️ Doppelklick sperrt & speichert';
     }
+    function setLockedAll(v) { fields.forEach(f => setLocked(f, v)); }
+    function syncValue(val) { fields.forEach(f => { f.value = val; }); }
 
-    function save() {
+    function save(source) {
         const body = new URLSearchParams();
         body.set('csrf_token', token);
-        body.set('merkfeld', ta.value);
-        ta.title = '… speichern';
+        body.set('merkfeld', source.value);
+        source.title = '… speichern';
         fetch('api/social_merkfeld.php', {
             method: 'POST',
             headers: { 'X-Requested-With': 'fetch' },
@@ -626,26 +707,25 @@ document.getElementById('so-render-card').addEventListener('click', async () => 
             .then(function(r) { return r.json(); })
             .then(function(d) {
                 if (d && d.ok) {
-                    setLocked(true);
-                    ta.title = '🔒 gespeichert';
+                    syncValue(source.value);
+                    setLockedAll(true);
+                    source.title = '🔒 gespeichert';
                 } else {
-                    ta.title = '⚠️ ' + ((d && d.message) || 'Fehler beim Speichern');
+                    source.title = '⚠️ ' + ((d && d.message) || 'Fehler beim Speichern');
                 }
             })
-            .catch(function() { ta.title = '⚠️ Fehler beim Speichern'; });
+            .catch(function() { source.title = '⚠️ Fehler beim Speichern'; });
     }
 
-    ta.addEventListener('dblclick', function() {
-        if (locked) {
-            setLocked(false);
-            ta.focus();
-        } else {
-            save();
-        }
+    fields.forEach(function(ta) {
+        ta.addEventListener('dblclick', function() {
+            if (ta.readOnly) { setLocked(ta, false); ta.focus(); }
+            else { save(ta); }
+        });
     });
 
     // Startzustand: mit Inhalt = gesperrt, leer = direkt beschreibbar
-    setLocked(ta.value.trim() !== '');
+    setLockedAll(fields[0].value.trim() !== '');
 })();
 
 // Vereinsweite Einstellungen speichern (Hashtags, RaceResult-URL)
@@ -677,7 +757,7 @@ document.getElementById('so-save-hashtags').addEventListener('click', (e) => {
         document.getElementById('so-ht-msg'), e.currentTarget);
 });
 document.getElementById('so-save-rr').addEventListener('click', (e) => {
-    saveSetting('raceresult_url', document.getElementById('so-rr-url').value,
+    saveSetting('raceresult_api_url', document.getElementById('so-rr-url').value,
         document.getElementById('so-rr-msg'), e.currentTarget);
 });
 

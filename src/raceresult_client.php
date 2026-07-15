@@ -6,8 +6,9 @@
  *   (https://events.raceresult.com/377952/ — Stand 2026-07-15 noch Testmodus).
  *
  * Datenquelle ist eine in RaceResult angelegte SimpleAPI-"Freigabe" vom Typ
- * "Liste"; deren statischer Link wird in den Einstellungen (Key `raceresult_url`)
- * hinterlegt. raceResultData() ruft diesen Link ab und liefert dasselbe
+ * "Liste"; deren statischer Link wird in den Einstellungen (Key `raceresult_api_url`)
+ * hinterlegt — eigener Key, NICHT der bestehende `raceresult_url` (der eine andere
+ * Funktion in den Admin-Einstellungen hat). raceResultData() ruft diesen Link ab und liefert dasselbe
  * Array-Shape wie raceResultMock(). Solange kein Link konfiguriert ist, der
  * Abruf scheitert oder (vor dem Renntag) keine Daten liefert, fällt die Funktion
  * automatisch auf raceResultMock() zurück — der Social-Flow bleibt damit
@@ -49,7 +50,7 @@ function raceResultData(?PDO $pdo = null): array
     return $mapped;
 }
 
-/** SimpleAPI-Listen-URL aus den Einstellungen lesen (Key raceresult_url). */
+/** SimpleAPI-Listen-URL aus den Einstellungen lesen (Key raceresult_api_url). */
 function raceResultConfiguredUrl(?PDO $pdo): string
 {
     if (!$pdo instanceof PDO) {
@@ -57,7 +58,7 @@ function raceResultConfiguredUrl(?PDO $pdo): string
     }
     try {
         $stmt = $pdo->prepare('SELECT `value` FROM einstellungen WHERE `key` = :key');
-        $stmt->execute(['key' => 'raceresult_url']);
+        $stmt->execute(['key' => 'raceresult_api_url']);
         return trim((string) ($stmt->fetchColumn() ?: ''));
     } catch (PDOException $e) {
         logError('raceResultConfiguredUrl: ' . $e->getMessage());
