@@ -329,9 +329,11 @@ body {
     font-weight: 500;
 }
 
-/* Items unter einer Abschnitts-Überschrift einrücken (Dashboard bleibt bündig) */
-.nav-item-sub a,
-.nav-item-sub .nav-disabled {
+/* Items unter einer Abschnitts-Überschrift einrücken (Dashboard bleibt bündig).
+   Doppelklasse für höhere Spezifität, damit auch deaktivierte Items (.nav-disabled,
+   z. B. Live-Ticker) die Basis-Regel .nav-item .nav-disabled sicher überschreiben. */
+.nav-item.nav-item-sub a,
+.nav-item.nav-item-sub .nav-disabled {
     padding-left: 2.25rem;
 }
 
