@@ -21,7 +21,9 @@ $config = getConfig();
 // try/catch, damit eine (noch) fehlende Tabelle nur die Kennzahl weglässt
 // statt das ganze Dashboard mit einem Fehler abzuschießen.
 $navItems = require __DIR__ . '/_nav.php';
-$dashboardTiles = [];
+// Kacheln nach Sidebar-Abschnitt gruppieren (gleiche Reihenfolge wie in _nav.php),
+// damit Dashboard und Sidebar dieselbe Struktur zeigen.
+$dashboardGroups = [];
 foreach ($navItems as $item) {
     if (($item['tile'] ?? true) === false || !empty($item['admin'])) {
         continue;
@@ -34,8 +36,33 @@ foreach ($navItems as $item) {
             logError('Dashboard-KPI (' . ($item['key'] ?? '?') . '): ' . $e->getMessage());
         }
     }
-    $dashboardTiles[] = ['item' => $item, 'kpi' => $kpi];
+    $section = $item['section'] ?? '';
+    $dashboardGroups[$section][] = ['item' => $item, 'kpi' => $kpi];
 }
+
+/**
+ * Eine einzelne Dashboard-Kachel rendern (deaktiviertes Modul oder Absprung/KPI-Link).
+ */
+$renderTile = static function (array $tile): void {
+    $item = $tile['item'];
+    $kpi  = $tile['kpi'];
+    if (empty($item['href'])) { // deaktiviertes Modul (z. B. Live-Ticker)
+        echo '<div class="card card-tile card-tile-disabled">'
+            . '<h3>' . htmlspecialchars($item['label'])
+            . (isset($item['badge']) ? ' <span class="badge">' . htmlspecialchars($item['badge']) . '</span>' : '')
+            . '</h3><p class="card-label">Noch nicht verfügbar</p></div>';
+        return;
+    }
+    echo '<a class="card card-tile signal-' . htmlspecialchars($kpi['signal'] ?? 'neutral') . '" href="' . htmlspecialchars($item['href']) . '">'
+        . '<h3>' . htmlspecialchars($item['label']) . '</h3>';
+    if ($kpi !== null) {
+        echo '<p class="card-stat">' . htmlspecialchars($kpi['value']) . '</p>'
+            . '<p class="card-label">' . htmlspecialchars($kpi['label']) . '</p>';
+    } else {
+        echo '<p class="card-tile-open">Öffnen →</p>';
+    }
+    echo '</a>';
+};
 
 $meineAufgaben = [];
 $orgaAufgaben = [];
@@ -260,6 +287,17 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                 grid-template-columns: 1fr;
             }
         }
+        .dashboard-group {
+            margin-bottom: 1.75rem;
+        }
+        .dashboard-group-title {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-light);
+            font-weight: 700;
+            margin: 0 0 0.75rem 0;
+        }
     </style>
 </head>
 <body>
@@ -301,26 +339,25 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
             </div>
             <?php endif; ?>
 
-            <section class="dashboard-grid">
-                <?php foreach ($dashboardTiles as $tile): ?>
-                    <?php $item = $tile['item']; $kpi = $tile['kpi']; ?>
-                    <?php if (empty($item['href'])): // deaktiviertes Modul (z. B. Live-Ticker, Phase 3) ?>
-                        <div class="card card-tile card-tile-disabled">
-                            <h3><?= htmlspecialchars($item['label']) ?><?= isset($item['badge']) ? ' <span class="badge">' . htmlspecialchars($item['badge']) . '</span>' : '' ?></h3>
-                            <p class="card-label">Noch nicht verfügbar</p>
-                        </div>
-                    <?php else: ?>
-                        <a class="card card-tile signal-<?= htmlspecialchars($kpi['signal'] ?? 'neutral') ?>" href="<?= htmlspecialchars($item['href']) ?>">
-                            <h3><?= htmlspecialchars($item['label']) ?></h3>
-                            <?php if ($kpi !== null): ?>
-                                <p class="card-stat"><?= htmlspecialchars($kpi['value']) ?></p>
-                                <p class="card-label"><?= htmlspecialchars($kpi['label']) ?></p>
-                            <?php else: ?>
-                                <p class="card-tile-open">Öffnen →</p>
-                            <?php endif; ?>
-                        </a>
-                    <?php endif; ?>
-                <?php endforeach; ?>
+            <?php foreach ($dashboardGroups as $section => $tiles): ?>
+                <?php if ($section === 'ADMIN' || $section === '') { continue; } // ADMIN nicht aufs Dashboard; '' unten mit Schnellzugriff ?>
+                <section class="dashboard-group">
+                    <h2 class="dashboard-group-title"><?= htmlspecialchars($section) ?></h2>
+                    <div class="dashboard-grid">
+                        <?php foreach ($tiles as $tile) { $renderTile($tile); } ?>
+                    </div>
+                </section>
+            <?php endforeach; ?>
+
+            <section class="dashboard-group">
+                <div class="dashboard-grid">
+                    <?php
+                    // Kacheln ohne eigenen Abschnitt sowie die ADMIN-Kachel (nur CI &
+                    // Design — für alle sichtbar, aber ohne ADMIN-Überschrift hier) plus
+                    // die Schnellzugriff-Karte als „Absprung"-Bereich am Ende.
+                    foreach (($dashboardGroups[''] ?? []) as $tile) { $renderTile($tile); }
+                    foreach (($dashboardGroups['ADMIN'] ?? []) as $tile) { $renderTile($tile); }
+                    ?>
 
                 <article class="card">
                     <h3>Schnellzugriff</h3>
@@ -339,6 +376,7 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                         <?php endif; ?>
                     </ul>
                 </article>
+                </div>
             </section>
 
             <div class="aufgaben-section">
