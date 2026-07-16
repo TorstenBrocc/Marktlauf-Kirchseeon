@@ -118,6 +118,36 @@ TEXT;
 }
 
 /**
+ * Passwort-Reset-Link versenden (admin-getriggert).
+ */
+function sendPasswortReset(string $to, string $name, string $resetLink): bool {
+    $subject = '🔑 Passwort zurücksetzen — Marktlauf Orga-Bereich';
+    $body = <<<TEXT
+Hallo {$name},
+
+für deinen Zugang zum Orga-Bereich des ATSV Kirchseeon Marktlaufs wurde ein
+Passwort-Reset ausgelöst.
+
+Über folgenden Link kannst du ein neues Passwort festlegen:
+
+{$resetLink}
+
+Dieser Link ist 48 Stunden gültig. Solange du kein neues Passwort setzt, bleibt
+dein bisheriges gültig.
+
+📧 Fragen? info@atsv-kirchseeon-marktlauf.de
+
+Sportliche Grüße
+Dein Marktlauf-Team
+──────────────────────────
+ATSV Kirchseeon Marktlauf
+https://atsv-kirchseeon-marktlauf.de
+TEXT;
+
+    return sendMail($to, $subject, $body);
+}
+
+/**
  * Sponsor-Anschreiben versenden (nativer SMTP-Mailer, HTML + Text-Fallback).
  *
  * Inhalt (Betreff + Körper) stammt aus der editierbaren Vorlage

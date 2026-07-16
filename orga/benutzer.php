@@ -21,7 +21,10 @@ $csrfToken = generateCsrfToken();
 
 $flashSuccess = $_SESSION['flash_success'] ?? '';
 $flashError = $_SESSION['flash_error'] ?? '';
-unset($_SESSION['flash_success'], $_SESSION['flash_error']);
+$flashResetLink = $_SESSION['flash_reset_link'] ?? '';
+$flashResetName = $_SESSION['flash_reset_name'] ?? '';
+$flashResetMailOk = $_SESSION['flash_reset_mail_ok'] ?? false;
+unset($_SESSION['flash_success'], $_SESSION['flash_error'], $_SESSION['flash_reset_link'], $_SESSION['flash_reset_name'], $_SESSION['flash_reset_mail_ok']);
 
 $pdo = getDbConnection();
 $stmt = $pdo->query('SELECT * FROM users ORDER BY created_at DESC');
@@ -156,10 +159,40 @@ try {
             border-radius: 3px;
             margin-left: 0.5rem;
         }
+        .reset-link-box {
+            background: #e8f5e9;
+            border: 1px solid var(--primary);
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+        .reset-link-box strong { display: block; margin-bottom: 0.25rem; }
+        .reset-link-box p {
+            margin: 0 0 0.75rem 0;
+            font-size: 0.85rem;
+            color: var(--text-light);
+        }
+        .reset-link-row {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        .reset-link-row input {
+            flex: 1;
+            min-width: 0;
+            padding: 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            background: var(--white);
+        }
+        .reset-link-row .btn { white-space: nowrap; }
         @media (max-width: 800px) {
             .invite-row {
                 grid-template-columns: 1fr;
             }
+            .reset-link-row { flex-direction: column; align-items: stretch; }
         }
     </style>
 </head>
@@ -177,6 +210,17 @@ try {
 
             <?php if ($flashError): ?>
                 <div class="alert alert-error"><?= htmlspecialchars($flashError) ?></div>
+            <?php endif; ?>
+
+            <?php if ($flashResetLink): ?>
+                <div class="reset-link-box">
+                    <strong>Passwort-Reset-Link für <?= htmlspecialchars($flashResetName) ?></strong>
+                    <p><?= $flashResetMailOk ? 'Wurde per E-Mail an den Benutzer gesendet.' : 'E-Mail-Versand fehlgeschlagen — bitte den Link manuell weitergeben.' ?> 48 Stunden gültig.</p>
+                    <div class="reset-link-row">
+                        <input type="text" id="reset-link-input" readonly value="<?= htmlspecialchars($flashResetLink) ?>" onclick="this.select()">
+                        <button type="button" class="btn btn-primary" id="reset-copy-btn" onclick="copyResetLink()">Kopieren</button>
+                    </div>
+                </div>
             <?php endif; ?>
 
             <div class="invite-form">
@@ -267,6 +311,11 @@ try {
                                 <td>
                                     <a href="benutzer_edit.php?id=<?= $u['id'] ?>" class="btn-action">Bearbeiten</a>
                                     <?php if ($u['id'] != $user['id']): ?>
+                                        <form method="post" action="api/user_reset_link.php" class="inline-form">
+                                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                                            <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
+                                            <button type="submit" class="btn-action" onclick="return confirm('Passwort-Reset-Link für <?= htmlspecialchars($u['name'], ENT_QUOTES) ?> erzeugen?')">Reset-Link</button>
+                                        </form>
                                         <?php if ($u['active']): ?>
                                             <form method="post" action="api/user_deactivate.php" class="inline-form">
                                                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
@@ -313,6 +362,24 @@ try {
             link.addEventListener('click', closeSidebar);
         });
     })();
+
+    function copyResetLink() {
+        var input = document.getElementById('reset-link-input');
+        var btn = document.getElementById('reset-copy-btn');
+        if (!input) return;
+        input.select();
+        var done = function () {
+            var label = btn.textContent;
+            btn.textContent = 'Kopiert ✓';
+            setTimeout(function () { btn.textContent = label; }, 1500);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(input.value).then(done).catch(function () { document.execCommand('copy'); done(); });
+        } else {
+            document.execCommand('copy');
+            done();
+        }
+    }
     </script>
 </body>
 </html>

@@ -15,6 +15,7 @@ $error = '';
 $success = false;
 $invite = null;
 $user = null;
+$isReset = false;
 
 if ($token === '' || strlen($token) > 64) {
     $error = 'Ungültiger Einladungslink.';
@@ -23,7 +24,7 @@ if ($token === '' || strlen($token) > 64) {
         $pdo = getDbConnection();
 
         $stmt = $pdo->prepare('
-            SELECT it.*, u.name, u.email, u.role
+            SELECT it.*, u.name, u.email, u.role, u.active, u.pass_hash
             FROM invite_tokens it
             JOIN users u ON it.user_id = u.id
             WHERE it.token = :token
@@ -31,12 +32,15 @@ if ($token === '' || strlen($token) > 64) {
         $stmt->execute(['token' => $token]);
         $invite = $stmt->fetch();
 
+        // Reset = bestehender, aktiver Account mit Passwort; sonst Erst-Einladung.
+        $isReset = $invite && $invite['active'] && $invite['pass_hash'] !== '';
+
         if (!$invite) {
-            $error = 'Einladungslink nicht gefunden.';
+            $error = $isReset ? 'Reset-Link nicht gefunden.' : 'Einladungslink nicht gefunden.';
         } elseif ($invite['used_at']) {
-            $error = 'Diese Einladung wurde bereits verwendet.';
+            $error = $isReset ? 'Dieser Reset-Link wurde bereits verwendet.' : 'Diese Einladung wurde bereits verwendet.';
         } elseif (strtotime($invite['expires_at']) < time()) {
-            $error = 'Diese Einladung ist abgelaufen. Bitte fordere eine neue an.';
+            $error = $isReset ? 'Dieser Reset-Link ist abgelaufen. Bitte fordere einen neuen an.' : 'Diese Einladung ist abgelaufen. Bitte fordere eine neue an.';
         } else {
             $user = $invite;
         }
@@ -71,7 +75,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $user && !$error) {
 
             $pdo->commit();
 
-            $_SESSION['flash_success'] = 'Dein Account ist aktiviert. Du kannst dich jetzt anmelden.';
+            $_SESSION['flash_success'] = $isReset
+                ? 'Dein neues Passwort ist gespeichert. Du kannst dich jetzt anmelden.'
+                : 'Dein Account ist aktiviert. Du kannst dich jetzt anmelden.';
             header('Location: login.php');
             exit;
 
@@ -93,7 +99,7 @@ $basePath = '../';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
-    <title>Einladung annehmen | ATSV Kirchseeon Marktlauf</title>
+    <title><?= $isReset ? 'Passwort zurücksetzen' : 'Einladung annehmen' ?> | ATSV Kirchseeon Marktlauf</title>
     <?php require_once __DIR__ . '/../src/layout/head.php'; ?>
     <style>
         .invite-section {
@@ -199,10 +205,10 @@ $basePath = '../';
             </div>
             <?php elseif ($user): ?>
             <div class="invite-card">
-                <h1>Willkommen!</h1>
+                <h1><?= $isReset ? 'Passwort zurücksetzen' : 'Willkommen!' ?></h1>
 
                 <div class="invite-info">
-                    <p>Du wurdest eingeladen als</p>
+                    <p><?= $isReset ? 'Neues Passwort für' : 'Du wurdest eingeladen als' ?></p>
                     <p><strong><?= htmlspecialchars($user['name']) ?></strong></p>
                     <p><?= htmlspecialchars($user['email']) ?></p>
                 </div>
@@ -225,7 +231,7 @@ $basePath = '../';
                         <input type="password" id="password_confirm" name="password_confirm" required minlength="12">
                     </div>
 
-                    <button type="submit" class="btn btn-primary btn-block">Account aktivieren</button>
+                    <button type="submit" class="btn btn-primary btn-block"><?= $isReset ? 'Neues Passwort speichern' : 'Account aktivieren' ?></button>
                 </form>
             </div>
             <?php endif; ?>
