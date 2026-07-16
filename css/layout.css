@@ -308,12 +308,17 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 8px;
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
     color: #fff;
     background-color: rgba(255, 255, 255, 0.12);
     transition: filter 0.2s ease, transform 0.2s ease;
+}
+
+.footer-social-link svg {
+    width: 28px;
+    height: 28px;
 }
 
 .footer-social-link:hover {
