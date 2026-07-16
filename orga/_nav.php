@@ -67,6 +67,23 @@ return [
         },
     ],
     [
+        'key'   => 'helfer_draht',
+        'label' => 'Helfer-Draht',
+        'href'  => 'helfer_verzeichnis.php',
+        'kpi'   => static function (PDO $pdo): array {
+            $best = (int) $pdo->query("SELECT COUNT(*) FROM helfer WHERE status = 'bestaetigt'")->fetchColumn();
+            $notfall = 0;
+            try {
+                $notfall = (int) $pdo->query("SELECT COUNT(*) FROM briefings WHERE sichtbar = 1 AND prioritaet = 'notfall'")->fetchColumn();
+            } catch (PDOException $e) { /* Tabelle evtl. noch nicht da */ }
+            return [
+                'value'  => (string) $best,
+                'label'  => 'erreichbare Helfer' . ($notfall > 0 ? " · {$notfall} Notfall-Info" : ''),
+                'signal' => $notfall > 0 ? 'attention' : 'neutral',
+            ];
+        },
+    ],
+    [
         'key'   => 'sponsoren',
         'label' => 'Sponsoren',
         'href'  => 'sponsoren.php',

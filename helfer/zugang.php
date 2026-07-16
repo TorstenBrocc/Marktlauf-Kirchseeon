@@ -78,6 +78,27 @@ if (!$error) {
     }
 }
 
+// Briefings (sichtbar) + Gruppen-Links für den Helfer-Draht
+$briefings = [];
+$telegramUrl = '';
+$whatsappUrl = '';
+if (!$error) {
+    try {
+        $pdo = getDbConnection();
+        $briefings = $pdo->query(
+            'SELECT text, prioritaet, created_at FROM briefings WHERE sichtbar = 1 ORDER BY id DESC LIMIT 30'
+        )->fetchAll();
+    } catch (PDOException $e) { /* Migration 019 evtl. noch nicht angewandt */ }
+    try {
+        $pdo = getDbConnection();
+        $g = $pdo->query("SELECT `key`, `value` FROM einstellungen WHERE `key` IN ('telegram_gruppe_url','whatsapp_gruppe_url')");
+        foreach ($g->fetchAll(PDO::FETCH_KEY_PAIR) as $k => $v) {
+            if ($k === 'telegram_gruppe_url') { $telegramUrl = (string) ($v ?? ''); }
+            if ($k === 'whatsapp_gruppe_url') { $whatsappUrl = (string) ($v ?? ''); }
+        }
+    } catch (PDOException $e) { /* egal */ }
+}
+
 function formatEinsatzZeit(array $s): string {
     $parts = [];
     if (!empty($s['tag'])) {
@@ -354,6 +375,18 @@ $basePath = '../';
         .contact-item a:hover {
             text-decoration: underline;
         }
+        .briefing-block { margin-bottom: 1rem; }
+        .briefing-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--space-sm); }
+        .briefing-item { padding: var(--space-md); background: var(--gray-50); border-left: 3px solid var(--gray-300); border-radius: var(--radius-md); }
+        .briefing-item.p-wichtig { border-left-color: var(--color-primary); background: #eef7f0; }
+        .briefing-item.p-notfall { border-left-color: #d32f2f; background: #fdecea; }
+        .briefing-prio { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; color: var(--gray-500); }
+        .briefing-item.p-notfall .briefing-prio { color: #d32f2f; }
+        .briefing-time { font-size: 0.7rem; color: var(--gray-500); margin-top: var(--space-xs); }
+        .gruppe-join { display: flex; gap: var(--space-sm); flex-wrap: wrap; margin-top: var(--space-sm); }
+        .btn-telegram, .btn-whatsapp { padding: var(--space-sm) var(--space-md); border-radius: var(--radius-md); text-decoration: none; font-size: var(--text-sm); color: #fff; }
+        .btn-telegram { background: #229ED9; }
+        .btn-whatsapp { background: #25D366; }
         .error-section {
             text-align: center;
             padding: var(--space-xxl) var(--space-md);
@@ -387,6 +420,31 @@ $basePath = '../';
                 <h1>Hallo, <?= htmlspecialchars($helfer['vorname']) ?>!</h1>
                 <p>Hier findest du alle Infos zu deiner Helfer-Anmeldung beim Marktlauf Kirchseeon.</p>
             </div>
+
+            <?php if (!empty($briefings) || $telegramUrl !== '' || $whatsappUrl !== ''): ?>
+            <section class="zugang-section briefing-block">
+                <h2>Infos &amp; Briefings</h2>
+                <?php if (!empty($briefings)): ?>
+                <ul class="briefing-list">
+                    <?php foreach ($briefings as $b): $prio = $b['prioritaet']; ?>
+                    <li class="briefing-item p-<?= htmlspecialchars($prio) ?>">
+                        <?php if ($prio !== 'normal'): ?><span class="briefing-prio"><?= $prio === 'notfall' ? '⚠️ Notfall' : 'Wichtig' ?></span><br><?php endif; ?>
+                        <?= nl2br(htmlspecialchars($b['text'])) ?>
+                        <div class="briefing-time"><?= date('d.m.Y H:i', strtotime($b['created_at'])) ?> Uhr</div>
+                    </li>
+                    <?php endforeach; ?>
+                </ul>
+                <?php else: ?>
+                <p style="color: var(--gray-600); font-size: var(--text-sm);">Aktuell keine Infos.</p>
+                <?php endif; ?>
+                <?php if ($telegramUrl !== '' || $whatsappUrl !== ''): ?>
+                <div class="gruppe-join">
+                    <?php if ($telegramUrl !== ''): ?><a class="btn-telegram" href="<?= htmlspecialchars($telegramUrl) ?>" target="_blank" rel="noopener">Telegram-Gruppe beitreten</a><?php endif; ?>
+                    <?php if ($whatsappUrl !== ''): ?><a class="btn-whatsapp" href="<?= htmlspecialchars($whatsappUrl) ?>" target="_blank" rel="noopener">WhatsApp-Gruppe beitreten</a><?php endif; ?>
+                </div>
+                <?php endif; ?>
+            </section>
+            <?php endif; ?>
 
             <div class="zugang-grid">
             <section class="zugang-section">
