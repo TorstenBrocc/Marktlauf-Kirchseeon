@@ -311,14 +311,27 @@
     width: 40px;
     height: 40px;
     border-radius: 8px;
-    color: var(--gray-300);
-    background-color: rgba(255, 255, 255, 0.06);
-    transition: color 0.2s ease, background-color 0.2s ease;
+    color: #fff;
+    background-color: rgba(255, 255, 255, 0.12);
+    transition: filter 0.2s ease, transform 0.2s ease;
 }
 
 .footer-social-link:hover {
-    color: var(--white);
-    background-color: var(--color-primary);
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+}
+
+/* Offizielle Plattform-Farben, Icon weiß */
+.footer-social-link.social-instagram {
+    background: radial-gradient(circle at 30% 110%, #fdf497 0%, #fd5949 45%, #d6249f 60%, #285aeb 90%);
+}
+
+.footer-social-link.social-facebook {
+    background-color: #1877f2;
+}
+
+.footer-social-link.social-strava {
+    background-color: #fc4c02;
 }
 
 .footer-bottom {
