@@ -12,14 +12,21 @@ require_once __DIR__ . '/../../src/logger.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
+$kategorie = $_GET['kategorie'] ?? '';
+
 try {
     $pdo = getDbConnection();
-    $stmt = $pdo->query(
-        "SELECT id, originalname, kategorie, bereich
-           FROM dateien
-          WHERE mimetype IN ('image/png', 'image/jpeg')
-          ORDER BY id DESC"
-    );
+    $sql = "SELECT id, originalname, kategorie, bereich
+              FROM dateien
+             WHERE mimetype IN ('image/png', 'image/jpeg')";
+    $params = [];
+    if ($kategorie !== '') {
+        $sql .= ' AND kategorie = :kat';
+        $params['kat'] = $kategorie;
+    }
+    $sql .= ' ORDER BY id DESC';
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
     $images = [];
     foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
         $images[] = [
