@@ -13,6 +13,9 @@
  *   label  string    Anzeigename
  *   href   ?string   Ziel-Datei; null = deaktiviert (kein Link, nur Hinweis)
  *   admin  bool      nur für Admins sichtbar (default false)
+ *   section ?string  Sidebar-Abschnitts-Überschrift; aufeinanderfolgende Items mit
+ *                    gleichem Wert werden unter EINER Überschrift gruppiert. Ohne
+ *                    section erscheint das Item ohne Überschrift (z. B. Dashboard).
  *   badge  ?string   kleines Label rechts (z. B. Phase-Kennzeichnung)
  *   tile   bool      als Dashboard-Kachel zeigen (default true; false = nur Sidebar)
  *   kpi    ?callable fn(PDO $pdo): array{value:string, label:string, signal:string}
@@ -35,9 +38,10 @@ return [
         'tile'  => false, // ist die aktuelle Seite — keine Selbst-Kachel
     ],
     [
-        'key'   => 'helfer',
-        'label' => 'Helfer',
-        'href'  => 'helfer.php',
+        'key'     => 'helfer',
+        'label'   => 'Helfer',
+        'section' => 'HELFER-ORGA',
+        'href'    => 'helfer.php',
         'kpi'   => static function (PDO $pdo): array {
             $anzahl = (int) $pdo->query('SELECT COUNT(*) FROM helfer')->fetchColumn();
             $neu    = (int) $pdo->query("SELECT COUNT(*) FROM helfer WHERE status = 'neu'")->fetchColumn();
@@ -49,9 +53,10 @@ return [
         },
     ],
     [
-        'key'   => 'schichten',
-        'label' => 'Einsatzplan',
-        'href'  => 'schichten.php',
+        'key'     => 'schichten',
+        'label'   => 'Einsatzplan',
+        'section' => 'HELFER-ORGA',
+        'href'    => 'schichten.php',
         'kpi'   => static function (PDO $pdo): array {
             $bedarf    = (int) $pdo->query('SELECT COALESCE(SUM(bedarf), 0) FROM schichten')->fetchColumn();
             $zugeteilt = (int) $pdo->query('SELECT COUNT(*) FROM schicht_zuteilung')->fetchColumn();
@@ -67,9 +72,10 @@ return [
         },
     ],
     [
-        'key'   => 'helfer_draht',
-        'label' => 'Helfer-Draht',
-        'href'  => 'helfer_verzeichnis.php',
+        'key'     => 'helfer_draht',
+        'label'   => 'Helfer-Draht',
+        'section' => 'HELFER-ORGA',
+        'href'    => 'helfer_verzeichnis.php',
         'kpi'   => static function (PDO $pdo): array {
             $best = (int) $pdo->query("SELECT COUNT(*) FROM helfer WHERE status = 'bestaetigt'")->fetchColumn();
             $notfall = 0;
@@ -84,9 +90,10 @@ return [
         },
     ],
     [
-        'key'   => 'sponsoren',
-        'label' => 'Sponsoren',
-        'href'  => 'sponsoren.php',
+        'key'     => 'sponsoren',
+        'label'   => 'Sponsoren',
+        'section' => 'SPONSOREN-HANDLING',
+        'href'    => 'sponsoren.php',
         'kpi'   => static function (PDO $pdo): array {
             $anzahl = (int) $pdo->query('SELECT COUNT(*) FROM sponsors')->fetchColumn();
             $summe  = (float) $pdo->query("SELECT COALESCE(SUM(summe), 0) FROM sponsors WHERE status IN ('zugesagt', 'bezahlt')")->fetchColumn();
@@ -98,9 +105,10 @@ return [
         },
     ],
     [
-        'key'   => 'sponsor_briefe',
-        'label' => 'Sponsorenbriefe',
-        'href'  => 'sponsor_briefe.php',
+        'key'     => 'sponsor_briefe',
+        'label'   => 'Sponsorenbriefe',
+        'section' => 'SPONSOREN-HANDLING',
+        'href'    => 'sponsor_briefe.php',
         'kpi'   => static function (PDO $pdo): array {
             $offen = (int) $pdo->query("SELECT COUNT(*) FROM sponsor_versand_queue WHERE status = 'offen'")->fetchColumn();
             return [
@@ -111,9 +119,10 @@ return [
         },
     ],
     [
-        'key'   => 'social_media',
-        'label' => 'Social Media',
-        'href'  => 'social_orchestrator.php',
+        'key'     => 'social_media',
+        'label'   => 'Social-Media',
+        'section' => 'KOMMUNIKATION',
+        'href'    => 'social_orchestrator.php',
         'kpi'   => static function (PDO $pdo): array {
             $entwuerfe = (int) $pdo->query("SELECT COUNT(*) FROM post_race_contents WHERE status = 'draft'")->fetchColumn();
             return [
@@ -124,9 +133,16 @@ return [
         },
     ],
     [
-        'key'   => 'dateien',
-        'label' => 'Dateien',
-        'href'  => 'dateien.php',
+        'key'     => 'live_ticker',
+        'label'   => 'Live-Ticker',
+        'section' => 'KOMMUNIKATION',
+        'href'    => null, // noch nicht gebaut, nicht klickbar
+    ],
+    [
+        'key'     => 'dateien',
+        'label'   => 'Dateien',
+        'section' => 'ABLAGE',
+        'href'    => 'dateien.php',
         'kpi'   => static function (PDO $pdo): array {
             $anzahl = (int) $pdo->query('SELECT COUNT(*) FROM dateien')->fetchColumn();
             return [
@@ -137,27 +153,26 @@ return [
         },
     ],
     [
-        'key'   => 'ci',
-        'label' => 'CI & Design',
-        'href'  => 'ci.php',
-        // Kein KPI: reine Referenz-Seite → Kachel ist ein Absprung-Link.
-    ],
-    [
-        'key'   => 'live_ticker',
-        'label' => 'Live-Ticker',
-        'href'  => null, // noch nicht gebaut, nicht klickbar
-    ],
-    [
-        'key'   => 'benutzer',
-        'label' => 'Benutzerverwaltung',
-        'href'  => 'benutzer.php',
+        'key'     => 'benutzer',
+        'label'   => 'Benutzerverwaltung',
+        'section' => 'ADMIN',
+        'href'    => 'benutzer.php',
         'admin' => true,
         'tile'  => false, // Admin-Werkzeug — bleibt Sidebar-only, keine Kachel
     ],
     [
-        'key'   => 'einstellungen',
-        'label' => 'Einstellungen',
-        'href'  => 'einstellungen.php',
+        'key'     => 'ci',
+        'label'   => 'CI & Design',
+        'section' => 'ADMIN',
+        'href'    => 'ci.php',
+        // Für alle Orga sichtbar (kein admin-Flag), bleibt Dashboard-Kachel; steht in
+        // der Sidebar aber optisch im ADMIN-Abschnitt. Kein KPI → Absprung-Link.
+    ],
+    [
+        'key'     => 'einstellungen',
+        'label'   => 'Einstellungen',
+        'section' => 'ADMIN',
+        'href'    => 'einstellungen.php',
         'admin' => true,
         'tile'  => false,
     ],

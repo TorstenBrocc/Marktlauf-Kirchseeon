@@ -50,17 +50,26 @@ $renderNavItem = static function (array $item, string $activeNav): void {
                 <img src="../assets/images/logo-final.svg" alt="Marktlauf Logo" class="header-logo">
             </div>
             <ul class="nav-menu">
-                <?php foreach ($navItems as $item): ?>
-                    <?php if (!empty($item['admin'])) { continue; } ?>
-                    <?php $renderNavItem($item, $activeNav); ?>
-                <?php endforeach; ?>
-                <?php if ($isAdmin): ?>
-                <li class="nav-section">Admin</li>
-                    <?php foreach ($navItems as $item): ?>
-                        <?php if (empty($item['admin'])) { continue; } ?>
-                        <?php $renderNavItem($item, $activeNav); ?>
-                    <?php endforeach; ?>
-                <?php endif; ?>
+                <?php
+                // Sektions-Überschriften werden lazy ausgegeben: erst wenn das erste
+                // tatsächlich sichtbare Item eines neuen Abschnitts gerendert wird.
+                // So entsteht keine leere Überschrift, wenn alle Items eines Abschnitts
+                // (z. B. Admin-Werkzeuge für Nicht-Admins) weggefiltert wurden.
+                $lastSection = null;
+                foreach ($navItems as $item) {
+                    if (!empty($item['admin']) && !$isAdmin) {
+                        continue; // Admin-Werkzeuge nur für Admins
+                    }
+                    $section = $item['section'] ?? '';
+                    if ($section !== $lastSection) {
+                        if ($section !== '') {
+                            echo '<li class="nav-section">' . htmlspecialchars($section) . '</li>';
+                        }
+                        $lastSection = $section;
+                    }
+                    $renderNavItem($item, $activeNav);
+                }
+                ?>
             </ul>
             <div class="sidebar-footer">
                 <div class="user-info">
