@@ -337,9 +337,29 @@ function sponsorBriefBeispielContext(PDO $pdo, int $userId = 0): array {
 
 /* ---- Rendering ----------------------------------------------------------- */
 
+/**
+ * Platzhalter case-insensitiv ersetzen: {{Vorname}}, {{ VORNAME }} und {{vorname}}
+ * treffen alle denselben Wert. Unbekannte Platzhalter bleiben unverändert stehen
+ * (z. B. Block-Platzhalter, die separat behandelt werden). Ersetzt das früher
+ * genutzte strtr, das case-sensitiv war und getippte Groß-/Kleinschreibung nicht traf.
+ *
+ * @param array<string,string> $map  Schlüssel wie '{{vorname}}' => Wert
+ */
+function sponsorApplyInline(string $s, array $map): string {
+    $lookup = [];
+    foreach ($map as $token => $value) {
+        $lookup[strtolower(trim($token, '{} '))] = $value;
+    }
+    return preg_replace_callback(
+        '/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/',
+        static fn (array $m): string => $lookup[strtolower($m[1])] ?? $m[0],
+        $s
+    );
+}
+
 /** Betreff mit Inline-Platzhaltern füllen (reiner Text). */
 function sponsorBriefBetreff(string $betreff, array $ctx): string {
-    return strtr($betreff, $ctx['inline']);
+    return sponsorApplyInline($betreff, $ctx['inline']);
 }
 
 /** Markdown -> HTML (Parsedown wenn vorhanden, sonst sicherer Mini-Konverter). */
@@ -407,10 +427,10 @@ function sponsorMdToText(string $md): string {
  * rendern, danach die vertrauenswürdigen HTML-Blöcke (Tabelle, Signatur) einsetzen.
  */
 function sponsorBriefRenderHtml(string $md, array $ctx): string {
-    $md = strtr($md, $ctx['inline']);
+    $md = sponsorApplyInline($md, $ctx['inline']);
     // Block-Platzhalter durch Tokens ersetzen, die das Markdown-Rendering überleben.
     foreach (array_keys($ctx['blocksHtml']) as $name) {
-        $md = str_replace('{{' . $name . '}}', "%%BLOCK_{$name}%%", $md);
+        $md = str_ireplace('{{' . $name . '}}', "%%BLOCK_{$name}%%", $md);
     }
     $html = sponsorMdToHtml($md);
     foreach ($ctx['blocksHtml'] as $name => $blockHtml) {
@@ -429,5 +449,5 @@ function sponsorBriefRenderText(string $md, array $ctx): string {
     foreach ($ctx['blocksText'] as $name => $blockText) {
         $map['{{' . $name . '}}'] = $blockText;
     }
-    return sponsorMdToText(strtr($md, $map));
+    return sponsorMdToText(sponsorApplyInline($md, $map));
 }
