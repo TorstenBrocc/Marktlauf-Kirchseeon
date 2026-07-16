@@ -41,6 +41,37 @@ funktioniert der Versandweg inkl. BCC korrekt.
 TEXT;
 
 echo "Sende Testmail an {$to} (BCC: {$bcc}) …\n";
-$ok = sendMail($to, $subject, $body);
-echo $ok ? "✓ Versand-Funktion meldet Erfolg.\n" : "✗ Versand fehlgeschlagen (siehe storage/logs).\n";
+
+$mailer = getSmtpMailer();
+if ($mailer === null) {
+    echo "SMTP nicht konfiguriert — mail()-Fallback, keine BCC-Diagnose möglich.\n";
+    $ok = sendMail($to, $subject, $body);
+    echo $ok ? "✓ mail() meldet Erfolg.\n" : "✗ mail() fehlgeschlagen.\n";
+    exit($ok ? 0 : 1);
+}
+
+$dedup = (strcasecmp($bcc, $to) === 0);
+$ok = $mailer->send($to, $subject, $body, '', $dedup ? [] : [$bcc]);
+
+echo $ok ? "✓ Hauptversand an {$to}: OK\n" : "✗ Hauptversand fehlgeschlagen.\n";
+echo "--- BCC-Diagnose (SMTP-Ebene) ---\n";
+if ($dedup) {
+    echo "BCC == To ({$bcc}) → übersprungen (Dedup).\n";
+} else {
+    $report = $mailer->getBccReport();
+    if (empty($report)) {
+        echo "Kein BCC-RCPT ausgeführt.\n";
+    }
+    foreach ($report as $addr => $res) {
+        echo "  {$addr}: {$res}\n";
+    }
+    echo "\nDeutung:\n";
+    echo "  'accepted (250)' → Strato hat info@ akzeptiert; kommt es trotzdem nicht an,\n";
+    echo "                     liegt es an Google (Spam/Routing/Split-Delivery).\n";
+    echo "  'REJECTED: ...'  → Strato lehnt info@ ab (z.B. 550 no such user) →\n";
+    echo "                     Domain-/Split-Delivery-Problem, kein Code-Fehler.\n";
+}
+if ($mailer->getLastError() !== null) {
+    echo "lastError: " . $mailer->getLastError() . "\n";
+}
 exit($ok ? 0 : 1);

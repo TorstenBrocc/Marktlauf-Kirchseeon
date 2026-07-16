@@ -17,6 +17,9 @@ class SmtpMailer
     private int $timeout = 30;
     private ?string $lastError = null;
 
+    /** @var array<string,string> Diagnose: Ergebnis je BCC-RCPT (accepted / REJECTED: ...) */
+    private array $bccReport = [];
+
     /** @var resource|null */
     private $socket = null;
 
@@ -35,6 +38,12 @@ class SmtpMailer
         return $this->lastError;
     }
 
+    /** @return array<string,string> Ergebnis je BCC-RCPT (Diagnose). */
+    public function getBccReport(): array
+    {
+        return $this->bccReport;
+    }
+
     /**
      * @param string[] $bcc Blindkopie-Empfänger (kein Header, nur zusätzliches RCPT TO).
      *                       Ein fehlgeschlagenes BCC-RCPT bricht den Hauptversand NICHT ab.
@@ -42,6 +51,7 @@ class SmtpMailer
     public function send(string $to, string $subject, string $textBody, string $htmlBody = '', array $bcc = []): bool
     {
         $this->lastError = null;
+        $this->bccReport = [];
 
         if (empty($this->host) || empty($this->user) || empty($this->password)) {
             $this->lastError = 'SMTP not configured';
@@ -61,7 +71,8 @@ class SmtpMailer
                 if ($bccAddr === '' || strcasecmp($bccAddr, $to) === 0) {
                     continue; // leer oder identisch mit To -> keine Doppelzustellung
                 }
-                $this->rcptToOptional($bccAddr);
+                $accepted = $this->rcptToOptional($bccAddr);
+                $this->bccReport[$bccAddr] = $accepted ? 'accepted (250)' : ('REJECTED: ' . ($this->lastError ?? '?'));
             }
             $this->data($to, $subject, $textBody, $htmlBody);
             $this->quit();
