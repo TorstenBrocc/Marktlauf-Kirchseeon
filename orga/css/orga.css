@@ -483,6 +483,7 @@ a.card-tile:hover {
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 0.5rem;
 }
 
@@ -518,6 +519,57 @@ a.card-tile:hover {
 .btn-brand-trello { background: #0079BF; }
 .btn-brand-onedrive { background: #6264A7; }
 .btn-brand-github { background: #24292e; }
+.btn-brand-strava { background: #FC4C02; }
+
+/* Zugangsdaten-Hinweis je Schnellzugriff-Button (nur Admin sichtbar) */
+.qc-info {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-light);
+    font-size: 1rem;
+    line-height: 1;
+    padding: 0.15rem 0.3rem;
+    border-radius: 4px;
+}
+.qc-info:hover { color: var(--text); background: var(--border); }
+.qc-note {
+    flex-basis: 100%;
+    margin-top: 0.4rem;
+    padding: 0.5rem;
+    background: #f7f7f7;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+.qc-note-text {
+    width: 100%;
+    box-sizing: border-box;
+    font-family: monospace;
+    font-size: 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.4rem;
+    resize: vertical;
+    background: #fff;
+    color: var(--text);
+}
+.qc-note-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-top: 0.4rem;
+}
+.qc-copy {
+    padding: 0.25rem 0.6rem;
+    font-size: 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--white);
+    cursor: pointer;
+    color: var(--text);
+}
+.qc-copy:hover { background: var(--border); }
+.qc-edit { font-size: 0.75rem; }
 
 /* Mobile Header Bar */
 .mobile-header {

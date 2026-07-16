@@ -145,8 +145,7 @@ return [
     [
         'key'   => 'live_ticker',
         'label' => 'Live-Ticker',
-        'href'  => null, // Phase 3 — noch nicht gebaut, nicht klickbar
-        'badge' => 'Phase 3',
+        'href'  => null, // noch nicht gebaut, nicht klickbar
     ],
     [
         'key'   => 'benutzer',
