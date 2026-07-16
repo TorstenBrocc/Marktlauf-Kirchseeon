@@ -110,11 +110,16 @@ return [
         'section' => 'SPONSOREN-HANDLING',
         'href'    => 'sponsor_briefe.php',
         'kpi'   => static function (PDO $pdo): array {
-            $offen = (int) $pdo->query("SELECT COUNT(*) FROM sponsor_versand_queue WHERE status = 'offen'")->fetchColumn();
+            $offen  = (int) $pdo->query("SELECT COUNT(*) FROM sponsor_versand_queue WHERE status = 'offen'")->fetchColumn();
+            $fehler = (int) $pdo->query("SELECT COUNT(*) FROM sponsor_versand_queue WHERE status = 'fehler'")->fetchColumn();
+            $label = 'offen in Versand-Queue';
+            if ($fehler > 0) {
+                $label .= " · {$fehler} Fehler";
+            }
             return [
                 'value'  => (string) $offen,
-                'label'  => 'offen in Versand-Queue',
-                'signal' => $offen > 0 ? 'attention' : 'ok',
+                'label'  => $label,
+                'signal' => ($offen > 0 || $fehler > 0) ? 'attention' : 'ok',
             ];
         },
     ],

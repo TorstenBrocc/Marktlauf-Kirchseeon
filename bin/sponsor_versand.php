@@ -12,6 +12,13 @@
  *   MARKTLAUF_CLI=1 php bin/sponsor_versand.php
  *
  * Delay pro Mail: config['sponsor_versand_delay'] (Sekunden, Default 15).
+ *
+ * Optionen:
+ *   --retry   Vor dem Lauf alle 'fehler'-Einträge auf 'offen' zurücksetzen
+ *             (erneuter Versandversuch für zuvor fehlgeschlagene Mails).
+ *
+ * Concurrency: sichert sich per MySQL GET_LOCK ab, damit zwei parallele Läufe
+ * (z.B. Cron + manuell) nicht dieselben Mails doppelt versenden.
  */
 
 // Strato: SSH-Shell liefert cgi-fcgi statt cli → Bypass via MARKTLAUF_CLI=1
@@ -27,9 +34,24 @@ require_once __DIR__ . '/../src/sponsor_status.php';
 
 $config = getConfig();
 $delay = (int) ($config['sponsor_versand_delay'] ?? 15);
+$retry = in_array('--retry', $argv, true);
+
+const SPONSOR_VERSAND_LOCK = 'sponsor_versand_queue';
 
 try {
     $pdo = getDbConnection();
+
+    // Nur ein Versandlauf gleichzeitig (Cron + manuell dürfen sich nicht überholen).
+    $gotLock = (int) $pdo->query("SELECT GET_LOCK('" . SPONSOR_VERSAND_LOCK . "', 0)")->fetchColumn();
+    if ($gotLock !== 1) {
+        echo "Ein anderer Versandlauf ist bereits aktiv (Lock gesetzt). Abbruch.\n";
+        exit(0);
+    }
+
+    if ($retry) {
+        $reopened = $pdo->exec("UPDATE sponsor_versand_queue SET status = 'offen', fehler_text = NULL WHERE status = 'fehler'");
+        echo "Retry: {$reopened} fehlgeschlagene Einträge auf 'offen' zurückgesetzt.\n";
+    }
 
     $stmt = $pdo->query("
         SELECT id, sponsor_id, email, anrede, vorname, nachname, firma, paket, anschreiben_typ, angefordert_von
@@ -92,7 +114,11 @@ try {
         }
     }
 
+    $pdo->query("SELECT RELEASE_LOCK('" . SPONSOR_VERSAND_LOCK . "')");
     echo "\nFertig. Gesendet: {$sent}, Fehlgeschlagen: {$failed}\n";
+    if ($failed > 0) {
+        echo "Hinweis: {$failed} fehlgeschlagen — erneuter Versuch mit: php bin/sponsor_versand.php --retry\n";
+    }
 } catch (PDOException $e) {
     logError('Sponsor-Versand CLI DB error: ' . $e->getMessage());
     echo "Datenbankfehler: {$e->getMessage()}\n";

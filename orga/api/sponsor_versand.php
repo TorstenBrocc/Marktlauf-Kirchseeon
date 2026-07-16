@@ -164,8 +164,9 @@ try {
         $queued++;
     }
 
-    $_SESSION['flash_success'] = "{$queued} Anschreiben in die Sende-Queue gestellt. "
-        . 'Der Versand läuft über das CLI-Script (bin/sponsor_versand.php).' . $hinweis;
+    $_SESSION['flash_success'] = "{$queued} Anschreiben in die Sende-Queue gestellt (Status „offen“). "
+        . 'ACHTUNG: Der Versand startet NICHT automatisch — er muss über das CLI-Script '
+        . 'ausgelöst werden (bin/sponsor_versand.php per SSH).' . $hinweis;
     header('Location: ../sponsoren.php');
     exit;
 } catch (PDOException $e) {
