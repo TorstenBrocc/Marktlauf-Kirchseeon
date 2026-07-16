@@ -330,6 +330,11 @@ try {
                                                 <input type="hidden" name="action" value="activate">
                                                 <button type="submit" class="btn-action btn-success">Aktivieren</button>
                                             </form>
+                                            <form method="post" action="api/user_delete.php" class="inline-form">
+                                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                                                <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
+                                                <button type="submit" class="btn-action btn-danger" onclick="return confirm('Benutzer „<?= htmlspecialchars($u['name'], ENT_QUOTES) ?>“ endgültig löschen? Das kann nicht rückgängig gemacht werden.')">Löschen</button>
+                                            </form>
                                         <?php endif; ?>
                                     <?php endif; ?>
                                 </td>
