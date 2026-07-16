@@ -17,7 +17,7 @@ function dateiKategorien(): array
         'konzept'   => 'Konzept / Planung',
         'sponsoren' => 'Sponsoren',
         'einsatz'   => 'Einsatzplan',
-        'presse'    => 'Presse / Öffentlichkeit',
+        'presse'    => 'Social-Media Assets',
         'finanzen'  => 'Finanzen',
         'sonstiges' => 'Sonstiges',
     ];

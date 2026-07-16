@@ -63,6 +63,26 @@ try {
     // Tabelle/Spalten existieren evtl. noch nicht
 }
 $raceresultConfigured = $raceresultApiUrl !== '';
+
+// Repo-Assets (Logos/Marken) für die Grafik — rekursiver Scan über assets/images.
+// Statische Dateien → Vorschau lädt zuverlässig (kein Auth-Endpoint). SVG bewusst
+// ausgeklammert (html2canvas rastert SVG unzuverlässig).
+$repoAssets = [];
+$assetsRoot = realpath(__DIR__ . '/../assets/images');
+if ($assetsRoot !== false && is_dir($assetsRoot)) {
+    $rii = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($assetsRoot, FilesystemIterator::SKIP_DOTS)
+    );
+    foreach ($rii as $file) {
+        if (!$file->isFile()) { continue; }
+        if (!in_array(strtolower($file->getExtension()), ['png', 'jpg', 'jpeg', 'webp'], true)) { continue; }
+        $rel = ltrim(str_replace($assetsRoot, '', $file->getPathname()), '/\\');
+        $rel = str_replace('\\', '/', $rel);
+        $url = '../assets/images/' . implode('/', array_map('rawurlencode', explode('/', $rel)));
+        $repoAssets[] = ['label' => $rel, 'url' => $url];
+    }
+    usort($repoAssets, static fn ($a, $b) => strcasecmp($a['label'], $b['label']));
+}
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -423,8 +443,8 @@ $raceresultConfigured = $raceresultApiUrl !== '';
                 </div>
             </div>
             <div class="so-photo-row">
-                <span style="font-size:0.85rem;color:var(--text-light)">Logo:</span>
-                <button class="btn btn-small btn-secondary" id="so-pick-logo">Aus Datei-Ablage wählen</button>
+                <span style="font-size:0.85rem;color:var(--text-light)">Logo (aus Repo-Assets):</span>
+                <button class="btn btn-small btn-secondary" id="so-pick-logo">Logo wählen</button>
                 <span id="so-logo-name" style="font-size:0.82rem;color:var(--text-light)">ATSV-Logo (Standard)</span>
                 <button class="btn btn-small btn-secondary" id="so-reset-logo" style="display:none">Standard</button>
             </div>
@@ -435,6 +455,10 @@ $raceresultConfigured = $raceresultApiUrl !== '';
                 <span id="so-photo-name" style="font-size:0.82rem;color:var(--text-light)">kein Foto</span>
                 <button class="btn btn-small btn-secondary" id="so-clear-photo" style="display:none">entfernen</button>
             </div>
+            <p style="font-size:0.8rem;color:var(--text-light);margin:0.3rem 0 0">
+                Fotos (z. B. Siegerehrung) zuerst in der <a href="dateien.php?tab=orga&amp;kat=presse" style="color:var(--primary)">Datei-Ablage</a>
+                unter der Kategorie <strong>„Social-Media Assets"</strong> hochladen — sie erscheinen dann hier zur Auswahl.
+            </p>
             <div class="so-photo-picker" id="so-photo-picker" style="display:none"></div>
             <div class="so-actions" style="margin-top:0.75rem">
                 <button class="btn btn-secondary" id="so-render-card">Grafik erzeugen</button>
@@ -737,6 +761,7 @@ const CARD_FORMATS = {
     story:    { w: 1080, h: 1920, label: 'Story 1080×1920' },
 };
 const DEFAULT_LOGO = <?= json_encode('../assets/images/ATSV_Logo-750x968.png') ?>;
+const repoAssets = <?= json_encode($repoAssets, JSON_UNESCAPED_UNICODE) ?>;
 let selectedPhotoUrl = '';
 let logoUrl = DEFAULT_LOGO;
 
@@ -798,41 +823,49 @@ function waitImg(img) {
     });
 }
 
-// Bild-Picker aus der Datei-Ablage — wiederverwendbar für Hintergrundfoto und Logo
-function attachPicker(btnId, panelId, onPick) {
+// Thumbnails rendern (items: [{url, name}]); Name per textContent -> kein XSS
+function renderThumbs(panel, items, onPick) {
+    panel.innerHTML = '';
+    if (!items.length) { panel.textContent = 'Keine Bilder gefunden.'; return; }
+    items.forEach(function(img) {
+        const t  = document.createElement('div'); t.className = 'so-thumb';
+        const im = document.createElement('img'); im.src = img.url; im.alt = '';
+        const nm = document.createElement('span'); nm.textContent = img.name;
+        t.appendChild(im); t.appendChild(nm);
+        t.addEventListener('click', function() { onPick(img); panel.style.display = 'none'; });
+        panel.appendChild(t);
+    });
+}
+// Picker aus der Datei-Ablage (Fetch, optional nach Kategorie gefiltert)
+function attachPicker(btnId, panelId, onPick, kategorie) {
     const panel = document.getElementById(panelId);
     document.getElementById(btnId).addEventListener('click', async () => {
         if (panel.style.display !== 'none') { panel.style.display = 'none'; return; }
-        panel.textContent = 'lädt …';
-        panel.style.display = 'flex';
+        panel.textContent = 'lädt …'; panel.style.display = 'flex';
         try {
-            const r = await fetch('api/dateien_images.php');
+            const q = kategorie ? ('?kategorie=' + encodeURIComponent(kategorie)) : '';
+            const r = await fetch('api/dateien_images.php' + q);
             const d = await r.json();
-            panel.innerHTML = '';
-            if (!d.ok || !d.images.length) {
-                panel.textContent = 'Keine Bilder in der Datei-Ablage.';
-                return;
-            }
-            d.images.forEach(function(img) {
-                const t   = document.createElement('div');
-                t.className = 'so-thumb';
-                const im  = document.createElement('img'); im.src = img.url; im.alt = '';
-                const nm  = document.createElement('span'); nm.textContent = img.name; // kein innerHTML -> kein XSS
-                t.appendChild(im); t.appendChild(nm);
-                t.addEventListener('click', function() { onPick(img); panel.style.display = 'none'; });
-                panel.appendChild(t);
-            });
-        } catch (e) {
-            panel.textContent = 'Fehler beim Laden.';
-        }
+            if (!d.ok) { panel.textContent = 'Fehler beim Laden.'; return; }
+            renderThumbs(panel, (d.images || []).map(i => ({url: i.url, name: i.name})), onPick);
+        } catch (e) { panel.textContent = 'Fehler beim Laden.'; }
+    });
+}
+// Picker aus statischer Liste (Repo-Assets)
+function attachStaticPicker(btnId, panelId, items, onPick) {
+    const panel = document.getElementById(panelId);
+    document.getElementById(btnId).addEventListener('click', () => {
+        if (panel.style.display !== 'none') { panel.style.display = 'none'; return; }
+        panel.style.display = 'flex';
+        renderThumbs(panel, items.map(i => ({url: i.url, name: i.label})), onPick);
     });
 }
 attachPicker('so-pick-photo', 'so-photo-picker', function(img) {
     selectedPhotoUrl = img.url;
     document.getElementById('so-photo-name').textContent = img.name;
     document.getElementById('so-clear-photo').style.display = 'inline-flex';
-});
-attachPicker('so-pick-logo', 'so-logo-picker', function(img) {
+}, 'presse');
+attachStaticPicker('so-pick-logo', 'so-logo-picker', repoAssets, function(img) {
     logoUrl = img.url;
     document.getElementById('so-logo-name').textContent = img.name;
     document.getElementById('so-reset-logo').style.display = 'inline-flex';
