@@ -17,18 +17,19 @@ $navItems  = require __DIR__ . '/_nav.php';
 /**
  * Ein Navigations-Item rendern (Link oder deaktivierter Hinweis inkl. Badge).
  */
-$renderNavItem = static function (array $item, string $activeNav): void {
+$renderNavItem = static function (array $item, string $activeNav, bool $indent = false): void {
     $isActive = ($item['key'] ?? '') === $activeNav;
+    $liClass  = 'nav-item' . ($indent ? ' nav-item-sub' : '') . ($isActive ? ' active' : '');
     $badge    = isset($item['badge'])
         ? ' <span class="badge">' . htmlspecialchars($item['badge']) . '</span>'
         : '';
     if (empty($item['href'])) {
-        echo '<li class="nav-item">'
+        echo '<li class="' . $liClass . '">'
             . '<span class="nav-disabled">' . htmlspecialchars($item['label']) . '</span>'
             . $badge . '</li>';
         return;
     }
-    echo '<li class="nav-item' . ($isActive ? ' active' : '') . '">'
+    echo '<li class="' . $liClass . '">'
         . '<a href="' . htmlspecialchars($item['href']) . '">' . htmlspecialchars($item['label']) . $badge . '</a>'
         . '</li>';
 };
@@ -67,7 +68,9 @@ $renderNavItem = static function (array $item, string $activeNav): void {
                         }
                         $lastSection = $section;
                     }
-                    $renderNavItem($item, $activeNav);
+                    // Items mit Abschnitts-Überschrift werden eingerückt, damit sie
+                    // optisch klar unter ihrer Überschrift hängen (Dashboard bleibt bündig).
+                    $renderNavItem($item, $activeNav, $section !== '');
                 }
                 ?>
             </ul>

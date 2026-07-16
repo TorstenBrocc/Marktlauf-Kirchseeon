@@ -329,6 +329,12 @@ body {
     font-weight: 500;
 }
 
+/* Items unter einer Abschnitts-Überschrift einrücken (Dashboard bleibt bündig) */
+.nav-item-sub a,
+.nav-item-sub .nav-disabled {
+    padding-left: 2.25rem;
+}
+
 /* Noch nicht gebautes Nav-Ziel (z. B. Live-Ticker, Phase 3): sichtbar, aber nicht klickbar */
 .nav-item .nav-disabled {
     display: flex;
