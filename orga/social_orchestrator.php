@@ -218,6 +218,10 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
         .so-thumb img { width: 100%; height: 68px; object-fit: cover; border-radius: 4px; display: block; }
         .so-thumb span { font-size: 0.66rem; color: var(--text-light); display: block; margin-top: 2px;
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .so-chips { display: flex; gap: 0.4rem; flex-wrap: wrap; margin: 0.5rem 0; }
+        .so-chip { display: inline-flex; align-items: center; gap: 0.35rem; background: var(--bg);
+            border: 1px solid var(--border); border-radius: 12px; padding: 0.15rem 0.2rem 0.15rem 0.6rem; font-size: 0.78rem; }
+        .so-chip button { border: none; background: none; cursor: pointer; color: #b91c1c; font-size: 0.9rem; line-height: 1; padding: 0 0.3rem; }
 
         /* Die eigentliche Render-Card (off-screen, echte Pixelgröße) — Höhe wird
            je Format per JS gesetzt (1080×1080 / 1080×1350 / 1080×1920). */
@@ -234,7 +238,8 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
         .sc-overlay { position: absolute; inset: 0; z-index: 1;
             background: linear-gradient(145deg, #009640 0%, #007230 100%); }
         #social-share-card > *:not(.sc-bg):not(.sc-overlay) { position: relative; z-index: 2; }
-        .sc-logo { width: 140px; height: auto; position: absolute; top: 60px; right: 60px; z-index: 3; }
+        .sc-logos { display: flex; flex-wrap: wrap; gap: 40px; align-items: center; margin-bottom: 24px; }
+        .sc-logos img { height: 96px; width: auto; max-width: 340px; object-fit: contain; }
         .sc-event { font-size: 28px; font-weight: 400; opacity: 0.85; margin-bottom: 16px; }
         .sc-headline { font-size: 72px; font-weight: 700; line-height: 1.1; margin-bottom: 0; }
         .sc-metrics { display: flex; flex-direction: column; gap: 36px; }
@@ -372,7 +377,6 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
             <div id="social-share-card">
                 <img class="sc-bg" id="sc-bg" alt="" style="display:none">
                 <div class="sc-overlay" id="sc-overlay"></div>
-                <img class="sc-logo" id="sc-logo-img" src="../assets/images/ATSV_Logo-750x968.png" alt="">
                 <div>
                     <div class="sc-event" id="sc-event">Marktlauf Kirchseeon · 20. September 2026</div>
                     <div class="sc-headline">Danke &amp; Glückwunsch!</div>
@@ -402,6 +406,7 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                     </div>
                 </div>
                 <div class="sc-highlight" id="sc-highlight"></div>
+                <div class="sc-logos" id="sc-logos"></div>
                 <div class="sc-footer">
                     <span class="sc-url">atsv-kirchseeon-marktlauf.de</span>
                     <span class="sc-wordmark">ATSV Kirchseeon</span>
@@ -443,11 +448,11 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                 </div>
             </div>
             <div class="so-photo-row">
-                <span style="font-size:0.85rem;color:var(--text-light)">Logo (aus Repo-Assets):</span>
-                <button class="btn btn-small btn-secondary" id="so-pick-logo">Logo wählen</button>
-                <span id="so-logo-name" style="font-size:0.82rem;color:var(--text-light)">ATSV-Logo (Standard)</span>
-                <button class="btn btn-small btn-secondary" id="so-reset-logo" style="display:none">Standard</button>
+                <span style="font-size:0.85rem;color:var(--text-light)">Logos (Repo-Assets, mehrere möglich):</span>
+                <button class="btn btn-small btn-secondary" id="so-pick-logo">Logo hinzufügen</button>
+                <button class="btn btn-small btn-secondary" id="so-reset-logo">nur ATSV</button>
             </div>
+            <div id="so-logo-chips" class="so-chips"></div>
             <div class="so-photo-picker" id="so-logo-picker" style="display:none"></div>
             <div class="so-photo-row">
                 <span style="font-size:0.85rem;color:var(--text-light)">Hintergrundfoto:</span>
@@ -457,7 +462,7 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
             </div>
             <p style="font-size:0.8rem;color:var(--text-light);margin:0.3rem 0 0">
                 Fotos (z. B. Siegerehrung) zuerst in der <a href="dateien.php?tab=orga&amp;kat=presse" style="color:var(--primary)">Datei-Ablage</a>
-                unter der Kategorie <strong>„Social-Media Assets"</strong> hochladen — sie erscheinen dann hier zur Auswahl.
+                unter der Kategorie <strong>„Social-Media Bilder"</strong> hochladen — sie erscheinen dann hier zur Auswahl.
             </p>
             <div class="so-photo-picker" id="so-photo-picker" style="display:none"></div>
             <div class="so-actions" style="margin-top:0.75rem">
@@ -763,7 +768,7 @@ const CARD_FORMATS = {
 const DEFAULT_LOGO = <?= json_encode('../assets/images/ATSV_Logo-750x968.png') ?>;
 const repoAssets = <?= json_encode($repoAssets, JSON_UNESCAPED_UNICODE) ?>;
 let selectedPhotoUrl = '';
-let logoUrl = DEFAULT_LOGO;
+let selectedLogos = [{ url: DEFAULT_LOGO, label: 'ATSV-Logo' }];
 
 // Markenfarben aus den CI-Tokens (orga.css :root) lesen — eine Quelle, kein Drift
 function cssVar(name, fallback) {
@@ -789,13 +794,12 @@ function applyCardStyle(fmt) {
     const card    = document.getElementById('social-share-card');
     const overlay = document.getElementById('so-overlay') || document.getElementById('sc-overlay');
     const bg      = document.getElementById('sc-bg');
-    const logo    = document.getElementById('sc-logo-img');
     const footer  = card.querySelector('.sc-footer');
 
     card.style.width  = fmt.w + 'px';
     card.style.height = fmt.h + 'px';
 
-    if (logoUrl) { logo.src = logoUrl; }
+    fillLogos();
 
     const [c1, c2] = schemeColors(document.getElementById('so-card-scheme').value);
     const hasPhoto = !!selectedPhotoUrl;
@@ -824,7 +828,7 @@ function waitImg(img) {
 }
 
 // Thumbnails rendern (items: [{url, name}]); Name per textContent -> kein XSS
-function renderThumbs(panel, items, onPick) {
+function renderThumbs(panel, items, onPick, keepOpen) {
     panel.innerHTML = '';
     if (!items.length) { panel.textContent = 'Keine Bilder gefunden.'; return; }
     items.forEach(function(img) {
@@ -832,7 +836,7 @@ function renderThumbs(panel, items, onPick) {
         const im = document.createElement('img'); im.src = img.url; im.alt = '';
         const nm = document.createElement('span'); nm.textContent = img.name;
         t.appendChild(im); t.appendChild(nm);
-        t.addEventListener('click', function() { onPick(img); panel.style.display = 'none'; });
+        t.addEventListener('click', function() { onPick(img); if (!keepOpen) { panel.style.display = 'none'; } });
         panel.appendChild(t);
     });
 }
@@ -851,13 +855,25 @@ function attachPicker(btnId, panelId, onPick, kategorie) {
         } catch (e) { panel.textContent = 'Fehler beim Laden.'; }
     });
 }
-// Picker aus statischer Liste (Repo-Assets)
-function attachStaticPicker(btnId, panelId, items, onPick) {
-    const panel = document.getElementById(panelId);
-    document.getElementById(btnId).addEventListener('click', () => {
-        if (panel.style.display !== 'none') { panel.style.display = 'none'; return; }
-        panel.style.display = 'flex';
-        renderThumbs(panel, items.map(i => ({url: i.url, name: i.label})), onPick);
+// Logos: mehrere aus Repo-Assets wählbar → Leiste auf der Karte
+function fillLogos() {
+    const box = document.getElementById('sc-logos');
+    box.innerHTML = '';
+    selectedLogos.forEach(function(l) {
+        const im = document.createElement('img'); im.src = l.url; im.alt = '';
+        box.appendChild(im);
+    });
+}
+function renderLogoChips() {
+    const box = document.getElementById('so-logo-chips');
+    box.innerHTML = '';
+    selectedLogos.forEach(function(l, i) {
+        const c = document.createElement('span'); c.className = 'so-chip';
+        const t = document.createElement('span'); t.textContent = l.label; c.appendChild(t);
+        const x = document.createElement('button'); x.type = 'button'; x.textContent = '✕';
+        x.addEventListener('click', function() { selectedLogos.splice(i, 1); renderLogoChips(); });
+        c.appendChild(x);
+        box.appendChild(c);
     });
 }
 attachPicker('so-pick-photo', 'so-photo-picker', function(img) {
@@ -865,21 +881,30 @@ attachPicker('so-pick-photo', 'so-photo-picker', function(img) {
     document.getElementById('so-photo-name').textContent = img.name;
     document.getElementById('so-clear-photo').style.display = 'inline-flex';
 }, 'presse');
-attachStaticPicker('so-pick-logo', 'so-logo-picker', repoAssets, function(img) {
-    logoUrl = img.url;
-    document.getElementById('so-logo-name').textContent = img.name;
-    document.getElementById('so-reset-logo').style.display = 'inline-flex';
-});
 document.getElementById('so-clear-photo').addEventListener('click', () => {
     selectedPhotoUrl = '';
     document.getElementById('so-photo-name').textContent = 'kein Foto';
     document.getElementById('so-clear-photo').style.display = 'none';
 });
-document.getElementById('so-reset-logo').addEventListener('click', () => {
-    logoUrl = DEFAULT_LOGO;
-    document.getElementById('so-logo-name').textContent = 'ATSV-Logo (Standard)';
-    document.getElementById('so-reset-logo').style.display = 'none';
-});
+// Logo-Picker: mehrere Logos hinzufügen (Panel bleibt offen)
+(function() {
+    const panel = document.getElementById('so-logo-picker');
+    document.getElementById('so-pick-logo').addEventListener('click', function() {
+        if (panel.style.display !== 'none') { panel.style.display = 'none'; return; }
+        panel.style.display = 'flex';
+        renderThumbs(panel, repoAssets.map(i => ({url: i.url, name: i.label})), function(img) {
+            if (!selectedLogos.some(l => l.url === img.url)) {
+                selectedLogos.push({ url: img.url, label: img.name });
+                renderLogoChips();
+            }
+        }, true);
+    });
+    document.getElementById('so-reset-logo').addEventListener('click', function() {
+        selectedLogos = [{ url: DEFAULT_LOGO, label: 'ATSV-Logo' }];
+        renderLogoChips();
+    });
+    renderLogoChips();
+})();
 
 document.getElementById('so-render-card').addEventListener('click', async () => {
     const btn    = document.getElementById('so-render-card');
@@ -894,9 +919,10 @@ document.getElementById('so-render-card').addEventListener('click', async () => 
     applyCardStyle(fmt);
 
     const card = document.getElementById('social-share-card');
-    // Logo + optionales Hintergrundfoto vorab laden, damit html2canvas sie findet
+    // Logos + optionales Hintergrundfoto vorab laden, damit html2canvas sie findet
+    const logoImgs = Array.from(document.querySelectorAll('#sc-logos img'));
     await Promise.all([
-        waitImg(document.getElementById('sc-logo-img')),
+        ...logoImgs.map(waitImg),
         selectedPhotoUrl ? waitImg(document.getElementById('sc-bg')) : Promise.resolve(),
     ]);
 
