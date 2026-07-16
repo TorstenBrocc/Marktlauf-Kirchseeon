@@ -339,6 +339,22 @@
     background-color: #fc4c02;
 }
 
+.footer-strava-cta {
+    display: inline-block;
+    margin-top: var(--space-sm);
+    font-size: 0.85rem;
+    color: var(--gray-300);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(252, 76, 2, 0.6);
+    padding-bottom: 1px;
+    transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.footer-strava-cta:hover {
+    color: #fff;
+    border-color: #fc4c02;
+}
+
 .footer-bottom {
     text-align: center;
     color: var(--gray-500);
