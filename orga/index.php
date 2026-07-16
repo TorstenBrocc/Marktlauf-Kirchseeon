@@ -87,6 +87,51 @@ try {
     // Table may not exist yet
 }
 
+$stravaUrl = '';
+try {
+    $stravaStmt = $pdo->prepare('SELECT `value` FROM einstellungen WHERE `key` = :key');
+    $stravaStmt->execute(['key' => 'strava_url']);
+    $stravaUrl = $stravaStmt->fetchColumn() ?: '';
+} catch (PDOException $e) {
+    // Table may not exist yet
+}
+
+// Zugangsdaten-Hinweise je Button — NUR für Admins, Klartext bleibt DB-intern.
+$linkHinweise = [];
+if ($isAdmin) {
+    try {
+        $hinweisStmt = $pdo->query("SELECT `key`, `value` FROM einstellungen WHERE `key` IN ('raceresult_hinweis','trello_hinweis','onedrive_hinweis','strava_hinweis')");
+        foreach ($hinweisStmt as $row) {
+            $linkHinweise[$row['key']] = $row['value'];
+        }
+    } catch (PDOException $e) {
+        // Table may not exist yet
+    }
+}
+
+/**
+ * Render-Helfer: ⓘ-Button + aufklappbare, kopierbare Notiz für einen Schnellzugriff-Link.
+ * Gibt leeren String zurück, wenn kein Admin oder kein Hinweis hinterlegt ist.
+ */
+$renderHinweis = function (string $key) use ($isAdmin, $linkHinweise): string {
+    if (!$isAdmin) {
+        return '';
+    }
+    $text = trim((string) ($linkHinweise[$key] ?? ''));
+    if ($text === '') {
+        return '';
+    }
+    $id = 'hint-' . $key;
+    $rows = min(6, max(2, substr_count($text, "\n") + 1));
+    return '<button type="button" class="qc-info" aria-expanded="false" aria-controls="' . $id . '" onclick="toggleHint(this)" title="Zugangsdaten (nur Admin)">&#9432;</button>'
+        . '<div class="qc-note" id="' . $id . '" hidden>'
+        . '<textarea class="qc-note-text" readonly rows="' . $rows . '" onclick="this.select()">' . htmlspecialchars($text) . '</textarea>'
+        . '<div class="qc-note-actions">'
+        . '<button type="button" class="qc-copy" onclick="copyHint(this)">Kopieren</button>'
+        . '<a class="qc-edit" href="einstellungen.php#link-' . htmlspecialchars($key) . '">Bearbeiten &rarr;</a>'
+        . '</div></div>';
+};
+
 $flashSuccess = $_SESSION['flash_success'] ?? '';
 $flashError = $_SESSION['flash_error'] ?? '';
 unset($_SESSION['flash_success'], $_SESSION['flash_error']);
@@ -281,13 +326,16 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                     <h3>Schnellzugriff</h3>
                     <ul class="quick-links">
                         <li><a href="../helfer-anmeldung.php" target="_blank">Helfer-Formular (öffentlich)</a></li>
-                        <li><a href="https://www.raceresult.com/de-de/account/index" target="_blank" rel="noopener" class="btn-brand btn-brand-raceresult">Race Result</a></li>
+                        <li><a href="https://www.raceresult.com/de-de/account/index" target="_blank" rel="noopener" class="btn-brand btn-brand-raceresult">Race Result</a><?= $renderHinweis('raceresult_hinweis') ?></li>
                         <li><a href="https://github.com/TorstenBrocc/Marktlauf-Kirchseeon" target="_blank" rel="noopener" class="btn-brand btn-brand-github">GitHub-Repo (Website)</a></li>
                         <?php if ($trelloBoardUrl): ?>
-                        <li><a href="<?= htmlspecialchars($trelloBoardUrl) ?>" target="_blank" rel="noopener" class="btn-brand btn-brand-trello">Trello-Board</a></li>
+                        <li><a href="<?= htmlspecialchars($trelloBoardUrl) ?>" target="_blank" rel="noopener" class="btn-brand btn-brand-trello">Trello-Board</a><?= $renderHinweis('trello_hinweis') ?></li>
                         <?php endif; ?>
                         <?php if ($onedriveUrl): ?>
-                        <li><a href="<?= htmlspecialchars($onedriveUrl) ?>" target="_blank" rel="noopener" class="btn-brand btn-brand-onedrive">Vereins-Cloud</a></li>
+                        <li><a href="<?= htmlspecialchars($onedriveUrl) ?>" target="_blank" rel="noopener" class="btn-brand btn-brand-onedrive">OneDrive</a><?= $renderHinweis('onedrive_hinweis') ?></li>
+                        <?php endif; ?>
+                        <?php if ($stravaUrl): ?>
+                        <li><a href="<?= htmlspecialchars($stravaUrl) ?>" target="_blank" rel="noopener" class="btn-brand btn-brand-strava">Strava</a><?= $renderHinweis('strava_hinweis') ?></li>
                         <?php endif; ?>
                     </ul>
                 </article>
@@ -413,6 +461,31 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
             link.addEventListener('click', closeSidebar);
         });
     })();
+
+    // Zugangsdaten-Hinweis je Schnellzugriff-Button: aufklappen + kopieren
+    function toggleHint(btn) {
+        var note = document.getElementById(btn.getAttribute('aria-controls'));
+        if (!note) return;
+        var willOpen = note.hasAttribute('hidden');
+        if (willOpen) { note.removeAttribute('hidden'); } else { note.setAttribute('hidden', ''); }
+        btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+    }
+    function copyHint(btn) {
+        var ta = btn.closest('.qc-note').querySelector('.qc-note-text');
+        if (!ta) return;
+        ta.select();
+        var done = function () {
+            var label = btn.textContent;
+            btn.textContent = 'Kopiert ✓';
+            setTimeout(function () { btn.textContent = label; }, 1500);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(ta.value).then(done).catch(function () { document.execCommand('copy'); done(); });
+        } else {
+            document.execCommand('copy');
+            done();
+        }
+    }
     </script>
 </body>
 </html>

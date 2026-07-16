@@ -18,6 +18,17 @@ $csrf    = generateCsrfToken();
 $pdo      = getDbConnection();
 $provider = llmActiveProvider($pdo);
 
+// Strava-Club-URL (global, siehe Einstellungen) — hier entsteht der Renn-Content,
+// der seinen Weg zu Strava findet, deshalb ein Absprung-Button im Kopf.
+$stravaUrl = '';
+try {
+    $stravaStmt = $pdo->prepare("SELECT `value` FROM einstellungen WHERE `key` = 'strava_url'");
+    $stravaStmt->execute();
+    $stravaUrl = $stravaStmt->fetchColumn() ?: '';
+} catch (PDOException $e) {
+    // Tabelle evtl. noch nicht vorhanden
+}
+
 // Mock-Daten für JS-Share-Card
 $mockData    = raceResultData($pdo);
 $mockDataJson = json_encode($mockData, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP);
@@ -267,6 +278,11 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
         <header class="content-header">
             <h1>Social Media</h1>
             <p class="content-subtitle">Zentrale KI-gestützte Content-Produktion für Instagram, Facebook &amp; Newsletter</p>
+            <?php if ($stravaUrl): ?>
+            <ul class="quick-links" style="margin-top:0.75rem;padding:0;">
+                <li style="border:none;padding:0;"><a href="<?= htmlspecialchars($stravaUrl) ?>" target="_blank" rel="noopener" class="btn-brand btn-brand-strava">Strava öffnen</a></li>
+            </ul>
+            <?php endif; ?>
         </header>
 
         <!-- Modul 1: Inhalt generieren (allgemein) -->

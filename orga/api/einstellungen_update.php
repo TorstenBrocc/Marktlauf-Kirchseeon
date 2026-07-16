@@ -34,6 +34,11 @@ $allowedKeys = [
     'raceresult_url',
     'trello_board_url',
     'onedrive_url',
+    'strava_url',
+    'raceresult_hinweis',
+    'trello_hinweis',
+    'onedrive_hinweis',
+    'strava_hinweis',
     'sponsor_brief_event_datum',
     'sponsor_brief_antwort_bis',
     'sponsoring_pakete',
@@ -46,6 +51,13 @@ $kontaktEmail = trim($_POST['kontakt_email'] ?? '');
 $raceresultUrl = trim($_POST['raceresult_url'] ?? '');
 $trelloUrl = trim($_POST['trello_board_url'] ?? '');
 $onedriveUrl = trim($_POST['onedrive_url'] ?? '');
+$stravaUrl = trim($_POST['strava_url'] ?? '');
+
+// Zugangsdaten-Notizen (Freitext, nur Admin sichtbar) — auf 2000 Zeichen gekappt.
+$raceresultHinweis = mb_substr(trim($_POST['raceresult_hinweis'] ?? ''), 0, 2000);
+$trelloHinweis     = mb_substr(trim($_POST['trello_hinweis'] ?? ''), 0, 2000);
+$onedriveHinweis   = mb_substr(trim($_POST['onedrive_hinweis'] ?? ''), 0, 2000);
+$stravaHinweis     = mb_substr(trim($_POST['strava_hinweis'] ?? ''), 0, 2000);
 
 $briefEventDatum = trim($_POST['sponsor_brief_event_datum'] ?? '');
 $briefAntwortBis = trim($_POST['sponsor_brief_antwort_bis'] ?? '');
@@ -99,6 +111,12 @@ if ($onedriveUrl !== '' && !filter_var($onedriveUrl, FILTER_VALIDATE_URL)) {
     exit;
 }
 
+if ($stravaUrl !== '' && !filter_var($stravaUrl, FILTER_VALIDATE_URL)) {
+    $_SESSION['flash_error'] = 'Ungültige Strava-URL.';
+    header('Location: ../einstellungen.php');
+    exit;
+}
+
 if ($briefEventDatum !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $briefEventDatum)) {
     $_SESSION['flash_error'] = 'Ungültiges Event-Datum.';
     header('Location: ../einstellungen.php');
@@ -120,6 +138,11 @@ try {
         'raceresult_url'            => $raceresultUrl ?: null,
         'trello_board_url'          => $trelloUrl ?: null,
         'onedrive_url'              => $onedriveUrl ?: null,
+        'strava_url'                => $stravaUrl ?: null,
+        'raceresult_hinweis'        => $raceresultHinweis ?: null,
+        'trello_hinweis'            => $trelloHinweis ?: null,
+        'onedrive_hinweis'          => $onedriveHinweis ?: null,
+        'strava_hinweis'            => $stravaHinweis ?: null,
         'sponsor_brief_event_datum' => $briefEventDatum ?: null,
         'sponsor_brief_antwort_bis' => $briefAntwortBis ?: null,
         'sponsoring_pakete'         => $sponsoringPaketeJson,

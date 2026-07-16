@@ -42,6 +42,19 @@ $kontaktEmail = $settings['kontakt_email'] ?? '';
 $raceresultUrl = $settings['raceresult_url'] ?? '';
 $trelloUrl = $settings['trello_board_url'] ?? '';
 $onedriveUrl = $settings['onedrive_url'] ?? '';
+$stravaUrl = $settings['strava_url'] ?? '';
+
+$raceresultHinweis = $settings['raceresult_hinweis'] ?? '';
+$trelloHinweis = $settings['trello_hinweis'] ?? '';
+$onedriveHinweis = $settings['onedrive_hinweis'] ?? '';
+$stravaHinweis = $settings['strava_hinweis'] ?? '';
+
+// Vorbelegung: geteilter Vereins-Account. Erste Zeile = Login, zweite Zeile = Passwort.
+$loginDefault = "info@atsv-kirchseeon-marktlauf.de\n";
+$raceresultHinweisVal = $raceresultHinweis !== '' ? $raceresultHinweis : $loginDefault;
+$trelloHinweisVal     = $trelloHinweis !== ''     ? $trelloHinweis     : $loginDefault;
+$onedriveHinweisVal   = $onedriveHinweis !== ''   ? $onedriveHinweis   : $loginDefault;
+$stravaHinweisVal     = $stravaHinweis !== ''     ? $stravaHinweis     : $loginDefault;
 
 $smtpHost = $config['smtp_host'] ?? '–';
 $smtpPort = $config['smtp_port'] ?? '–';
@@ -87,15 +100,31 @@ $smtpFrom = $config['smtp_from'] ?? $config['smtp_user'] ?? '–';
             font-weight: 500;
             margin-bottom: 0.25rem;
         }
-        .form-group input {
+        .form-group input,
+        .form-group textarea {
             padding: 0.5rem;
             border: 1px solid var(--border);
             border-radius: 4px;
             font-size: 0.875rem;
+            font-family: inherit;
         }
-        .form-group input:focus {
+        .form-group textarea {
+            resize: vertical;
+        }
+        .form-group input:focus,
+        .form-group textarea:focus {
             outline: none;
             border-color: var(--primary);
+        }
+        .settings-hint {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 0.6rem 0.8rem;
+            margin: 0 0 1rem 0;
+            line-height: 1.4;
         }
         .info-block {
             background: var(--bg);
@@ -171,23 +200,50 @@ $smtpFrom = $config['smtp_from'] ?? $config['smtp_user'] ?? '–';
                 </div>
 
                 <div class="settings-section">
-                    <h2>Externe Links</h2>
-                    <div class="form-row single">
+                    <h2>Schnellzugriff-Links (Dashboard)</h2>
+                    <p class="settings-hint">Zugangsdaten-Notizen sind im Dashboard <strong>nur für Admins</strong> hinter dem&nbsp;ⓘ-Symbol sichtbar. Sie werden im Klartext gespeichert – lege hier idealerweise nur geteilte Vereins-Zugänge ab, keine persönlichen Passwörter.</p>
+
+                    <div class="form-row single" id="link-raceresult_hinweis">
                         <div class="form-group">
                             <label for="raceresult_url">Race-Result-URL</label>
                             <input type="url" id="raceresult_url" name="raceresult_url" value="<?= htmlspecialchars($raceresultUrl) ?>" placeholder="https://my.raceresult.com/...">
                         </div>
+                        <div class="form-group">
+                            <label for="raceresult_hinweis">Zugangsdaten / Notiz (nur Admin)</label>
+                            <textarea id="raceresult_hinweis" name="raceresult_hinweis" rows="3"><?= htmlspecialchars($raceresultHinweisVal) ?></textarea>
+                        </div>
                     </div>
-                    <div class="form-row single">
+
+                    <div class="form-row single" id="link-trello_hinweis">
                         <div class="form-group">
                             <label for="trello_board_url">Trello-Board-URL</label>
                             <input type="url" id="trello_board_url" name="trello_board_url" value="<?= htmlspecialchars($trelloUrl) ?>" placeholder="https://trello.com/b/...">
                         </div>
-                    </div>
-                    <div class="form-row single">
                         <div class="form-group">
-                            <label for="onedrive_url">Vereins-Cloud (OneDrive)</label>
+                            <label for="trello_hinweis">Zugangsdaten / Notiz (nur Admin)</label>
+                            <textarea id="trello_hinweis" name="trello_hinweis" rows="3"><?= htmlspecialchars($trelloHinweisVal) ?></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-row single" id="link-onedrive_hinweis">
+                        <div class="form-group">
+                            <label for="onedrive_url">OneDrive-URL</label>
                             <input type="url" id="onedrive_url" name="onedrive_url" value="<?= htmlspecialchars($onedriveUrl) ?>" placeholder="https://onedrive.live.com/...">
+                        </div>
+                        <div class="form-group">
+                            <label for="onedrive_hinweis">Zugangsdaten / Notiz (nur Admin)</label>
+                            <textarea id="onedrive_hinweis" name="onedrive_hinweis" rows="3"><?= htmlspecialchars($onedriveHinweisVal) ?></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-row single" id="link-strava_hinweis">
+                        <div class="form-group">
+                            <label for="strava_url">Strava-URL</label>
+                            <input type="url" id="strava_url" name="strava_url" value="<?= htmlspecialchars($stravaUrl) ?>" placeholder="https://www.strava.com/clubs/...">
+                        </div>
+                        <div class="form-group">
+                            <label for="strava_hinweis">Zugangsdaten / Notiz (nur Admin)</label>
+                            <textarea id="strava_hinweis" name="strava_hinweis" rows="3"><?= htmlspecialchars($stravaHinweisVal) ?></textarea>
                         </div>
                     </div>
                 </div>
