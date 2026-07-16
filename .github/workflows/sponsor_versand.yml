@@ -1,0 +1,35 @@
+name: Sponsor-Versand-Queue
+
+# Arbeitet die Sponsor-Anschreiben-Queue (sponsor_versand_queue, status='offen') ab.
+# Ersetzt einen Server-Cron: Strato-Shared-Hosting bietet kein crontab per SSH,
+# also verbindet sich GitHub Actions per SSH (gleiche Secrets wie der Deploy) und
+# ruft das CLI-Script auf. GET_LOCK im Script verhindert überlappende Läufe.
+#
+# Hinweis: geplante Workflows starten unter Last evtl. verzögert und werden nach
+# 60 Tagen Repo-Inaktivität deaktiviert (wie beim Uptime-Check).
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'   # alle 15 Minuten
+  workflow_dispatch:          # manuell im Actions-Tab auslösbar
+
+# Nur ein Lauf gleichzeitig — zweiter wartet, statt parallel zu senden.
+concurrency:
+  group: sponsor-versand
+  cancel-in-progress: false
+
+jobs:
+  drain-queue:
+    name: Versand-Queue abarbeiten
+    runs-on: ubuntu-latest
+    steps:
+      - name: CLI-Versand per SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SFTP_HOST }}
+          username: ${{ secrets.SFTP_USERNAME }}
+          key: ${{ secrets.SFTP_SSH_KEY }}
+          command_timeout: 30m
+          script: |
+            cd ${{ secrets.SFTP_REMOTE_PATH }}
+            MARKTLAUF_CLI=1 /bin/php bin/sponsor_versand.php
