@@ -236,6 +236,15 @@ function getFileIcon(string $mimetype): string {
             color: var(--primary-dark);
             white-space: nowrap;
         }
+        .kat-edit {
+            font-size: 0.75rem;
+            padding: 0.2rem 0.4rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background: var(--white);
+            max-width: 170px;
+        }
+        .kat-saved { color: #16a34a; font-size: 0.8rem; margin-left: 0.3rem; }
         .kategorie-empty {
             text-align: center;
             padding: 2rem 1rem;
@@ -314,7 +323,7 @@ function getFileIcon(string $mimetype): string {
                                             <span class="file-icon"><?= getFileIcon($d['mimetype']) ?></span>
                                             <span class="file-name"><?= htmlspecialchars($d['originalname']) ?></span>
                                         </td>
-                                        <td><span class="kat-badge"><?= htmlspecialchars(dateiKategorieLabel($kat)) ?></span></td>
+                                        <td><select class="kat-edit" data-id="<?= (int)$d['id'] ?>" aria-label="Kategorie ändern"><?= dateiKategorieOptions($kat) ?></select><span class="kat-saved" style="display:none">✓</span></td>
                                         <td class="file-meta"><?= formatFileSize((int)$d['groesse']) ?></td>
                                         <td class="file-meta"><?= htmlspecialchars($d['uploader_name']) ?></td>
                                         <td class="file-meta"><?= date('d.m.Y H:i', strtotime($d['created_at'])) ?></td>
@@ -380,7 +389,7 @@ function getFileIcon(string $mimetype): string {
                                             <span class="file-icon"><?= getFileIcon($d['mimetype']) ?></span>
                                             <span class="file-name"><?= htmlspecialchars($d['originalname']) ?></span>
                                         </td>
-                                        <td><span class="kat-badge"><?= htmlspecialchars(dateiKategorieLabel($kat)) ?></span></td>
+                                        <td><select class="kat-edit" data-id="<?= (int)$d['id'] ?>" aria-label="Kategorie ändern"><?= dateiKategorieOptions($kat) ?></select><span class="kat-saved" style="display:none">✓</span></td>
                                         <td class="file-meta"><?= formatFileSize((int)$d['groesse']) ?></td>
                                         <td class="file-meta"><?= htmlspecialchars($d['uploader_name']) ?></td>
                                         <td class="file-meta"><?= date('d.m.Y H:i', strtotime($d['created_at'])) ?></td>
@@ -405,6 +414,27 @@ function getFileIcon(string $mimetype): string {
         </main>
     </div>
     <script>
+    // Kategorie nachträglich ändern (Umflaggen)
+    (function() {
+        const CSRF = <?= json_encode($csrfToken) ?>;
+        document.querySelectorAll('.kat-edit').forEach(function(sel) {
+            sel.addEventListener('change', function() {
+                sel.disabled = true;
+                fetch('api/datei_kategorie_update.php', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                    body: new URLSearchParams({csrf_token: CSRF, id: sel.dataset.id, kategorie: sel.value}),
+                }).then(r => r.json()).then(d => {
+                    if (d.ok) {
+                        const tr = sel.closest('tr'); if (tr) tr.dataset.kategorie = d.kategorie;
+                        const s = sel.parentElement.querySelector('.kat-saved');
+                        if (s) { s.style.display = 'inline'; setTimeout(() => { s.style.display = 'none'; }, 1500); }
+                    }
+                }).finally(() => { sel.disabled = false; });
+            });
+        });
+    })();
+
     (function() {
         const burger = document.getElementById('burger-btn');
         const sidebar = document.getElementById('sidebar');
