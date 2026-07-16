@@ -10,11 +10,31 @@ require_once __DIR__ . '/../mailer.php';
 require_once __DIR__ . '/../logger.php';
 require_once __DIR__ . '/../sponsor_brief.php';
 
+/**
+ * BCC-Adresse für ausgehende Mails: bei JEDEM Versand bekommt info@ eine
+ * Blindkopie. Reihenfolge: config['smtp_bcc'] > config['mail']['from_address']
+ * > hartkodierter info@-Fallback. Leerer smtp_bcc => Fallback greift.
+ */
+function mailBccAddress(): string {
+    $config = getConfig();
+    $bcc = trim((string) ($config['smtp_bcc'] ?? ''));
+    if ($bcc === '') {
+        $bcc = trim((string) ($config['mail']['from_address'] ?? ''));
+    }
+    if ($bcc === '') {
+        $bcc = 'info@atsv-kirchseeon-marktlauf.de';
+    }
+    return $bcc;
+}
+
 function sendMail(string $to, string $subject, string $textBody, string $htmlBody = ''): bool {
+    $bccAddr = mailBccAddress();
+    $bcc = ($bccAddr !== '' && strcasecmp($bccAddr, $to) !== 0) ? [$bccAddr] : [];
+
     $mailer = getSmtpMailer();
 
     if ($mailer !== null) {
-        $result = $mailer->send($to, $subject, $textBody, $htmlBody);
+        $result = $mailer->send($to, $subject, $textBody, $htmlBody, $bcc);
         if (!$result) {
             logError('SMTP error: ' . $mailer->getLastError());
         }
@@ -34,6 +54,10 @@ function sendMail(string $to, string $subject, string $textBody, string $htmlBod
         'Content-Type' => 'text/plain; charset=UTF-8',
         'X-Mailer'     => 'PHP/' . phpversion(),
     ];
+
+    if (!empty($bcc)) {
+        $headers['Bcc'] = $bcc[0];
+    }
 
     $headerString = '';
     foreach ($headers as $key => $value) {

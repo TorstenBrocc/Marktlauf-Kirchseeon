@@ -35,7 +35,11 @@ class SmtpMailer
         return $this->lastError;
     }
 
-    public function send(string $to, string $subject, string $textBody, string $htmlBody = ''): bool
+    /**
+     * @param string[] $bcc Blindkopie-Empfänger (kein Header, nur zusätzliches RCPT TO).
+     *                       Ein fehlgeschlagenes BCC-RCPT bricht den Hauptversand NICHT ab.
+     */
+    public function send(string $to, string $subject, string $textBody, string $htmlBody = '', array $bcc = []): bool
     {
         $this->lastError = null;
 
@@ -52,6 +56,13 @@ class SmtpMailer
             $this->authenticate();
             $this->mailFrom();
             $this->rcptTo($to);
+            foreach ($bcc as $bccAddr) {
+                $bccAddr = trim((string) $bccAddr);
+                if ($bccAddr === '' || strcasecmp($bccAddr, $to) === 0) {
+                    continue; // leer oder identisch mit To -> keine Doppelzustellung
+                }
+                $this->rcptToOptional($bccAddr);
+            }
             $this->data($to, $subject, $textBody, $htmlBody);
             $this->quit();
             return true;
@@ -114,6 +125,22 @@ class SmtpMailer
     {
         $this->sendCommand("RCPT TO:<$to>");
         $this->expectCode(250);
+    }
+
+    /**
+     * RCPT TO für Blindkopien: lehnt der Server ab, wird das protokolliert,
+     * der Versand an den Hauptempfänger läuft aber weiter.
+     */
+    private function rcptToOptional(string $to): bool
+    {
+        $this->sendCommand("RCPT TO:<$to>");
+        try {
+            $this->expectCode(250);
+            return true;
+        } catch (Exception $e) {
+            $this->lastError = "BCC <$to> abgelehnt: " . $e->getMessage();
+            return false;
+        }
     }
 
     private function data(string $to, string $subject, string $textBody, string $htmlBody): void

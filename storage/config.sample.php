@@ -35,6 +35,7 @@ return [
     'smtp_password'  => '',  // Postfach-Passwort
     'smtp_from'      => '',  // Absender-Adresse (oder leer = smtp_user)
     'smtp_from_name' => 'ATSV Kirchseeon Marktlauf',
+    'smtp_bcc'       => '',  // Blindkopie bei JEDEM Versand (leer = mail.from_address, also info@)
 
     // Sponsor-Versand: Pause (Sekunden) zwischen zwei Mails im CLI-Queue-Lauf
     // (bin/sponsor_versand.php), damit Strato nicht drosselt.
