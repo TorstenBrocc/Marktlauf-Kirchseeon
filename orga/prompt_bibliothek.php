@@ -161,8 +161,24 @@ $kategorien = [
             width: 100%; min-height: 420px; padding: 0.75rem;
             border: 1px solid var(--border); border-radius: 6px;
             font-family: monospace; font-size: 0.85rem; line-height: 1.6;
-            box-sizing: border-box; resize: vertical;
+            box-sizing: border-box; resize: none; overflow: hidden;
             background: var(--bg);
+        }
+        .pb-kontext-row {
+            display: flex; align-items: flex-start; gap: 0.6rem;
+            margin-bottom: 0.75rem; padding: 0.6rem 0.75rem;
+            background: #fffbf0; border: 1px solid #f0d890;
+            border-radius: 6px;
+        }
+        .pb-kontext-label {
+            font-size: 0.78rem; font-weight: 600; color: #7a5000;
+            white-space: nowrap; padding-top: 0.15rem;
+        }
+        #pb-kontext {
+            flex: 1; border: none; background: transparent; resize: none;
+            font-size: 0.82rem; line-height: 1.5; color: var(--text);
+            font-family: inherit; outline: none; min-height: 1.5rem;
+            overflow: hidden;
         }
         #pb-preview {
             min-height: 420px; padding: 0.75rem 1rem;
@@ -238,10 +254,19 @@ $kategorien = [
                     </select>
                 </div>
 
+                <!-- Kontext / Quellen -->
+                <div class="pb-kontext-row">
+                    <span class="pb-kontext-label">Kontext:</span>
+                    <textarea id="pb-kontext" rows="1" placeholder="URLs, Dokumente oder Hinweise, die beim Einsatz dieses Prompts bereitgestellt werden müssen …"></textarea>
+                </div>
+
                 <!-- Tag-Eingabe -->
-                <div class="pb-tags-wrapper" id="pb-tags-wrapper">
-                    <div id="pb-tags-chips"></div>
-                    <input type="text" id="pb-tag-input" placeholder="Tag eingeben + Enter …">
+                <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">
+                    <span style="font-size:0.78rem;font-weight:600;color:var(--text-light);white-space:nowrap">Tags:</span>
+                    <div class="pb-tags-wrapper" id="pb-tags-wrapper" style="flex:1;margin-bottom:0">
+                        <div id="pb-tags-chips"></div>
+                        <input type="text" id="pb-tag-input" placeholder="z. B. regional, überregional, Krankenkassen …">
+                    </div>
                 </div>
 
                 <!-- Toolbar -->
@@ -310,6 +335,15 @@ $kategorien = [
     const statusEl  = document.getElementById('pb-status');
     const tagsChips = document.getElementById('pb-tags-chips');
     const tagInput  = document.getElementById('pb-tag-input');
+    const kontextEl = document.getElementById('pb-kontext');
+
+    // ── Auto-grow Textareas ───────────────────────────────────
+    function autoGrow(el) {
+        el.style.height = 'auto';
+        el.style.height = el.scrollHeight + 'px';
+    }
+    editor.addEventListener('input', function() { autoGrow(editor); });
+    kontextEl.addEventListener('input', function() { autoGrow(kontextEl); });
 
     // ── Markdown → HTML (Subset) ──────────────────────────────
     function md2html(src) {
@@ -345,6 +379,7 @@ $kategorien = [
     }
 
     editor.addEventListener('input', refreshPreview);
+
 
     // ── Tags ──────────────────────────────────────────────────
     function renderTags() {
@@ -461,12 +496,15 @@ $kategorien = [
             if (!data.ok) return;
             const p   = data.prompt;
             currentId = p.id;
-            titelEl.value = p.titel;
-            katEl.value   = p.kategorie;
-            tags          = p.tags || [];
-            editor.value  = p.inhalt;
+            titelEl.value    = p.titel;
+            katEl.value      = p.kategorie;
+            tags             = p.tags || [];
+            editor.value     = p.inhalt;
+            kontextEl.value  = p.kontext || '';
             renderTags();
             refreshPreview();
+            autoGrow(editor);
+            autoGrow(kontextEl);
             delBtn.style.display = '';
             setStatus('');
             renderList();
@@ -479,13 +517,16 @@ $kategorien = [
 
     // ── Neu ───────────────────────────────────────────────────
     document.getElementById('pb-new-btn').addEventListener('click', function() {
-        currentId     = null;
-        titelEl.value = '';
-        katEl.value   = 'frei';
-        tags          = [];
-        editor.value  = '';
+        currentId        = null;
+        titelEl.value    = '';
+        katEl.value      = 'frei';
+        tags             = [];
+        editor.value     = '';
+        kontextEl.value  = '';
         renderTags();
         refreshPreview();
+        autoGrow(editor);
+        autoGrow(kontextEl);
         delBtn.style.display = 'none';
         setStatus('');
         listEl.querySelectorAll('.pb-item').forEach(function(el) { el.classList.remove('active'); });
@@ -510,7 +551,8 @@ $kategorien = [
         api({
             action: 'save', id: currentId || 0,
             titel: titel, kategorie: katEl.value,
-            tags: tags, inhalt: editor.value
+            tags: tags, inhalt: editor.value,
+            kontext: kontextEl.value
         }).then(function(data) {
             if (!data.ok) { setStatus(data.error || 'Fehler', true); return; }
             currentId = data.id;
@@ -528,7 +570,8 @@ $kategorien = [
         api({ action: 'delete', id: currentId }).then(function(data) {
             if (!data.ok) { setStatus(data.error || 'Fehler', true); return; }
             currentId = null;
-            titelEl.value = ''; katEl.value = 'frei'; tags = []; editor.value = '';
+            titelEl.value = ''; katEl.value = 'frei'; tags = []; editor.value = ''; kontextEl.value = '';
+            autoGrow(editor); autoGrow(kontextEl);
             renderTags(); refreshPreview();
             delBtn.style.display = 'none';
             setStatus('Gelöscht.');
