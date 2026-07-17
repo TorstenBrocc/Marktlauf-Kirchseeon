@@ -75,6 +75,18 @@ try {
 } catch (PDOException $e) {
     // Table may not exist yet
 }
+
+$branchen = [];
+try {
+    $bStmt = $pdo->prepare('SELECT `value` FROM einstellungen WHERE `key` = :key');
+    $bStmt->execute(['key' => 'sponsor_branchen']);
+    $bRaw = $bStmt->fetchColumn();
+    if ($bRaw) {
+        $branchen = json_decode((string) $bRaw, true) ?? [];
+    }
+} catch (PDOException $e) {
+    // Branchen noch nicht angelegt
+}
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -522,6 +534,7 @@ try {
                             <th>Paket</th>
                             <th>Summe</th>
                             <th>Status</th>
+                            <th>Branche</th>
                             <th>Wiedervorlage</th>
                             <th>Notiz</th>
                             <th>Aktion</th>
@@ -530,7 +543,7 @@ try {
                     <tbody>
                         <?php if (empty($sponsoren)): ?>
                             <tr>
-                                <td colspan="9">Keine Sponsoren gefunden.</td>
+                                <td colspan="10">Keine Sponsoren gefunden.</td>
                             </tr>
                         <?php else: ?>
                             <?php
@@ -600,6 +613,15 @@ try {
                                                 data-id="<?= $s['id'] ?>" data-field="status" title="Status ändern">
                                             <?php foreach (SPONSOR_STATUS as $key => $meta): ?>
                                                 <option value="<?= $key ?>" <?= $s['status'] === $key ? 'selected' : '' ?>><?= htmlspecialchars($meta['label']) ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <select class="inline-select branche-select"
+                                                data-id="<?= $s['id'] ?>" data-field="branche" title="Branche ändern">
+                                            <option value="" <?= empty($s['branche']) ? 'selected' : '' ?>>–</option>
+                                            <?php foreach ($branchen as $b): ?>
+                                                <option value="<?= htmlspecialchars($b) ?>" <?= ($s['branche'] ?? '') === $b ? 'selected' : '' ?>><?= htmlspecialchars($b) ?></option>
                                             <?php endforeach; ?>
                                         </select>
                                     </td>

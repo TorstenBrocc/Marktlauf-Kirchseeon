@@ -83,6 +83,14 @@ if (($_POST['action'] ?? '') === 'inline_update') {
             exit;
         }
 
+        if ($field === 'branche') {
+            $branche = $value !== '' ? mb_substr(trim($value), 0, 100) : null;
+            $pdo->prepare('UPDATE sponsors SET branche = :v WHERE id = :id')
+                ->execute(['v' => $branche, 'id' => $sponsorId]);
+            echo json_encode(['ok' => true]);
+            exit;
+        }
+
         echo json_encode(['ok' => false, 'message' => 'Ungültiges Feld.']);
         exit;
     } catch (PDOException $e) {
