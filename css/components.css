@@ -306,6 +306,27 @@
     background: var(--white);
 }
 
+/* Meta-Zeile mit Zusatzhinweis in zweiter Zeile (Punkt bleibt am Haupttext) */
+.hero-meta-line--stacked {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+}
+
+.hero-meta-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.hero-meta-note {
+    font-size: 0.72em;
+    font-weight: 500;
+    opacity: 0.82;
+    padding-left: 18px; /* Punktbreite (9px) + gap (9px) -> unter dem Text ausgerichtet */
+    letter-spacing: .2px;
+}
+
 /* CTA buttons */
 .hero-actions {
     display: flex;
