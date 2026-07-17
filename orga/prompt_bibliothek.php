@@ -282,6 +282,7 @@ $kategorien = [
 
     </div>
 </main>
+    </div>
 
 <script>
 (function () {
