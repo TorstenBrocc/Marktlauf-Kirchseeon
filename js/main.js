@@ -8,6 +8,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     initTabs();
     initHeaderScroll();
     initCountdown();
+    initScrollAnimations();
     await initLanguage();
 });
 
@@ -235,4 +236,44 @@ function updateLanguageUI() {
     
     langFlag.src = flagSrc;
     langFlag.alt = currentLanguage === "de" ? "English" : "Deutsch";
+}
+
+/**
+ * Scroll-Animationen via IntersectionObserver
+ */
+function initScrollAnimations() {
+    if (typeof IntersectionObserver === 'undefined') return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    // Elemente die animiert werden sollen — mit optionaler Richtung und Staffelung
+    const targets = [
+        { sel: '#ueber .ueber-inner',        dir: '' },
+        { sel: '#distanzen .run-card',        dir: '', stagger: true },
+        { sel: '#ablauf .container',         dir: '' },
+        { sel: '#strecke .container',        dir: '' },
+        { sel: '#anmeldung .container',      dir: '' },
+        { sel: '#connect .container',        dir: '' },
+        { sel: '#sponsoren .container',      dir: '' },
+    ];
+
+    targets.forEach(function(t) {
+        document.querySelectorAll(t.sel).forEach(function(el, i) {
+            el.classList.add('reveal');
+            if (t.dir) el.classList.add('reveal--' + t.dir);
+            if (t.stagger) el.style.transitionDelay = (i * 80) + 'ms';
+        });
+    });
+
+    const observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('is-visible');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.12 });
+
+    document.querySelectorAll('.reveal').forEach(function(el) {
+        observer.observe(el);
+    });
 }
