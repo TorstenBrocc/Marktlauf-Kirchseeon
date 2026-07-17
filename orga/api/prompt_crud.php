@@ -43,7 +43,7 @@ try {
                 $params[] = $body['kategorie'];
             }
             $stmt = $pdo->prepare(
-                'SELECT id, titel, kategorie, tags, LEFT(inhalt,120) AS vorschau, geaendert_am
+                'SELECT id, titel, kategorie, tags, kontext, LEFT(inhalt,120) AS vorschau, geaendert_am
                  FROM prompts' . $where . ' ORDER BY geaendert_am DESC'
             );
             $stmt->execute($params);
@@ -70,6 +70,7 @@ try {
             $kategorie = trim((string) ($body['kategorie'] ?? 'frei'));
             $tags      = array_values(array_filter(array_map('trim', (array) ($body['tags'] ?? []))));
             $inhalt    = (string) ($body['inhalt'] ?? '');
+            $kontext   = trim((string) ($body['kontext'] ?? ''));
 
             if ($titel === '' || $inhalt === '') {
                 echo json_encode(['ok' => false, 'error' => 'Titel und Inhalt sind Pflicht']);
@@ -83,15 +84,15 @@ try {
 
             if ($id > 0) {
                 $stmt = $pdo->prepare(
-                    'UPDATE prompts SET titel=?, kategorie=?, tags=?, inhalt=? WHERE id=?'
+                    'UPDATE prompts SET titel=?, kategorie=?, tags=?, inhalt=?, kontext=? WHERE id=?'
                 );
-                $stmt->execute([$titel, $kategorie, $tagsJson, $inhalt, $id]);
+                $stmt->execute([$titel, $kategorie, $tagsJson, $inhalt, $kontext, $id]);
                 echo json_encode(['ok' => true, 'id' => $id]);
             } else {
                 $stmt = $pdo->prepare(
-                    'INSERT INTO prompts (titel, kategorie, tags, inhalt) VALUES (?,?,?,?)'
+                    'INSERT INTO prompts (titel, kategorie, tags, inhalt, kontext) VALUES (?,?,?,?,?)'
                 );
-                $stmt->execute([$titel, $kategorie, $tagsJson, $inhalt]);
+                $stmt->execute([$titel, $kategorie, $tagsJson, $inhalt, $kontext]);
                 echo json_encode(['ok' => true, 'id' => (int) $pdo->lastInsertId()]);
             }
             break;
