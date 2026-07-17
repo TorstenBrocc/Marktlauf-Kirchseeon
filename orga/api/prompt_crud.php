@@ -24,7 +24,7 @@ $raw    = file_get_contents('php://input');
 $body   = json_decode($raw ?: '', true) ?? [];
 $action = (string) ($body['action'] ?? '');
 
-if (!validateCsrfToken((string) ($body['csrf_token'] ?? ''))) {
+if (!verifyCsrfToken((string) ($body['csrf_token'] ?? ''))) {
     http_response_code(403);
     echo json_encode(['ok' => false, 'error' => 'CSRF-Fehler']);
     exit;
