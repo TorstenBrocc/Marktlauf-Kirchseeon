@@ -255,6 +255,34 @@ $smtpFrom = $config['smtp_from'] ?? $config['smtp_user'] ?? '–';
                 </div>
             </form>
 
+            <div class="settings-section" id="branchen-section">
+                <h2>Sponsor-Branchen</h2>
+                <p style="font-size:0.85rem;color:var(--text-light);margin-bottom:0.75rem">
+                    Diese Liste bestimmt die Optionen im Branchen-Dropdown der Sponsorenliste.
+                </p>
+                <?php
+                $bRaw = $settings['sponsor_branchen'] ?? '[]';
+                $bListe = json_decode($bRaw, true) ?? [];
+                ?>
+                <ul id="branchen-liste" style="list-style:none;padding:0;margin:0 0 0.75rem;display:flex;flex-direction:column;gap:0.4rem">
+                    <?php foreach ($bListe as $i => $b): ?>
+                        <li style="display:flex;align-items:center;gap:0.5rem">
+                            <span style="flex:1;font-size:0.875rem"><?= htmlspecialchars($b) ?></span>
+                            <button type="button" class="btn-icon branche-del" data-index="<?= $i ?>" title="Löschen">✕</button>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+                <div style="display:flex;gap:0.5rem;align-items:center">
+                    <input type="text" id="branche-neu-input" placeholder="Neue Branche …" maxlength="100"
+                           style="flex:1;padding:0.45rem 0.6rem;border:1px solid var(--border);border-radius:6px;font-size:0.875rem">
+                    <button type="button" class="btn btn-secondary" id="branche-add-btn">Hinzufügen</button>
+                </div>
+                <div style="margin-top:0.75rem">
+                    <button type="button" class="btn btn-primary" id="branchen-save-btn">Branchen speichern</button>
+                    <span id="branchen-status" style="font-size:0.8rem;color:var(--text-light);margin-left:0.75rem"></span>
+                </div>
+            </div>
+
             <div class="settings-section">
                 <h2>SMTP-Konfiguration</h2>
                 <div class="info-block">
@@ -291,6 +319,76 @@ $smtpFrom = $config['smtp_from'] ?? $config['smtp_user'] ?? '–';
         overlay.addEventListener('click', closeSidebar);
         sidebar.querySelectorAll('.nav-item a').forEach(function(link) {
             link.addEventListener('click', closeSidebar);
+        });
+    })();
+
+    // ── Branchen-Verwaltung ───────────────────────────────────
+    (function () {
+        const csrf      = <?= json_encode($csrfToken) ?>;
+        const liste     = document.getElementById('branchen-liste');
+        const neuInput  = document.getElementById('branche-neu-input');
+        const addBtn    = document.getElementById('branche-add-btn');
+        const saveBtn   = document.getElementById('branchen-save-btn');
+        const statusEl  = document.getElementById('branchen-status');
+
+        function getBranchen() {
+            return Array.from(liste.querySelectorAll('li span')).map(function(s) {
+                return s.textContent.trim();
+            });
+        }
+
+        function addRow(name) {
+            const li = document.createElement('li');
+            li.style.cssText = 'display:flex;align-items:center;gap:0.5rem';
+            const span = document.createElement('span');
+            span.style.cssText = 'flex:1;font-size:0.875rem';
+            span.textContent = name;
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'btn-icon branche-del';
+            btn.title = 'Löschen';
+            btn.textContent = '✕';
+            btn.addEventListener('click', function() { li.remove(); });
+            li.appendChild(span);
+            li.appendChild(btn);
+            liste.appendChild(li);
+        }
+
+        // Bestehende Löschen-Buttons verdrahten
+        liste.querySelectorAll('.branche-del').forEach(function(btn) {
+            btn.addEventListener('click', function() { btn.closest('li').remove(); });
+        });
+
+        addBtn.addEventListener('click', function() {
+            const val = neuInput.value.trim();
+            if (!val) return;
+            addRow(val);
+            neuInput.value = '';
+            neuInput.focus();
+        });
+        neuInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') { e.preventDefault(); addBtn.click(); }
+        });
+
+        saveBtn.addEventListener('click', function() {
+            const branchen = getBranchen();
+            const body = new URLSearchParams();
+            body.set('csrf_token', csrf);
+            body.set('key', 'sponsor_branchen');
+            body.set('value', JSON.stringify(branchen));
+            saveBtn.disabled = true;
+            fetch('api/einstellungen_json_update.php', {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'fetch' },
+                body: body
+            }).then(function(r) { return r.json(); })
+              .then(function(d) {
+                statusEl.textContent = d.ok ? 'Gespeichert ✓' : (d.message || 'Fehler');
+                statusEl.style.color = d.ok ? 'var(--primary)' : 'var(--error)';
+                setTimeout(function() { statusEl.textContent = ''; }, 2500);
+              })
+              .catch(function() { statusEl.textContent = 'Fehler'; })
+              .finally(function() { saveBtn.disabled = false; });
         });
     })();
     </script>
