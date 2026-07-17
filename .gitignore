@@ -46,6 +46,7 @@ Thumbs.db
 # --- Projekt-spezifisch: niemals committen ---
 briefing.md
 .claude/lessons.md
+.claude/settings.local.json
 assets/images/design-briefing*.md
 sponsor-data/
 *.sponsor.csv
