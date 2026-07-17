@@ -390,7 +390,7 @@
     padding: 14px;
     box-shadow: 0 14px 30px -8px rgba(0,0,0,.3);
     z-index: 3;
-    animation: ml-float 7s ease-in-out infinite;
+    animation: hero-enter-up 0.5s 0.4s ease-out both, ml-float 7s 1s ease-in-out infinite;
 }
 
 .hero-float-badge img {
@@ -404,8 +404,39 @@
     50% { transform: translateY(-14px) rotate(2deg); }
 }
 
+/* Hero entrance & runner float */
+@keyframes hero-enter-up {
+    from { opacity: 0; transform: translateY(28px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes hero-enter-right {
+    from { opacity: 0; transform: translateX(60px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes runner-float {
+    0%, 100% { transform: translateY(0); }
+    50%       { transform: translateY(-12px); }
+}
+
+.hero-koop-badge  { animation: hero-enter-up 0.55s 0.00s ease-out both; }
+.hero-kicker      { animation: hero-enter-up 0.55s 0.10s ease-out both; }
+.hero h1          { animation: hero-enter-up 0.60s 0.22s ease-out both; }
+.hero-year-motto  { animation: hero-enter-up 0.55s 0.35s ease-out both; }
+.hero-meta        { animation: hero-enter-up 0.55s 0.48s ease-out both; }
+.countdown        { animation: hero-enter-up 0.55s 0.58s ease-out both; }
+.hero-actions     { animation: hero-enter-up 0.55s 0.68s ease-out both; }
+
+.hero-runner {
+    animation: hero-enter-right 0.70s 0.30s ease-out both,
+               runner-float     5.00s 1.20s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
-    .hero-float-badge {
+    .hero-koop-badge, .hero-kicker, .hero h1,
+    .hero-year-motto, .hero-meta, .countdown,
+    .hero-actions, .hero-runner, .hero-float-badge {
         animation: none;
     }
 }
