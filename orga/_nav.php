@@ -158,6 +158,20 @@ return [
         },
     ],
     [
+        'key'     => 'prompt_bibliothek',
+        'label'   => 'Prompts',
+        'section' => 'ABLAGE',
+        'href'    => 'prompt_bibliothek.php',
+        'kpi'   => static function (PDO $pdo): array {
+            $anzahl = (int) $pdo->query('SELECT COUNT(*) FROM prompts')->fetchColumn();
+            return [
+                'value'  => (string) $anzahl,
+                'label'  => 'Prompts gespeichert',
+                'signal' => 'neutral',
+            ];
+        },
+    ],
+    [
         'key'     => 'benutzer',
         'label'   => 'Benutzerverwaltung',
         'section' => 'ADMIN',
