@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS prompts (
+    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    titel       VARCHAR(120)  NOT NULL,
+    kategorie   VARCHAR(50)   NOT NULL DEFAULT 'frei',
+    tags        JSON          NOT NULL DEFAULT (JSON_ARRAY()),
+    inhalt      TEXT          NOT NULL,
+    erstellt_am DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    geaendert_am DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
