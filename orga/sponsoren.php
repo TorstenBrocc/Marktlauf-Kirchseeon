@@ -531,10 +531,10 @@ try {
                             <th class="col-check"><input type="checkbox" id="check-all" title="Alle auswählen"></th>
                             <th>Firma</th>
                             <th>Ansprechpartner</th>
+                            <th>Branche</th>
                             <th>Paket</th>
                             <th>Summe</th>
                             <th>Status</th>
-                            <th>Branche</th>
                             <th>Wiedervorlage</th>
                             <th>Notiz</th>
                             <th>Aktion</th>
@@ -599,6 +599,15 @@ try {
                                         <?php endif; ?>
                                     </td>
                                     <td>
+                                        <select class="inline-select branche-select"
+                                                data-id="<?= $s['id'] ?>" data-field="branche" title="Branche ändern">
+                                            <option value="" <?= empty($s['branche']) ? 'selected' : '' ?>>–</option>
+                                            <?php foreach ($branchen as $b): ?>
+                                                <option value="<?= htmlspecialchars($b) ?>" <?= ($s['branche'] ?? '') === $b ? 'selected' : '' ?>><?= htmlspecialchars($b) ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </td>
+                                    <td>
                                         <select class="inline-select paket-select paket-<?= $s['paket'] ?: 'none' ?>"
                                                 data-id="<?= $s['id'] ?>" data-field="paket" title="Paket ändern">
                                             <option value="" <?= !$s['paket'] ? 'selected' : '' ?>>–</option>
@@ -613,15 +622,6 @@ try {
                                                 data-id="<?= $s['id'] ?>" data-field="status" title="Status ändern">
                                             <?php foreach (SPONSOR_STATUS as $key => $meta): ?>
                                                 <option value="<?= $key ?>" <?= $s['status'] === $key ? 'selected' : '' ?>><?= htmlspecialchars($meta['label']) ?></option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                    </td>
-                                    <td>
-                                        <select class="inline-select branche-select"
-                                                data-id="<?= $s['id'] ?>" data-field="branche" title="Branche ändern">
-                                            <option value="" <?= empty($s['branche']) ? 'selected' : '' ?>>–</option>
-                                            <?php foreach ($branchen as $b): ?>
-                                                <option value="<?= htmlspecialchars($b) ?>" <?= ($s['branche'] ?? '') === $b ? 'selected' : '' ?>><?= htmlspecialchars($b) ?></option>
                                             <?php endforeach; ?>
                                         </select>
                                     </td>
