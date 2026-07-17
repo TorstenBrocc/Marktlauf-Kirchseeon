@@ -131,7 +131,8 @@ function sponsorBriefPlatzhalterHilfe(): array {
         '{{firma}}'         => 'Firmenname des Sponsors',
         '{{paket_text}}'    => 'Paketname (Hauptsponsor / Gold-Sponsor / Silber-Sponsor / Bronze-Sponsor)',
         '{{paket_tabelle}}' => 'Tabelle aller Sponsoring-Pakete mit Preisen und Highlights',
-        '{{signatur}}'      => 'Signatur-Block (Name, Aufgabe, Telefon, E-Mail)',
+        '{{signatur}}'      => "Signatur-Block (Name, Aufgabe, Telefon, E-Mail)\n"
+                               . "Die persönlichen Daten stammen aus der Benutzerverwaltung (dein Profil).",
         '{{event_datum}}'   => 'Datum des Marktlaufs (aus Einstellungen)',
         '{{antwort_bis}}'   => 'Rückmeldefrist (aus Einstellungen)',
     ];

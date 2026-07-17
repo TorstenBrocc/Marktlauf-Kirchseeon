@@ -250,6 +250,13 @@ try {
             font-size: 0.8rem;
             font-weight: 600;
         }
+        /* Hinweis unter den Versand-Controls: eigene volle Zeile (flex-basis 100%) */
+        .versand-hint {
+            flex-basis: 100%;
+            margin: 0.15rem 0 0;
+            font-size: 0.8rem;
+            color: var(--text-light);
+        }
         .action-bar select {
             padding: 0.3rem 0.4rem;
             font-size: 0.8rem;
@@ -462,6 +469,7 @@ try {
                     </select>
                     <button type="submit" class="btn btn-small btn-primary">Ausgewählte anschreiben</button>
                     <span class="versand-count" id="versand-count">0 ausgewählt</span>
+                    <p class="versand-hint">Versand erfolgt über <strong>info@atsv-kirchseeon-marktlauf.de</strong></p>
                 </form>
             </div>
 
