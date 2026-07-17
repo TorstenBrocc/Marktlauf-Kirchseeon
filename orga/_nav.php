@@ -159,7 +159,7 @@ return [
     ],
     [
         'key'     => 'prompt_bibliothek',
-        'label'   => 'Prompts',
+        'label'   => 'Prompt-Bibliothek',
         'section' => 'ABLAGE',
         'href'    => 'prompt_bibliothek.php',
         'kpi'   => static function (PDO $pdo): array {
