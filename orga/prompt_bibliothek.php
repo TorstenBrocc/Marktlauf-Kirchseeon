@@ -127,7 +127,7 @@ $kategorien = [
         .pb-tag-remove:hover { color: var(--danger, #c0392b); }
         #pb-tag-input {
             border: none; outline: none; font-size: 0.8rem;
-            background: transparent; min-width: 80px;
+            background: transparent; min-width: 80px; flex: 1;
             padding: 0.2rem 0;
         }
         .pb-tags-wrapper {
@@ -265,7 +265,7 @@ $kategorien = [
                     <span style="font-size:0.78rem;font-weight:600;color:var(--text-light);white-space:nowrap">Tags:</span>
                     <div class="pb-tags-wrapper" id="pb-tags-wrapper" style="flex:1;margin-bottom:0">
                         <div id="pb-tags-chips"></div>
-                        <input type="text" id="pb-tag-input" placeholder="z. B. regional, überregional, Krankenkassen …">
+                        <input type="text" id="pb-tag-input" placeholder="bspw. regional, überregional oder Krankenkassen für Sponsoren-Scraping">
                     </div>
                 </div>
 
