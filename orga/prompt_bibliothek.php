@@ -84,7 +84,7 @@ $kategorien = [
             display: inline-block; padding: 0.15rem 0.55rem; border-radius: 20px;
             font-size: 0.72rem; font-weight: 600; letter-spacing: 0.02em;
         }
-        .badge-raceresult  { background: #e8f4ff; color: #0057b8; }
+        .badge-raceresult  { background: #d0021b; color: #fff; }
         .badge-sponsoren   { background: #fff3cd; color: #7a5000; }
         .badge-social      { background: #e8f5e9; color: #1b5e20; }
         .badge-newsletter  { background: #f3e5f5; color: #6a1b9a; }
