@@ -152,6 +152,7 @@ $kategorien = [
         .pb-split {
             display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
         }
+        .pb-split > div { min-width: 0; }
         @media (max-width: 700px) { .pb-split { grid-template-columns: 1fr; } }
         .pb-split-label {
             font-size: 0.78rem; color: var(--text-light);
