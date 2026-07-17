@@ -150,7 +150,7 @@ $renderHinweis = function (string $key) use ($isAdmin, $linkHinweise): string {
     }
     $id = 'hint-' . $key;
     $rows = min(6, max(2, substr_count($text, "\n") + 1));
-    return '<button type="button" class="qc-info" aria-expanded="false" aria-controls="' . $id . '" onclick="toggleHint(this)" title="Zugangsdaten (nur Admin)">&#9432;</button>'
+    return '<button type="button" class="qc-info" aria-expanded="false" aria-controls="' . $id . '" onclick="toggleHint(this)" title="' . htmlspecialchars($text) . '">&#9432;</button>'
         . '<div class="qc-note" id="' . $id . '" hidden>'
         . '<textarea class="qc-note-text" readonly rows="' . $rows . '" onclick="this.select()">' . htmlspecialchars($text) . '</textarea>'
         . '<div class="qc-note-actions">'
