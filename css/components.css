@@ -327,6 +327,34 @@
     letter-spacing: .2px;
 }
 
+/* "Zum Kalender hinzufügen"-Link unter der Datumszeile */
+.hero-cal-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    align-self: flex-start;
+    margin-top: 6px;
+    margin-left: 18px; /* bündig unter dem Datumstext (wie hero-meta-note) */
+    font-size: 0.8em;
+    font-weight: 600;
+    color: #fff;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: rgba(255,255,255,.5);
+    transition: color .2s, text-decoration-color .2s, transform .2s;
+}
+
+.hero-cal-link:hover {
+    color: var(--color-accent-yellow);
+    text-decoration-color: var(--color-accent-yellow);
+    transform: translateY(-1px);
+}
+
+.hero-cal-icon {
+    font-size: 1.05em;
+    line-height: 1;
+}
+
 /* CTA buttons */
 .hero-actions {
     display: flex;
