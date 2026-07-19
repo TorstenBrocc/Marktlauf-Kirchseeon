@@ -9,6 +9,7 @@ require_once __DIR__ . '/_auth.php';
 require_once __DIR__ . '/../../src/db.php';
 require_once __DIR__ . '/../../src/channels/mail.php';
 require_once __DIR__ . '/../../src/logger.php';
+require_once __DIR__ . '/../../src/helpers.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: ../helfer.php');
@@ -51,14 +52,7 @@ try {
 
     $uuid = $helfer['uuid'];
     if (empty($uuid)) {
-        $uuid = sprintf(
-            '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
-            random_int(0, 0xffff), random_int(0, 0xffff),
-            random_int(0, 0xffff),
-            random_int(0, 0x0fff) | 0x4000,
-            random_int(0, 0x3fff) | 0x8000,
-            random_int(0, 0xffff), random_int(0, 0xffff), random_int(0, 0xffff)
-        );
+        $uuid = uuid();
 
         $stmt = $pdo->prepare('UPDATE helfer SET uuid = :uuid, status = :status WHERE id = :id');
         $stmt->execute(['uuid' => $uuid, 'status' => 'bestaetigt', 'id' => $helferId]);
