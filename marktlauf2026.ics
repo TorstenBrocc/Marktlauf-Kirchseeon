@@ -10,7 +10,7 @@ DTSTART:20260920T060000Z
 DTEND:20260920T110000Z
 SUMMARY:Marktlauf Kirchseeon 2026
 DESCRIPTION:Der Marktlauf Kirchseeon geht in die nächste Runde! Wir freuen uns auf dich. Alle Infos unter www.atsv-kirchseeon-marktlauf.de
-LOCATION:Marktplatz\, Kirchseeon\, Deutschland
+LOCATION:JEK\, Westring 6\, 85614 Kirchseeon
 BEGIN:VALARM
 TRIGGER:-PT60M
 ACTION:DISPLAY
