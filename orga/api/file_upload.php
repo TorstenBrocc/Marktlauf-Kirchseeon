@@ -8,6 +8,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/_auth.php';
 require_once __DIR__ . '/../../src/db.php';
 require_once __DIR__ . '/../../src/logger.php';
+require_once __DIR__ . '/../../src/helpers.php';
 require_once __DIR__ . '/../_dateien_kategorien.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -80,14 +81,7 @@ if (!isset($allowedMimes[$detectedMime])) {
 
 $extension = $allowedMimes[$detectedMime];
 
-$uuid = sprintf(
-    '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
-    random_int(0, 0xffff), random_int(0, 0xffff),
-    random_int(0, 0xffff),
-    random_int(0, 0x0fff) | 0x4000,
-    random_int(0, 0x3fff) | 0x8000,
-    random_int(0, 0xffff), random_int(0, 0xffff), random_int(0, 0xffff)
-);
+$uuid = uuid();
 
 $serverFilename = $uuid . '.' . $extension;
 $targetDir = __DIR__ . '/../../storage/files/' . $bereich . '/';

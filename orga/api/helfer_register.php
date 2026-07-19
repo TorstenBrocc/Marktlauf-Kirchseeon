@@ -10,6 +10,7 @@ require_once __DIR__ . '/../../src/auth.php';
 require_once __DIR__ . '/../../src/db.php';
 require_once __DIR__ . '/../../src/channels/mail.php';
 require_once __DIR__ . '/../../src/logger.php';
+require_once __DIR__ . '/../../src/helpers.php';
 
 initSession();
 
@@ -112,14 +113,7 @@ foreach ($slots as $slot) {
 $validBeitragTypes = ['kuchen', 'equipment', 'sonstiges'];
 $validBeitrag = array_filter($beitrag, fn($b) => in_array($b, $validBeitragTypes, true));
 
-$uuid = sprintf(
-    '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
-    random_int(0, 0xffff), random_int(0, 0xffff),
-    random_int(0, 0xffff),
-    random_int(0, 0x0fff) | 0x4000,
-    random_int(0, 0x3fff) | 0x8000,
-    random_int(0, 0xffff), random_int(0, 0xffff), random_int(0, 0xffff)
-);
+$uuid = uuid();
 
 try {
     $pdo = getDbConnection();
