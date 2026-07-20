@@ -584,9 +584,26 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                     <span style="font-size:0.8rem;color:var(--text-light)">Bild → Modul 3 (PNG)</span>
                 </div>
             </div>
-            <p class="so-notice" style="margin-top:0.9rem">
-                Auto-Posting (Instagram/Facebook via Meta Graph API) ist für eine spätere Phase geplant.
-            </p>
+            <div class="so-dispatch" style="margin-top:1.1rem;border-top:1px solid var(--border);padding-top:0.9rem">
+                <h3 style="margin:0 0 0.5rem;font-size:1rem">Automatisch posten (Make.com)</h3>
+                <p class="so-notice" style="margin:0 0 0.6rem">
+                    Sendet den <strong>Social-Text</strong> oben + die zuletzt in <strong>Modul 3</strong> erzeugte
+                    <strong>Grafik</strong> über Make.com an die gewählten Kanäle. Ist kein Auto-Posting eingerichtet
+                    oder klappt der Versand nicht, erscheint hier der Hinweis zum manuellen Posten — die Buttons oben
+                    bleiben dafür bestehen.
+                </p>
+                <div class="so-save-row" style="align-items:center;gap:1rem;flex-wrap:wrap">
+                    <label style="display:inline-flex;align-items:center;gap:0.35rem;font-size:0.9rem">
+                        <input type="checkbox" id="so-ch-ig" checked> Instagram
+                    </label>
+                    <label style="display:inline-flex;align-items:center;gap:0.35rem;font-size:0.9rem">
+                        <input type="checkbox" id="so-ch-fb" checked> Facebook
+                    </label>
+                    <button class="btn btn-primary btn-small" id="so-dispatch-btn">An Instagram + Facebook senden</button>
+                    <span id="so-dispatch-spinner" style="display:none;font-size:0.85rem;color:var(--text-light)">⏳ sende …</span>
+                </div>
+                <p id="so-dispatch-msg" style="display:none;margin-top:0.6rem;font-size:0.88rem"></p>
+            </div>
         </div>
     </main>
 </div>
@@ -776,6 +793,8 @@ function fillShareCard(data) {
     document.getElementById('sc-highlight').textContent = data.highlight || '';
 }
 
+let lastCardDataUrl = null; // wird beim Rendern in Modul 3 gesetzt, für Auto-Posting (Modul 5)
+
 const CARD_FORMATS = {
     square:   { w: 1080, h: 1080, label: 'Quadratisch 1080×1080' },
     portrait: { w: 1080, h: 1350, label: 'Portrait 1080×1350' },
@@ -953,6 +972,7 @@ document.getElementById('so-render-card').addEventListener('click', async () => 
             logging:      false,
         });
         const dataUrl = canvas.toDataURL('image/png');
+        lastCardDataUrl = dataUrl;
         document.getElementById('so-card-img').src = dataUrl;
         document.getElementById('so-card-caption').textContent = 'Vorschau (' + fmt.label + '):';
         document.getElementById('so-card-preview').style.display = 'block';
@@ -1118,6 +1138,49 @@ document.getElementById('so-nl-copy-html').addEventListener('click', () => {
         m.style.display = 'inline';
         setTimeout(() => { m.style.display = 'none'; }, 2000);
     });
+});
+
+// Modul 5: Auto-Posting an IG/FB über Make.com (mit Fallback auf manuell)
+function showDispatchMsg(text, ok) {
+    const msg = document.getElementById('so-dispatch-msg');
+    msg.textContent = text;
+    msg.style.color = ok ? '#16a34a' : '#dc2626';
+    msg.style.display = 'block';
+}
+document.getElementById('so-dispatch-btn').addEventListener('click', async (e) => {
+    const btn     = e.currentTarget;
+    const spinner = document.getElementById('so-dispatch-spinner');
+    const text    = (document.getElementById('so-social').value || '').trim();
+    const channels = [];
+    if (document.getElementById('so-ch-ig').checked) channels.push('instagram');
+    if (document.getElementById('so-ch-fb').checked) channels.push('facebook');
+
+    document.getElementById('so-dispatch-msg').style.display = 'none';
+    if (!text)            { showDispatchMsg('Bitte zuerst einen Social-Text generieren/eingeben (Modul 2).', false); return; }
+    if (!channels.length) { showDispatchMsg('Bitte mindestens einen Kanal (Instagram/Facebook) wählen.', false); return; }
+
+    btn.disabled = true;
+    spinner.style.display = 'inline';
+    try {
+        const body = new URLSearchParams();
+        body.set('csrf_token', csrf);
+        body.set('text', text);
+        if (lastCardDataUrl) body.set('image_base64', lastCardDataUrl);
+        channels.forEach(c => body.append('channels[]', c));
+
+        const r = await fetch('api/social_dispatch.php', { method: 'POST', body });
+        const d = await r.json();
+        if (d.ok) {
+            showDispatchMsg('✓ ' + (d.message || 'An Make.com übergeben.'), true);
+        } else {
+            showDispatchMsg('⚠️ ' + (d.message || d.error || 'Versand fehlgeschlagen — bitte manuell posten (Text kopieren, PNG herunterladen).'), false);
+        }
+    } catch (err) {
+        showDispatchMsg('⚠️ Netzwerkfehler — bitte manuell posten (Text kopieren, PNG herunterladen).', false);
+    } finally {
+        btn.disabled = false;
+        spinner.style.display = 'none';
+    }
 });
 
 // Burger-Menü (wie alle anderen Orga-Seiten)

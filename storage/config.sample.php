@@ -72,4 +72,13 @@ return [
     // LLM-Provider für Social-Media-Content-Erstellung (Gemini oder Mistral)
     'gemini_api_key'  => '',  // Google AI Studio → https://aistudio.google.com/app/apikey
     'mistral_api_key' => '',  // Mistral → https://console.mistral.ai/api-keys
+
+    // Auto-Posting Social Media über Make.com (Instagram/Facebook).
+    // Leer lassen = kein Auto-Posting, das Dashboard fällt automatisch auf
+    // "manuell" zurück (Text kopieren + PNG herunterladen).
+    // Einrichtung: in Make.com ein Szenario "Custom Webhook → Instagram/Facebook"
+    // anlegen, IG-Business-/Creator-Konto + FB-Seite verbinden, die vom Webhook
+    // erzeugte URL hier eintragen. Der Webhook bekommt JSON {text, image_url, channels, secret}.
+    'make_webhook_url'    => '',  // z.B. 'https://hook.eu2.make.com/xxxxxxxxxxxx'
+    'make_webhook_secret' => '',  // frei wählbares Shared Secret; im Make-Szenario gegenprüfen (optional, aber empfohlen)
 ];
