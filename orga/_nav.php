@@ -33,7 +33,7 @@ declare(strict_types=1);
 return [
     [
         'key'   => 'dashboard',
-        'label' => 'Dashboard',
+        'label' => 'Cockpit',
         'href'  => 'index.php',
         'tile'  => false, // ist die aktuelle Seite — keine Selbst-Kachel
     ],

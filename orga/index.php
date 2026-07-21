@@ -169,7 +169,7 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
-    <title>Dashboard | ATSV Kirchseeon Marktlauf</title>
+    <title>Cockpit | ATSV Kirchseeon Marktlauf</title>
     <link rel="stylesheet" href="css/orga.css?v=<?= @filemtime(__DIR__ . '/css/orga.css') ?>">
     <style>
         .meine-aufgaben {
@@ -305,7 +305,7 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
 
         <main class="main-content">
             <header class="content-header">
-                <h1>Dashboard</h1>
+                <h1>Cockpit</h1>
             </header>
 
             <?php if ($flashSuccess): ?>

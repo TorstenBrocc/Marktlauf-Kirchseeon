@@ -103,6 +103,21 @@ $makeWebhookSecret = (string) ($config['make_webhook_secret'] ?? '');
             font-weight: 500;
             margin-bottom: 0.25rem;
         }
+        /* Überschriften der Schnellzugriff-URL-Felder als farbige Pille,
+           in der Button-Farbe der jeweiligen Kachel im Cockpit. */
+        .form-group label.link-pill {
+            align-self: flex-start;
+            display: inline-block;
+            color: #fff;
+            font-weight: 600;
+            padding: 0.15rem 0.7rem;
+            border-radius: 999px;
+            letter-spacing: 0.01em;
+        }
+        .link-pill-raceresult { background: #C41011; }
+        .link-pill-trello     { background: #0079BF; }
+        .link-pill-onedrive   { background: #6264A7; }
+        .link-pill-strava     { background: #FC4C02; }
         .form-group input,
         .form-group textarea {
             padding: 0.5rem;
@@ -203,12 +218,12 @@ $makeWebhookSecret = (string) ($config['make_webhook_secret'] ?? '');
                 </div>
 
                 <div class="settings-section">
-                    <h2>Schnellzugriff-Links (Dashboard)</h2>
-                    <p class="settings-hint">Zugangsdaten-Notizen sind im Dashboard <strong>nur für Admins</strong> hinter dem&nbsp;ⓘ-Symbol sichtbar. Sie werden im Klartext gespeichert – lege hier idealerweise nur geteilte Vereins-Zugänge ab, keine persönlichen Passwörter.</p>
+                    <h2>Schnellzugriff-Links (Cockpit)</h2>
+                    <p class="settings-hint">Zugangsdaten-Notizen sind im Cockpit <strong>nur für Admins</strong> hinter dem&nbsp;ⓘ-Symbol sichtbar. Sie werden im Klartext gespeichert – lege hier idealerweise nur geteilte Vereins-Zugänge ab, keine persönlichen Passwörter.</p>
 
                     <div class="form-row single" id="link-raceresult_hinweis">
                         <div class="form-group">
-                            <label for="raceresult_url">Race-Result-URL</label>
+                            <label for="raceresult_url" class="link-pill link-pill-raceresult">Race-Result-URL</label>
                             <input type="url" id="raceresult_url" name="raceresult_url" value="<?= htmlspecialchars($raceresultUrl) ?>" placeholder="https://my.raceresult.com/...">
                         </div>
                         <div class="form-group">
@@ -219,7 +234,7 @@ $makeWebhookSecret = (string) ($config['make_webhook_secret'] ?? '');
 
                     <div class="form-row single" id="link-trello_hinweis">
                         <div class="form-group">
-                            <label for="trello_board_url">Trello-Board-URL</label>
+                            <label for="trello_board_url" class="link-pill link-pill-trello">Trello-Board-URL</label>
                             <input type="url" id="trello_board_url" name="trello_board_url" value="<?= htmlspecialchars($trelloUrl) ?>" placeholder="https://trello.com/b/...">
                         </div>
                         <div class="form-group">
@@ -230,7 +245,7 @@ $makeWebhookSecret = (string) ($config['make_webhook_secret'] ?? '');
 
                     <div class="form-row single" id="link-onedrive_hinweis">
                         <div class="form-group">
-                            <label for="onedrive_url">OneDrive-URL</label>
+                            <label for="onedrive_url" class="link-pill link-pill-onedrive">OneDrive-URL</label>
                             <input type="url" id="onedrive_url" name="onedrive_url" value="<?= htmlspecialchars($onedriveUrl) ?>" placeholder="https://onedrive.live.com/...">
                         </div>
                         <div class="form-group">
@@ -241,7 +256,7 @@ $makeWebhookSecret = (string) ($config['make_webhook_secret'] ?? '');
 
                     <div class="form-row single" id="link-strava_hinweis">
                         <div class="form-group">
-                            <label for="strava_url">Strava-URL</label>
+                            <label for="strava_url" class="link-pill link-pill-strava">Strava-URL</label>
                             <input type="url" id="strava_url" name="strava_url" value="<?= htmlspecialchars($stravaUrl) ?>" placeholder="https://www.strava.com/clubs/...">
                         </div>
                         <div class="form-group">
