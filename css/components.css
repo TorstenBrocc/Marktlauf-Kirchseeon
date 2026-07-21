@@ -236,9 +236,7 @@
 
 /* Dezenter Link auf die Veranstaltungsseite */
 .hero-kicker-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
+    display: inline;
     color: inherit;
     text-decoration: none;
     transition: opacity 0.2s ease;
@@ -255,8 +253,10 @@
     text-underline-offset: 3px;
 }
 
+/* Icon klebt an der letzten Zeile (kein Whitespace im HTML => keine Umbruchstelle) */
 .hero-kicker-ext {
-    flex: none;
+    vertical-align: middle;
+    margin-left: 5px;
     opacity: 0.75;
 }
 
