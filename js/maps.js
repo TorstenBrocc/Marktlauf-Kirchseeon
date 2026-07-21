@@ -51,9 +51,11 @@ const routesConfig = {
   },
   "elite-5km": {
     gpx: "assets/courses/5km.gpx",
+    blocked: true,
   },
   "elite-10km": {
     gpx: "assets/courses/10km.gpx",
+    blocked: true,
   },
 };
 
@@ -66,7 +68,16 @@ function initRouteMaps() {
     const config = routesConfig[routeId];
     const previewEl = card.querySelector(".route-map-preview");
 
-    if (config && config.gpx) {
+    if (config && config.blocked) {
+      // Karte nicht abbilden: Störer statt Vorschau, kein Klick zum Öffnen.
+      previewEl.classList.add("route-map-blocked");
+      previewEl.innerHTML = `
+        <div class="route-blocked-overlay">
+          <span class="route-blocked-icon" aria-hidden="true">🔒</span>
+          <span class="route-blocked-text" data-i18n="strecke.approval_pending">Karte noch nicht verfügbar – Genehmigungsverfahren läuft</span>
+        </div>`;
+      previewEl.style.cursor = "default";
+    } else if (config && config.gpx) {
       const mapId = `preview-map-${routeId}`;
       previewEl.id = mapId;
       createPreviewMap(mapId, config.gpx);
@@ -125,7 +136,7 @@ function openMapModal(routeId) {
   const modal = document.getElementById("map-modal");
   const config = routesConfig[routeId];
 
-  if (!modal || !config || !config.gpx) return;
+  if (!modal || !config || !config.gpx || config.blocked) return;
 
   modal.classList.add("active");
   document.body.style.overflow = "hidden";
