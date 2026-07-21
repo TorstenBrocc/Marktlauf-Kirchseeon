@@ -59,6 +59,9 @@ $stravaHinweisVal     = $stravaHinweis !== ''     ? $stravaHinweis     : $loginD
 $smtpHost = $config['smtp_host'] ?? '–';
 $smtpPort = $config['smtp_port'] ?? '–';
 $smtpFrom = $config['smtp_from'] ?? $config['smtp_user'] ?? '–';
+
+$makeWebhookUrl    = (string) ($config['make_webhook_url'] ?? '');
+$makeWebhookSecret = (string) ($config['make_webhook_secret'] ?? '');
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -296,6 +299,21 @@ $smtpFrom = $config['smtp_from'] ?? $config['smtp_user'] ?? '–';
                     </dl>
                 </div>
                 <p class="info-hint">Änderungen nur über <code>storage/config.php</code></p>
+            </div>
+
+            <div class="settings-section">
+                <h2>Social-Media Auto-Posting (Make.com)</h2>
+                <div class="info-block">
+                    <dl>
+                        <dt>Status</dt>
+                        <dd><?= $makeWebhookUrl !== '' ? 'aktiv' : 'nicht konfiguriert – manueller Versand' ?></dd>
+                        <dt>Webhook-URL</dt>
+                        <dd><?= $makeWebhookUrl !== '' ? htmlspecialchars($makeWebhookUrl) : '–' ?></dd>
+                        <dt>Secret</dt>
+                        <dd><?= $makeWebhookSecret !== '' ? htmlspecialchars($makeWebhookSecret) : '–' ?></dd>
+                    </dl>
+                </div>
+                <p class="info-hint">Dasselbe Secret gehört in den Filter des Make.com-Szenarios. Änderungen nur über <code>storage/config.php</code>.</p>
             </div>
         </main>
     </div>
