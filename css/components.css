@@ -234,6 +234,32 @@
     color: #fff8dd;
 }
 
+/* Dezenter Link auf die Veranstaltungsseite */
+.hero-kicker-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: inherit;
+    text-decoration: none;
+    transition: opacity 0.2s ease;
+}
+
+.hero-kicker-link:hover,
+.hero-kicker-link:focus-visible {
+    opacity: 0.8;
+}
+
+.hero-kicker-link:hover .hero-kicker-text,
+.hero-kicker-link:focus-visible .hero-kicker-text {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.hero-kicker-ext {
+    flex: none;
+    opacity: 0.75;
+}
+
 /* Main title */
 .hero h1 {
     margin: 0;
