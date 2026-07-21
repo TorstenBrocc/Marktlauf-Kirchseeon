@@ -814,6 +814,45 @@
     cursor: pointer;
 }
 
+/* Störer: Karte wegen laufendem Genehmigungsverfahren gesperrt */
+.route-map-blocked {
+    position: relative;
+    cursor: default;
+    background-color: var(--gray-200);
+    background-image: repeating-linear-gradient(
+        45deg,
+        var(--gray-100),
+        var(--gray-100) 12px,
+        var(--gray-200) 12px,
+        var(--gray-200) 24px
+    );
+}
+
+.route-blocked-overlay {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-xs);
+    text-align: center;
+    padding: var(--space-md);
+    width: 100%;
+    height: 100%;
+}
+
+.route-blocked-icon {
+    font-size: 1.75rem;
+    line-height: 1;
+}
+
+.route-blocked-text {
+    font-style: normal;
+    font-weight: 700;
+    color: var(--secondary-color);
+    font-size: 0.95rem;
+    max-width: 90%;
+}
+
 .route-card-content {
     padding: var(--space-md);
     display: flex;
