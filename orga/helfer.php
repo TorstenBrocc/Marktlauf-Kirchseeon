@@ -198,14 +198,32 @@ while ($row = $slotStmt->fetch()) {
             font-size: 0.75rem;
             color: var(--text-light);
         }
+        .content-header--with-action {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
     </style>
 </head>
 <body>
 <?php $activeNav = 'helfer'; require __DIR__ . '/_sidebar.php'; ?>
 
         <main class="main-content">
-            <header class="content-header">
+            <header class="content-header content-header--with-action">
                 <h1>Helfer-Übersicht</h1>
+                <a href="https://atsv-kirchseeon-marktlauf.de/helfer-anmeldung.php?token=2650B7543C102D8E528F96021885F5EE3BE8361FBA6ADE4611023A9D02875FEB"
+                   class="btn btn-primary btn-small"
+                   target="_blank" rel="noopener noreferrer"
+                   title="Öffentlichen Einladungslink der Helferanmeldung öffnen">
+                    Einladungslink
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:middle;margin-left:4px;">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                </a>
             </header>
 
             <?php if ($flashSuccess): ?>
