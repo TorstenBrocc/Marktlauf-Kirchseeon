@@ -85,8 +85,34 @@ if ($imageB64 !== '') {
         exit;
     }
 
-    $filename = 'post-' . date('Ymd-His') . '-' . substr(uuid(), 0, 8) . '.png';
-    if (file_put_contents($dir . '/' . $filename, $binary) === false) {
+    // Instagram-Content-Publishing akzeptiert offiziell nur JPEG → PNG serverseitig
+    // nach JPEG wandeln (weißer Hintergrund, da JPEG keine Transparenz kennt).
+    // Facebook akzeptiert JPEG ebenso. Ohne GD-Erweiterung: PNG als Fallback.
+    $ext = 'png';
+    $out = $binary;
+    if (function_exists('imagecreatefromstring')) {
+        $src = @imagecreatefromstring($binary);
+        if ($src !== false) {
+            $w = imagesx($src);
+            $h = imagesy($src);
+            $canvas = imagecreatetruecolor($w, $h);
+            $white  = imagecolorallocate($canvas, 255, 255, 255);
+            imagefilledrectangle($canvas, 0, 0, $w, $h, $white);
+            imagecopy($canvas, $src, 0, 0, 0, 0, $w, $h);
+            ob_start();
+            imagejpeg($canvas, null, 90);
+            $jpeg = ob_get_clean();
+            if ($jpeg !== false && $jpeg !== '') {
+                $out = $jpeg;
+                $ext = 'jpg';
+            }
+            imagedestroy($src);
+            imagedestroy($canvas);
+        }
+    }
+
+    $filename = 'post-' . date('Ymd-His') . '-' . substr(uuid(), 0, 8) . '.' . $ext;
+    if (file_put_contents($dir . '/' . $filename, $out) === false) {
         logError('social_dispatch: Bild konnte nicht geschrieben werden.');
         http_response_code(500);
         echo json_encode(['error' => 'Bild konnte nicht gespeichert werden.']);
