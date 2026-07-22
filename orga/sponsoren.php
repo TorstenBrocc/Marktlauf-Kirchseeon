@@ -133,10 +133,10 @@ try {
     <style>
         .page-header {
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-start;
             align-items: center;
             flex-wrap: wrap;
-            gap: 1rem;
+            gap: 1.25rem;
             margin-bottom: 1.5rem;
         }
         .filter-bar {
@@ -397,6 +397,8 @@ try {
         .status-abgelehnt-row { background: rgba(211, 47, 47, 0.12); }
         /* In Klärung: ganze Zeile hell transparent gelb (analog zu zugesagt/abgelehnt) */
         .status-in_klaerung-row { background: rgba(244, 180, 0, 0.16); }
+        /* Angeschrieben: ganze Zeile hell transparent blau (Ampel-Blau) */
+        .status-angefragt-row { background: rgba(43, 125, 233, 0.12); }
         .kein-kontakt-row {
             background: #f9f9f9;
         }
@@ -615,6 +617,8 @@ try {
                                     $rowClass = 'status-abgelehnt-row';
                                 } elseif ($s['status'] === 'in_klaerung') {
                                     $rowClass = 'status-in_klaerung-row';
+                                } elseif ($s['status'] === 'angefragt') {
+                                    $rowClass = 'status-angefragt-row';
                                 }
                                 ?>
                                 <tr class="<?= $rowClass ?>">
@@ -890,13 +894,15 @@ try {
                                 applyClass(sel, ampelClasses, 'ampel-' + d.ampel);
                                 const row = sel.closest('tr');
                                 if (row && !row.classList.contains('kein-kontakt-row')) {
-                                    row.classList.remove('status-zugesagt-row', 'status-abgelehnt-row', 'status-in_klaerung-row');
+                                    row.classList.remove('status-zugesagt-row', 'status-abgelehnt-row', 'status-in_klaerung-row', 'status-angefragt-row');
                                     if (sel.value === 'zugesagt') {
                                         row.classList.add('status-zugesagt-row');
                                     } else if (sel.value === 'abgelehnt') {
                                         row.classList.add('status-abgelehnt-row');
                                     } else if (sel.value === 'in_klaerung') {
                                         row.classList.add('status-in_klaerung-row');
+                                    } else if (sel.value === 'angefragt') {
+                                        row.classList.add('status-angefragt-row');
                                     }
                                 }
                             } else if (sel.dataset.field === 'paket') {
