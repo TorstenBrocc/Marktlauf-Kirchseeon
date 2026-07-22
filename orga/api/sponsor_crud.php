@@ -91,6 +91,23 @@ if (($_POST['action'] ?? '') === 'inline_update') {
             exit;
         }
 
+        if ($field === 'zustaendig') {
+            // Leer = Zuordnung entfernen; sonst muss es ein aktiver Nutzer sein.
+            $uid = ($value !== '' && ctype_digit($value)) ? (int) $value : 0;
+            if ($uid > 0) {
+                $chk = $pdo->prepare('SELECT 1 FROM users WHERE id = :id AND active = 1');
+                $chk->execute(['id' => $uid]);
+                if (!$chk->fetchColumn()) {
+                    echo json_encode(['ok' => false, 'message' => 'Unbekannte oder inaktive Person.']);
+                    exit;
+                }
+            }
+            $pdo->prepare('UPDATE sponsors SET zustaendig_user_id = :v WHERE id = :id')
+                ->execute(['v' => $uid > 0 ? $uid : null, 'id' => $sponsorId]);
+            echo json_encode(['ok' => true]);
+            exit;
+        }
+
         echo json_encode(['ok' => false, 'message' => 'Ungültiges Feld.']);
         exit;
     } catch (PDOException $e) {
