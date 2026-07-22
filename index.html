@@ -479,6 +479,25 @@
                         /* Eigenes CSS zum Anpassen der RaceResult-Anmeldung hier einfuegen */
                     </style>
                     <!-- RaceResult Snippet End -->
+                    <!-- Deutsches Datum in der RR-Vor-Oeffnungs-Meldung (ISO -> lesbar) -->
+                    <script>
+                    (function () {
+                        var MON = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+                        var TAG = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+                        var ISO = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:[+-]\d{2}:\d{2}|Z)?/;
+                        function fmt(iso){ var d=new Date(iso); if(isNaN(d.getTime())) return null;
+                            var h=('0'+d.getHours()).slice(-2), m=('0'+d.getMinutes()).slice(-2);
+                            return TAG[d.getDay()]+', '+d.getDate()+'. '+MON[d.getMonth()]+' '+d.getFullYear()+' um '+h+':'+m+' Uhr'; }
+                        function fix(root){ if(!root) return;
+                            var w=document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null), n;
+                            while((n=w.nextNode())){ var m=n.nodeValue.match(ISO); if(m){ var s=fmt(m[0]);
+                                if(s){ n.nodeValue=n.nodeValue.replace(m[0], s).replace(/\.\s*$/, ''); } } } }
+                        var t=document.getElementById('anmeldung')||document.body;
+                        fix(t);
+                        new MutationObserver(function(ms){ ms.forEach(function(){ fix(t); }); })
+                            .observe(t,{childList:true,subtree:true,characterData:true});
+                    })();
+                    </script>
                 </div>
             </div>
         </section>
@@ -494,16 +513,16 @@
                     <div class="sponsor-item"><img src="assets/images/sponsoren/Apotheke%20St.%20Josef.png" alt="Apotheke St. Josef" loading="lazy"></div>
                     <div class="sponsor-item"><img src="assets/images/sponsoren/KSKMSE_Instituts-Logo-Regionen_cmyk_rot.jpg" alt="Kreissparkasse München Starnberg Ebersberg" loading="lazy"></div>
                     <div class="sponsor-item"><img src="assets/images/sponsoren/trauerhilfe%20DENK.png" alt="Trauerhilfe DENK" loading="lazy"></div>
-                    <div class="sponsor-item"><img src="assets/images/sponsoren/Apotheke%20St.%20Josef.png" alt="Apotheke St. Josef" loading="lazy"></div>
-                    <div class="sponsor-item"><img src="assets/images/sponsoren/KSKMSE_Instituts-Logo-Regionen_cmyk_rot.jpg" alt="Kreissparkasse München Starnberg Ebersberg" loading="lazy"></div>
-                    <div class="sponsor-item"><img src="assets/images/sponsoren/trauerhilfe%20DENK.png" alt="Trauerhilfe DENK" loading="lazy"></div>
+                    <div class="sponsor-item"><img src="assets/images/platzhalter-sponsoren-logo.png" alt="Sponsorenlogo" loading="lazy"></div>
+                    <div class="sponsor-item"><img src="assets/images/platzhalter-sponsoren-logo.png" alt="Sponsorenlogo" loading="lazy"></div>
+                    <div class="sponsor-item"><img src="assets/images/platzhalter-sponsoren-logo.png" alt="Sponsorenlogo" loading="lazy"></div>
                     <!-- Duplicate for seamless loop -->
                     <div class="sponsor-item" aria-hidden="true"><img src="assets/images/sponsoren/Apotheke%20St.%20Josef.png" alt="" loading="lazy"></div>
                     <div class="sponsor-item" aria-hidden="true"><img src="assets/images/sponsoren/KSKMSE_Instituts-Logo-Regionen_cmyk_rot.jpg" alt="" loading="lazy"></div>
                     <div class="sponsor-item" aria-hidden="true"><img src="assets/images/sponsoren/trauerhilfe%20DENK.png" alt="" loading="lazy"></div>
-                    <div class="sponsor-item" aria-hidden="true"><img src="assets/images/sponsoren/Apotheke%20St.%20Josef.png" alt="" loading="lazy"></div>
-                    <div class="sponsor-item" aria-hidden="true"><img src="assets/images/sponsoren/KSKMSE_Instituts-Logo-Regionen_cmyk_rot.jpg" alt="" loading="lazy"></div>
-                    <div class="sponsor-item" aria-hidden="true"><img src="assets/images/sponsoren/trauerhilfe%20DENK.png" alt="" loading="lazy"></div>
+                    <div class="sponsor-item" aria-hidden="true"><img src="assets/images/platzhalter-sponsoren-logo.png" alt="" loading="lazy"></div>
+                    <div class="sponsor-item" aria-hidden="true"><img src="assets/images/platzhalter-sponsoren-logo.png" alt="" loading="lazy"></div>
+                    <div class="sponsor-item" aria-hidden="true"><img src="assets/images/platzhalter-sponsoren-logo.png" alt="" loading="lazy"></div>
                 </div>
             </div>
         </section>
