@@ -201,8 +201,8 @@ while ($row = $slotStmt->fetch()) {
         .content-header--with-action {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            gap: 1rem;
+            justify-content: flex-start;
+            gap: 1.25rem;
             flex-wrap: wrap;
         }
     </style>
@@ -216,8 +216,19 @@ while ($row = $slotStmt->fetch()) {
                 <a href="https://atsv-kirchseeon-marktlauf.de/helfer-anmeldung.php?token=2650B7543C102D8E528F96021885F5EE3BE8361FBA6ADE4611023A9D02875FEB"
                    class="btn btn-primary btn-small"
                    target="_blank" rel="noopener noreferrer"
-                   title="Öffentlichen Einladungslink der Helferanmeldung öffnen">
-                    Einladungslink
+                   title="Öffentliche Maske der Helfereinladung/-anmeldung öffnen">
+                    Maske Helfereinladung
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:middle;margin-left:4px;">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                </a>
+                <a href="https://atsv-kirchseeon-marktlauf.de/helfer/zugang.php"
+                   class="btn btn-secondary btn-small"
+                   target="_blank" rel="noopener noreferrer"
+                   title="Briefing-Übersicht (persönliche Helfer-Maske) öffnen">
+                    Briefing-Übersicht
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:middle;margin-left:4px;">
                         <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
                         <polyline points="15 3 21 3 21 9"></polyline>
@@ -284,13 +295,13 @@ while ($row = $slotStmt->fetch()) {
                             <th>Einsatz</th>
                             <th>Anmeldung</th>
                             <th>Notiz</th>
-                            <?php if ($isAdmin): ?><th>Aktion</th><?php endif; ?>
+                            <th>Aktion</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if (empty($helfer)): ?>
                             <tr>
-                                <td colspan="<?= $isAdmin ? 10 : 9 ?>">Keine Helfer gefunden.</td>
+                                <td colspan="10">Keine Helfer gefunden.</td>
                             </tr>
                         <?php else: ?>
                             <?php foreach ($helfer as $h): ?>
@@ -330,15 +341,18 @@ while ($row = $slotStmt->fetch()) {
                                             <button type="submit" title="Notiz speichern">Speichern</button>
                                         </form>
                                     </td>
-                                    <?php if ($isAdmin): ?>
                                     <td>
-                                        <form method="post" action="api/helfer_delete.php" class="inline-form" onsubmit="return confirm('Helfer wirklich löschen?');">
+                                        <a href="https://atsv-kirchseeon-marktlauf.de/helfer/zugang.php?uuid=<?= htmlspecialchars(urlencode($h['uuid'])) ?>"
+                                           class="btn-action" target="_blank" rel="noopener noreferrer"
+                                           title="Briefing-Ansicht dieses Helfers öffnen (zum Nachvollziehen der Darstellung)">Briefing</a>
+                                        <?php if ($isAdmin): ?>
+                                        <form method="post" action="api/helfer_delete.php" class="inline-form" onsubmit="return confirm('Helfer wirklich löschen?');" style="margin-top: 0.25rem;">
                                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                                             <input type="hidden" name="helfer_id" value="<?= $h['id'] ?>">
                                             <button type="submit" class="btn-action btn-danger" title="Helfer löschen">Löschen</button>
                                         </form>
+                                        <?php endif; ?>
                                     </td>
-                                    <?php endif; ?>
                                 </tr>
                             <?php endforeach; ?>
                         <?php endif; ?>
