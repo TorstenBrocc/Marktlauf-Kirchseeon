@@ -13,6 +13,6 @@ $basePath = $basePath ?? '';
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="<?= $basePath ?>css/base.css">
-    <link rel="stylesheet" href="<?= $basePath ?>css/layout.css">
-    <link rel="stylesheet" href="<?= $basePath ?>css/components.css">
+    <link rel="stylesheet" href="<?= $basePath ?>css/base.css?v=<?= @filemtime(__DIR__ . '/../../css/base.css') ?>">
+    <link rel="stylesheet" href="<?= $basePath ?>css/layout.css?v=<?= @filemtime(__DIR__ . '/../../css/layout.css') ?>">
+    <link rel="stylesheet" href="<?= $basePath ?>css/components.css?v=<?= @filemtime(__DIR__ . '/../../css/components.css') ?>">
