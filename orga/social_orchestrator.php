@@ -302,12 +302,30 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                 <div class="so-field" id="so-anlass-field">
                     <label for="so-anlass">Anlass / Thema</label>
                     <select id="so-anlass">
-                        <option value="allgemein">Allgemeiner Beitrag</option>
-                        <option value="ankuendigung">Ankündigung des Events</option>
-                        <option value="countdown">Countdown / Vorfreude</option>
-                        <option value="sponsoren_dank">Dank an Sponsoren &amp; Partner</option>
-                        <option value="helfer">Helfer-Aufruf / -Dank</option>
-                        <option value="renntag">Renntag-Nachbericht (nutzt RaceResult-Daten)</option>
+                        <optgroup label="Standard">
+                            <option value="allgemein">Allgemeiner Beitrag</option>
+                            <option value="ankuendigung">Ankündigung des Events</option>
+                            <option value="countdown">Countdown / Vorfreude</option>
+                            <option value="sponsoren_dank">Dank an Sponsoren &amp; Partner</option>
+                            <option value="helfer">Helfer-Aufruf / -Dank</option>
+                            <option value="renntag">Renntag-Nachbericht (nutzt RaceResult-Daten)</option>
+                        </optgroup>
+                        <optgroup label="Contentplan 2026">
+                            <option value="save_the_date">Save the Date</option>
+                            <option value="warum_mitlaufen">Warum mitlaufen? (5 Gründe)</option>
+                            <option value="strecke">Strecke entdecken</option>
+                            <option value="nachhaltigkeit">Nachhaltig laufen</option>
+                            <option value="anmeldung_offen">Anmeldung geöffnet</option>
+                            <option value="helfer_gesucht">Helfer gesucht</option>
+                            <option value="sponsorenvorstellung">Sponsorenvorstellung</option>
+                            <option value="countdown_30">30-Tage-Countdown</option>
+                            <option value="trainingstipp">Trainingstipp</option>
+                            <option value="energie_umwelttag">Energie- &amp; Umwelttag</option>
+                            <option value="countdown_7">7-Tage-Countdown</option>
+                            <option value="morgen">Morgen geht's los</option>
+                            <option value="eventtag">Eventtag (live)</option>
+                            <option value="danke">Danke / Rückblick</option>
+                        </optgroup>
                     </select>
                 </div>
                 <div class="so-field" id="so-hashtags-field">
@@ -606,10 +624,68 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                 <p id="so-dispatch-msg" style="display:none;margin-top:0.6rem;font-size:0.88rem"></p>
             </div>
         </div>
+
+        <!-- Modul 4: QR-Code Generator -->
+        <div class="so-card">
+            <h2>4 · QR-Code Generator</h2>
+            <p class="so-notice">
+                Beliebige URL eingeben (z.&nbsp;B. Anmeldung, Familienanmeldung, Ergebnisse) und als
+                <strong>QR-Code</strong> für Flyer, Aushang oder Story herunterladen.
+            </p>
+            <div class="so-field">
+                <label for="so-qr-url">URL</label>
+                <input type="url" id="so-qr-url" placeholder="https://atsv-kirchseeon-marktlauf.de/…" style="width:100%">
+            </div>
+            <div class="so-save-row" style="align-items:center;gap:1rem;flex-wrap:wrap;margin-top:0.6rem">
+                <button class="btn btn-primary btn-small" id="so-qr-gen" type="button">QR-Code erzeugen</button>
+                <a class="btn btn-secondary btn-small" id="so-qr-dl-png" download="marktlauf-qr.png" style="display:none">PNG herunterladen</a>
+                <a class="btn btn-secondary btn-small" id="so-qr-dl-svg" download="marktlauf-qr.svg" style="display:none">SVG herunterladen</a>
+                <span id="so-qr-msg" style="display:none;font-size:0.85rem"></span>
+            </div>
+            <div id="so-qr-out" style="margin-top:1rem"></div>
+        </div>
     </main>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<!-- QR-Code Generator (lokal, ohne externe Abhaengigkeit) -->
+<script src="../assets/js/qrcode.js"></script>
+<script>
+(function(){
+    var url   = document.getElementById('so-qr-url'),
+        gen   = document.getElementById('so-qr-gen'),
+        out   = document.getElementById('so-qr-out'),
+        dlPng = document.getElementById('so-qr-dl-png'),
+        dlSvg = document.getElementById('so-qr-dl-svg'),
+        msg   = document.getElementById('so-qr-msg');
+    if (!gen || typeof qrcode !== 'function') return;
+    function show(m, ok){ msg.style.display='inline'; msg.textContent=m; msg.style.color = ok ? '#16a34a' : '#dc2626'; }
+    function build(){
+        var v = (url.value || '').trim();
+        if (!v){ show('Bitte eine URL eingeben.', false); out.innerHTML=''; dlPng.style.display='none'; dlSvg.style.display='none'; return; }
+        try {
+            var qr = qrcode(0, 'M'); qr.addData(v); qr.make();
+            var count = qr.getModuleCount(), cell = 8, quiet = 4, size = (count + quiet*2) * cell;
+            var canvas = document.createElement('canvas'); canvas.width = canvas.height = size;
+            var ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, size, size);
+            ctx.fillStyle = '#000000';
+            for (var r=0; r<count; r++) for (var c=0; c<count; c++) if (qr.isDark(r, c)) ctx.fillRect((c+quiet)*cell, (r+quiet)*cell, cell, cell);
+            canvas.style.cssText = 'width:220px;height:220px;image-rendering:pixelated;border:1px solid var(--border);border-radius:8px;background:#fff';
+            out.innerHTML=''; out.appendChild(canvas);
+            dlPng.href = canvas.toDataURL('image/png'); dlPng.style.display='inline-flex';
+            var svg = qr.createSvgTag({ cellSize: cell, margin: quiet*cell, scalable: true });
+            dlSvg.href = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg); dlSvg.style.display='inline-flex';
+            show('✓ QR-Code erzeugt.', true);
+        } catch (e) {
+            show('Fehler — URL evtl. zu lang für einen QR-Code.', false);
+            out.innerHTML=''; dlPng.style.display='none'; dlSvg.style.display='none';
+        }
+    }
+    gen.addEventListener('click', build);
+    url.addEventListener('keydown', function(e){ if (e.key === 'Enter'){ e.preventDefault(); build(); } });
+})();
+</script>
 <script>
 const csrf     = <?= json_encode($csrf) ?>;
 const mockData = <?= $mockDataJson ?>;
