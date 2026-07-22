@@ -39,7 +39,7 @@ return [
     ],
     [
         'key'     => 'helfer',
-        'label'   => 'Helfer',
+        'label'   => 'Helfer-Übersicht',
         'section' => 'HELFER-ORGA',
         'href'    => 'helfer.php',
         'kpi'   => static function (PDO $pdo): array {

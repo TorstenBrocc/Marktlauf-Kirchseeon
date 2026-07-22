@@ -78,10 +78,24 @@ function einsatzTooltip(array $einsatzProHelfer, int $helferId): string {
             font-size: 1.1rem; margin-bottom: 0.9rem;
             padding-bottom: 0.4rem; border-bottom: 2px solid var(--primary);
         }
-        .beitrag-kachel { display: flex; flex-direction: column; gap: 0.4rem; }
-        .bk-name { font-weight: 600; display: flex; align-items: center; }
-        .bk-contact a { display: block; font-size: 0.8rem; }
-        .bk-inhalt { font-size: 0.9rem; margin-top: 0.15rem; }
+        /* Eine Kachel je Bereich; Einträge tabellarisch untereinander. */
+        .bt-kachel { padding: 0; }
+        .bt-kopf, .bt-zeile {
+            display: grid;
+            grid-template-columns: minmax(140px, 1fr) minmax(150px, 1.1fr) minmax(160px, 1.5fr);
+            gap: 0.9rem; padding: 0.7rem 1.15rem; align-items: start;
+        }
+        .bt-kopf {
+            border-bottom: 2px solid var(--border);
+            font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em;
+            color: var(--text-light); font-weight: 600;
+        }
+        .bt-zeile { border-top: 1px solid var(--border); font-size: 0.875rem; }
+        .bt-zeile:first-of-type { border-top: none; }
+        .bt-zeile:hover { background: #fafafa; }
+        .bt-name { font-weight: 600; display: flex; align-items: center; overflow-wrap: anywhere; }
+        .bt-kontakt a { display: block; font-size: 0.8rem; overflow-wrap: anywhere; }
+        .bt-inhalt { overflow-wrap: anywhere; }
         .nuesse-badge {
             display: inline-block; margin-left: 0.4rem; padding: 0.1rem 0.45rem;
             background: #fffbea; border: 1px solid #f59e0b; border-radius: 4px;
@@ -95,6 +109,17 @@ function einsatzTooltip(array $einsatzProHelfer, int $helferId): string {
             cursor: help; user-select: none; margin-left: 0.4rem;
         }
         .empty-hint { color: var(--text-light); font-size: 0.875rem; }
+
+        @media (max-width: 760px) {
+            .bt-kopf { display: none; }
+            .bt-zeile { grid-template-columns: 1fr; gap: 0.3rem; padding: 0.85rem 1rem; }
+            .bt-zeile > div { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: baseline; }
+            .bt-zeile > div::before {
+                content: attr(data-label); flex: 0 0 5.5rem;
+                font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em;
+                color: var(--text-light); font-weight: 600;
+            }
+        }
     </style>
 </head>
 <body>
@@ -111,23 +136,24 @@ function einsatzTooltip(array $einsatzProHelfer, int $helferId): string {
                 <?php if (empty($kuchen)): ?>
                     <p class="empty-hint">Noch keine Kuchen-Zusagen.</p>
                 <?php else: ?>
-                    <div class="kachel-grid">
+                    <div class="kachel bt-kachel">
+                        <div class="bt-kopf"><div>Name</div><div>Kontakt</div><div>Art des Kuchens</div></div>
                         <?php foreach ($kuchen as $k): ?>
                             <?php $p = kuchenParts($k['freitext']); $tt = einsatzTooltip($einsatzProHelfer, (int) $k['id']); ?>
-                            <div class="kachel beitrag-kachel">
-                                <div class="bk-name">
+                            <div class="bt-zeile">
+                                <div class="bt-name" data-label="Name">
                                     <?= htmlspecialchars($k['vorname'] . ' ' . $k['nachname']) ?>
                                     <?php if ($tt !== ''): ?>
                                         <span class="info-i" tabindex="0" title="Hilft außerdem im Einsatzplan — <?= htmlspecialchars($tt) ?>">i</span>
                                     <?php endif; ?>
                                 </div>
-                                <div class="bk-inhalt">
-                                    🍰 <?= $p['art'] !== '' ? htmlspecialchars($p['art']) : '<span class="empty-hint">ohne Angabe</span>' ?>
-                                    <?php if ($p['nuesse']): ?><span class="nuesse-badge">⚠️ enthält Nüsse</span><?php endif; ?>
-                                </div>
-                                <div class="bk-contact">
+                                <div class="bt-kontakt" data-label="Kontakt">
                                     <a href="mailto:<?= htmlspecialchars($k['email']) ?>"><?= htmlspecialchars($k['email']) ?></a>
                                     <a href="tel:<?= htmlspecialchars($k['phone']) ?>"><?= htmlspecialchars($k['phone']) ?></a>
+                                </div>
+                                <div class="bt-inhalt" data-label="Art">
+                                    🍰 <?= $p['art'] !== '' ? htmlspecialchars($p['art']) : '<span class="empty-hint">ohne Angabe</span>' ?>
+                                    <?php if ($p['nuesse']): ?><span class="nuesse-badge">⚠️ enthält Nüsse</span><?php endif; ?>
                                 </div>
                             </div>
                         <?php endforeach; ?>
@@ -141,21 +167,22 @@ function einsatzTooltip(array $einsatzProHelfer, int $helferId): string {
                 <?php if (empty($sonstiges)): ?>
                     <p class="empty-hint">Noch keine sonstige Unterstützung angeboten.</p>
                 <?php else: ?>
-                    <div class="kachel-grid">
+                    <div class="kachel bt-kachel">
+                        <div class="bt-kopf"><div>Name</div><div>Kontakt</div><div>Angebotene Unterstützung</div></div>
                         <?php foreach ($sonstiges as $s): ?>
                             <?php $tt = einsatzTooltip($einsatzProHelfer, (int) $s['id']); ?>
-                            <div class="kachel beitrag-kachel">
-                                <div class="bk-name">
+                            <div class="bt-zeile">
+                                <div class="bt-name" data-label="Name">
                                     <?= htmlspecialchars($s['vorname'] . ' ' . $s['nachname']) ?>
                                     <?php if ($tt !== ''): ?>
                                         <span class="info-i" tabindex="0" title="Hilft außerdem im Einsatzplan — <?= htmlspecialchars($tt) ?>">i</span>
                                     <?php endif; ?>
                                 </div>
-                                <div class="bk-inhalt"><?= nl2br(htmlspecialchars((string) $s['freitext'])) ?: '<span class="empty-hint">ohne Angabe</span>' ?></div>
-                                <div class="bk-contact">
+                                <div class="bt-kontakt" data-label="Kontakt">
                                     <a href="mailto:<?= htmlspecialchars($s['email']) ?>"><?= htmlspecialchars($s['email']) ?></a>
                                     <a href="tel:<?= htmlspecialchars($s['phone']) ?>"><?= htmlspecialchars($s['phone']) ?></a>
                                 </div>
+                                <div class="bt-inhalt" data-label="Unterstützung"><?= nl2br(htmlspecialchars((string) $s['freitext'])) ?: '<span class="empty-hint">ohne Angabe</span>' ?></div>
                             </div>
                         <?php endforeach; ?>
                     </div>

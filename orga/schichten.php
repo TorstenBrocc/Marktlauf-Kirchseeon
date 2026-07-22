@@ -127,11 +127,23 @@ function beitragTooltip(array $beitragProHelfer, int $helferId): string {
         .tag-kachel { padding: 0; }
         .zeile-kopf, .schicht-zeile {
             display: grid;
-            grid-template-columns: 150px minmax(160px, 1.3fr) minmax(150px, 1.4fr) minmax(180px, 1fr) 96px;
-            gap: 0.9rem;
+            grid-template-columns:
+                104px                   /* Zeit */
+                minmax(100px, 1.2fr)    /* Schicht */
+                minmax(78px, 0.7fr)     /* Ort */
+                minmax(92px, 1fr)       /* Beschreibung */
+                96px                    /* Sichtbar */
+                minmax(110px, 1.1fr)    /* Zugeteilt */
+                minmax(120px, 1fr)      /* Helfer zuteilen */
+                50px                    /* Bedarf */
+                30px;                   /* Löschen */
+            gap: 0.6rem;
             align-items: start;
-            padding: 0.7rem 1.15rem;
+            padding: 0.7rem 1rem;
         }
+        .zeile-kopf > div, .col { min-width: 0; overflow-wrap: anywhere; }
+        /* Löschen klar abgesetzt, wirkt wie eigene Spalte. */
+        .zeile-kopf > :last-child, .col-loeschen { margin-left: 0.5rem; }
         .zeile-kopf {
             border-bottom: 2px solid var(--border);
             font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em;
@@ -210,17 +222,18 @@ function beitragTooltip(array $beitragProHelfer, int $helferId): string {
         }
         .ie-save:hover { background: var(--primary-dark); }
 
-        /* Mobil: Spalten aufbrechen, Zeilen stapeln (nur vertikales Scrollen). */
-        @media (max-width: 760px) {
+        /* Schmalere Screens: Spalten aufbrechen, Zeilen stapeln (nur vertikales Scrollen). */
+        @media (max-width: 1100px) {
             .zeile-kopf { display: none; }
-            .schicht-zeile { grid-template-columns: 1fr; gap: 0.4rem; }
-            .col { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: baseline; }
+            .schicht-zeile { grid-template-columns: 1fr; gap: 0.4rem; padding: 0.85rem 1rem; }
+            .col { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: baseline; margin-left: 0 !important; }
             .col::before {
-                content: attr(data-label); flex: 0 0 6.5rem;
+                content: attr(data-label); flex: 0 0 7rem;
                 font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em;
                 color: var(--text-light); font-weight: 600;
             }
-            .col-name::before { align-self: flex-start; }
+            .col[data-label=""]::before { display: none; }
+            .col-name { font-size: 1rem; }
         }
     </style>
 </head>
@@ -342,7 +355,7 @@ function beitragTooltip(array $beitragProHelfer, int $helferId): string {
                     <h2 class="tag-heading"><?= htmlspecialchars($tag !== '' ? helferTagLabel($tag) : 'Ohne festen Termin') ?></h2>
                     <div class="kachel tag-kachel">
                         <div class="zeile-kopf">
-                            <div>Zeit</div><div>Schicht</div><div>Zugeteilt</div><div>Helfer zuteilen</div><div>Bedarf</div>
+                            <div>Zeit</div><div>Schicht</div><div>Ort</div><div>Beschreibung</div><div>Sichtbar</div><div>Zugeteilt</div><div>Helfer zuteilen</div><div>Bedarf</div><div></div>
                         </div>
                     <?php foreach ($tagSchichten as $s): ?>
                         <?php
@@ -376,29 +389,37 @@ function beitragTooltip(array $beitragProHelfer, int $helferId): string {
                                 </form>
                             </div>
 
-                            <!-- 2) Schichtname (+ Ort, Beschreibung, Anmelde-Status; alle Doppelklick) -->
+                            <!-- 2) Schichtname (Doppelklick) -->
                             <div class="col col-name" data-label="Schicht">
                                 <div class="name-haupt"><?= $ie($sid, 'titel', $s['titel'], htmlspecialchars($s['titel']), ['class' => 'ie-titel']) ?></div>
-                                <div class="name-sub">
-                                    <?= $ie($sid, 'ort', $s['ort'] ?? '', $s['ort'] ? '📍 ' . htmlspecialchars($s['ort']) : '<span class="muted">+ Ort</span>') ?>
-                                    <form method="post" action="api/schicht_field.php" class="ie ie-anm">
-                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                                        <input type="hidden" name="schicht_id" value="<?= $sid ?>">
-                                        <span class="ie-view" tabindex="0" title="Doppelklick zum Ändern"><?php if ((int) $s['in_anmeldung'] === 1): ?><span class="tag-anmeldung">in Anmeldung</span><?php else: ?><span class="tag-intern">nur intern</span><?php endif; ?></span>
-                                        <span class="ie-edit">
-                                            <select name="in_anmeldung" onchange="this.form.submit()">
-                                                <option value="1" <?= (int) $s['in_anmeldung'] === 1 ? 'selected' : '' ?>>in Anmeldung</option>
-                                                <option value="0" <?= (int) $s['in_anmeldung'] === 0 ? 'selected' : '' ?>>nur intern</option>
-                                            </select>
-                                        </span>
-                                    </form>
-                                </div>
-                                <div class="name-sub">
-                                    <?= $ie($sid, 'beschreibung', $s['beschreibung'] ?? '', $s['beschreibung'] ? nl2br(htmlspecialchars($s['beschreibung'])) : '<span class="muted">+ Beschreibung</span>', ['type' => 'textarea', 'placeholder' => 'Was ist zu tun? Details …', 'class' => 'ie-desc']) ?>
-                                </div>
                             </div>
 
-                            <!-- 3) Zugeteilte Helfer -->
+                            <!-- 3) Ort (Doppelklick) -->
+                            <div class="col col-ort" data-label="Ort">
+                                <?= $ie($sid, 'ort', $s['ort'] ?? '', $s['ort'] ? '📍 ' . htmlspecialchars($s['ort']) : '<span class="muted">+ Ort</span>') ?>
+                            </div>
+
+                            <!-- 4) Beschreibung (Doppelklick) -->
+                            <div class="col col-beschreibung" data-label="Beschreibung">
+                                <?= $ie($sid, 'beschreibung', $s['beschreibung'] ?? '', $s['beschreibung'] ? nl2br(htmlspecialchars($s['beschreibung'])) : '<span class="muted">+ Beschreibung</span>', ['type' => 'textarea', 'placeholder' => 'Was ist zu tun? Details …', 'class' => 'ie-desc']) ?>
+                            </div>
+
+                            <!-- 5) Sichtbar (Dropdown schaltet in Anmeldung / nur intern) -->
+                            <div class="col col-sichtbar" data-label="Sichtbar">
+                                <form method="post" action="api/schicht_field.php" class="ie ie-anm">
+                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                                    <input type="hidden" name="schicht_id" value="<?= $sid ?>">
+                                    <span class="ie-view" tabindex="0" title="Doppelklick zum Ändern"><?php if ((int) $s['in_anmeldung'] === 1): ?><span class="tag-anmeldung">in Anmeldung</span><?php else: ?><span class="tag-intern">nur intern</span><?php endif; ?></span>
+                                    <span class="ie-edit">
+                                        <select name="in_anmeldung" onchange="this.form.submit()">
+                                            <option value="1" <?= (int) $s['in_anmeldung'] === 1 ? 'selected' : '' ?>>in Anmeldung</option>
+                                            <option value="0" <?= (int) $s['in_anmeldung'] === 0 ? 'selected' : '' ?>>nur intern</option>
+                                        </select>
+                                    </span>
+                                </form>
+                            </div>
+
+                            <!-- 6) Zugeteilte Helfer -->
                             <div class="col col-zugeteilt" data-label="Zugeteilt">
                                 <?php if ($zugeteilt): ?>
                                     <ul class="helfer-chips">
@@ -424,7 +445,7 @@ function beitragTooltip(array $beitragProHelfer, int $helferId): string {
                                 <?php endif; ?>
                             </div>
 
-                            <!-- 4) Helfer zuteilen (Auswahl fügt direkt hinzu) + Gemeldete als Schnellzuteilung -->
+                            <!-- 7) Helfer zuteilen (Auswahl fügt direkt hinzu) + Gemeldete als Schnellzuteilung -->
                             <div class="col col-zuteilen" data-label="Helfer zuteilen">
                                 <form method="post" action="api/schicht_zuteilung.php">
                                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
@@ -466,7 +487,7 @@ function beitragTooltip(array $beitragProHelfer, int $helferId): string {
                                 <?php endif; ?>
                             </div>
 
-                            <!-- 5) Bedarfs-Pille (Doppelklick: nur Bedarf änderbar) + Löschen -->
+                            <!-- 8) Bedarfs-Pille (Doppelklick: nur Bedarf änderbar) -->
                             <div class="col col-bedarf" data-label="Bedarf">
                                 <form method="post" action="api/schicht_field.php" class="ie ie-bedarf">
                                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
@@ -477,6 +498,10 @@ function beitragTooltip(array $beitragProHelfer, int $helferId): string {
                                         <button type="submit" class="ie-save" title="Speichern">✓</button>
                                     </span>
                                 </form>
+                            </div>
+
+                            <!-- 9) Löschen (eigene Spalte, klar abgesetzt) -->
+                            <div class="col col-loeschen" data-label="">
                                 <form method="post" action="api/schicht_crud.php" onsubmit="return confirm('Schicht wirklich löschen? Zuteilungen gehen verloren.');">
                                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                                     <input type="hidden" name="action" value="delete">
