@@ -23,6 +23,10 @@
     --radius: 5px;
     --control-pad-y: 0.45rem;
     --control-pad-x: 0.9rem;
+    /* Schatten-Tokens — identisch zur öffentlichen Website (css/base.css) */
+    --shadow-sm: 0 2px 4px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 6px 12px -1px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 15px 25px -3px rgba(0, 0, 0, 0.15);
 }
 
 * {
@@ -427,7 +431,7 @@ body {
     border: 1px solid var(--border);
     border-radius: 8px;
     padding: 1rem 1.15rem;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    box-shadow: var(--shadow-md);
 }
 
 /* Dashboard Grid */
@@ -441,7 +445,7 @@ body {
     background: var(--white);
     padding: 1.15rem;
     border-radius: 6px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    box-shadow: var(--shadow-md);
 }
 
 .card h3 {
@@ -485,7 +489,7 @@ body {
 }
 
 a.card-tile:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14);
+    box-shadow: var(--shadow-lg);
     transform: translateY(-1px);
 }
 
