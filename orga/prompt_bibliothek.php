@@ -30,6 +30,7 @@ $kategorien = [
     <meta name="robots" content="noindex, nofollow">
     <title>Prompt-Bibliothek | ATSV Kirchseeon Marktlauf</title>
     <link rel="stylesheet" href="css/orga.css?v=<?= @filemtime(__DIR__ . '/css/orga.css') ?>">
+    <link rel="icon" type="image/svg+xml" href="../assets/images/logo-final.svg">
     <style>
         /* ── Layout ─────────────────────────────────────────── */
         .pb-layout {

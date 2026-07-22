@@ -171,6 +171,7 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
     <meta name="robots" content="noindex, nofollow">
     <title>Cockpit | ATSV Kirchseeon Marktlauf</title>
     <link rel="stylesheet" href="css/orga.css?v=<?= @filemtime(__DIR__ . '/css/orga.css') ?>">
+    <link rel="icon" type="image/svg+xml" href="../assets/images/logo-final.svg">
     <style>
         .meine-aufgaben {
             background: #fff3cd;

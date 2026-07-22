@@ -61,6 +61,7 @@ $prioLabel = ['normal' => 'Normal', 'wichtig' => 'Wichtig', 'notfall' => '⚠️
     <meta name="robots" content="noindex, nofollow">
     <title>Helfer-Draht | ATSV Kirchseeon Marktlauf</title>
     <link rel="stylesheet" href="css/orga.css?v=<?= @filemtime(__DIR__ . '/css/orga.css') ?>">
+    <link rel="icon" type="image/svg+xml" href="../assets/images/logo-final.svg">
     <style>
         .hd-card { background: var(--white); border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 1.25rem; margin-bottom: 1.25rem; }
         .hd-card h2 { font-size: 1rem; margin: 0 0 0.9rem; }

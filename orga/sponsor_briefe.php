@@ -65,6 +65,7 @@ if (!empty($briefSettings['sponsoring_pakete'])) {
     <meta name="robots" content="noindex, nofollow">
     <title>Sponsorenbriefe | ATSV Kirchseeon Marktlauf</title>
     <link rel="stylesheet" href="css/orga.css?v=<?= @filemtime(__DIR__ . '/css/orga.css') ?>">
+    <link rel="icon" type="image/svg+xml" href="../assets/images/logo-final.svg">
     <style>
         .brief-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
         .brief-tab {

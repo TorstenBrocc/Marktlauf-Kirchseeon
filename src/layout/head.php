@@ -7,7 +7,7 @@
 
 $basePath = $basePath ?? '';
 ?>
-    <link rel="icon" type="image/png" href="<?= $basePath ?>assets/images/ATSV_Logo-750x968.png">
+    <link rel="icon" type="image/svg+xml" href="<?= $basePath ?>assets/images/logo-final.svg">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
