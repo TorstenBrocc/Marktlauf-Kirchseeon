@@ -20,8 +20,31 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error'], $_SESSION['import_re
 
 $filterStatus = $_GET['status'] ?? '';
 $filterPaket = $_GET['paket'] ?? '';
+$filterZustaendig = $_GET['zustaendig'] ?? '';
 
 $pdo = getDbConnection();
+
+// Zuordenbare Personen: aktive Orga-/Admin-Mitglieder
+$users = [];
+$userNameById = [];
+try {
+    $uStmt = $pdo->query("SELECT id, name FROM users WHERE active = 1 ORDER BY name");
+    $users = $uStmt->fetchAll();
+    foreach ($users as $u) {
+        $userNameById[(int) $u['id']] = $u['name'];
+    }
+} catch (PDOException $e) {
+    // users-Tabelle immer vorhanden; defensiv
+}
+
+// Ist Migration 023 (zustaendig_user_id) bereits angewendet? Solange nicht,
+// bleibt die Spalte/Filter ausgeblendet (graceful, kein Fehler).
+$hasZustaendig = false;
+try {
+    $hasZustaendig = (bool) $pdo->query("SHOW COLUMNS FROM sponsors LIKE 'zustaendig_user_id'")->fetchColumn();
+} catch (PDOException $e) {
+    // ignore
+}
 
 $sql = 'SELECT * FROM sponsors';
 $where = [];
@@ -39,6 +62,17 @@ if ($filterStatus !== '' && sponsorStatusValid($filterStatus)) {
 if ($filterPaket !== '' && in_array($filterPaket, ['hauptsponsor', 'gold', 'silber', 'bronze'], true)) {
     $where[] = 'paket = :paket';
     $params['paket'] = $filterPaket;
+}
+
+// Zuständigkeit: "mine" = eigene Einträge, sonst konkrete User-ID
+if ($hasZustaendig) {
+    if ($filterZustaendig === 'mine') {
+        $where[] = 'zustaendig_user_id = :zust';
+        $params['zust'] = (int) $user['id'];
+    } elseif ($filterZustaendig !== '' && ctype_digit((string) $filterZustaendig) && isset($userNameById[(int) $filterZustaendig])) {
+        $where[] = 'zustaendig_user_id = :zust';
+        $params['zust'] = (int) $filterZustaendig;
+    }
 }
 
 if (!empty($where)) {
@@ -361,6 +395,8 @@ try {
         .status-zugesagt-row { background: rgba(76, 175, 80, 0.12); }
         /* Abgelehnte Sponsoren: ganze Zeile hell transparent rot (analog zu zugesagt) */
         .status-abgelehnt-row { background: rgba(211, 47, 47, 0.12); }
+        /* In Klärung: ganze Zeile hell transparent gelb (analog zu zugesagt/abgelehnt) */
+        .status-in_klaerung-row { background: rgba(244, 180, 0, 0.16); }
         .kein-kontakt-row {
             background: #f9f9f9;
         }
@@ -507,7 +543,21 @@ try {
                             <option value="bronze" <?= $filterPaket === 'bronze' ? 'selected' : '' ?>>Bronze</option>
                         </select>
                     </div>
-                    <?php if ($filterStatus || $filterPaket): ?>
+                    <?php if ($hasZustaendig): ?>
+                    <div class="form-group">
+                        <label>Zuständig</label>
+                        <select name="zustaendig" onchange="this.form.submit()">
+                            <option value="">Alle</option>
+                            <option value="mine" <?= $filterZustaendig === 'mine' ? 'selected' : '' ?>>Nur meine</option>
+                            <?php foreach ($users as $u): ?>
+                                <option value="<?= (int) $u['id'] ?>" <?= (string) $filterZustaendig === (string) $u['id'] ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($u['name']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <?php endif; ?>
+                    <?php if ($filterStatus || $filterPaket || $filterZustaendig): ?>
                         <a href="sponsoren.php" class="btn btn-small btn-secondary">Filter zurücksetzen</a>
                     <?php endif; ?>
                 </form>
@@ -536,6 +586,7 @@ try {
                             <th>Summe</th>
                             <th>Status</th>
                             <th>Wiedervorlage</th>
+                            <?php if ($hasZustaendig): ?><th>Zuständig</th><?php endif; ?>
                             <th>Notiz</th>
                             <th>Aktion</th>
                         </tr>
@@ -543,7 +594,7 @@ try {
                     <tbody>
                         <?php if (empty($sponsoren)): ?>
                             <tr>
-                                <td colspan="10">Keine Sponsoren gefunden.</td>
+                                <td colspan="<?= $hasZustaendig ? 11 : 10 ?>">Keine Sponsoren gefunden.</td>
                             </tr>
                         <?php else: ?>
                             <?php
@@ -555,8 +606,18 @@ try {
                                 $apCount = count($apList);
                                 $firstAp = $apList[0] ?? null;
                                 $prio = (int) ($s['prioritaet'] ?? 0);
+                                $rowClass = '';
+                                if ($s['kein_kontakt']) {
+                                    $rowClass = 'kein-kontakt-row';
+                                } elseif ($s['status'] === 'zugesagt') {
+                                    $rowClass = 'status-zugesagt-row';
+                                } elseif ($s['status'] === 'abgelehnt') {
+                                    $rowClass = 'status-abgelehnt-row';
+                                } elseif ($s['status'] === 'in_klaerung') {
+                                    $rowClass = 'status-in_klaerung-row';
+                                }
                                 ?>
-                                <tr class="<?= $s['kein_kontakt'] ? 'kein-kontakt-row' : ($s['status'] === 'zugesagt' ? 'status-zugesagt-row' : ($s['status'] === 'abgelehnt' ? 'status-abgelehnt-row' : '')) ?>">
+                                <tr class="<?= $rowClass ?>">
                                     <td class="col-check">
                                         <?php if (!$s['kein_kontakt']): ?>
                                             <input type="checkbox" class="row-check" name="sponsor_ids[]" value="<?= $s['id'] ?>" form="versand-form">
@@ -632,6 +693,18 @@ try {
                                             –
                                         <?php endif; ?>
                                     </td>
+                                    <?php if ($hasZustaendig): ?>
+                                    <td>
+                                        <?php $zustId = (int) ($s['zustaendig_user_id'] ?? 0); ?>
+                                        <select class="inline-select zustaendig-select"
+                                                data-id="<?= $s['id'] ?>" data-field="zustaendig" title="Zuständige Person zuordnen">
+                                            <option value="" <?= $zustId === 0 ? 'selected' : '' ?>>–</option>
+                                            <?php foreach ($users as $u): ?>
+                                                <option value="<?= (int) $u['id'] ?>" <?= $zustId === (int) $u['id'] ? 'selected' : '' ?>><?= htmlspecialchars($u['name']) ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </td>
+                                    <?php endif; ?>
                                     <td>
                                         <form method="post" action="api/sponsor_notiz.php" class="notiz-form">
                                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
@@ -817,7 +890,14 @@ try {
                                 applyClass(sel, ampelClasses, 'ampel-' + d.ampel);
                                 const row = sel.closest('tr');
                                 if (row && !row.classList.contains('kein-kontakt-row')) {
-                                    row.classList.toggle('status-zugesagt-row', sel.value === 'zugesagt');
+                                    row.classList.remove('status-zugesagt-row', 'status-abgelehnt-row', 'status-in_klaerung-row');
+                                    if (sel.value === 'zugesagt') {
+                                        row.classList.add('status-zugesagt-row');
+                                    } else if (sel.value === 'abgelehnt') {
+                                        row.classList.add('status-abgelehnt-row');
+                                    } else if (sel.value === 'in_klaerung') {
+                                        row.classList.add('status-in_klaerung-row');
+                                    }
                                 }
                             } else if (sel.dataset.field === 'paket') {
                                 applyClass(sel, paketClasses, 'paket-' + (d.paket || 'none'));
