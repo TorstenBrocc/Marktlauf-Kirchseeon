@@ -103,6 +103,7 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
     <meta name="robots" content="noindex, nofollow">
     <title>Social Media | ATSV Kirchseeon Marktlauf</title>
     <link rel="stylesheet" href="css/orga.css?v=<?= @filemtime(__DIR__ . '/css/orga.css') ?>">
+    <link rel="icon" type="image/svg+xml" href="../assets/images/logo-final.svg">
     <style>
         /* Kopf: Titel links, Notiz + Meta-Business-Button rechts oben */
         .so-header-row {
