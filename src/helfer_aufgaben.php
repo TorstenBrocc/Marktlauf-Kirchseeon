@@ -1,61 +1,116 @@
 <?php
 /**
- * Zentraler Katalog der Helfer-Aufgaben (Zeitfenster + Beschreibung je Tag).
- * Einzige Quelle für das Anmeldeformular UND die serverseitige Validierung,
- * damit nur echte Katalog-Aufgaben gespeichert werden können.
+ * Helfer-Aufgaben = im Anmeldeformular angebotene Schichten.
  *
- * Termine bewusst identisch zum bisherigen Formular (Fr/Sa/So).
+ * Quelle ist ab Migration 026 die schichten-Tabelle (in_anmeldung = 1) — NICHT
+ * mehr ein hart kodierter Katalog. Damit sind Anmeldeformular und Einsatzplan
+ * dieselbe Wahrheit: Legt die Orga im Einsatzplan eine Schicht an (mit Haken
+ * "in Anmeldung zeigen"), erscheint sie automatisch hier.
+ *
+ * Die Funktionsnamen/-signaturen bleiben stabil, damit Formular und
+ * Registrierungs-Handler unveraendert damit arbeiten. Der frueher genutzte
+ * String-"key" ist jetzt die schicht_id.
  */
 
 declare(strict_types=1);
 
-function helferAufgabenKatalog(): array
+require_once __DIR__ . '/db.php';
+
+/**
+ * Deutsches Wochentag-Datum-Label aus einem ISO-Datum (locale-unabhaengig).
+ */
+function helferTagLabel(string $isoDate): string
 {
-    return [
-        '2026-09-18' => [
-            'label' => 'Freitag · 18.09.2026 (Aufbau)',
-            'aufgaben' => [
-                ['key' => 'fr_wegfuehrung_frei',  'beschreibung' => 'Div. Unterstützung für die Wegführung', 'zeitfenster' => 'freie Verfügbarkeit'],
-                ['key' => 'fr_wegfuehrung_nachm', 'beschreibung' => 'Div. Unterstützung für die Wegführung', 'zeitfenster' => 'Nachmittag nach Absprache'],
-            ],
-        ],
-        '2026-09-19' => [
-            'label' => 'Samstag · 19.09.2026 (Aufbau)',
-            'aufgaben' => [
-                ['key' => 'sa_ganztag',          'beschreibung' => 'Ganzer Tag', 'zeitfenster' => 'freie Verfügbarkeit'],
-                ['key' => 'sa_alt_vorbereitung', 'beschreibung' => 'Alternativer Termin / übrige Vorbereitungen für die Wegführung', 'zeitfenster' => 'nach Absprache'],
-                ['key' => 'sa_vereinsheim',      'beschreibung' => 'Vorbereitungen im Vereinsheim', 'zeitfenster' => 'nach Absprache'],
-            ],
-        ],
-        '2026-09-20' => [
-            'label' => 'Sonntag · 20.09.2026 (Renntag)',
-            'aufgaben' => [
-                ['key' => 'so_ganztag',            'beschreibung' => 'Ganzer Tag', 'zeitfenster' => 'freie Verfügbarkeit'],
-                ['key' => 'so_aufbau_0700',        'beschreibung' => 'Aufbauarbeiten Start/Ziel', 'zeitfenster' => '07:00–10:00'],
-                ['key' => 'so_aufbau_0800',        'beschreibung' => 'Aufbauarbeiten Start/Ziel', 'zeitfenster' => '08:00–10:00'],
-                ['key' => 'so_startnummern',       'beschreibung' => 'Startnummernausgabe / Nachmeldungen', 'zeitfenster' => '08:00–10:00'],
-                ['key' => 'so_streckenposten',     'beschreibung' => 'Streckenposten Versorgungsstationen Laufstrecke', 'zeitfenster' => '09:00–12:00'],
-                ['key' => 'so_versorgung_startziel','beschreibung' => 'Betreuung / Aufbau Versorgungsstation Start/Ziel', 'zeitfenster' => '09:00–13:00'],
-                ['key' => 'so_abbau',              'beschreibung' => 'Abbau Laufevent', 'zeitfenster' => '13:00–15:00'],
-                ['key' => 'so_getraenke_0930',     'beschreibung' => 'ATSV Getränkeverkauf Hauptplatz', 'zeitfenster' => '09:30–12:00'],
-                ['key' => 'so_getraenke_1200',     'beschreibung' => 'ATSV Getränkeverkauf Hauptplatz', 'zeitfenster' => '12:00–14:00'],
-                ['key' => 'so_getraenke_1400',     'beschreibung' => 'ATSV Getränkeverkauf Hauptplatz', 'zeitfenster' => '14:00–16:30'],
-            ],
-        ],
-    ];
+    static $wt = [1 => 'Montag', 2 => 'Dienstag', 3 => 'Mittwoch', 4 => 'Donnerstag', 5 => 'Freitag', 6 => 'Samstag', 7 => 'Sonntag'];
+    $ts = strtotime($isoDate);
+    if ($ts === false) {
+        return $isoDate;
+    }
+    return $wt[(int) date('N', $ts)] . ' · ' . date('d.m.Y', $ts);
 }
 
 /**
- * Katalog-Aufgabe per Key auflösen (inkl. tag). null wenn unbekannt.
+ * Angebotene Schichten, gruppiert nach Tag — Struktur wie das bisherige Formular
+ * erwartet: [tag => ['label' => ..., 'aufgaben' => [['key','beschreibung','zeitfenster'], ...]]].
+ * 'key' = schicht_id (string), 'beschreibung' = Schicht-Titel.
+ */
+function helferAufgabenKatalog(): array
+{
+    static $cache = null;
+    if ($cache !== null) {
+        return $cache;
+    }
+
+    $pdo = getDbConnection();
+    $rows = $pdo->query('
+        SELECT id, titel, tag, von, bis, zeitfenster
+        FROM schichten
+        WHERE in_anmeldung = 1
+        ORDER BY (tag IS NULL), tag, (von IS NULL), von, id
+    ')->fetchAll();
+
+    $katalog = [];
+    foreach ($rows as $r) {
+        $tag = (string) ($r['tag'] ?? '');
+        if (!isset($katalog[$tag])) {
+            $katalog[$tag] = [
+                'label'    => $tag !== '' ? helferTagLabel($tag) : 'Termin nach Absprache',
+                'aufgaben' => [],
+            ];
+        }
+        $katalog[$tag]['aufgaben'][] = [
+            'key'         => (string) $r['id'],
+            'beschreibung' => (string) $r['titel'],
+            'zeitfenster' => helferSchichtZeitfenster($r),
+        ];
+    }
+
+    return $cache = $katalog;
+}
+
+/**
+ * Zeitfenster-Anzeige einer Schicht: bevorzugt feste Uhrzeit (von/bis),
+ * sonst das Freitext-Label, sonst leer.
+ */
+function helferSchichtZeitfenster(array $s): string
+{
+    if (!empty($s['von'])) {
+        $z = substr((string) $s['von'], 0, 5);
+        if (!empty($s['bis'])) {
+            $z .= '–' . substr((string) $s['bis'], 0, 5);
+        }
+        return $z;
+    }
+    return (string) ($s['zeitfenster'] ?? '');
+}
+
+/**
+ * Angebotene Schicht per Key (= schicht_id) aufloesen. null wenn unbekannt oder
+ * nicht (mehr) im Formular angeboten. Rueckgabe kompatibel zum bisherigen
+ * Katalog: ['tag','zeitfenster','beschreibung'] (+ 'schicht_id').
  */
 function helferAufgabeByKey(string $key): ?array
 {
-    foreach (helferAufgabenKatalog() as $tag => $day) {
-        foreach ($day['aufgaben'] as $a) {
-            if ($a['key'] === $key) {
-                return $a + ['tag' => $tag];
-            }
-        }
+    if ($key === '' || !ctype_digit($key)) {
+        return null;
     }
-    return null;
+
+    $pdo = getDbConnection();
+    $stmt = $pdo->prepare('
+        SELECT id, titel, tag, von, bis, zeitfenster
+        FROM schichten
+        WHERE id = :id AND in_anmeldung = 1
+    ');
+    $stmt->execute(['id' => (int) $key]);
+    $r = $stmt->fetch();
+    if (!$r) {
+        return null;
+    }
+
+    return [
+        'schicht_id'  => (int) $r['id'],
+        'tag'         => (string) $r['tag'],
+        'zeitfenster' => helferSchichtZeitfenster($r),
+        'beschreibung' => (string) $r['titel'],
+    ];
 }

@@ -72,6 +72,21 @@ return [
         },
     ],
     [
+        'key'     => 'beitraege',
+        'label'   => 'Kuchen & Sonstiges',
+        'section' => 'HELFER-ORGA',
+        'href'    => 'beitraege.php',
+        'kpi'   => static function (PDO $pdo): array {
+            $kuchen    = (int) $pdo->query("SELECT COUNT(*) FROM helfer_beitrag WHERE typ = 'kuchen'")->fetchColumn();
+            $sonstiges = (int) $pdo->query("SELECT COUNT(*) FROM helfer_beitrag WHERE typ = 'sonstiges'")->fetchColumn();
+            return [
+                'value'  => (string) $kuchen,
+                'label'  => 'Kuchen-Zusagen' . ($sonstiges > 0 ? " · {$sonstiges}× sonstiges" : ''),
+                'signal' => 'neutral',
+            ];
+        },
+    ],
+    [
         'key'     => 'helfer_draht',
         'label'   => 'Helfer-Draht',
         'section' => 'HELFER-ORGA',

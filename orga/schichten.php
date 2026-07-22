@@ -37,6 +37,37 @@ foreach ($zStmt as $row) {
     $zuteilungen[(int) $row['schicht_id']][] = $row;
 }
 
+// Selbstmeldungen aus der Anmeldung je Schicht (helfer_slots.schicht_id).
+// Das ist die "Gemeldet"-Liste: Helfer, die sich fuer diese Schicht eingetragen
+// haben und per Klick verbindlich zugeteilt werden koennen.
+$gemeldet = [];
+$gStmt = $pdo->query('
+    SELECT hs.schicht_id, h.id AS helfer_id, h.vorname, h.nachname, h.status
+    FROM helfer_slots hs
+    JOIN helfer h ON h.id = hs.helfer_id
+    WHERE hs.schicht_id IS NOT NULL
+    ORDER BY h.nachname, h.vorname
+');
+foreach ($gStmt as $row) {
+    $gemeldet[(int) $row['schicht_id']][] = $row;
+}
+
+// Beitraege je Helfer (Kuchen / Sonstiges) fuer das "i"-Tooltip im Einsatzplan
+// (umgekehrter Inhalt zur "Kuchen & Sonstiges"-Uebersicht).
+$beitragProHelfer = [];
+$bStmt = $pdo->query('
+    SELECT helfer_id, typ, freitext
+    FROM helfer_beitrag
+    ORDER BY typ
+');
+foreach ($bStmt as $row) {
+    $label = $row['typ'] === 'kuchen' ? 'Kuchen' : 'Sonstiges';
+    if (!empty($row['freitext'])) {
+        $label .= ': ' . $row['freitext'];
+    }
+    $beitragProHelfer[(int) $row['helfer_id']][] = $label;
+}
+
 // Bestätigte Helfer + Verfügbarkeit (für Zuteil-Dropdown)
 $confirmedHelfer = $pdo->query('
     SELECT h.id, h.vorname, h.nachname,
@@ -60,8 +91,16 @@ function schichtZeit(array $s): string {
             $zeit .= '–' . substr($s['bis'], 0, 5);
         }
         $parts[] = $zeit . ' Uhr';
+    } elseif (!empty($s['zeitfenster'])) {
+        $parts[] = $s['zeitfenster'];
     }
     return $parts ? implode(' · ', $parts) : 'Zeit offen';
+}
+
+/** Tooltip-Text der Beiträge eines Helfers ("" wenn keine). */
+function beitragTooltip(array $beitragProHelfer, int $helferId): string {
+    $list = $beitragProHelfer[$helferId] ?? [];
+    return $list ? implode(' | ', $list) : '';
 }
 ?>
 <!DOCTYPE html>
@@ -125,6 +164,29 @@ function schichtZeit(array $s): string {
             width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px; font-size: 0.875rem;
         }
         .form-group textarea { resize: vertical; min-height: 60px; }
+        .anmeldung-toggle {
+            display: flex; align-items: center; gap: 0.5rem;
+            font-size: 0.85rem; margin: 0.75rem 0; cursor: pointer;
+        }
+        .anmeldung-toggle input { width: auto; }
+        .tag-anmeldung { color: var(--success); font-weight: 600; }
+        .tag-intern { color: var(--text-light); font-style: italic; }
+        .gemeldet-block { margin-top: 0.75rem; }
+        .gemeldet-label { font-size: 0.75rem; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.04em; }
+        .gemeldet-chip { background: #f5f8ff; border-color: #c9d8ff; }
+        .chip-status { font-size: 0.7rem; color: #856404; }
+        .chip-add {
+            border: none; background: var(--primary); color: var(--white);
+            border-radius: 999px; padding: 0.1rem 0.5rem; font-size: 0.72rem; cursor: pointer;
+        }
+        .chip-add:hover { background: var(--primary-dark); }
+        .info-i {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 15px; height: 15px; border-radius: 50%;
+            background: var(--text-light); color: var(--white);
+            font-size: 0.65rem; font-style: italic; font-weight: 700;
+            cursor: help; user-select: none;
+        }
     </style>
 </head>
 <body>
@@ -175,11 +237,19 @@ function schichtZeit(array $s): string {
                             <label>Bedarf (Anzahl)</label>
                             <input type="number" name="bedarf" min="1" value="1">
                         </div>
+                        <div class="form-group">
+                            <label>Zeitfenster (Freitext)</label>
+                            <input type="text" name="zeitfenster" maxlength="80" placeholder="z.B. nach Absprache">
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>Beschreibung (für Helfer sichtbar)</label>
                         <textarea name="beschreibung" placeholder="Was ist zu tun? Details, Ansprechpartner …"></textarea>
                     </div>
+                    <label class="anmeldung-toggle">
+                        <input type="checkbox" name="in_anmeldung" value="1" checked>
+                        In der Helfer-Anmeldung zum Eintragen anzeigen
+                    </label>
                     <button type="submit" class="btn btn-primary">Schicht anlegen</button>
                 </form>
             </div>
@@ -207,6 +277,11 @@ function schichtZeit(array $s): string {
                                 <div class="schicht-meta">
                                     <?= htmlspecialchars(schichtZeit($s)) ?>
                                     <?php if (!empty($s['ort'])): ?> · <?= htmlspecialchars($s['ort']) ?><?php endif; ?>
+                                    <?php if ((int) $s['in_anmeldung'] === 1): ?>
+                                        · <span class="tag-anmeldung">in Anmeldung</span>
+                                    <?php else: ?>
+                                        · <span class="tag-intern">nur intern</span>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                             <span class="besetzung <?= $voll ? 'voll' : 'offen' ?>">
@@ -221,8 +296,12 @@ function schichtZeit(array $s): string {
                         <?php if ($zugeteilt): ?>
                             <ul class="helfer-chips">
                                 <?php foreach ($zugeteilt as $z): ?>
+                                    <?php $tt = beitragTooltip($beitragProHelfer, (int) $z['helfer_id']); ?>
                                     <li class="helfer-chip">
                                         <?= htmlspecialchars($z['vorname'] . ' ' . $z['nachname']) ?>
+                                        <?php if ($tt !== ''): ?>
+                                            <span class="info-i" tabindex="0" title="Bringt außerdem mit — <?= htmlspecialchars($tt) ?>">i</span>
+                                        <?php endif; ?>
                                         <form method="post" action="api/schicht_zuteilung.php" style="display:inline;">
                                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                                             <input type="hidden" name="action" value="remove">
@@ -233,6 +312,40 @@ function schichtZeit(array $s): string {
                                     </li>
                                 <?php endforeach; ?>
                             </ul>
+                        <?php endif; ?>
+
+                        <?php
+                        // Gemeldet (Selbstauskunft aus der Anmeldung), die noch nicht zugeteilt sind.
+                        $gemeldetOffen = array_filter(
+                            $gemeldet[$sid] ?? [],
+                            static fn($g) => !in_array((int) $g['helfer_id'], $zugeteilteIds, true)
+                        );
+                        ?>
+                        <?php if ($gemeldetOffen): ?>
+                            <div class="gemeldet-block">
+                                <span class="gemeldet-label">Gemeldet (aus Anmeldung):</span>
+                                <ul class="helfer-chips">
+                                    <?php foreach ($gemeldetOffen as $g): ?>
+                                        <?php $tt = beitragTooltip($beitragProHelfer, (int) $g['helfer_id']); ?>
+                                        <li class="helfer-chip gemeldet-chip">
+                                            <?= htmlspecialchars($g['vorname'] . ' ' . $g['nachname']) ?>
+                                            <?php if ($g['status'] !== 'bestaetigt'): ?>
+                                                <span class="chip-status" title="Helfer-Status: <?= htmlspecialchars($g['status']) ?>">(<?= htmlspecialchars($g['status']) ?>)</span>
+                                            <?php endif; ?>
+                                            <?php if ($tt !== ''): ?>
+                                                <span class="info-i" tabindex="0" title="Bringt außerdem mit — <?= htmlspecialchars($tt) ?>">i</span>
+                                            <?php endif; ?>
+                                            <form method="post" action="api/schicht_zuteilung.php" style="display:inline;">
+                                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                                                <input type="hidden" name="action" value="add">
+                                                <input type="hidden" name="schicht_id" value="<?= $sid ?>">
+                                                <input type="hidden" name="helfer_id" value="<?= (int) $g['helfer_id'] ?>">
+                                                <button type="submit" class="chip-add" title="Verbindlich zuteilen">+ zuteilen</button>
+                                            </form>
+                                        </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            </div>
                         <?php endif; ?>
 
                         <div class="schicht-actions">
@@ -290,11 +403,19 @@ function schichtZeit(array $s): string {
                                         <label>Bedarf</label>
                                         <input type="number" name="bedarf" min="1" value="<?= (int) $s['bedarf'] ?>">
                                     </div>
+                                    <div class="form-group">
+                                        <label>Zeitfenster (Freitext)</label>
+                                        <input type="text" name="zeitfenster" maxlength="80" value="<?= htmlspecialchars($s['zeitfenster'] ?? '') ?>" placeholder="z.B. nach Absprache">
+                                    </div>
                                 </div>
                                 <div class="form-group">
                                     <label>Beschreibung</label>
                                     <textarea name="beschreibung"><?= htmlspecialchars($s['beschreibung'] ?? '') ?></textarea>
                                 </div>
+                                <label class="anmeldung-toggle">
+                                    <input type="checkbox" name="in_anmeldung" value="1" <?= (int) $s['in_anmeldung'] === 1 ? 'checked' : '' ?>>
+                                    In der Helfer-Anmeldung zum Eintragen anzeigen
+                                </label>
                                 <div style="display:flex;gap:0.5rem;">
                                     <button type="submit" class="btn btn-small btn-primary">Speichern</button>
                                 </div>

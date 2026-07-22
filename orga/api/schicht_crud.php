@@ -33,6 +33,9 @@ $bedarf = (int) ($_POST['bedarf'] ?? 1);
 if ($bedarf < 1) {
     $bedarf = 1;
 }
+$zeitfenster = trim($_POST['zeitfenster'] ?? '');
+// Checkbox: gesetzt => in Anmeldung anbieten, sonst nur intern.
+$inAnmeldung = isset($_POST['in_anmeldung']) ? 1 : 0;
 
 $params = [
     'titel' => $titel,
@@ -42,6 +45,8 @@ $params = [
     'von' => $von !== '' ? $von : null,
     'bis' => $bis !== '' ? $bis : null,
     'bedarf' => $bedarf,
+    'zeitfenster' => $zeitfenster !== '' ? $zeitfenster : null,
+    'in_anmeldung' => $inAnmeldung,
 ];
 
 try {
@@ -54,8 +59,8 @@ try {
             exit;
         }
         $stmt = $pdo->prepare('
-            INSERT INTO schichten (titel, beschreibung, ort, tag, von, bis, bedarf)
-            VALUES (:titel, :beschreibung, :ort, :tag, :von, :bis, :bedarf)
+            INSERT INTO schichten (titel, beschreibung, ort, tag, von, bis, bedarf, zeitfenster, in_anmeldung)
+            VALUES (:titel, :beschreibung, :ort, :tag, :von, :bis, :bedarf, :zeitfenster, :in_anmeldung)
         ');
         $stmt->execute($params);
         $_SESSION['flash_success'] = 'Schicht angelegt.';
@@ -70,7 +75,8 @@ try {
         $stmt = $pdo->prepare('
             UPDATE schichten
             SET titel = :titel, beschreibung = :beschreibung, ort = :ort,
-                tag = :tag, von = :von, bis = :bis, bedarf = :bedarf
+                tag = :tag, von = :von, bis = :bis, bedarf = :bedarf,
+                zeitfenster = :zeitfenster, in_anmeldung = :in_anmeldung
             WHERE id = :id
         ');
         $stmt->execute($params);
