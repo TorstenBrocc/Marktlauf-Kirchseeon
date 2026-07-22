@@ -12,23 +12,23 @@ declare(strict_types=1);
 function helferAufgabenKatalog(): array
 {
     return [
-        '2026-10-09' => [
-            'label' => 'Freitag · 09.10.2026 (Aufbau)',
+        '2026-09-18' => [
+            'label' => 'Freitag · 18.09.2026 (Aufbau)',
             'aufgaben' => [
                 ['key' => 'fr_wegfuehrung_frei',  'beschreibung' => 'Div. Unterstützung für die Wegführung', 'zeitfenster' => 'freie Verfügbarkeit'],
                 ['key' => 'fr_wegfuehrung_nachm', 'beschreibung' => 'Div. Unterstützung für die Wegführung', 'zeitfenster' => 'Nachmittag nach Absprache'],
             ],
         ],
-        '2026-10-10' => [
-            'label' => 'Samstag · 10.10.2026 (Aufbau)',
+        '2026-09-19' => [
+            'label' => 'Samstag · 19.09.2026 (Aufbau)',
             'aufgaben' => [
                 ['key' => 'sa_ganztag',          'beschreibung' => 'Ganzer Tag', 'zeitfenster' => 'freie Verfügbarkeit'],
                 ['key' => 'sa_alt_vorbereitung', 'beschreibung' => 'Alternativer Termin / übrige Vorbereitungen für die Wegführung', 'zeitfenster' => 'nach Absprache'],
                 ['key' => 'sa_vereinsheim',      'beschreibung' => 'Vorbereitungen im Vereinsheim', 'zeitfenster' => 'nach Absprache'],
             ],
         ],
-        '2026-10-11' => [
-            'label' => 'Sonntag · 11.10.2026 (Renntag)',
+        '2026-09-20' => [
+            'label' => 'Sonntag · 20.09.2026 (Renntag)',
             'aufgaben' => [
                 ['key' => 'so_ganztag',            'beschreibung' => 'Ganzer Tag', 'zeitfenster' => 'freie Verfügbarkeit'],
                 ['key' => 'so_aufbau_0700',        'beschreibung' => 'Aufbauarbeiten Start/Ziel', 'zeitfenster' => '07:00–10:00'],

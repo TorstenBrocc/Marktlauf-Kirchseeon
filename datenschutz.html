@@ -1,166 +1,363 @@
+<!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Datenschutz | ATS Kirchseeon e.V.</title>
-    <meta name="description" content="Datenschutzerklärung des ATSV Kirchseeon e.V. Informationen zur Verarbeitung personenbezogener Daten im Rahmen des Marktlaufs 2026.">
-    <link rel="canonical" href="https://atsv-kirchseeon-marktlauf.de/datenschutz.html">
-    <link rel="icon" type="image/png" href="assets/images/ATSV_Logo-750x968.png">
-    
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-    
-    <!-- Styles -->
-    <link rel="stylesheet" href="css/base.css">
-    <link rel="stylesheet" href="css/layout.css">
-    <link rel="stylesheet" href="css/components.css">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://atsv-kirchseeon-marktlauf.de/datenschutz.html">
-    <meta property="og:title" content="Datenschutz | ATSV Marktlauf Kirchseeon 2026">
-    <meta property="og:description" content="Offizieller Marktlauf des ATSV Kirchseeon 2026. Alle Infos zu Strecken, Terminen, Anmeldung und Ergebnissen für Läufer & Familien im Landkreis Ebersberg.">
-    <meta property="og:image" content="https://atsv-kirchseeon-marktlauf.de/assets/images/20050716_Logo_Martktlauf_auf weiß.png">
-    <meta property="og:image:width" content="1200">
-    <meta property="og:image:height" content="630">
-    <meta property="og:locale" content="de_DE">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:image" content="https://atsv-kirchseeon-marktlauf.de/assets/images/ATSV_Logo-750x968.png">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Datenschutzerklärung – Marktlauf Kirchseeon</title>
+  <meta name="description" content="Datenschutzerklärung des ATSV Kirchseeon e.V. – Informationen zur Verarbeitung personenbezogener Daten im Rahmen des Marktlaufs." />
+  <link rel="canonical" href="https://atsv-kirchseeon-marktlauf.de/datenschutz.html">
+  <link rel="icon" type="image/png" href="assets/images/ATSV_Logo-750x968.png">
+  <meta name="robots" content="index, follow">
+  <style>
+    /* ── Tokens ────────────────────────────────────────────── */
+    :root {
+      --primary:       #009640;
+      --primary-dark:  #007230;
+      --primary-light: #2ecc71;
+      --accent:        #ff6b35;
+
+      --gray-50:  #f8fafc;
+      --gray-100: #f1f5f9;
+      --gray-200: #e2e8f0;
+      --gray-300: #cbd5e1;
+      --gray-400: #94a3b8;
+      --gray-500: #64748b;
+      --gray-600: #475569;
+      --gray-700: #334155;
+      --gray-800: #1e293b;
+      --gray-900: #0f172a;
+
+      --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+
+      /* Semantic aliases */
+      --c-bg:        var(--gray-50);
+      --c-surface:   #ffffff;
+      --c-accent:    var(--primary);
+      --c-accent-dk: var(--primary-dark);
+      --c-text:      var(--gray-800);
+      --c-muted:     var(--gray-500);
+      --c-border:    var(--gray-200);
+
+      /* Nur serifenlose Schrift (Vorgabe) */
+      --f-head: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      --f-body: system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+      --space: 1rem;
+      --radius: 4px;
+      --max-w: 760px;
+    }
+
+    /* ── Reset ─────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--c-bg);
+      color: var(--c-text);
+      font-family: var(--f-body);
+      font-size: 1rem;
+      line-height: 1.7;
+    }
+
+    /* ── Header ────────────────────────────────────────────── */
+    header {
+      background: var(--c-surface);
+      border-bottom: 3px solid var(--c-accent);
+      padding: 1.25rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .logo-mark {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      flex-shrink: 0;
+    }
+
+    .logo-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.2;
+    }
+
+    .logo-text strong {
+      font-family: var(--f-head);
+      font-size: 1.1rem;
+      letter-spacing: 0.01em;
+    }
+
+    .logo-text span {
+      font-size: 0.72rem;
+      color: var(--c-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    /* ── Page wrapper ──────────────────────────────────────── */
+    main {
+      max-width: var(--max-w);
+      margin: 2.5rem auto 4rem;
+      padding: 0 1.5rem;
+    }
+
+    /* ── Page title ────────────────────────────────────────── */
+    .page-title {
+      margin-bottom: 2.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid var(--c-border);
+    }
+
+    .page-title .eyebrow {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--c-accent);
+      margin-bottom: 0.4rem;
+    }
+
+    .page-title h1 {
+      font-family: var(--f-head);
+      font-size: clamp(1.6rem, 4vw, 2.2rem);
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    /* ── Section card ──────────────────────────────────────── */
+    .section {
+      background: var(--c-surface);
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius);
+      padding: 1.75rem 2rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .section h2 {
+      font-family: var(--f-head);
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--c-accent);
+      display: inline-block;
+    }
+
+    /* Nummerierte Unterpunkte (Informationspflichten) – lesbar, serifenlos */
+    .section h3 {
+      font-family: var(--f-head);
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: var(--c-text);
+      margin: 1.5rem 0 0.4rem;
+    }
+
+    /* Kurze Zwischenüberschriften (z. B. Empfänger, Speicherdauer) */
+    .section h3.minor {
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--c-muted);
+    }
+
+    .section p {
+      font-size: 0.92rem;
+      color: var(--c-muted);
+      margin-bottom: 0.75rem;
+    }
+
+    .section p:last-child { margin-bottom: 0; }
+
+    .section a { color: var(--c-accent-dk); text-decoration: none; }
+    .section a:hover { text-decoration: underline; }
+
+    .intro-note { margin-bottom: 1.25rem; }
+
+    .stand-note {
+      text-align: right;
+      font-style: italic;
+      color: var(--c-muted);
+      font-size: 0.85rem;
+      margin-top: 2rem;
+    }
+
+    /* ── Footer (site-einheitlich) ─────────────────────────── */
+    .main-footer {
+      background-color: #0f172a;
+      color: #cbd5e1;
+      padding: 3rem 0 1.5rem;
+      font-size: 0.875rem;
+    }
+    .main-footer .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+    .footer-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 2rem;
+      margin-bottom: 2.5rem;
+      text-align: left;
+    }
+    .footer-col h4 { color: #fff; margin-bottom: 1rem; font-size: 1.1rem; }
+    .footer-links { display: flex; flex-direction: column; gap: 0.75rem; }
+    .footer-link { color: #94a3b8; text-decoration: none; transition: color 0.2s ease; }
+    .footer-link:hover { color: #2ecc71; }
+    .footer-bottom { text-align: center; color: #64748b; }
+    .footer-bottom a { color: inherit; }
+    .footer-credits { font-size: 0.75rem; margin-top: 0.25rem; color: #64748b; }
+    .footer-credits-link { color: inherit; text-decoration: none; opacity: 0.7; }
+
+    /* Sprachumschalter (site-einheitlich, Header) */
+    .lang-switcher { display: flex; gap: 8px; align-items: center; }
+    .lang-btn {
+      background: none; border: none; padding: 0; cursor: pointer;
+      width: 36px; height: 24px; display: flex; align-items: center;
+      justify-content: center; transition: transform 0.2s ease;
+    }
+    .lang-btn:hover { transform: scale(1.2); }
+    .flag-icon { width: 100%; height: 100%; object-fit: contain; }
+
+    /* ── Responsive ────────────────────────────────────────── */
+    @media (max-width: 560px) {
+      header { padding: 1rem 1.25rem; }
+      main { padding: 0 1rem; margin-top: 1.75rem; }
+      .section { padding: 1.25rem 1.25rem; }
+    }
+  </style>
 </head>
 <body>
 
-    <header class="main-header">
-        <div class="container nav-container">
-            <a href="/" class="nav-logo">
-                <img src="assets/images/ATSV_Logo-750x968.png" alt="ATSV Kirchseeon e.V. Logo" class="logo-img">
-            </a>
-            
-            <button class="mobile-menu-toggle" aria-label="Menü öffnen">
-                <span class="burger-icon"></span>
-            </button>
+<!-- ── Header ──────────────────────────────────────────────── -->
+<header>
+  <a href="/" class="logo-mark">
+    <svg class="logo-icon" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <circle cx="20" cy="20" r="19" stroke="#009640" stroke-width="2"/>
+      <path d="M12 28 L18 14 L22 22 L26 18 L30 28" stroke="#009640" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <circle cx="26" cy="14" r="2.5" fill="#009640"/>
+    </svg>
+    <span class="logo-text">
+      <strong>Marktlauf Kirchseeon</strong>
+      <span>ATSV Kirchseeon e.V.</span>
+    </span>
+  </a>
+  <div class="lang-switcher" style="margin-left:auto;">
+    <button id="lang-toggle" class="lang-btn" title="Sprache wechseln">
+      <img src="assets/images/allemand.png" alt="Deutsch" id="lang-flag" class="flag-icon">
+    </button>
+  </div>
+</header>
 
-            <nav class="nav-links">
-                <a href="/#distanzen" class="nav-link" data-i18n="nav.laeufe">Läufe</a>
-                <a href="/#ablauf" class="nav-link" data-i18n="nav.zeitplan">Zeitplan</a>
-                <a href="/#strecke" class="nav-link" data-i18n="nav.strecke">Strecke</a>
-                <a href="/#sponsoren" class="nav-link" data-i18n="nav.sponsoren">Sponsoren</a>
-                <a href="/#connect" class="nav-link" data-i18n="nav.kontakt">Newsletter & Kontakt</a>
-                <div class="lang-switcher">
-<button id="lang-toggle" class="lang-btn" title="Sprache wechseln">
-    <img src="assets/images/anglais.png" alt="English" id="lang-flag" class="flag-icon">
-</button>
-                </div>
-                <a href="/#anmeldung" class="nav-link nav-cta" data-i18n="nav.anmeldung">Jetzt anmelden</a>
-            </nav>
+<!-- ── Main ────────────────────────────────────────────────── -->
+<main>
+
+  <div class="page-title">
+    <p class="eyebrow" data-i18n="footer.legal_title">Rechtliches</p>
+    <h1>Datenschutzerklärung – ATSV Kirchseeon Marktlauf</h1>
+  </div>
+
+  <!-- Informationspflichten -->
+  <div class="section">
+    <h2>Datenschutz-Informationspflichten</h2>
+    <p class="intro-note">Nach Artikel 13 und 14 EU-DSGVO hat der Verantwortliche einer betroffenen Person, deren Daten er verarbeitet, die in den Artikeln genannten Informationen bereitzustellen. Dieser Informationspflicht kommt diese Erklärung nach.</p>
+
+    <h3>1. Name und Kontaktdaten des Verantwortlichen sowie seines Vertreters</h3>
+    <p>ATSV Kirchseeon e.V., Sportplatzweg 7, 85614 Kirchseeon, gesetzlich vertreten durch den Vorstand nach § 26 BGB, Herrn Stefan Reinhart und Herrn Matthias Gramüller; E-Mail: <a href="mailto:atsv@atsv-kirchseeon.de">atsv@atsv-kirchseeon.de</a></p>
+
+    <h3>2. Kontaktdaten des Datenschutzbeauftragten</h3>
+    <p>siehe unter 1. Verantwortliche</p>
+
+    <h3>3. Zwecke, für die personenbezogene Daten verarbeitet werden</h3>
+    <p>Die personenbezogenen Daten werden für die Durchführung des Mitgliedschaftsverhältnisses verarbeitet (z. B. Einladung zu Versammlungen, Beitragseinzug, Organisation des Sportbetriebes). Ferner werden personenbezogene Daten zur Teilnahme am Wettkampf-, Turnier- und Spielbetrieb der Landesfachverbände an diese weitergeleitet. Darüber hinaus werden personenbezogene Daten im Zusammenhang mit sportlichen Ereignissen einschließlich der Berichterstattung hierüber auf der Internetseite des Vereins, in Auftritten des Vereins in Sozialen Medien sowie auf Seiten der Fachverbände veröffentlicht und an lokale, regionale und überregionale Printmedien übermittelt.</p>
+
+    <h3>4. Rechtsgrundlagen, auf Grund derer die Verarbeitung erfolgt</h3>
+    <p>Die Verarbeitung der personenbezogenen Daten erfolgt in der Regel aufgrund der Erforderlichkeit zur Erfüllung eines Vertrages gemäß Artikel 6 Abs. 1 lit. b) DSGVO. Bei den Vertragsverhältnissen handelt es sich in erster Linie um das Mitgliedschaftsverhältnis im Verein und um die Teilnahme am Spielbetrieb der Fachverbände. Werden personenbezogene Daten erhoben, ohne dass die Verarbeitung zur Erfüllung des Vertrages erforderlich ist, erfolgt die Verarbeitung aufgrund einer Einwilligung nach Artikel 6 Abs. 1 lit. a) i.V.m. Artikel 7 DSGVO.</p>
+    <p>Die Veröffentlichung personenbezogener Daten im Internet oder in lokalen, regionalen oder überregionalen Printmedien erfolgt zur Wahrung berechtigter Interessen des Vereins (vgl. Artikel 6 Abs. 1 lit. f) DSGVO). Das berechtigte Interesse des Vereins besteht in der Information der Öffentlichkeit durch Berichterstattung über die Aktivitäten des Vereins. In diesem Rahmen werden personenbezogene Daten einschließlich von Bildern der Teilnehmer zum Beispiel im Rahmen der Berichterstattung über sportliche Ereignisse des Vereins veröffentlicht.</p>
+
+    <h3>5. Empfänger oder Kategorien von Empfängern der personenbezogenen Daten</h3>
+    <p>Personenbezogene Daten der Mitglieder, die am Spiel- und Wettkampfbetrieb der Landesfachverbände teilnehmen, werden zum Erwerb einer Lizenz, einer Wertungskarte, eines Spielerpasses oder sonstiger Teilnahmeberechtigung an den jeweiligen Landesfachverband weitergegeben. Die Daten der Bankverbindung der Mitglieder werden zum Zwecke des Beitragseinzugs an die Kreissparkasse München Starnberg Ebersberg weitergeleitet.</p>
+
+    <h3>6. Dauer, für die die personenbezogenen Daten gespeichert werden</h3>
+    <p>Die personenbezogenen Daten werden für die Dauer der Mitgliedschaft gespeichert. Mit Beendigung der Mitgliedschaft werden die Datenkategorien gemäß den gesetzlichen Aufbewahrungsfristen weitere zehn Jahre vorgehalten und dann gelöscht. In der Zeit zwischen Beendigung der Mitgliedschaft und der Löschung wird die Verarbeitung dieser Daten eingeschränkt. Bestimmte Datenkategorien werden zum Zweck der Vereinschronik im Vereinsarchiv gespeichert. Hierbei handelt es sich um die Kategorien Vorname, Nachname, Zugehörigkeit zu einer Mannschaft, besondere sportliche Erfolge oder Ereignisse, an denen die betroffene Person mitgewirkt hat. Der Speicherung liegt ein berechtigtes Interesse des Vereins an der zeitgeschichtlichen Dokumentation von sportlichen Ereignissen und Erfolgen und der jeweiligen Zusammensetzung der Mannschaften zugrunde.</p>
+
+    <h3>7. Rechte der betroffenen Person</h3>
+    <p>Der betroffenen Person stehen unter den in den Artikeln jeweils genannten Voraussetzungen die nachfolgenden Rechte zu: das Recht auf Auskunft nach Artikel 15 DSGVO, das Recht auf Berichtigung nach Artikel 16 DSGVO, das Recht auf Löschung nach Artikel 17 DSGVO, das Recht auf Einschränkung der Verarbeitung nach Artikel 18 DSGVO, das Recht auf Datenübertragbarkeit nach Artikel 20 DSGVO, das Widerspruchsrecht nach Artikel 21 DSGVO, das Recht auf Beschwerde bei einer Aufsichtsbehörde nach Artikel 77 DSGVO und das Recht, eine erteilte Einwilligung jederzeit widerrufen zu können, ohne dass die Rechtmäßigkeit der aufgrund der Einwilligung bis zum Widerruf erfolgten Verarbeitung hierdurch berührt wird.</p>
+
+    <h3>8. Quelle, aus der die personenbezogenen Daten stammen</h3>
+    <p>Die personenbezogenen Daten werden grundsätzlich im Rahmen des Erwerbs der Mitgliedschaft erhoben.</p>
+  </div>
+
+  <!-- Newsletter -->
+  <div class="section">
+    <h2>Newsletter-Versand via Brevo</h2>
+    <p>Wir nutzen Brevo (Sendinblue GmbH) für den Versand unseres Newsletters. Bei der Anmeldung übermittelte Daten (wie E-Mail-Adresse, IP-Adresse und der Zeitpunkt der Anmeldung) werden an Brevo in Deutschland/EU gesendet.</p>
+    <p>Die Rechtsgrundlage für diese Verarbeitung ist Ihre ausdrückliche Einwilligung gemäß Art. 6 Abs. 1 lit. a DSGVO.</p>
+    <p>Sie können Ihre Einwilligung jederzeit mit Wirkung für die Zukunft widerrufen. Die Abmeldung ist jederzeit über den Abmeldelink in jeder versendeten E-Mail möglich.</p>
+  </div>
+
+  <!-- Foto- und Videoaufnahmen -->
+  <div class="section">
+    <h2>Foto- und Videoaufnahmen</h2>
+    <p>Während des Marktlaufs werden Foto- und Videoaufnahmen erstellt. Übersichts- und Wettkampfaufnahmen, auf denen das Renngeschehen im Vordergrund steht und einzelne Personen nicht gezielt herausgestellt werden, verarbeiten und veröffentlichen wir auf Grundlage unseres berechtigten Interesses an der Dokumentation und öffentlichen Darstellung der Veranstaltung (Art. 6 Abs. 1 lit. f DSGVO). Eine Interessenabwägung haben wir vorab durchgeführt.</p>
+    <p>Aufnahmen, auf denen einzelne Personen gezielt erkennbar im Mittelpunkt stehen, sowie die Nutzung solcher Aufnahmen zu werblichen Zwecken erfolgen ausschließlich auf Grundlage Ihrer Einwilligung (Art. 6 Abs. 1 lit. a DSGVO), die Sie bei der Anmeldung separat erteilen können.</p>
+
+    <h3 class="minor">Empfänger / Veröffentlichungsorte</h3>
+    <p>Vereinswebsite, Social-Media-Kanäle des Vereins, Vereinsmedien sowie ggf. lokale Presse. Bei Social Media weisen wir darauf hin, dass Inhalte durch Teilen/Kommentieren weiterverbreitet werden können, worauf wir keinen Einfluss haben.</p>
+
+    <h3 class="minor">Speicherdauer</h3>
+    <p>Bis zum Widerruf bzw. solange die Aufnahmen für die genannten Zwecke benötigt werden.</p>
+
+    <h3 class="minor">Widerruf und Widerspruch</h3>
+    <p>Eine erteilte Einwilligung können Sie jederzeit mit Wirkung für die Zukunft widerrufen. Gegen die Verarbeitung auf Grundlage berechtigter Interessen können Sie Widerspruch einlegen (Art. 21 DSGVO). In beiden Fällen genügt eine Nachricht an <a href="mailto:atsv@atsv-kirchseeon.de">atsv@atsv-kirchseeon.de</a>; wir entfernen die betreffenden Aufnahmen anschließend aus unseren eigenen Kanälen.</p>
+  </div>
+
+  <p class="stand-note">Stand: Juli 2026 · ATSV Kirchseeon e.V.</p>
+
+</main>
+
+<!-- ── Footer ───────────────────────────────────────────────── -->
+<footer class="main-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <h4 data-i18n="footer.title">Marktlauf 2026</h4>
+        <p style="color:#94a3b8; line-height:1.6;" data-i18n="footer.text">Ein sportliches Highlight in Kirchseeon für die ganze Familie. Wir freuen uns auf euch!</p>
+      </div>
+      <div class="footer-col">
+        <h4 data-i18n="footer.links_title">Quick Links</h4>
+        <div class="footer-links">
+          <a href="/#distanzen" class="footer-link" data-i18n="nav.laeufe">Die Läufe</a>
+          <a href="/#ablauf" class="footer-link" data-i18n="nav.zeitplan">Zeitplan</a>
+          <a href="/#strecke" class="footer-link" data-i18n="nav.strecke">Die Strecke</a>
+          <a href="/#anmeldung" class="footer-link" data-i18n="nav.anmeldung">Anmeldung</a>
         </div>
-    </header>
-
-    <main>
-        <section class="section-padding">
-            <div class="container">
-                <div class="contact-wrapper" style="text-align: left; line-height: 1.6; color: var(--gray-700);">
-                    <h1 class="text-center" style="margin-bottom: var(--space-xl);">Datenschutzerklärung – ATSV Kirchseeon Marktlauf</h1>
-                    
-                    <div style="background-color: var(--white); padding: var(--space-lg); border-radius: 12px; border: 1px solid var(--gray-200); box-shadow: var(--shadow-sm);">
-                        
-                        <h2 class="text-center" style="color: var(--gray-900); margin-bottom: var(--space-lg);">Datenschutz Informationspflichten</h2>
-                        <p style="margin-bottom: var(--space-lg);">Nach Artikel 13 und 14 EU-DSGVO hat der Verantwortliche einer betroffenen Person, deren Daten er verarbeitet, die in den Artikeln genannten Informationen bereit zu stellen. Dieser Informationspflicht kommt dieses Merkblatt nach.</p>
-
-                        <section style="margin-bottom: var(--space-lg);">
-                            <h3 style="color: var(--gray-900); margin-bottom: var(--space-sm);">1. Namen und Kontaktdaten des Verantwortlichen sowie seines Vertreters:</h3>
-                            <p>ATSV Kirchseeon e.V., Sportplatzweg 7, 85614 Kirchseeon, gesetzlich vertreten durch den Vorstand nach § 26 BGB, Herrn Stefan Reinhart und Herrn Matthias Gramüller; E-Mail: atsv@atsv-kirchseeon.de</p>
-                        </section>
-
-                        <section style="margin-bottom: var(--space-lg);">
-                            <h3 style="color: var(--gray-900); margin-bottom: var(--space-sm);">2. Kontaktdaten des Datenschutzbeauftragten:</h3>
-                            <p>siehe unter 1. Verantwortliche</p>
-                        </section>
-
-                        <section style="margin-bottom: var(--space-lg);">
-                            <h3 style="color: var(--gray-900); margin-bottom: var(--space-sm);">3. Zwecke, für die personenbezogenen Daten verarbeitet werden:</h3>
-                            <p>Die personenbezogenen Daten werden für die Durchführung des Mitgliedschaftsverhältnisses verarbeitet (z.B. Einladung zu Versammlungen, Beitragseinzug, Organisation des Sportbetriebes). Ferner werden personenbezogene Daten zur Teilnahme am Wettkampf-, Turnier- und Spielbetrieb der Landesfachverbände an diese weitergeleitet. Darüber hinaus werden personenbezogene Daten im Zusammenhang mit sportlichen Ereignissen einschließlich der Berichterstattung hierüber auf der Internetseite des Vereins, in Auftritten des Vereins in Sozialen Medien sowie auf Seiten der Fachverbände veröffentlicht und an lokale, regionale und überregionale Printmedien übermittelt.</p>
-                        </section>
-
-                        <section style="margin-bottom: var(--space-lg);">
-                            <h3 style="color: var(--gray-900); margin-bottom: var(--space-sm);">4. Rechtsgrundlagen, auf Grund derer die Verarbeitung erfolgt:</h3>
-                            <p>Die Verarbeitung der personenbezogenen Daten erfolgt in der Regel aufgrund der Erforderlichkeit zur Erfüllung eines Vertrages gemäß Artikel 6 Abs. 1 lit. b) DSGVO. Bei den Vertragsverhältnissen handelt es sich in erster Linie um das Mitgliedschaftsverhältnis im Verein und um die Teilnahme am Spielbetrieb der Fachverbände. Werden personenbezogene Daten erhoben, ohne dass die Verarbeitung zur Erfüllung des Vertrages erforderlich ist, erfolgt die Verarbeitung aufgrund einer Einwilligung nach Artikel 6 Abs. 1 lit. a) i.V.m. Artikel 7 DSGVO.</p>
-                            <p style="margin-top: var(--space-xs);">Die Veröffentlichung personenbezogenen Daten im Internet oder in lokalen, regionalen oder überregionalen Printmedien erfolgt zur Wahrung berechtigter Interessen des Vereins (vgl. Artikel 6 Abs. 1 lit. f) DSGVO). Das berechtigte Interesse des Vereins besteht in der Information der Öffentlichkeit durch Berichtserstattung über die Aktivitäten des Vereins. In diesem Rahmen werden personenbezogene Daten einschließlich von Bildern der Teilnehmer zum Beispiel im Rahmen der Berichterstattung über sportliche Ereignisse des Vereins veröffentlicht.</p>
-                        </section>
-
-                        <section style="margin-bottom: var(--space-lg);">
-                            <h3 style="color: var(--gray-900); margin-bottom: var(--space-sm);">5. Die Empfänger oder Kategorien von Empfängern der personenbezogenen Daten:</h3>
-                            <p>Personenbezogene Daten der Mitglieder, die am Spiel- und Wettkampfbetrieb der Landesfachverbände teilnehmen, werden zum Erwerb einer Lizenz, einer Wertungskarte, eines Spielerpasses oder sonstiger Teilnahmeberechtigung an den jeweiligen Landesfachverband weitergegeben. Die Daten der Bankverbindung der Mitglieder werden zum Zwecke des Beitragseinzugs an die Kreissparkasse München Starnberg Ebersberg weitergeleitet.</p>
-                        </section>
-
-                        <section style="margin-bottom: var(--space-lg);">
-                            <h3 style="color: var(--gray-900); margin-bottom: var(--space-sm);">6. Die Dauer, für die die personenbezogenen Daten gespeichert werden oder, falls dies nicht möglich ist, die Kriterien für die Festlegung der Dauer:</h3>
-                            <p>Die personenbezogenen Daten werden für die Dauer der Mitgliedschaft gespeichert. Mit Beendigung der Mitgliedschaft werden die Datenkategorien gemäß den gesetzlichen Aufbewahrungsfristen weitere zehn Jahre vorgehalten und dann gelöscht. In der Zeit zwischen Beendigung der Mitgliedschaft und der Löschung wird die Verarbeitung dieser Daten eingeschränkt. Bestimmte Datenkategorien werden zum Zweck der Vereinschronik im Vereinsarchiv gespeichert. Hierbei handelt es sich um die Kategorien Vorname, Nachname, Zugehörigkeit zu einer Mannschaft, besondere sportliche Erfolge oder Ereignisse, an denen die betroffene Person mitgewirkt hat. Der Speicherung liegt ein berechtigtes Interesse des Vereins an der zeitgeschichtlichen Dokumentation von sportlichen Ereignissen und Erfolgen und der jeweiligen Zusammensetzung der Mannschaften zugrunde.</p>
-                        </section>
-
-                        <section style="margin-bottom: var(--space-lg);">
-                            <h3 style="color: var(--gray-900); margin-bottom: var(--space-sm);">7. Der betroffenen Person stehen unter den in den Artikeln jeweils genannten Voraussetzungen die nachfolgenden Rechte zu:</h3>
-                            <p>das Recht auf Auskunft nach Artikel 15 DSGVO, das Recht auf Berichtigung nach Artikel 16 DSGVO, das Recht auf Löschung nach Artikel 17 DSGVO, das Recht auf Einschränkung der Verarbeitung nach Artikel 18 DSGVO, das Recht auf Datenübertragbarkeit nach Artikel 20 DSGVO, das Widerspruchsrecht nach Artikel 21 DSGVO, das Recht auf Beschwerde bei einer Aufsichtsbehörde nach Artikel 77 DSGVO und das Recht, eine erteilte Einwilligung jederzeit widerrufen zu können, ohne dass die Rechtmäßigkeit der aufgrund der Einwilligung bis zum Widerruf erfolgten Verarbeitung hierdurch berührt wird.</p>
-                        </section>
-
-                        <section style="margin-bottom: var(--space-lg);">
-                            <h3 style="color: var(--gray-900); margin-bottom: var(--space-sm);">8. Die Quelle, aus der die personenbezogenen Daten stammen:</h3>
-                            <p>Die personenbezogenen Daten werden grundsätzlich im Rahmen des Erwerbs der Mitgliedschaft erhoben.</p>
-                        </section>
-
-                        <hr style="border: 0; border-top: 1px solid var(--gray-200); margin: var(--space-lg) 0;">
-
-                        <section style="margin-bottom: var(--space-lg);">
-                            <h3 style="color: var(--gray-900); margin-bottom: var(--space-sm);">Newsletter-Versand via Brevo</h3>
-                            <p>Wir nutzen Brevo (Sendinblue GmbH) für den Versand unseres Newsletters. Bei der Anmeldung übermittelte Daten (wie E-Mail-Adresse, IP-Adresse und der Zeitpunkt der Anmeldung) werden an Brevo in Deutschland/EU gesendet.</p>
-                            <p>Die Rechtsgrundlage für diese Verarbeitung ist Ihre ausdrückliche Einwilligung gemäß Art. 6 Abs. 1 lit. a DSGVO.</p>
-                            <p>Sie können Ihre Einwilligung jederzeit mit Wirkung für die Zukunft widerrufen. Die Abmeldung ist jederzeit über den Abmeldelink in jeder versendeten E-Mail möglich.</p>
-                        </section>
-
-                        <p style="text-align: right; font-style: italic; color: var(--gray-500); margin-top: var(--space-xl);">
-                            <span>Stand: Juni 2022</span><br>
-                            ATSV Kirchseeon e.V.
-                        </p>
-
-                    </div>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <footer class="main-footer">
-        <div class="container">
-            <div class="footer-grid">
-                <div class="footer-col">
-                    <h4 data-i18n="footer.title">Marktlauf 2026</h4>
-                    <p style="color: var(--gray-400); line-height: 1.6;" data-i18n="footer.text">
-                        Ein sportliches Highlight in Kirchseeon für die ganze Familie. 
-                        Wir freuen uns auf euch!
-                    </p>
-                </div>
-                <div class="footer-col">
-                    <h4 data-i18n="footer.links_title">Quick Links</h4>
-                    <div class="footer-links">
-                        <a href="/#distanzen" class="footer-link" data-i18n="nav.laeufe">Die Läufe</a>
-                        <a href="/#ablauf" class="footer-link" data-i18n="nav.zeitplan">Zeitplan</a>
-                        <a href="/#strecke" class="footer-link" data-i18n="nav.strecke">Die Strecke</a>
-                        <a href="/#anmeldung" class="footer-link" data-i18n="nav.anmeldung">Anmeldung</a>
-                    </div>
-                </div>
-                <div class="footer-col">
-                    <h4 data-i18n="footer.legal_title">Rechtliches</h4>
-                    <div class="footer-links">
-                        <a href="impressum.html" class="footer-link" data-i18n="footer.legal.impressum">Impressum</a>
-                        <a href="datenschutz.html" class="footer-link" data-i18n="footer.legal.privacy">Datenschutz</a>
-                    </div>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p data-i18n="footer.copyright">&copy; 2026 ATS Kirchseeon e.V. | Alle Rechte vorbehalten.</p>
-                <p class="footer-credits" data-i18n="footer.realized_by">Realisiert durch <a href="/humans.txt" rel="author" class="footer-credits-link">Torsten Tyras</a></p>
-            </div>
+      </div>
+      <div class="footer-col">
+        <h4 data-i18n="footer.legal_title">Rechtliches</h4>
+        <div class="footer-links">
+          <a href="impressum.html" class="footer-link" data-i18n="footer.legal.impressum">Impressum</a>
+          <a href="datenschutz.html" class="footer-link" data-i18n="footer.legal.privacy">Datenschutzerklärung</a>
         </div>
-    </footer>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p data-i18n="footer.copyright">&copy; 2026 ATSV Kirchseeon e.V. | Alle Rechte vorbehalten.</p>
+      <p class="footer-credits" data-i18n="footer.realized_by">Realisiert durch <a href="/humans.txt" rel="author" class="footer-credits-link">Torsten Tyras</a></p>
+    </div>
+  </div>
+</footer>
 
-    <script src="js/main.js"></script>
+<script src="js/main.js"></script>
 </body>
 </html>
