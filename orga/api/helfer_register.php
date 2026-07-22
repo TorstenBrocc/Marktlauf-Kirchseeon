@@ -11,6 +11,7 @@ require_once __DIR__ . '/../../src/db.php';
 require_once __DIR__ . '/../../src/channels/mail.php';
 require_once __DIR__ . '/../../src/logger.php';
 require_once __DIR__ . '/../../src/helpers.php';
+require_once __DIR__ . '/../../src/helfer_aufgaben.php';
 
 initSession();
 
@@ -79,6 +80,9 @@ $beitrag = $_POST['beitrag'] ?? [];
 $beitragFreitext = trim($_POST['beitrag_freitext'] ?? '');
 $kuchenArt       = trim($_POST['kuchen_art'] ?? '');
 $kuchenNuesse    = trim($_POST['kuchen_nuesse'] ?? '');
+$isMinorRaw      = $_POST['is_minor'] ?? '';
+$consentPhoto    = $_POST['consent_photo'] ?? '';
+$guardianName    = trim($_POST['guardian_name'] ?? '');
 
 if (empty($vorname) || empty($nachname) || empty($email) || empty($phone)) {
     redirectWithError('Bitte fülle alle Pflichtfelder aus.', $accessToken);
@@ -92,6 +96,28 @@ if (strlen($vorname) > 50 || strlen($nachname) > 50 || strlen($email) > 255 || s
     redirectWithError('Eingabe zu lang.', $accessToken);
 }
 
+// --- Fotoeinwilligung (DSGVO) serverseitig validieren ---
+if ($isMinorRaw !== '0' && $isMinorRaw !== '1') {
+    redirectWithError('Bitte gib an, ob du dich selbst oder eine minderjährige Person anmeldest.', $accessToken);
+}
+$isMinor = ($isMinorRaw === '1') ? 1 : 0;
+
+if ($consentPhoto !== 'yes' && $consentPhoto !== 'no') {
+    redirectWithError('Bitte triff eine Auswahl zur Fotoeinwilligung (Ja/Nein).', $accessToken);
+}
+
+// Bedingte Pflicht: bei Minderjährigen ist der Name der erziehungsberechtigten
+// Person zwingend — sonst ist die Einwilligung rechtlich wertlos.
+if ($isMinor === 1 && $guardianName === '') {
+    redirectWithError('Bei der Anmeldung einer minderjährigen Person ist der Name der erziehungsberechtigten Person erforderlich.', $accessToken);
+}
+if (!$isMinor) {
+    $guardianName = '';
+}
+if (strlen($guardianName) > 255) {
+    redirectWithError('Name der erziehungsberechtigten Person zu lang.', $accessToken);
+}
+
 if (!is_array($slots)) {
     $slots = [];
 }
@@ -99,13 +125,18 @@ if (!is_array($beitrag)) {
     $beitrag = [];
 }
 
+// Slots nur aus dem Katalog akzeptieren (Key -> tag/aufgabe/zeitfenster).
 $validSlots = [];
-$slotPattern = '/^(\d{4}-\d{2}-\d{2})_(vormittag|nachmittag)$/';
-foreach ($slots as $slot) {
-    if (preg_match($slotPattern, $slot, $matches)) {
+foreach ($slots as $slotKey) {
+    if (!is_string($slotKey)) {
+        continue;
+    }
+    $aufgabe = helferAufgabeByKey($slotKey);
+    if ($aufgabe !== null) {
         $validSlots[] = [
-            'tag' => $matches[1],
-            'zeitfenster' => $matches[2],
+            'tag'         => $aufgabe['tag'],
+            'zeitfenster' => $aufgabe['zeitfenster'],
+            'aufgabe'     => $aufgabe['beschreibung'],
         ];
     }
 }
@@ -120,29 +151,33 @@ try {
     $pdo->beginTransaction();
 
     $stmt = $pdo->prepare('
-        INSERT INTO helfer (uuid, vorname, nachname, email, phone, status)
-        VALUES (:uuid, :vorname, :nachname, :email, :phone, :status)
+        INSERT INTO helfer (uuid, vorname, nachname, email, phone, status, is_minor, consent_photo, guardian_name, consent_ts)
+        VALUES (:uuid, :vorname, :nachname, :email, :phone, :status, :is_minor, :consent_photo, :guardian_name, NOW())
     ');
     $stmt->execute([
-        'uuid'     => $uuid,
-        'vorname'  => $vorname,
-        'nachname' => $nachname,
-        'email'    => $email,
-        'phone'    => $phone,
-        'status'   => 'neu',
+        'uuid'          => $uuid,
+        'vorname'       => $vorname,
+        'nachname'      => $nachname,
+        'email'         => $email,
+        'phone'         => $phone,
+        'status'        => 'neu',
+        'is_minor'      => $isMinor,
+        'consent_photo' => $consentPhoto,
+        'guardian_name' => $isMinor ? $guardianName : null,
     ]);
     $helferId = (int) $pdo->lastInsertId();
 
     if (!empty($validSlots)) {
         $slotStmt = $pdo->prepare('
-            INSERT INTO helfer_slots (helfer_id, tag, zeitfenster)
-            VALUES (:helfer_id, :tag, :zeitfenster)
+            INSERT INTO helfer_slots (helfer_id, tag, zeitfenster, aufgabe)
+            VALUES (:helfer_id, :tag, :zeitfenster, :aufgabe)
         ');
         foreach ($validSlots as $slot) {
             $slotStmt->execute([
-                'helfer_id'  => $helferId,
-                'tag'        => $slot['tag'],
+                'helfer_id'   => $helferId,
+                'tag'         => $slot['tag'],
                 'zeitfenster' => $slot['zeitfenster'],
+                'aufgabe'     => $slot['aufgabe'],
             ]);
         }
     }

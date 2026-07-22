@@ -24,7 +24,7 @@ $pdo = getDbConnection();
 
 $sql = '
     SELECT h.*,
-           GROUP_CONCAT(DISTINCT CONCAT(hs.tag, " ", hs.zeitfenster) ORDER BY hs.tag SEPARATOR ", ") AS slots,
+           GROUP_CONCAT(DISTINCT CONCAT(DATE_FORMAT(hs.tag, "%a %d.%m."), " ", COALESCE(CONCAT(hs.aufgabe, " – "), ""), hs.zeitfenster) ORDER BY hs.tag SEPARATOR ", ") AS slots,
            GROUP_CONCAT(DISTINCT CONCAT(hb.typ, COALESCE(CONCAT(": ", hb.freitext), "")) SEPARATOR ", ") AS beitraege,
            GROUP_CONCAT(DISTINCT sc.titel ORDER BY sc.titel SEPARATOR ", ") AS schichten
     FROM helfer h
