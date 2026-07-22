@@ -205,6 +205,17 @@ while ($row = $slotStmt->fetch()) {
             gap: 1.25rem;
             flex-wrap: wrap;
         }
+        .aktion-cell {
+            white-space: nowrap;
+        }
+        .aktion-cell > a,
+        .aktion-cell > form {
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+        .aktion-cell > a {
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -341,12 +352,14 @@ while ($row = $slotStmt->fetch()) {
                                             <button type="submit" title="Notiz speichern">Speichern</button>
                                         </form>
                                     </td>
-                                    <td>
+                                    <td class="aktion-cell">
+                                        <a href="helfer_form.php?id=<?= $h['id'] ?>"
+                                           class="btn-action" title="Helfer-Stammdaten bearbeiten">Bearbeiten</a>
                                         <a href="https://atsv-kirchseeon-marktlauf.de/helfer/zugang.php?uuid=<?= htmlspecialchars(urlencode($h['uuid'])) ?>"
                                            class="btn-action" target="_blank" rel="noopener noreferrer"
                                            title="Briefing-Ansicht dieses Helfers öffnen (zum Nachvollziehen der Darstellung)">Briefing</a>
                                         <?php if ($isAdmin): ?>
-                                        <form method="post" action="api/helfer_delete.php" class="inline-form" onsubmit="return confirm('Helfer wirklich löschen?');" style="margin-top: 0.25rem;">
+                                        <form method="post" action="api/helfer_delete.php" class="inline-form" onsubmit="return confirm('Helfer wirklich löschen?');">
                                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                                             <input type="hidden" name="helfer_id" value="<?= $h['id'] ?>">
                                             <button type="submit" class="btn-action btn-danger" title="Helfer löschen">Löschen</button>
