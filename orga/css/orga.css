@@ -27,6 +27,8 @@
     --shadow-sm: 0 2px 4px 0 rgba(0, 0, 0, 0.05);
     --shadow-md: 0 6px 12px -1px rgba(0, 0, 0, 0.1);
     --shadow-lg: 0 15px 25px -3px rgba(0, 0, 0, 0.15);
+    /* Kachel-Schatten etwas deutlicher als --shadow-md */
+    --shadow-card: 0 10px 22px -4px rgba(0, 0, 0, 0.2);
 }
 
 * {
@@ -431,7 +433,7 @@ body {
     border: 1px solid var(--border);
     border-radius: 8px;
     padding: 1rem 1.15rem;
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-card);
 }
 
 /* Dashboard Grid */
@@ -445,7 +447,7 @@ body {
     background: var(--white);
     padding: 1.15rem;
     border-radius: 6px;
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-card);
 }
 
 .card h3 {
