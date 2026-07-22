@@ -462,6 +462,7 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
         <!-- Modul 3: Grafik & Formate -->
         <div class="so-card">
             <h2>3 · Grafik &amp; Formate</h2>
+            <p style="margin:0 0 0.7rem"><a href="poster_generator.php" class="btn btn-small btn-primary">📣 Kampagnen-Poster „Anmeldung geöffnet" erstellen →</a></p>
             <p class="so-notice">
                 PNG-Grafik mit Ergebnis-Highlights in drei Formaten: <strong>Quadratisch 1080×1080</strong> (Feed),
                 <strong>Portrait 1080×1350</strong> (Instagram-Feed, füllt am meisten) und <strong>Story 1080×1920</strong>.
