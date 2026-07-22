@@ -12,36 +12,35 @@ require_once __DIR__ . '/api/_auth.php';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kampagnen-Poster | Orga · Marktlauf Kirchseeon</title>
     <meta name="robots" content="noindex, nofollow">
+    <title>Kampagnen-Poster | ATSV Kirchseeon Marktlauf</title>
+    <link rel="stylesheet" href="css/orga.css?v=<?= @filemtime(__DIR__ . '/css/orga.css') ?>">
+    <link rel="icon" type="image/svg+xml" href="../assets/images/logo-final.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;800;900&display=swap" rel="stylesheet">
-    <?php require_once __DIR__ . '/../src/layout/head.php'; ?>
     <style>
         .pg-wrap { display: grid; grid-template-columns: 380px 1fr; gap: 1.5rem; align-items: start; }
-        @media (max-width: 1000px) { .pg-wrap { grid-template-columns: 1fr; } }
-        .pg-controls .so-field, .pg-controls label { display: block; }
-        .pg-controls input[type=text], .pg-controls input[type=url] { width: 100%; }
+        @media (max-width: 1100px) { .pg-wrap { grid-template-columns: 1fr; } }
         .pg-row { margin-bottom: 0.7rem; }
-        .pg-row label { font-size: 0.8rem; color: var(--text-light); margin-bottom: 0.2rem; display:block; }
+        .pg-row label { font-size: 0.8rem; color: var(--text-light); margin-bottom: 0.2rem; display: block; }
+        .pg-row input[type=text], .pg-row input[type=url] { width: 100%; padding: 0.45rem 0.6rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; box-sizing: border-box; }
         .pg-row input + input { margin-top: 0.35rem; }
         .pg-hint { font-size: 0.82rem; color: var(--text-light); }
 
         /* ---- Vorschau (skaliert) ---- */
         .pg-stage { position: relative; width: 100%; overflow: hidden; border: 1px solid var(--border); border-radius: 10px; background: #eef1ee; }
-        /* Das echte Poster in Zielaufloesung 1080x1350; per JS skaliert */
         #pg-poster {
             position: absolute; top: 0; left: 0; transform-origin: top left;
             width: 1080px; height: 1350px; overflow: hidden;
             font-family: 'Montserrat', 'Arial Black', system-ui, sans-serif;
             color: #fff; background: #007230; cursor: crosshair;
+            padding: 64px; box-sizing: border-box; display: flex; flex-direction: column;
         }
         #pg-poster .pg-bg { position: absolute; inset: 0; background-size: cover; background-position: center; z-index: 0; }
         #pg-poster .pg-ov { position: absolute; inset: 0; z-index: 1;
             background: linear-gradient(120deg, rgba(0,86,42,0.92) 0%, rgba(0,118,48,0.78) 46%, rgba(0,118,48,0.15) 100%); }
         #pg-poster > *:not(.pg-bg):not(.pg-ov) { position: relative; z-index: 2; }
-        #pg-poster { padding: 64px; box-sizing: border-box; display: flex; flex-direction: column; }
 
         .pg-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; }
         .pg-lock { background: #fff; border-radius: 20px; padding: 20px 28px; display: flex; align-items: center; gap: 18px; }
@@ -75,84 +74,80 @@ require_once __DIR__ . '/api/_auth.php';
         .pg-domain { font-size: 20px; font-weight: 700; color: #007230; margin-top: 14px; }
         #pg-qr { width: 200px; height: 200px; display: block; margin: 0 auto; }
 
-        /* frei platzierbarer QR (Klick) */
         .pg-qr-float { position: absolute; z-index: 5; background: #fff; padding: 12px; border-radius: 14px; box-shadow: 0 6px 20px rgba(0,0,0,0.3); display: none; }
         .pg-qr-float img { display: block; width: 100%; height: 100%; }
     </style>
 </head>
 <body>
-    <?php require_once __DIR__ . '/../src/layout/header.php'; ?>
+<?php $activeNav = 'social_media'; require __DIR__ . '/_sidebar.php'; ?>
 
-    <main>
-        <section class="section-padding">
-            <div class="container">
-                <p style="margin:0 0 0.5rem"><a href="social_orchestrator.php">&larr; zur Social-Media-Seite</a></p>
-                <h2>Kampagnen-Poster „Anmeldung geöffnet"</h2>
-                <p class="pg-hint" style="max-width:760px">
-                    <strong>Entwurf.</strong> Layout fest &amp; on-brand, Inhalte editierbar. Foto hochladen, Texte anpassen,
-                    QR per <strong>Klick ins Poster</strong> platzieren, Größe per Regler → als PNG exportieren.
-                    Schrift (Montserrat) &amp; Platzhalter-Foto werden später gegen eure Marken-Assets getauscht.
-                </p>
+    <main class="main-content">
+        <header class="content-header">
+            <h1>Kampagnen-Poster „Anmeldung geöffnet"</h1>
+            <p class="content-subtitle">On-Brand-Poster mit editierbaren Inhalten, Klick-QR &amp; PNG-Export (Entwurf)</p>
+        </header>
 
-                <div class="pg-wrap">
-                    <!-- STEUERUNG -->
-                    <div class="pg-controls">
-                        <div class="pg-row"><label>Headline</label><input type="text" id="c-headline" value="ANMELDUNG GEÖFFNET!"></div>
-                        <div class="pg-row"><label>Subline</label><input type="text" id="c-subline" value="Sichert euch jetzt euren Startplatz!"></div>
-                        <div class="pg-row"><label>Button-Text</label><input type="text" id="c-cta" value="JETZT ANMELDEN!"></div>
-                        <div class="pg-row"><label>Feature 1 (Titel / Zusatz)</label><input type="text" id="c-f1t" value="Für alle Altersklassen"><input type="text" id="c-f1s" value="Bambini, Schüler, Jugend, Erwachsene"></div>
-                        <div class="pg-row"><label>Feature 2 (Titel / Zusatz)</label><input type="text" id="c-f2t" value="Verschiedene Distanzen"><input type="text" id="c-f2s" value="500 m bis 10 km"></div>
-                        <div class="pg-row"><label>Feature 3 (Titel / Zusatz)</label><input type="text" id="c-f3t" value="Gemeinsam für Umwelt & Energie"><input type="text" id="c-f3s" value="Jeder Schritt zählt!"></div>
-                        <div class="pg-row"><label>Datum</label><input type="text" id="c-date" value="Sonntag 20.09.2026 · Start 10:00 Uhr"></div>
-                        <div class="pg-row"><label>Ort</label><input type="text" id="c-loc" value="JEK, Westring 6 Kirchseeon"></div>
-                        <div class="pg-row"><label>Familie</label><input type="text" id="c-fam" value="Sport, Spaß & Gemeinschaft für die ganze Familie!"></div>
-                        <div class="pg-row"><label>Domain</label><input type="text" id="c-domain" value="atsv-kirchseeon-marktlauf.de"></div>
-                        <div class="pg-row"><label>QR-Ziel-URL</label><input type="url" id="c-qr-url" value="https://atsv-kirchseeon-marktlauf.de/#anmeldung"></div>
-                        <div class="pg-row"><label>QR-Größe: <span id="c-qr-size-val">240</span> px</label><input type="range" id="c-qr-size" min="140" max="420" value="240" style="width:100%"></div>
-                        <div class="pg-row"><label>Hintergrundfoto (optional)</label><input type="file" id="c-photo" accept="image/*"> <button class="btn btn-small btn-secondary" id="c-photo-clear" type="button">entfernen</button></div>
-                        <button class="btn btn-primary" id="c-export" type="button" style="margin-top:0.6rem">Poster als PNG exportieren</button>
-                        <p class="pg-hint" id="c-status" style="margin-top:0.5rem"></p>
-                    </div>
+        <p style="margin:0 0 1rem"><a href="social_orchestrator.php">&larr; zur Social-Media-Seite</a></p>
+        <p class="pg-hint" style="max-width:760px;margin-bottom:1.25rem">
+            <strong>Entwurf.</strong> Layout fest &amp; on-brand, Inhalte editierbar. Foto hochladen, Texte anpassen,
+            QR per <strong>Klick ins Poster</strong> platzieren, Größe per Regler → als PNG exportieren.
+            Schrift (Montserrat) &amp; Platzhalter-Foto werden später gegen eure Marken-Assets getauscht.
+        </p>
 
-                    <!-- VORSCHAU -->
-                    <div>
-                        <p class="pg-hint" style="margin:0 0 0.4rem">👉 Ins Poster klicken, um den QR zu platzieren:</p>
-                        <div class="pg-stage" id="pg-stage">
-                            <div id="pg-poster">
-                                <div class="pg-bg" id="pg-bg"></div>
-                                <div class="pg-ov"></div>
-                                <div class="pg-top">
-                                    <div class="pg-lock"><img src="../assets/images/ATSV_Logo-750x968.png" alt=""><span>Marktlauf<br>Kirchseeon</span></div>
-                                    <div class="pg-coop"><small>IN KOOPERATION MIT</small><strong>Markt Kirchseeon</strong></div>
-                                </div>
-                                <h1 class="pg-headline" id="p-headline">ANMELDUNG GEÖFFNET!</h1>
-                                <div class="pg-subline" id="p-subline">Sichert euch jetzt euren Startplatz!</div>
-                                <div class="pg-features" id="p-features"></div>
-                                <div class="pg-cta" id="p-cta">JETZT ANMELDEN!</div>
-                                <div class="pg-bottom">
-                                    <div class="pg-details" id="p-details"></div>
-                                    <div class="pg-scan">
-                                        <div class="pg-scan-head">JETZT SCANNEN<br>&amp; ANMELDEN!</div>
-                                        <img id="pg-qr" alt="">
-                                        <div class="pg-domain" id="p-domain">atsv-kirchseeon-marktlauf.de</div>
-                                    </div>
-                                </div>
-                                <div class="pg-qr-float" id="pg-qr-float"><img id="pg-qr-float-img" alt=""></div>
+        <div class="pg-wrap">
+            <!-- STEUERUNG -->
+            <div class="pg-controls">
+                <div class="pg-row"><label>Headline</label><input type="text" id="c-headline" value="ANMELDUNG GEÖFFNET!"></div>
+                <div class="pg-row"><label>Subline</label><input type="text" id="c-subline" value="Sichert euch jetzt euren Startplatz!"></div>
+                <div class="pg-row"><label>Button-Text</label><input type="text" id="c-cta" value="JETZT ANMELDEN!"></div>
+                <div class="pg-row"><label>Feature 1 (Titel / Zusatz)</label><input type="text" id="c-f1t" value="Für alle Altersklassen"><input type="text" id="c-f1s" value="Bambini, Schüler, Jugend, Erwachsene"></div>
+                <div class="pg-row"><label>Feature 2 (Titel / Zusatz)</label><input type="text" id="c-f2t" value="Verschiedene Distanzen"><input type="text" id="c-f2s" value="500 m bis 10 km"></div>
+                <div class="pg-row"><label>Feature 3 (Titel / Zusatz)</label><input type="text" id="c-f3t" value="Gemeinsam für Umwelt & Energie"><input type="text" id="c-f3s" value="Jeder Schritt zählt!"></div>
+                <div class="pg-row"><label>Datum</label><input type="text" id="c-date" value="Sonntag 20.09.2026 · Start 10:00 Uhr"></div>
+                <div class="pg-row"><label>Ort</label><input type="text" id="c-loc" value="JEK, Westring 6 Kirchseeon"></div>
+                <div class="pg-row"><label>Familie</label><input type="text" id="c-fam" value="Sport, Spaß & Gemeinschaft für die ganze Familie!"></div>
+                <div class="pg-row"><label>Domain</label><input type="text" id="c-domain" value="atsv-kirchseeon-marktlauf.de"></div>
+                <div class="pg-row"><label>QR-Ziel-URL</label><input type="url" id="c-qr-url" value="https://atsv-kirchseeon-marktlauf.de/#anmeldung"></div>
+                <div class="pg-row"><label>QR-Größe: <span id="c-qr-size-val">240</span> px</label><input type="range" id="c-qr-size" min="140" max="420" value="240" style="width:100%"></div>
+                <div class="pg-row"><label>Hintergrundfoto (optional)</label><input type="file" id="c-photo" accept="image/*"> <button class="btn btn-small btn-secondary" id="c-photo-clear" type="button">entfernen</button></div>
+                <button class="btn btn-primary" id="c-export" type="button" style="margin-top:0.6rem">Poster als PNG exportieren</button>
+                <p class="pg-hint" id="c-status" style="margin-top:0.5rem"></p>
+            </div>
+
+            <!-- VORSCHAU -->
+            <div>
+                <p class="pg-hint" style="margin:0 0 0.4rem">👉 Ins Poster klicken, um den QR zu platzieren:</p>
+                <div class="pg-stage" id="pg-stage">
+                    <div id="pg-poster">
+                        <div class="pg-bg" id="pg-bg"></div>
+                        <div class="pg-ov"></div>
+                        <div class="pg-top">
+                            <div class="pg-lock"><img src="../assets/images/ATSV_Logo-750x968.png" alt=""><span>Marktlauf<br>Kirchseeon</span></div>
+                            <div class="pg-coop"><small>IN KOOPERATION MIT</small><strong>Markt Kirchseeon</strong></div>
+                        </div>
+                        <h1 class="pg-headline" id="p-headline">ANMELDUNG GEÖFFNET!</h1>
+                        <div class="pg-subline" id="p-subline">Sichert euch jetzt euren Startplatz!</div>
+                        <div class="pg-features" id="p-features"></div>
+                        <div class="pg-cta" id="p-cta">JETZT ANMELDEN!</div>
+                        <div class="pg-bottom">
+                            <div class="pg-details" id="p-details"></div>
+                            <div class="pg-scan">
+                                <div class="pg-scan-head">JETZT SCANNEN<br>&amp; ANMELDEN!</div>
+                                <img id="pg-qr" alt="">
+                                <div class="pg-domain" id="p-domain">atsv-kirchseeon-marktlauf.de</div>
                             </div>
                         </div>
+                        <div class="pg-qr-float" id="pg-qr-float"><img id="pg-qr-float-img" alt=""></div>
                     </div>
                 </div>
             </div>
-        </section>
+        </div>
     </main>
-
-    <?php require_once __DIR__ . '/../src/layout/footer.php'; ?>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="../assets/js/qrcode.js"></script>
     <script>
     (function(){
-        // ---- SVG-Icons ----
         var IC = {
             shoe:  '<svg viewBox="0 0 24 24"><path d="M2 17h20v2a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-2z"/><path d="M2 17l1-6 5 1 4 3h8a2 2 0 0 1 2 2"/></svg>',
             watch: '<svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="7"/><path d="M12 13V9M9 2h6"/></svg>',
@@ -163,8 +158,9 @@ require_once __DIR__ . '/api/_auth.php';
         };
         var $ = function(id){ return document.getElementById(id); };
         var poster = $('pg-poster'), stage = $('pg-stage');
-        var qrX = 0.72, qrY = 0.80; // relative Klick-Position (Mitte des QR)
+        var qrX = 0.72, qrY = 0.80;
 
+        function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
         function renderFeatures(){
             $('p-features').innerHTML =
                 [['shoe','c-f1t','c-f1s'],['watch','c-f2t','c-f2s'],['leaf','c-f3t','c-f3s']].map(function(f){
@@ -179,7 +175,6 @@ require_once __DIR__ . '/api/_auth.php';
                     return '<div class="pg-dcard">'+d[0]+'<b>'+(v[0]||'')+'</b><span>'+(v.slice(1).join('·')||'')+'</span></div>';
                 }).join('');
         }
-        function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
         function bindText(cid, pid){ var el=$(cid); el.addEventListener('input', function(){ $(pid).textContent = el.value; }); }
         bindText('c-headline','p-headline'); bindText('c-subline','p-subline');
         bindText('c-cta','p-cta'); bindText('c-domain','p-domain');
@@ -187,14 +182,12 @@ require_once __DIR__ . '/api/_auth.php';
         ['c-date','c-loc','c-fam'].forEach(function(id){ $(id).addEventListener('input', renderDetails); });
         renderFeatures(); renderDetails();
 
-        // ---- Foto ----
         $('c-photo').addEventListener('change', function(e){
             var f = e.target.files[0]; if(!f) return;
             var r = new FileReader(); r.onload = function(){ $('pg-bg').style.backgroundImage = 'url('+r.result+')'; }; r.readAsDataURL(f);
         });
         $('c-photo-clear').addEventListener('click', function(){ $('pg-bg').style.backgroundImage=''; $('c-photo').value=''; });
 
-        // ---- QR erzeugen ----
         function qrDataUrl(text){
             var qr = qrcode(0,'H'); qr.addData(text); qr.make();
             var n = qr.getModuleCount(), cell=8, q=2, size=(n+q*2)*cell;
@@ -209,8 +202,8 @@ require_once __DIR__ . '/api/_auth.php';
             var float=$('pg-qr-float'), fimg=$('pg-qr-float-img'), boxImg=$('pg-qr');
             if(!url){ float.style.display='none'; boxImg.removeAttribute('src'); return; }
             var data; try{ data=qrDataUrl(url); }catch(e){ float.style.display='none'; return; }
-            boxImg.src=data;                       // QR in der Scan-Card (Standard)
-            fimg.src=data;                          // frei platzierbarer QR
+            boxImg.src=data;
+            fimg.src=data;
             float.style.width=size+'px'; float.style.height=size+'px';
             float.style.left=(qrX*1080 - size/2)+'px'; float.style.top=(qrY*1350 - size/2)+'px';
             float.style.display='block';
@@ -218,7 +211,6 @@ require_once __DIR__ . '/api/_auth.php';
         $('c-qr-url').addEventListener('input', updateQr);
         $('c-qr-size').addEventListener('input', updateQr);
 
-        // ---- Klick platziert den QR ----
         poster.addEventListener('click', function(e){
             var scale = poster._scale || 1;
             var rect = poster.getBoundingClientRect();
@@ -227,7 +219,6 @@ require_once __DIR__ . '/api/_auth.php';
             updateQr();
         });
 
-        // ---- Vorschau skalieren ----
         function fit(){
             var w = stage.clientWidth; var scale = w/1080;
             poster.style.transform='scale('+scale+')'; poster._scale=scale;
@@ -235,11 +226,10 @@ require_once __DIR__ . '/api/_auth.php';
         }
         window.addEventListener('resize', fit);
 
-        // ---- Export ----
         $('c-export').addEventListener('click', async function(){
             var st=$('c-status'); st.textContent='⏳ Rendert …';
             var savedTransform=poster.style.transform, savedH=stage.style.height;
-            poster.style.transform='none'; // fuer sauberen 1:1-Render
+            poster.style.transform='none';
             try{
                 if(document.fonts && document.fonts.ready) await document.fonts.ready;
                 var canvas = await html2canvas(poster,{width:1080,height:1350,scale:2,useCORS:false,backgroundColor:'#007230',logging:false});
@@ -249,10 +239,8 @@ require_once __DIR__ . '/api/_auth.php';
             finally{ poster.style.transform=savedTransform; stage.style.height=savedH; }
         });
 
-        // init
         fit(); updateQr();
 
-        // Burger (wie andere Orga-Seiten)
         var b=$('burger-btn'), sb=$('sidebar'), ov=$('sidebar-overlay');
         if(b){ b.addEventListener('click',function(){ sb.classList.toggle('open'); ov.classList.toggle('active'); });
                ov.addEventListener('click',function(){ sb.classList.remove('open'); ov.classList.remove('active'); }); }
