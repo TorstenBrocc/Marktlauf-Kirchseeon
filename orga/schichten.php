@@ -132,10 +132,10 @@ function beitragTooltip(array $beitragProHelfer, int $helferId): string {
                 minmax(100px, 1.2fr)    /* Schicht */
                 minmax(78px, 0.7fr)     /* Ort */
                 minmax(92px, 1fr)       /* Beschreibung */
-                96px                    /* Sichtbar */
                 minmax(110px, 1.1fr)    /* Zugeteilt */
                 minmax(120px, 1fr)      /* Helfer zuteilen */
                 50px                    /* Bedarf */
+                96px                    /* Sichtbar */
                 30px;                   /* Löschen */
             gap: 0.6rem;
             align-items: start;
@@ -355,7 +355,7 @@ function beitragTooltip(array $beitragProHelfer, int $helferId): string {
                     <h2 class="tag-heading"><?= htmlspecialchars($tag !== '' ? helferTagLabel($tag) : 'Ohne festen Termin') ?></h2>
                     <div class="kachel tag-kachel">
                         <div class="zeile-kopf">
-                            <div>Zeit</div><div>Schicht</div><div>Ort</div><div>Beschreibung</div><div>Sichtbar</div><div>Zugeteilt</div><div>Helfer zuteilen</div><div>Bedarf</div><div></div>
+                            <div>Zeit</div><div>Schicht</div><div>Ort</div><div>Beschreibung</div><div>Zugeteilt</div><div>Helfer zuteilen</div><div>Bedarf</div><div>Sichtbar</div><div></div>
                         </div>
                     <?php foreach ($tagSchichten as $s): ?>
                         <?php
@@ -404,22 +404,7 @@ function beitragTooltip(array $beitragProHelfer, int $helferId): string {
                                 <?= $ie($sid, 'beschreibung', $s['beschreibung'] ?? '', $s['beschreibung'] ? nl2br(htmlspecialchars($s['beschreibung'])) : '<span class="muted">+ Beschreibung</span>', ['type' => 'textarea', 'placeholder' => 'Was ist zu tun? Details …', 'class' => 'ie-desc']) ?>
                             </div>
 
-                            <!-- 5) Sichtbar (Dropdown schaltet in Anmeldung / nur intern) -->
-                            <div class="col col-sichtbar" data-label="Sichtbar">
-                                <form method="post" action="api/schicht_field.php" class="ie ie-anm">
-                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                                    <input type="hidden" name="schicht_id" value="<?= $sid ?>">
-                                    <span class="ie-view" tabindex="0" title="Doppelklick zum Ändern"><?php if ((int) $s['in_anmeldung'] === 1): ?><span class="tag-anmeldung">in Anmeldung</span><?php else: ?><span class="tag-intern">nur intern</span><?php endif; ?></span>
-                                    <span class="ie-edit">
-                                        <select name="in_anmeldung" onchange="this.form.submit()">
-                                            <option value="1" <?= (int) $s['in_anmeldung'] === 1 ? 'selected' : '' ?>>in Anmeldung</option>
-                                            <option value="0" <?= (int) $s['in_anmeldung'] === 0 ? 'selected' : '' ?>>nur intern</option>
-                                        </select>
-                                    </span>
-                                </form>
-                            </div>
-
-                            <!-- 6) Zugeteilte Helfer -->
+                            <!-- 5) Zugeteilte Helfer -->
                             <div class="col col-zugeteilt" data-label="Zugeteilt">
                                 <?php if ($zugeteilt): ?>
                                     <ul class="helfer-chips">
@@ -496,6 +481,21 @@ function beitragTooltip(array $beitragProHelfer, int $helferId): string {
                                     <span class="ie-edit">
                                         <input type="number" name="bedarf" min="1" value="<?= $bedarf ?>">
                                         <button type="submit" class="ie-save" title="Speichern">✓</button>
+                                    </span>
+                                </form>
+                            </div>
+
+                            <!-- 8) Sichtbar (Dropdown schaltet in Anmeldung / nur intern) -->
+                            <div class="col col-sichtbar" data-label="Sichtbar">
+                                <form method="post" action="api/schicht_field.php" class="ie ie-anm">
+                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                                    <input type="hidden" name="schicht_id" value="<?= $sid ?>">
+                                    <span class="ie-view" tabindex="0" title="Doppelklick zum Ändern"><?php if ((int) $s['in_anmeldung'] === 1): ?><span class="tag-anmeldung">in Anmeldung</span><?php else: ?><span class="tag-intern">nur intern</span><?php endif; ?></span>
+                                    <span class="ie-edit">
+                                        <select name="in_anmeldung" onchange="this.form.submit()">
+                                            <option value="1" <?= (int) $s['in_anmeldung'] === 1 ? 'selected' : '' ?>>in Anmeldung</option>
+                                            <option value="0" <?= (int) $s['in_anmeldung'] === 0 ? 'selected' : '' ?>>nur intern</option>
+                                        </select>
                                     </span>
                                 </form>
                             </div>
