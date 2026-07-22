@@ -1106,22 +1106,22 @@
 }
 
 .sponsor-item {
-    flex: 0 0 160px;
+    flex: 0 0 240px;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
 .sponsor-item img {
-    width: 140px;
-    height: 70px;
+    width: 210px;
+    height: 105px;
     object-fit: contain;
-    filter: grayscale(30%) opacity(0.75);
+    filter: none;
     transition: filter 0.3s ease;
 }
 
 .sponsor-item:hover img {
-    filter: grayscale(0%) opacity(1);
+    filter: none;
 }
 
 /* ── Scroll-Animationen ──────────────────────────────────── */
