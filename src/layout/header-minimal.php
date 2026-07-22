@@ -10,7 +10,7 @@ $basePath = $basePath ?? '';
     <header class="main-header">
         <div class="container nav-container">
             <a href="<?= $basePath ?>index.html" class="logo-plakette">
-                <img src="<?= $basePath ?>assets/images/Marktlauf%20Logo%20Schrift.png" alt="Marktlauf Kirchseeon" class="logo-wordmark">
+                <img src="<?= $basePath ?>assets/images/Marktlauf-Logo-Schrift-1180x579%20freigestellt.png" alt="Marktlauf Kirchseeon" class="logo-wordmark">
                 <span class="logo-divider"></span>
                 <img src="<?= $basePath ?>assets/images/ATSV_Logo-750x968.png" alt="ATSV Kirchseeon 1906" class="logo-atsv">
             </a>
