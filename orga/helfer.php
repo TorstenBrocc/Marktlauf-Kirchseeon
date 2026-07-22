@@ -17,19 +17,16 @@ $flashError = $_SESSION['flash_error'] ?? '';
 unset($_SESSION['flash_success'], $_SESSION['flash_error']);
 
 $filterStatus = $_GET['status'] ?? '';
-$filterSlot = $_GET['slot'] ?? '';
-$filterBeitrag = $_GET['beitrag'] ?? '';
 
 $pdo = getDbConnection();
 
+// Helferübersicht = Kontakt & Status. Verfügbarkeit/Slots leben im Einsatzplan,
+// Kuchen/Sonstiges in "Kuchen & Sonstiges". Hier bleibt als Einsatz-Kontext nur
+// die verbindliche Schicht-Zuteilung (nicht die Selbstmeldung).
 $sql = '
     SELECT h.*,
-           GROUP_CONCAT(DISTINCT CONCAT(DATE_FORMAT(hs.tag, "%a %d.%m."), " ", COALESCE(CONCAT(hs.aufgabe, " – "), ""), hs.zeitfenster) ORDER BY hs.tag SEPARATOR ", ") AS slots,
-           GROUP_CONCAT(DISTINCT CONCAT(hb.typ, COALESCE(CONCAT(": ", hb.freitext), "")) SEPARATOR ", ") AS beitraege,
            GROUP_CONCAT(DISTINCT sc.titel ORDER BY sc.titel SEPARATOR ", ") AS schichten
     FROM helfer h
-    LEFT JOIN helfer_slots hs ON h.id = hs.helfer_id
-    LEFT JOIN helfer_beitrag hb ON h.id = hb.helfer_id
     LEFT JOIN schicht_zuteilung sz ON h.id = sz.helfer_id
     LEFT JOIN schichten sc ON sc.id = sz.schicht_id
 ';
@@ -40,16 +37,6 @@ $params = [];
 if ($filterStatus !== '' && in_array($filterStatus, ['neu', 'bestaetigt', 'abgelehnt'], true)) {
     $where[] = 'h.status = :status';
     $params['status'] = $filterStatus;
-}
-
-if ($filterSlot !== '') {
-    $where[] = 'hs.tag = :slot';
-    $params['slot'] = $filterSlot;
-}
-
-if ($filterBeitrag !== '' && in_array($filterBeitrag, ['kuchen', 'equipment', 'sonstiges'], true)) {
-    $where[] = 'hb.typ = :beitrag';
-    $params['beitrag'] = $filterBeitrag;
 }
 
 if (!empty($where)) {
@@ -64,12 +51,6 @@ $helfer = $stmt->fetchAll();
 
 $countStmt = $pdo->query('SELECT COUNT(*) FROM helfer');
 $totalCount = (int) $countStmt->fetchColumn();
-
-$availableSlots = [];
-$slotStmt = $pdo->query('SELECT DISTINCT tag FROM helfer_slots ORDER BY tag');
-while ($row = $slotStmt->fetch()) {
-    $availableSlots[] = $row['tag'];
-}
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -138,6 +119,16 @@ while ($row = $slotStmt->fetch()) {
         .status-neu { background: #fff3cd; color: #856404; }
         .status-bestaetigt { background: var(--success-bg); color: var(--success); }
         .status-abgelehnt { background: var(--error-bg); color: var(--error); }
+        .foto-badge {
+            display: inline-block;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .foto-ja { background: var(--success-bg); color: var(--success); }
+        .foto-nein { background: var(--error-bg); color: var(--error); }
+        .foto-minor { margin-top: 0.25rem; color: var(--text-light); font-size: 0.7rem; }
         .inline-form {
             display: flex;
             gap: 0.25rem;
@@ -267,27 +258,7 @@ while ($row = $slotStmt->fetch()) {
                         <option value="abgelehnt" <?= $filterStatus === 'abgelehnt' ? 'selected' : '' ?>>Abgelehnt</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label>Slot</label>
-                    <select name="slot" onchange="this.form.submit()">
-                        <option value="">Alle Tage</option>
-                        <?php foreach ($availableSlots as $slot): ?>
-                            <option value="<?= htmlspecialchars($slot) ?>" <?= $filterSlot === $slot ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($slot) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Beitrag</label>
-                    <select name="beitrag" onchange="this.form.submit()">
-                        <option value="">Alle</option>
-                        <option value="kuchen" <?= $filterBeitrag === 'kuchen' ? 'selected' : '' ?>>Kuchen</option>
-                        <option value="equipment" <?= $filterBeitrag === 'equipment' ? 'selected' : '' ?>>Equipment</option>
-                        <option value="sonstiges" <?= $filterBeitrag === 'sonstiges' ? 'selected' : '' ?>>Sonstiges</option>
-                    </select>
-                </div>
-                <?php if ($filterStatus || $filterSlot || $filterBeitrag): ?>
+                <?php if ($filterStatus): ?>
                     <a href="helfer.php" class="btn btn-small btn-secondary">Filter zurücksetzen</a>
                 <?php endif; ?>
             </form>
@@ -302,8 +273,7 @@ while ($row = $slotStmt->fetch()) {
                             <th>E-Mail</th>
                             <th>Telefon</th>
                             <th>Status</th>
-                            <th>Slots</th>
-                            <th>Beitrag</th>
+                            <th>Fotofreigabe</th>
                             <th>Einsatz</th>
                             <th>Anmeldung</th>
                             <th>Notiz</th>
@@ -313,7 +283,7 @@ while ($row = $slotStmt->fetch()) {
                     <tbody>
                         <?php if (empty($helfer)): ?>
                             <tr>
-                                <td colspan="10">Keine Helfer gefunden.</td>
+                                <td colspan="9">Keine Helfer gefunden.</td>
                             </tr>
                         <?php else: ?>
                             <?php foreach ($helfer as $h): ?>
@@ -341,8 +311,23 @@ while ($row = $slotStmt->fetch()) {
                                         </form>
                                         <?php endif; ?>
                                     </td>
-                                    <td class="cell-small"><?= htmlspecialchars($h['slots'] ?? '-') ?></td>
-                                    <td class="cell-small"><?= htmlspecialchars($h['beitraege'] ?? '-') ?></td>
+                                    <td class="cell-small">
+                                        <?php
+                                        $ja = ($h['consent_photo'] ?? 'no') === 'yes';
+                                        $minor = (int) ($h['is_minor'] ?? 0) === 1;
+                                        $tsTitle = !empty($h['consent_ts'])
+                                            ? 'Einwilligung erteilt am ' . date('d.m.Y H:i', strtotime((string) $h['consent_ts']))
+                                            : 'Kein Einwilligungszeitpunkt hinterlegt';
+                                        ?>
+                                        <span class="foto-badge <?= $ja ? 'foto-ja' : 'foto-nein' ?>" title="<?= htmlspecialchars($tsTitle) ?>">
+                                            <?= $ja ? 'Ja' : 'Nein' ?>
+                                        </span>
+                                        <?php if ($minor): ?>
+                                            <div class="foto-minor" title="Erziehungsberechtigte Person: <?= htmlspecialchars((string) ($h['guardian_name'] ?? '–') ?: '–') ?>">
+                                                minderjährig · erz.-ber.: <?= htmlspecialchars((string) ($h['guardian_name'] ?? '–') ?: '–') ?>
+                                            </div>
+                                        <?php endif; ?>
+                                    </td>
                                     <td class="cell-small"><?= htmlspecialchars($h['schichten'] ?? '') ?: '-' ?></td>
                                     <td class="cell-small"><?= date('d.m.Y H:i', strtotime($h['created_at'])) ?></td>
                                     <td class="notiz-cell">

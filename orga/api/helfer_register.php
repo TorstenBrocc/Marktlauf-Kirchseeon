@@ -125,15 +125,19 @@ if (!is_array($beitrag)) {
     $beitrag = [];
 }
 
-// Slots nur aus dem Katalog akzeptieren (Key -> tag/aufgabe/zeitfenster).
+// Slots nur aus angebotenen Schichten akzeptieren (Key = schicht_id).
+// schicht_id = verbindliche Referenz; tag/zeitfenster/aufgabe als Snapshot.
 $validSlots = [];
+$seenSchichten = [];
 foreach ($slots as $slotKey) {
     if (!is_string($slotKey)) {
         continue;
     }
     $aufgabe = helferAufgabeByKey($slotKey);
-    if ($aufgabe !== null) {
+    if ($aufgabe !== null && !isset($seenSchichten[$aufgabe['schicht_id']])) {
+        $seenSchichten[$aufgabe['schicht_id']] = true;
         $validSlots[] = [
+            'schicht_id'  => $aufgabe['schicht_id'],
             'tag'         => $aufgabe['tag'],
             'zeitfenster' => $aufgabe['zeitfenster'],
             'aufgabe'     => $aufgabe['beschreibung'],
@@ -141,8 +145,12 @@ foreach ($slots as $slotKey) {
     }
 }
 
-$validBeitragTypes = ['kuchen', 'equipment', 'sonstiges'];
-$validBeitrag = array_filter($beitrag, fn($b) => in_array($b, $validBeitragTypes, true));
+// Beitrag: "kuchen" per Checkbox; "sonstiges" ergibt sich allein aus dem
+// Freitext (kein eigenes Auswahlfeld mehr).
+$validBeitrag = in_array('kuchen', $beitrag, true) ? ['kuchen'] : [];
+if ($beitragFreitext !== '') {
+    $validBeitrag[] = 'sonstiges';
+}
 
 $uuid = uuid();
 
@@ -169,12 +177,13 @@ try {
 
     if (!empty($validSlots)) {
         $slotStmt = $pdo->prepare('
-            INSERT INTO helfer_slots (helfer_id, tag, zeitfenster, aufgabe)
-            VALUES (:helfer_id, :tag, :zeitfenster, :aufgabe)
+            INSERT INTO helfer_slots (helfer_id, schicht_id, tag, zeitfenster, aufgabe)
+            VALUES (:helfer_id, :schicht_id, :tag, :zeitfenster, :aufgabe)
         ');
         foreach ($validSlots as $slot) {
             $slotStmt->execute([
                 'helfer_id'   => $helferId,
+                'schicht_id'  => $slot['schicht_id'],
                 'tag'         => $slot['tag'],
                 'zeitfenster' => $slot['zeitfenster'],
                 'aufgabe'     => $slot['aufgabe'],
@@ -189,7 +198,9 @@ try {
         ');
         foreach ($validBeitrag as $typ) {
             if ($typ === 'kuchen') {
-                $freitext = $kuchenArt !== '' ? $kuchenArt . ($kuchenNuesse === 'ja' ? ' | enthält Nüsse' : '') : null;
+                $nuesse = $kuchenNuesse === 'ja' ? 'enthält Nüsse' : '';
+                $freitext = trim($kuchenArt . ($kuchenArt !== '' && $nuesse !== '' ? ' | ' : '') . $nuesse);
+                $freitext = $freitext !== '' ? $freitext : null;
             } elseif ($typ === 'sonstiges' && $beitragFreitext !== '') {
                 $freitext = $beitragFreitext;
             } else {

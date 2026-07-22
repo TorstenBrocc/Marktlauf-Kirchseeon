@@ -378,6 +378,24 @@ $basePath = '';
             font-size: var(--text-sm);
             line-height: 1.5;
         }
+        .sonstige-block {
+            margin-top: var(--space-sm);
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-xs);
+        }
+        .sonstige-label {
+            font-weight: 600;
+        }
+        .sonstige-block textarea {
+            width: 100%;
+            padding: var(--space-sm);
+            border: 1px solid var(--gray-300);
+            border-radius: var(--radius-md);
+            font-size: var(--text-base);
+            font-family: inherit;
+            resize: vertical;
+        }
         @media (min-width: 600px) {
             .name-row {
                 grid-template-columns: 1fr 1fr;
@@ -498,15 +516,11 @@ $basePath = '';
                                         ⚠️ Bitte nur durchgebackene Produkte ohne rohe Eier oder ungekühlte Sahne. Kuchen mit Sahne bitte gekühlt transportieren. Allergene werden am Stand ausgehängt.
                                     </div>
                                 </div>
-                                <label>
-                                    <input type="checkbox" name="beitrag[]" value="equipment">
-                                    Equipment (Tische, Zelte, etc.)
-                                </label>
-                                <label style="align-items:flex-start">
-                                    <input type="checkbox" name="beitrag[]" value="sonstiges" style="margin-top:0.2rem;flex-shrink:0">
-                                    <span>Sonstige Unterstützung (wir suchen auch über den kompletten Zeitraum hinweg) – bitte gern näher beschreiben:</span>
-                                </label>
-                                <textarea id="beitrag_freitext" name="beitrag_freitext" rows="3" style="margin-left:calc(18px + 0.5rem);width:calc(100% - 18px - 0.5rem)"></textarea>
+                                <div class="sonstige-block">
+                                    <label for="beitrag_freitext" class="sonstige-label">Sonstige Unterstützung:</label>
+                                    <textarea id="beitrag_freitext" name="beitrag_freitext" rows="3"
+                                              placeholder="z.B. Social-Media, Sponsoring/Sponsoring-Kontakt, Equipment, sonstige Orga-Unterstützung…"></textarea>
+                                </div>
                             </div>
                         </div>
 
