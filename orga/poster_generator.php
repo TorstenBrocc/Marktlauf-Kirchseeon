@@ -6,6 +6,10 @@
  */
 declare(strict_types=1);
 require_once __DIR__ . '/api/_auth.php';
+require_once __DIR__ . '/../src/db.php';
+$pdo     = getDbConnection();
+$user    = getCurrentUserFromGuard();
+$isAdmin = isAdminFromGuard();
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -143,6 +147,7 @@ require_once __DIR__ . '/api/_auth.php';
             </div>
         </div>
     </main>
+</div><!-- /dashboard-layout (von _sidebar.php geoeffnet) -->
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="../assets/js/qrcode.js"></script>
