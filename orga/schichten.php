@@ -114,16 +114,18 @@ function beitragTooltip(array $beitragProHelfer, int $helferId): string {
         }
         .neu-details[open] > summary { margin-bottom: 1rem; }
         .neu-kachel { border: 2px dashed var(--border); background: #fafafa; }
-        /* Schicht-Kachel (nutzt globales .kachel; hier nur Innenleben). */
-        .schicht-kachel { display: flex; flex-direction: column; }
-        .schicht-head {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 0.75rem;
+        /* Eine Kachel pro Tag, Schichten als Zeilen untereinander. */
+        .tag-kachel { padding: 0; }
+        .schicht-zeile { padding: 0.85rem 1.15rem; border-top: 1px solid var(--border); }
+        .schicht-zeile:first-child { border-top: none; }
+        .zeile-top {
+            display: flex; justify-content: space-between;
+            align-items: flex-start; gap: 1rem; flex-wrap: wrap;
         }
-        .schicht-title { margin: 0; font-size: 1rem; line-height: 1.3; }
-        .schicht-meta { font-size: 0.8rem; color: var(--text-light); margin-top: 0.3rem; }
+        .zeile-info { display: flex; align-items: flex-start; gap: 0.7rem; flex: 1; min-width: 200px; }
+        .zeile-titel { font-size: 0.95rem; line-height: 1.3; }
+        .zeile-meta { font-size: 0.78rem; color: var(--text-light); margin-top: 0.2rem; }
+        .zeile-actions { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
         .schicht-desc { font-size: 0.85rem; margin: 0.5rem 0 0; white-space: pre-wrap; }
         .zugeteilt-label, .gemeldet-label {
             font-size: 0.7rem; color: var(--text-light);
@@ -131,15 +133,16 @@ function beitragTooltip(array $beitragProHelfer, int $helferId): string {
             margin-top: 0.75rem;
         }
         .besetzung {
-            font-size: 0.8rem;
+            font-size: 0.78rem;
             font-weight: 700;
-            padding: 0.2rem 0.55rem;
+            padding: 0.15rem 0.5rem;
             border-radius: 999px;
             white-space: nowrap;
+            margin-top: 0.1rem;
         }
         .besetzung.voll { background: var(--success-bg); color: var(--success); }
         .besetzung.offen { background: #fff3cd; color: #856404; }
-        .helfer-chips { list-style: none; padding: 0; margin: 0.75rem 0 0; display: flex; flex-wrap: wrap; gap: 0.4rem; }
+        .helfer-chips { list-style: none; padding: 0; margin: 0.35rem 0 0; display: flex; flex-wrap: wrap; gap: 0.4rem; }
         .helfer-chip {
             display: inline-flex; align-items: center; gap: 0.35rem;
             background: var(--bg); border: 1px solid var(--border);
@@ -150,10 +153,8 @@ function beitragTooltip(array $beitragProHelfer, int $helferId): string {
             border: none; background: transparent; cursor: pointer;
             color: var(--error); font-size: 1rem; line-height: 1; padding: 0 0.2rem;
         }
-        .schicht-actions { display: flex; gap: 0.5rem; margin-top: auto; padding-top: 0.75rem; flex-wrap: wrap; align-items: flex-end; }
-        .add-form { display: flex; gap: 0.4rem; align-items: flex-end; flex-wrap: wrap; flex: 1; }
-        .add-form .form-group { flex: 1; min-width: 0; }
-        .add-form select { padding: 0.4rem; width: 100%; max-width: 100%; }
+        .add-form { display: flex; gap: 0.4rem; align-items: center; }
+        .zeile-actions select { padding: 0.35rem 0.5rem; max-width: 200px; }
         .edit-form { margin-top: 0.75rem; display: none; }
         .edit-form.open { display: block; }
         .field-row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
@@ -262,39 +263,76 @@ function beitragTooltip(array $beitragProHelfer, int $helferId): string {
                 <p>Noch keine Schichten angelegt.</p>
             <?php else: ?>
                 <?php
-                $lastTag = '__init__';
-                foreach ($schichten as $s):
-                    $sid = (int) $s['id'];
-                    $zugeteilt = $zuteilungen[$sid] ?? [];
-                    $anzahl = count($zugeteilt);
-                    $bedarf = (int) $s['bedarf'];
-                    $voll = $anzahl >= $bedarf;
-                    $zugeteilteIds = array_map(static fn($z) => (int) $z['helfer_id'], $zugeteilt);
-                    $tag = (string) ($s['tag'] ?? '');
-                    if ($tag !== $lastTag):
-                        if ($lastTag !== '__init__') { echo "</div>\n"; } // vorheriges Raster schließen
-                        $lastTag = $tag;
-                        echo '<h2 class="tag-heading">' . htmlspecialchars($tag !== '' ? helferTagLabel($tag) : 'Ohne festen Termin') . '</h2>';
-                        echo '<div class="kachel-grid">';
-                    endif;
-                    ?>
-                    <div class="kachel schicht-kachel" id="schicht-<?= $sid ?>">
-                        <div class="schicht-head">
-                            <h3 class="schicht-title"><?= htmlspecialchars($s['titel']) ?></h3>
-                            <span class="besetzung <?= $voll ? 'voll' : 'offen' ?>">
-                                <?= $anzahl ?>/<?= $bedarf ?>
-                            </span>
-                        </div>
-                        <div class="schicht-meta">
-                            <?php $zf = helferSchichtZeitfenster($s); ?>
-                            <?= htmlspecialchars($zf !== '' ? $zf : 'Zeit offen') ?>
-                            <?php if (!empty($s['ort'])): ?> · <?= htmlspecialchars($s['ort']) ?><?php endif; ?>
-                            <?php if ((int) $s['in_anmeldung'] === 1): ?>
-                                · <span class="tag-anmeldung">in Anmeldung</span>
-                            <?php else: ?>
-                                · <span class="tag-intern">nur intern</span>
-                            <?php endif; ?>
-                        </div>
+                // Nach Tag gruppieren (Reihenfolge aus SQL: Tage aufsteigend, ohne Tag zuletzt).
+                $byTag = [];
+                foreach ($schichten as $s) {
+                    $byTag[(string) ($s['tag'] ?? '')][] = $s;
+                }
+                // Je Tag sortieren: "Ganzer Tag" oben, dann nach Startzeit (von),
+                // Freitext-Zeitfenster (ohne feste Uhrzeit) ans Ende.
+                foreach ($byTag as &$_list) {
+                    usort($_list, static function (array $a, array $b): int {
+                        $ra = ($a['titel'] === 'Ganzer Tag') ? 0 : 1;
+                        $rb = ($b['titel'] === 'Ganzer Tag') ? 0 : 1;
+                        if ($ra !== $rb) { return $ra <=> $rb; }
+                        $va = !empty($a['von']) ? substr((string) $a['von'], 0, 5) : '99:99';
+                        $vb = !empty($b['von']) ? substr((string) $b['von'], 0, 5) : '99:99';
+                        if ($va !== $vb) { return strcmp($va, $vb); }
+                        return strcmp((string) ($a['zeitfenster'] ?? '') . $a['titel'],
+                                      (string) ($b['zeitfenster'] ?? '') . $b['titel']);
+                    });
+                }
+                unset($_list);
+                ?>
+                <?php foreach ($byTag as $tag => $tagSchichten): ?>
+                    <h2 class="tag-heading"><?= htmlspecialchars($tag !== '' ? helferTagLabel($tag) : 'Ohne festen Termin') ?></h2>
+                    <div class="kachel tag-kachel">
+                    <?php foreach ($tagSchichten as $s): ?>
+                        <?php
+                        $sid = (int) $s['id'];
+                        $zugeteilt = $zuteilungen[$sid] ?? [];
+                        $anzahl = count($zugeteilt);
+                        $bedarf = (int) $s['bedarf'];
+                        $voll = $anzahl >= $bedarf;
+                        $zugeteilteIds = array_map(static fn($z) => (int) $z['helfer_id'], $zugeteilt);
+                        $zf = helferSchichtZeitfenster($s);
+                        ?>
+                        <div class="schicht-zeile" id="schicht-<?= $sid ?>">
+                            <div class="zeile-top">
+                                <div class="zeile-info">
+                                    <span class="besetzung <?= $voll ? 'voll' : 'offen' ?>"><?= $anzahl ?>/<?= $bedarf ?></span>
+                                    <div>
+                                        <strong class="zeile-titel"><?= htmlspecialchars($s['titel']) ?></strong>
+                                        <div class="zeile-meta">
+                                            <?= htmlspecialchars($zf !== '' ? $zf : 'Zeit offen') ?>
+                                            <?php if (!empty($s['ort'])): ?> · <?= htmlspecialchars($s['ort']) ?><?php endif; ?>
+                                            <?php if ((int) $s['in_anmeldung'] === 1): ?>
+                                                · <span class="tag-anmeldung">in Anmeldung</span>
+                                            <?php else: ?>
+                                                · <span class="tag-intern">nur intern</span>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="zeile-actions">
+                                    <form method="post" action="api/schicht_zuteilung.php" class="add-form">
+                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                                        <input type="hidden" name="action" value="add">
+                                        <input type="hidden" name="schicht_id" value="<?= $sid ?>">
+                                        <select name="helfer_id" required aria-label="Bestätigten Helfer zuteilen">
+                                            <option value="">– bestätigten Helfer wählen –</option>
+                                            <?php foreach ($confirmedHelfer as $h): ?>
+                                                <?php if (in_array((int) $h['id'], $zugeteilteIds, true)) continue; ?>
+                                                <option value="<?= (int) $h['id'] ?>">
+                                                    <?= htmlspecialchars($h['vorname'] . ' ' . $h['nachname']) ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                        <button type="submit" class="btn btn-small btn-primary">Zuteilen</button>
+                                    </form>
+                                    <button type="button" class="btn btn-small btn-secondary" onclick="document.getElementById('edit-<?= $sid ?>').classList.toggle('open')">Bearbeiten</button>
+                                </div>
+                            </div>
 
                         <?php if (!empty($s['beschreibung'])): ?>
                             <p class="schicht-desc"><?= htmlspecialchars($s['beschreibung']) ?></p>
@@ -356,28 +394,6 @@ function beitragTooltip(array $beitragProHelfer, int $helferId): string {
                             </div>
                         <?php endif; ?>
 
-                        <div class="schicht-actions">
-                            <form method="post" action="api/schicht_zuteilung.php" class="add-form">
-                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                                <input type="hidden" name="action" value="add">
-                                <input type="hidden" name="schicht_id" value="<?= $sid ?>">
-                                <div class="form-group" style="margin:0;">
-                                    <label>Helfer zuteilen</label>
-                                    <select name="helfer_id" required>
-                                        <option value="">– bestätigten Helfer wählen –</option>
-                                        <?php foreach ($confirmedHelfer as $h): ?>
-                                            <?php if (in_array((int) $h['id'], $zugeteilteIds, true)) continue; ?>
-                                            <option value="<?= (int) $h['id'] ?>">
-                                                <?= htmlspecialchars($h['vorname'] . ' ' . $h['nachname']) ?><?= $h['slots'] ? ' — ' . htmlspecialchars($h['slots']) : '' ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
-                                <button type="submit" class="btn btn-small btn-primary">Zuteilen</button>
-                            </form>
-                            <button type="button" class="btn btn-small btn-secondary" onclick="document.getElementById('edit-<?= $sid ?>').classList.toggle('open')">Bearbeiten</button>
-                        </div>
-
                         <!-- Bearbeiten -->
                         <div class="edit-form" id="edit-<?= $sid ?>">
                             <form method="post" action="api/schicht_crud.php">
@@ -435,9 +451,10 @@ function beitragTooltip(array $beitragProHelfer, int $helferId): string {
                                 <button type="submit" class="btn btn-small btn-danger">Schicht löschen</button>
                             </form>
                         </div>
-                    </div>
+                        </div><!-- .schicht-zeile -->
+                    <?php endforeach; ?>
+                    </div><!-- .tag-kachel -->
                 <?php endforeach; ?>
-                </div><!-- letztes .kachel-grid schließen -->
             <?php endif; ?>
         </main>
     </div>
