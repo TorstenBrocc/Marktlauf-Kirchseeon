@@ -76,7 +76,7 @@ $makeWebhookSecret = (string) ($config['make_webhook_secret'] ?? '');
         .settings-section {
             background: var(--white);
             border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow-card);
             padding: 1.5rem;
             margin-bottom: 1.5rem;
         }

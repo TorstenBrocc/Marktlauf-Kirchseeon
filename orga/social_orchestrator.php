@@ -127,7 +127,7 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
 
         .so-card {
             background: var(--white); border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow-card);
             padding: 1.5rem; margin-bottom: 1.25rem;
         }
         .so-card h2 { font-size: 1rem; margin: 0 0 1rem; }
@@ -174,7 +174,7 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
         .so-save-row { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
         .so-saved { display: none; color: #16a34a; font-size: 0.8rem; }
         /* Einklappbares RaceResult-Modul */
-        .so-collapse { border: 1px solid var(--border); border-radius: 8px; background: var(--white); box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 0.75rem 1.25rem; margin-bottom: 1.25rem; }
+        .so-collapse { border: 1px solid var(--border); border-radius: 8px; background: var(--white); box-shadow: var(--shadow-card); padding: 0.75rem 1.25rem; margin-bottom: 1.25rem; }
         .so-collapse > summary { cursor: pointer; font-size: 1rem; font-weight: 600; padding: 0.4rem 0; list-style: revert; }
         .so-collapse[open] > summary { margin-bottom: 0.75rem; border-bottom: 1px solid var(--border); }
         .so-badge-ok { font-size: 0.72rem; font-weight: 500; padding: 0.1rem 0.5rem; border-radius: 10px; background: #d1fae5; color: #065f46; }
