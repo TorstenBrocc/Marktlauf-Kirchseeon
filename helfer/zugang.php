@@ -189,7 +189,7 @@ $basePath = '../';
         .zugang-section {
             background: var(--white);
             border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-md);
+            box-shadow: 0 10px 22px -4px rgba(0,0,0,0.2);
             padding: var(--space-md);
         }
         .zugang-section h2 {

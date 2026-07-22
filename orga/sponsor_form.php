@@ -68,7 +68,7 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
             background: var(--white);
             padding: 1.5rem;
             border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow-card);
             margin-bottom: 1.5rem;
         }
         .form-card h2 {

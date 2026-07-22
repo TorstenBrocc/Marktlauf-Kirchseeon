@@ -75,7 +75,7 @@ if (!empty($briefSettings['sponsoring_pakete'])) {
         }
         .brief-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
         .brief-card {
-            background: var(--white); border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            background: var(--white); border-radius: 8px; box-shadow: var(--shadow-card);
             padding: 1.5rem; margin-bottom: 1.25rem;
         }
         .brief-betreff { width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px; font-size: 0.95rem; box-sizing: border-box; }

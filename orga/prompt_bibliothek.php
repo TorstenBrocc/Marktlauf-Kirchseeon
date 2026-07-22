@@ -101,7 +101,7 @@ $kategorien = [
         .pb-editor-col {}
         .pb-card {
             background: var(--white); border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08); padding: 1.25rem;
+            box-shadow: var(--shadow-card); padding: 1.25rem;
         }
         .pb-meta-row {
             display: grid; grid-template-columns: 1fr auto; gap: 0.75rem;

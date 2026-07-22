@@ -212,7 +212,7 @@ function ci_card(array $t, array $tokens): string
             background: var(--white);
             border: 1px solid var(--border);
             border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            box-shadow: var(--shadow-card);
             overflow: hidden;
             padding: 0;
             font: inherit;

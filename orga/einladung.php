@@ -114,7 +114,7 @@ $basePath = '../';
             background: var(--white);
             padding: var(--space-xl);
             border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-md);
+            box-shadow: 0 10px 22px -4px rgba(0,0,0,0.2);
             width: 100%;
             max-width: 450px;
         }

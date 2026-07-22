@@ -63,7 +63,7 @@ $prioLabel = ['normal' => 'Normal', 'wichtig' => 'Wichtig', 'notfall' => '⚠️
     <link rel="stylesheet" href="css/orga.css?v=<?= @filemtime(__DIR__ . '/css/orga.css') ?>">
     <link rel="icon" type="image/svg+xml" href="../assets/images/logo-final.svg">
     <style>
-        .hd-card { background: var(--white); border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 1.25rem; margin-bottom: 1.25rem; }
+        .hd-card { background: var(--white); border-radius: 8px; box-shadow: var(--shadow-card); padding: 1.25rem; margin-bottom: 1.25rem; }
         .hd-card h2 { font-size: 1rem; margin: 0 0 0.9rem; }
         .hd-table { width: 100%; border-collapse: collapse; }
         .hd-table th, .hd-table td { padding: 0.5rem 0.6rem; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.9rem; vertical-align: top; }
