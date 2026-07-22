@@ -181,6 +181,58 @@ $basePath = '';
         .foto-consent-text a {
             color: var(--primary);
         }
+        .foto-options {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-sm);
+            margin-top: var(--space-xs);
+        }
+        /* Auswahlzeile: eckiges Feld + Text nebeneinander, linksbündig */
+        .foto-fieldset .foto-option {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.6rem;
+            margin: 0;
+            font-weight: normal;
+            color: var(--gray-700);
+            text-align: left;
+            cursor: pointer;
+        }
+        /* Eckige Auswahlfelder (wie die Checkboxen sonst) – überschreibt .form-group input { width:100% } */
+        .foto-fieldset .foto-option input[type="radio"] {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            flex: 0 0 auto;
+            margin: 0;
+            padding: 0;
+            border: 1px solid var(--gray-400);
+            border-radius: 4px;
+            background: var(--white);
+            cursor: pointer;
+            position: relative;
+            top: 1px;
+        }
+        .foto-fieldset .foto-option input[type="radio"]:checked {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+        .foto-fieldset .foto-option input[type="radio"]:checked::after {
+            content: "";
+            position: absolute;
+            left: 6px;
+            top: 2px;
+            width: 5px;
+            height: 10px;
+            border: solid #fff;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+        .foto-fieldset .foto-option input[type="radio"]:focus-visible {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
         .checkbox-group {
             display: flex;
             flex-direction: column;
@@ -457,14 +509,14 @@ $basePath = '';
 
                             <div class="form-group">
                                 <p class="foto-step"><strong>Schritt 1:</strong> Für wen erfolgt die Anmeldung?</p>
-                                <div class="checkbox-group">
-                                    <label>
+                                <div class="foto-options">
+                                    <label class="foto-option">
                                         <input type="radio" name="is_minor" value="0" id="minor_no" required>
-                                        Ich bin volljährig und melde mich selbst an.
+                                        <span>Ich bin volljährig und melde mich selbst an.</span>
                                     </label>
-                                    <label>
+                                    <label class="foto-option">
                                         <input type="radio" name="is_minor" value="1" id="minor_yes">
-                                        Ich bin erziehungsberechtigt und melde eine minderjährige Person an.
+                                        <span>Ich bin erziehungsberechtigt und melde eine minderjährige Person an.</span>
                                     </label>
                                 </div>
                             </div>
@@ -479,14 +531,14 @@ $basePath = '';
 
                             <div class="form-group">
                                 <p class="foto-step"><strong>Schritt 2:</strong> Willigst du in die Nutzung der Aufnahmen ein?</p>
-                                <div class="checkbox-group">
-                                    <label>
+                                <div class="foto-options">
+                                    <label class="foto-option">
                                         <input type="radio" name="consent_photo" value="yes" id="consent_yes" required>
-                                        Ja, ich willige ein.
+                                        <span>Ja, ich willige ein.</span>
                                     </label>
-                                    <label>
+                                    <label class="foto-option">
                                         <input type="radio" name="consent_photo" value="no" id="consent_no">
-                                        Nein, ich willige nicht ein.
+                                        <span>Nein, ich willige nicht ein.</span>
                                     </label>
                                 </div>
                             </div>
