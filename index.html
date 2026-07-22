@@ -466,13 +466,18 @@
                 
                 <div class="registration-container">
                     <!-- RaceResult Snippet Start -->
-                    <div class="registration-placeholder">
-                        <p><strong data-i18n="anmeldung.placeholder_title">RaceResult Anmeldung</strong></p>
-                        <p data-i18n="anmeldung.placeholder_text">Hier wird das RaceResult-Anmelde-Snippet eingebunden.</p>
-                        <p style="font-size: 0.8rem; margin-top: var(--space-sm);" data-i18n="anmeldung.placeholder_note">
-                            (Bitte RaceResult-Iframe/Script hier einfügen)
-                        </p>
-                    </div>
+                    <script type="text/javascript">
+                    <!--
+                        var RRReg_eventid="412617";
+                        var RRReg_name="Anmeldung Marktlauf 2026";
+                        var RRReg_key="JDwE1JRSUcb1";
+                        var RRReg_server="https://events2.raceresult.com";
+                    -->
+                    </script>
+                    <script type="text/javascript" src="https://events2.raceresult.com/registrations/init.js?lang=de-de"></script>
+                    <style>
+                        /* Eigenes CSS zum Anpassen der RaceResult-Anmeldung hier einfuegen */
+                    </style>
                     <!-- RaceResult Snippet End -->
                 </div>
             </div>
