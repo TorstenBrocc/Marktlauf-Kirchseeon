@@ -233,6 +233,12 @@ $basePath = '';
             outline: 2px solid var(--primary);
             outline-offset: 2px;
         }
+        /* Ein-/Ausblenden per Radio-Zustand – funktioniert auch OHNE JavaScript */
+        #consent-text-minor,
+        #guardian-name-group { display: none; }
+        .foto-fieldset:has(#minor_yes:checked) #consent-text-adult { display: none; }
+        .foto-fieldset:has(#minor_yes:checked) #consent-text-minor { display: block; }
+        .foto-fieldset:has(#minor_yes:checked) #guardian-name-group { display: block; }
         .checkbox-group {
             display: flex;
             flex-direction: column;
@@ -525,11 +531,11 @@ $basePath = '';
                                 Ich willige ein, dass der ATSV Kirchseeon e.V. Foto- und Videoaufnahmen von mir beim Marktlauf für die Öffentlichkeitsarbeit des Vereins (Website, Social Media, Presse und Vereinsarchiv) einschließlich der Bewerbung künftiger Veranstaltungen verwendet (Art. 6 Abs. 1 lit. a DSGVO). Die Einwilligung ist freiwillig, hat keinen Einfluss auf die Teilnahme und ist jederzeit mit Wirkung für die Zukunft widerrufbar an <a href="mailto:atsv@atsv-kirchseeon.de">atsv@atsv-kirchseeon.de</a>. Die <a href="https://atsv-kirchseeon-marktlauf.de/datenschutz.html" target="_blank" rel="noopener noreferrer">Datenschutzhinweise</a> habe ich gelesen.
                             </div>
 
-                            <div class="foto-consent-text" id="consent-text-minor" hidden>
+                            <div class="foto-consent-text" id="consent-text-minor">
                                 Ich willige als erziehungsberechtigte Person ein, dass der ATSV Kirchseeon e.V. Foto- und Videoaufnahmen des von mir angemeldeten Kindes beim Marktlauf für die Öffentlichkeitsarbeit des Vereins (Website, Social Media, Presse und Vereinsarchiv) einschließlich der Bewerbung künftiger Veranstaltungen verwendet (Art. 6 Abs. 1 lit. a DSGVO). Die Einwilligung ist freiwillig, hat keinen Einfluss auf die Teilnahme und ist jederzeit mit Wirkung für die Zukunft widerrufbar an <a href="mailto:atsv@atsv-kirchseeon.de">atsv@atsv-kirchseeon.de</a>. Die <a href="https://atsv-kirchseeon-marktlauf.de/datenschutz.html" target="_blank" rel="noopener noreferrer">Datenschutzhinweise</a> habe ich gelesen.
                             </div>
 
-                            <div class="form-group" id="guardian-name-group" hidden>
+                            <div class="form-group" id="guardian-name-group">
                                 <label for="guardian_name" class="required">Vollständiger Name der erziehungsberechtigten Person</label>
                                 <input type="text" id="guardian_name" name="guardian_name" maxlength="255">
                             </div>
@@ -556,16 +562,12 @@ $basePath = '';
                     (function () {
                         const minorYes = document.getElementById('minor_yes');
                         const minorNo = document.getElementById('minor_no');
-                        const adultText = document.getElementById('consent-text-adult');
-                        const minorText = document.getElementById('consent-text-minor');
-                        const guardianGroup = document.getElementById('guardian-name-group');
                         const guardianInput = document.getElementById('guardian_name');
 
+                        // Sichtbarkeit steuert CSS (:has). JS setzt nur die Pflicht
+                        // (serverseitig wird zusätzlich validiert).
                         function sync() {
                             const isMinor = minorYes.checked;
-                            adultText.hidden = isMinor;
-                            minorText.hidden = !isMinor;
-                            guardianGroup.hidden = !isMinor;
                             guardianInput.required = isMinor;
                             if (!isMinor) { guardianInput.value = ''; }
                         }
