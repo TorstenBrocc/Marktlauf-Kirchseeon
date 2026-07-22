@@ -264,9 +264,13 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
             font-size: 26px; opacity: 0.9; background: rgba(255,255,255,0.12);
             border-radius: 12px; padding: 24px 32px; line-height: 1.4;
         }
-        .sc-footer { display: flex; justify-content: space-between; align-items: flex-end; }
+        .sc-footer { display: flex; justify-content: space-between; align-items: flex-end; gap: 40px; }
+        .sc-footer-text { display: flex; flex-direction: column; gap: 6px; }
         .sc-url { font-size: 22px; opacity: 0.6; }
         .sc-wordmark { font-size: 32px; font-weight: 700; letter-spacing: 1px; }
+        .sc-qr { display: flex; flex-direction: column; align-items: center; gap: 10px; flex: 0 0 auto; }
+        .sc-qr img { width: 200px; height: 200px; background: #fff; padding: 14px; border-radius: 16px; box-sizing: border-box; display: block; }
+        .sc-qr-label { font-size: 24px; font-weight: 600; text-align: center; }
         #so-card-preview { display: none; margin-top: 1rem; }
         #so-card-preview img { max-width: 360px; border-radius: 8px; border: 1px solid var(--border); }
         #so-card-error { display: none; color: #dc2626; font-size: 0.88rem; margin-top: 0.5rem; }
@@ -443,8 +447,14 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                 <div class="sc-highlight" id="sc-highlight"></div>
                 <div class="sc-logos" id="sc-logos"></div>
                 <div class="sc-footer">
-                    <span class="sc-url">atsv-kirchseeon-marktlauf.de</span>
-                    <span class="sc-wordmark">ATSV Kirchseeon</span>
+                    <div class="sc-footer-text">
+                        <span class="sc-wordmark">ATSV Kirchseeon</span>
+                        <span class="sc-url">atsv-kirchseeon-marktlauf.de</span>
+                    </div>
+                    <div class="sc-qr" id="sc-qr" style="display:none">
+                        <img id="sc-qr-img" alt="">
+                        <span class="sc-qr-label" id="sc-qr-label">Jetzt anmelden</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -480,6 +490,14 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                         <option value="dunkel">Dunkelgrün</option>
                         <option value="akzent">Akzent (Orange)</option>
                     </select>
+                </div>
+                <div class="so-field">
+                    <label for="so-qr-url">QR-Code-URL (optional)</label>
+                    <input type="url" id="so-qr-url" placeholder="https://atsv-kirchseeon-marktlauf.de/#anmeldung">
+                </div>
+                <div class="so-field">
+                    <label for="so-qr-label">QR-Beschriftung</label>
+                    <input type="text" id="so-qr-label" value="Jetzt anmelden">
                 </div>
             </div>
             <div class="so-photo-row">
@@ -624,68 +642,12 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                 <p id="so-dispatch-msg" style="display:none;margin-top:0.6rem;font-size:0.88rem"></p>
             </div>
         </div>
-
-        <!-- Modul 4: QR-Code Generator -->
-        <div class="so-card">
-            <h2>4 · QR-Code Generator</h2>
-            <p class="so-notice">
-                Beliebige URL eingeben (z.&nbsp;B. Anmeldung, Familienanmeldung, Ergebnisse) und als
-                <strong>QR-Code</strong> für Flyer, Aushang oder Story herunterladen.
-            </p>
-            <div class="so-field">
-                <label for="so-qr-url">URL</label>
-                <input type="url" id="so-qr-url" placeholder="https://atsv-kirchseeon-marktlauf.de/…" style="width:100%">
-            </div>
-            <div class="so-save-row" style="align-items:center;gap:1rem;flex-wrap:wrap;margin-top:0.6rem">
-                <button class="btn btn-primary btn-small" id="so-qr-gen" type="button">QR-Code erzeugen</button>
-                <a class="btn btn-secondary btn-small" id="so-qr-dl-png" download="marktlauf-qr.png" style="display:none">PNG herunterladen</a>
-                <a class="btn btn-secondary btn-small" id="so-qr-dl-svg" download="marktlauf-qr.svg" style="display:none">SVG herunterladen</a>
-                <span id="so-qr-msg" style="display:none;font-size:0.85rem"></span>
-            </div>
-            <div id="so-qr-out" style="margin-top:1rem"></div>
-        </div>
     </main>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<!-- QR-Code Generator (lokal, ohne externe Abhaengigkeit) -->
+<!-- QR-Code Generator (lokale Lib, ohne externe Abhaengigkeit) — genutzt fuer QR auf der Grafik -->
 <script src="../assets/js/qrcode.js"></script>
-<script>
-(function(){
-    var url   = document.getElementById('so-qr-url'),
-        gen   = document.getElementById('so-qr-gen'),
-        out   = document.getElementById('so-qr-out'),
-        dlPng = document.getElementById('so-qr-dl-png'),
-        dlSvg = document.getElementById('so-qr-dl-svg'),
-        msg   = document.getElementById('so-qr-msg');
-    if (!gen || typeof qrcode !== 'function') return;
-    function show(m, ok){ msg.style.display='inline'; msg.textContent=m; msg.style.color = ok ? '#16a34a' : '#dc2626'; }
-    function build(){
-        var v = (url.value || '').trim();
-        if (!v){ show('Bitte eine URL eingeben.', false); out.innerHTML=''; dlPng.style.display='none'; dlSvg.style.display='none'; return; }
-        try {
-            var qr = qrcode(0, 'M'); qr.addData(v); qr.make();
-            var count = qr.getModuleCount(), cell = 8, quiet = 4, size = (count + quiet*2) * cell;
-            var canvas = document.createElement('canvas'); canvas.width = canvas.height = size;
-            var ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, size, size);
-            ctx.fillStyle = '#000000';
-            for (var r=0; r<count; r++) for (var c=0; c<count; c++) if (qr.isDark(r, c)) ctx.fillRect((c+quiet)*cell, (r+quiet)*cell, cell, cell);
-            canvas.style.cssText = 'width:220px;height:220px;image-rendering:pixelated;border:1px solid var(--border);border-radius:8px;background:#fff';
-            out.innerHTML=''; out.appendChild(canvas);
-            dlPng.href = canvas.toDataURL('image/png'); dlPng.style.display='inline-flex';
-            var svg = qr.createSvgTag({ cellSize: cell, margin: quiet*cell, scalable: true });
-            dlSvg.href = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg); dlSvg.style.display='inline-flex';
-            show('✓ QR-Code erzeugt.', true);
-        } catch (e) {
-            show('Fehler — URL evtl. zu lang für einen QR-Code.', false);
-            out.innerHTML=''; dlPng.style.display='none'; dlSvg.style.display='none';
-        }
-    }
-    gen.addEventListener('click', build);
-    url.addEventListener('keydown', function(e){ if (e.key === 'Enter'){ e.preventDefault(); build(); } });
-})();
-</script>
 <script>
 const csrf     = <?= json_encode($csrf) ?>;
 const mockData = <?= $mockDataJson ?>;
@@ -1018,6 +980,29 @@ document.getElementById('so-clear-photo').addEventListener('click', () => {
     renderLogoChips();
 })();
 
+// QR-Code auf der Grafik erzeugen (aus optionaler URL in Modul 3)
+function applyQr() {
+    const urlVal = (document.getElementById('so-qr-url').value || '').trim();
+    const wrap   = document.getElementById('sc-qr');
+    const img    = document.getElementById('sc-qr-img');
+    const lbl    = document.getElementById('sc-qr-label');
+    if (!urlVal || typeof qrcode !== 'function') { wrap.style.display = 'none'; return; }
+    try {
+        const qr = qrcode(0, 'M'); qr.addData(urlVal); qr.make();
+        const count = qr.getModuleCount(), cell = 10, quiet = 2, size = (count + quiet * 2) * cell;
+        const cv = document.createElement('canvas'); cv.width = cv.height = size;
+        const ctx = cv.getContext('2d');
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, size, size);
+        ctx.fillStyle = '#000000';
+        for (let r = 0; r < count; r++) for (let c = 0; c < count; c++) if (qr.isDark(r, c)) ctx.fillRect((c + quiet) * cell, (r + quiet) * cell, cell, cell);
+        img.src = cv.toDataURL('image/png');
+        lbl.textContent = (document.getElementById('so-qr-label').value || '').trim() || 'Jetzt anmelden';
+        wrap.style.display = 'flex';
+    } catch (e) {
+        wrap.style.display = 'none';
+    }
+}
+
 document.getElementById('so-render-card').addEventListener('click', async () => {
     const btn    = document.getElementById('so-render-card');
     const errEl  = document.getElementById('so-card-error');
@@ -1029,13 +1014,15 @@ document.getElementById('so-render-card').addEventListener('click', async () => 
 
     fillShareCard(mockData);
     applyCardStyle(fmt);
+    applyQr();
 
     const card = document.getElementById('social-share-card');
-    // Logos + optionales Hintergrundfoto vorab laden, damit html2canvas sie findet
+    // Logos + optionales Hintergrundfoto + QR vorab laden, damit html2canvas sie findet
     const logoImgs = Array.from(document.querySelectorAll('#sc-logos img'));
     await Promise.all([
         ...logoImgs.map(waitImg),
         selectedPhotoUrl ? waitImg(document.getElementById('sc-bg')) : Promise.resolve(),
+        waitImg(document.getElementById('sc-qr-img')),
     ]);
 
     try {
