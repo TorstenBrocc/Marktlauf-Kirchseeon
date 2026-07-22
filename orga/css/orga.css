@@ -401,6 +401,35 @@ body {
     color: var(--text);
 }
 
+/* =====================================================================
+   Kachel-Layout — GLOBALES Layout-Pattern (Doku: docs/ui-kacheln.md)
+   Standard, um Inhalte statt seitenbreit in responsiven Karten zu zeigen.
+   Auf JEDER neuen Orga-Seite mit Listen/Objekten dieses Pattern verwenden.
+
+     <div class="kachel-grid">
+        <div class="kachel"> … </div>
+        …
+     </div>
+
+   - .kachel-grid: responsives Raster, bricht automatisch um (auto-fit),
+     mobil einspaltig -> nur vertikales Scrollen.
+   - .kachel: einzelne Karte (Fläche, Rand, Radius, Schatten).
+   Das Dashboard-Grid (.dashboard-grid + .card) ist die KPI-Variante davon.
+   ===================================================================== */
+.kachel-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+    align-items: start;
+}
+.kachel {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.15rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
 /* Dashboard Grid */
 .dashboard-grid {
     display: grid;

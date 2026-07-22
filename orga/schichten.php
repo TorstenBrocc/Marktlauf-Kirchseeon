@@ -8,6 +8,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/api/_auth.php';
 require_once __DIR__ . '/../src/db.php';
+require_once __DIR__ . '/../src/helfer_aufgaben.php'; // helferTagLabel()
 
 $user = getCurrentUserFromGuard();
 $isAdmin = isAdminFromGuard();
@@ -80,23 +81,6 @@ $confirmedHelfer = $pdo->query('
     ORDER BY h.nachname, h.vorname
 ')->fetchAll();
 
-function schichtZeit(array $s): string {
-    $parts = [];
-    if (!empty($s['tag'])) {
-        $parts[] = date('D, d.m.Y', strtotime($s['tag']));
-    }
-    if (!empty($s['von'])) {
-        $zeit = substr($s['von'], 0, 5);
-        if (!empty($s['bis'])) {
-            $zeit .= '–' . substr($s['bis'], 0, 5);
-        }
-        $parts[] = $zeit . ' Uhr';
-    } elseif (!empty($s['zeitfenster'])) {
-        $parts[] = $s['zeitfenster'];
-    }
-    return $parts ? implode(' · ', $parts) : 'Zeit offen';
-}
-
 /** Tooltip-Text der Beiträge eines Helfers ("" wenn keine). */
 function beitragTooltip(array $beitragProHelfer, int $helferId): string {
     $list = $beitragProHelfer[$helferId] ?? [];
@@ -113,28 +97,43 @@ function beitragTooltip(array $beitragProHelfer, int $helferId): string {
     <link rel="stylesheet" href="css/orga.css?v=<?= @filemtime(__DIR__ . '/css/orga.css') ?>">
     <link rel="icon" type="image/svg+xml" href="../assets/images/logo-final.svg">
     <style>
-        .schicht-card {
-            background: var(--white);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1rem 1.25rem;
-            margin-bottom: 1rem;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        /* Tagesüberschrift wie im Anmeldeformular (grüne Trennlinie). */
+        .tag-heading {
+            font-size: 1.1rem;
+            margin: 1.75rem 0 0.9rem;
+            padding-bottom: 0.4rem;
+            border-bottom: 2px solid var(--primary);
         }
+        .tag-heading:first-of-type { margin-top: 0.5rem; }
+        /* Anlege-Formular eingeklappt. */
+        .neu-details { margin-bottom: 0.5rem; }
+        .neu-details > summary {
+            cursor: pointer; font-weight: 600; color: var(--primary);
+            padding: 0.6rem 0.9rem; background: var(--white);
+            border: 1px dashed var(--border); border-radius: 8px; list-style: none;
+        }
+        .neu-details[open] > summary { margin-bottom: 1rem; }
+        .neu-kachel { border: 2px dashed var(--border); background: #fafafa; }
+        /* Schicht-Kachel (nutzt globales .kachel; hier nur Innenleben). */
+        .schicht-kachel { display: flex; flex-direction: column; }
         .schicht-head {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            gap: 1rem;
-            flex-wrap: wrap;
+            gap: 0.75rem;
         }
-        .schicht-title { margin: 0 0 0.25rem; font-size: 1.05rem; }
-        .schicht-meta { font-size: 0.8rem; color: var(--text-light); }
-        .schicht-desc { font-size: 0.875rem; margin: 0.5rem 0 0; white-space: pre-wrap; }
+        .schicht-title { margin: 0; font-size: 1rem; line-height: 1.3; }
+        .schicht-meta { font-size: 0.8rem; color: var(--text-light); margin-top: 0.3rem; }
+        .schicht-desc { font-size: 0.85rem; margin: 0.5rem 0 0; white-space: pre-wrap; }
+        .zugeteilt-label, .gemeldet-label {
+            font-size: 0.7rem; color: var(--text-light);
+            text-transform: uppercase; letter-spacing: 0.04em;
+            margin-top: 0.75rem;
+        }
         .besetzung {
             font-size: 0.8rem;
-            font-weight: 600;
-            padding: 0.25rem 0.6rem;
+            font-weight: 700;
+            padding: 0.2rem 0.55rem;
             border-radius: 999px;
             white-space: nowrap;
         }
@@ -151,14 +150,14 @@ function beitragTooltip(array $beitragProHelfer, int $helferId): string {
             border: none; background: transparent; cursor: pointer;
             color: var(--error); font-size: 1rem; line-height: 1; padding: 0 0.2rem;
         }
-        .schicht-actions { display: flex; gap: 0.5rem; margin-top: 0.75rem; flex-wrap: wrap; align-items: flex-end; }
-        .add-form { display: flex; gap: 0.4rem; align-items: flex-end; flex-wrap: wrap; }
-        .add-form select { padding: 0.4rem; min-width: 220px; }
+        .schicht-actions { display: flex; gap: 0.5rem; margin-top: auto; padding-top: 0.75rem; flex-wrap: wrap; align-items: flex-end; }
+        .add-form { display: flex; gap: 0.4rem; align-items: flex-end; flex-wrap: wrap; flex: 1; }
+        .add-form .form-group { flex: 1; min-width: 0; }
+        .add-form select { padding: 0.4rem; width: 100%; max-width: 100%; }
         .edit-form { margin-top: 0.75rem; display: none; }
         .edit-form.open { display: block; }
         .field-row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
         .field-row .form-group { flex: 1; min-width: 140px; }
-        .neu-card { border: 2px dashed var(--border); background: #fafafa; }
         .form-group label { display:block; font-size: 0.75rem; margin-bottom: 0.25rem; color: var(--text-light); }
         .form-group input, .form-group textarea {
             width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px; font-size: 0.875rem;
@@ -171,8 +170,7 @@ function beitragTooltip(array $beitragProHelfer, int $helferId): string {
         .anmeldung-toggle input { width: auto; }
         .tag-anmeldung { color: var(--success); font-weight: 600; }
         .tag-intern { color: var(--text-light); font-style: italic; }
-        .gemeldet-block { margin-top: 0.75rem; }
-        .gemeldet-label { font-size: 0.75rem; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.04em; }
+        .gemeldet-block { margin-top: 0.25rem; }
         .gemeldet-chip { background: #f5f8ff; border-color: #c9d8ff; }
         .chip-status { font-size: 0.7rem; color: #856404; }
         .chip-add {
@@ -204,9 +202,10 @@ function beitragTooltip(array $beitragProHelfer, int $helferId): string {
                 <div class="alert alert-error"><?= htmlspecialchars($flashError) ?></div>
             <?php endif; ?>
 
-            <!-- Neue Schicht anlegen -->
-            <div class="schicht-card neu-card">
-                <h2 style="margin-top:0;font-size:1rem;">Neue Schicht / Aufgabe</h2>
+            <!-- Neue Schicht anlegen (eingeklappt, damit die Übersicht im Fokus bleibt) -->
+            <details class="neu-details">
+                <summary>+ Neue Schicht / Aufgabe anlegen</summary>
+                <div class="kachel neu-kachel">
                 <form method="post" action="api/schicht_crud.php">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                     <input type="hidden" name="action" value="create">
@@ -252,7 +251,8 @@ function beitragTooltip(array $beitragProHelfer, int $helferId): string {
                     </label>
                     <button type="submit" class="btn btn-primary">Schicht anlegen</button>
                 </form>
-            </div>
+                </div>
+            </details>
 
             <p class="stats" style="margin:1.5rem 0 1rem;color:var(--text-light);font-size:0.875rem;">
                 <?= count($schichten) ?> Schicht(en) angelegt
@@ -261,32 +261,39 @@ function beitragTooltip(array $beitragProHelfer, int $helferId): string {
             <?php if (empty($schichten)): ?>
                 <p>Noch keine Schichten angelegt.</p>
             <?php else: ?>
-                <?php foreach ($schichten as $s): ?>
-                    <?php
+                <?php
+                $lastTag = '__init__';
+                foreach ($schichten as $s):
                     $sid = (int) $s['id'];
                     $zugeteilt = $zuteilungen[$sid] ?? [];
                     $anzahl = count($zugeteilt);
                     $bedarf = (int) $s['bedarf'];
                     $voll = $anzahl >= $bedarf;
                     $zugeteilteIds = array_map(static fn($z) => (int) $z['helfer_id'], $zugeteilt);
+                    $tag = (string) ($s['tag'] ?? '');
+                    if ($tag !== $lastTag):
+                        if ($lastTag !== '__init__') { echo "</div>\n"; } // vorheriges Raster schließen
+                        $lastTag = $tag;
+                        echo '<h2 class="tag-heading">' . htmlspecialchars($tag !== '' ? helferTagLabel($tag) : 'Ohne festen Termin') . '</h2>';
+                        echo '<div class="kachel-grid">';
+                    endif;
                     ?>
-                    <div class="schicht-card" id="schicht-<?= $sid ?>">
+                    <div class="kachel schicht-kachel" id="schicht-<?= $sid ?>">
                         <div class="schicht-head">
-                            <div>
-                                <h3 class="schicht-title"><?= htmlspecialchars($s['titel']) ?></h3>
-                                <div class="schicht-meta">
-                                    <?= htmlspecialchars(schichtZeit($s)) ?>
-                                    <?php if (!empty($s['ort'])): ?> · <?= htmlspecialchars($s['ort']) ?><?php endif; ?>
-                                    <?php if ((int) $s['in_anmeldung'] === 1): ?>
-                                        · <span class="tag-anmeldung">in Anmeldung</span>
-                                    <?php else: ?>
-                                        · <span class="tag-intern">nur intern</span>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
+                            <h3 class="schicht-title"><?= htmlspecialchars($s['titel']) ?></h3>
                             <span class="besetzung <?= $voll ? 'voll' : 'offen' ?>">
-                                besetzt <?= $anzahl ?> / Soll <?= $bedarf ?>
+                                <?= $anzahl ?>/<?= $bedarf ?>
                             </span>
+                        </div>
+                        <div class="schicht-meta">
+                            <?php $zf = helferSchichtZeitfenster($s); ?>
+                            <?= htmlspecialchars($zf !== '' ? $zf : 'Zeit offen') ?>
+                            <?php if (!empty($s['ort'])): ?> · <?= htmlspecialchars($s['ort']) ?><?php endif; ?>
+                            <?php if ((int) $s['in_anmeldung'] === 1): ?>
+                                · <span class="tag-anmeldung">in Anmeldung</span>
+                            <?php else: ?>
+                                · <span class="tag-intern">nur intern</span>
+                            <?php endif; ?>
                         </div>
 
                         <?php if (!empty($s['beschreibung'])): ?>
@@ -294,6 +301,7 @@ function beitragTooltip(array $beitragProHelfer, int $helferId): string {
                         <?php endif; ?>
 
                         <?php if ($zugeteilt): ?>
+                            <div class="zugeteilt-label">Zugeteilt</div>
                             <ul class="helfer-chips">
                                 <?php foreach ($zugeteilt as $z): ?>
                                     <?php $tt = beitragTooltip($beitragProHelfer, (int) $z['helfer_id']); ?>
@@ -429,6 +437,7 @@ function beitragTooltip(array $beitragProHelfer, int $helferId): string {
                         </div>
                     </div>
                 <?php endforeach; ?>
+                </div><!-- letztes .kachel-grid schließen -->
             <?php endif; ?>
         </main>
     </div>
