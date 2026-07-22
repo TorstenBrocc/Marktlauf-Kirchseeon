@@ -421,6 +421,8 @@ try {
         }
         .table-wrap {
             overflow-x: auto;
+            border-radius: 8px;
+            box-shadow: var(--shadow-card);
         }
         .stats {
             display: flex;

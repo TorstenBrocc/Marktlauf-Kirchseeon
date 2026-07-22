@@ -200,6 +200,8 @@ function getFileIcon(string $mimetype): string {
         }
         .table-wrap {
             overflow-x: auto;
+            border-radius: 8px;
+            box-shadow: var(--shadow-card);
         }
         .inline-form {
             display: inline;
