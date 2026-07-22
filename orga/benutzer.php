@@ -112,6 +112,8 @@ try {
         .role-orga { background: var(--bg); color: var(--text-light); }
         .table-wrap {
             overflow-x: auto;
+            border-radius: 8px;
+            box-shadow: var(--shadow-card);
         }
         .inline-form {
             display: inline;

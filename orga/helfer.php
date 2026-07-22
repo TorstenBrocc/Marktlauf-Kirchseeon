@@ -180,6 +180,8 @@ $totalCount = (int) $countStmt->fetchColumn();
         }
         .table-wrap {
             overflow-x: auto;
+            border-radius: 8px;
+            box-shadow: var(--shadow-card);
         }
         .stats {
             font-size: 0.875rem;
