@@ -529,6 +529,11 @@ $basePath = '';
                                 Ich willige als erziehungsberechtigte Person ein, dass der ATSV Kirchseeon e.V. Foto- und Videoaufnahmen des von mir angemeldeten Kindes beim Marktlauf für die Öffentlichkeitsarbeit des Vereins (Website, Social Media, Presse und Vereinsarchiv) einschließlich der Bewerbung künftiger Veranstaltungen verwendet (Art. 6 Abs. 1 lit. a DSGVO). Die Einwilligung ist freiwillig, hat keinen Einfluss auf die Teilnahme und ist jederzeit mit Wirkung für die Zukunft widerrufbar an <a href="mailto:atsv@atsv-kirchseeon.de">atsv@atsv-kirchseeon.de</a>. Die <a href="https://atsv-kirchseeon-marktlauf.de/datenschutz.html" target="_blank" rel="noopener noreferrer">Datenschutzhinweise</a> habe ich gelesen.
                             </div>
 
+                            <div class="form-group" id="guardian-name-group" hidden>
+                                <label for="guardian_name" class="required">Vollständiger Name der erziehungsberechtigten Person</label>
+                                <input type="text" id="guardian_name" name="guardian_name" maxlength="255">
+                            </div>
+
                             <div class="form-group">
                                 <p class="foto-step"><strong>Schritt 2:</strong> Willigst du in die Nutzung der Aufnahmen ein?</p>
                                 <div class="foto-options">
@@ -541,11 +546,6 @@ $basePath = '';
                                         <span>Nein, ich willige nicht ein.</span>
                                     </label>
                                 </div>
-                            </div>
-
-                            <div class="form-group" id="guardian-name-group" hidden>
-                                <label for="guardian_name" class="required">Vollständiger Name der erziehungsberechtigten Person</label>
-                                <input type="text" id="guardian_name" name="guardian_name" maxlength="255">
                             </div>
                         </fieldset>
 
