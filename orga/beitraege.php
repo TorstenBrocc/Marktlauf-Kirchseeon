@@ -75,23 +75,13 @@ function einsatzTooltip(array $einsatzProHelfer, int $helferId): string {
     <style>
         .beitrag-section { margin-bottom: 2.5rem; }
         .beitrag-section h2 {
-            font-size: 1.1rem; margin-bottom: 0.75rem;
-            padding-bottom: 0.4rem; border-bottom: 2px solid var(--border);
+            font-size: 1.1rem; margin-bottom: 0.9rem;
+            padding-bottom: 0.4rem; border-bottom: 2px solid var(--primary);
         }
-        .data-table {
-            width: 100%; border-collapse: collapse; background: var(--white);
-            border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        .data-table th, .data-table td {
-            padding: 0.75rem; text-align: left; border-bottom: 1px solid var(--border);
-            font-size: 0.875rem; vertical-align: top;
-        }
-        .data-table th {
-            background: var(--bg); font-weight: 600; font-size: 0.75rem;
-            text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-light);
-        }
-        .data-table tr:hover { background: #fafafa; }
-        .table-wrap { overflow-x: auto; }
+        .beitrag-kachel { display: flex; flex-direction: column; gap: 0.4rem; }
+        .bk-name { font-weight: 600; display: flex; align-items: center; }
+        .bk-contact a { display: block; font-size: 0.8rem; }
+        .bk-inhalt { font-size: 0.9rem; margin-top: 0.15rem; }
         .nuesse-badge {
             display: inline-block; margin-left: 0.4rem; padding: 0.1rem 0.45rem;
             background: #fffbea; border: 1px solid #f59e0b; border-radius: 4px;
@@ -105,8 +95,6 @@ function einsatzTooltip(array $einsatzProHelfer, int $helferId): string {
             cursor: help; user-select: none; margin-left: 0.4rem;
         }
         .empty-hint { color: var(--text-light); font-size: 0.875rem; }
-        .name-cell strong { display: block; }
-        .contact-cell a { display: block; font-size: 0.8rem; }
     </style>
 </head>
 <body>
@@ -123,37 +111,26 @@ function einsatzTooltip(array $einsatzProHelfer, int $helferId): string {
                 <?php if (empty($kuchen)): ?>
                     <p class="empty-hint">Noch keine Kuchen-Zusagen.</p>
                 <?php else: ?>
-                    <div class="table-wrap">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Kontakt</th>
-                                    <th>Art des Kuchens</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($kuchen as $k): ?>
-                                    <?php $p = kuchenParts($k['freitext']); $tt = einsatzTooltip($einsatzProHelfer, (int) $k['id']); ?>
-                                    <tr>
-                                        <td class="name-cell">
-                                            <strong><?= htmlspecialchars($k['vorname'] . ' ' . $k['nachname']) ?></strong>
-                                            <?php if ($tt !== ''): ?>
-                                                <span class="info-i" tabindex="0" title="Hilft außerdem im Einsatzplan — <?= htmlspecialchars($tt) ?>">i</span>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td class="contact-cell">
-                                            <a href="mailto:<?= htmlspecialchars($k['email']) ?>"><?= htmlspecialchars($k['email']) ?></a>
-                                            <a href="tel:<?= htmlspecialchars($k['phone']) ?>"><?= htmlspecialchars($k['phone']) ?></a>
-                                        </td>
-                                        <td>
-                                            <?= $p['art'] !== '' ? htmlspecialchars($p['art']) : '<span class="empty-hint">ohne Angabe</span>' ?>
-                                            <?php if ($p['nuesse']): ?><span class="nuesse-badge">⚠️ enthält Nüsse</span><?php endif; ?>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
+                    <div class="kachel-grid">
+                        <?php foreach ($kuchen as $k): ?>
+                            <?php $p = kuchenParts($k['freitext']); $tt = einsatzTooltip($einsatzProHelfer, (int) $k['id']); ?>
+                            <div class="kachel beitrag-kachel">
+                                <div class="bk-name">
+                                    <?= htmlspecialchars($k['vorname'] . ' ' . $k['nachname']) ?>
+                                    <?php if ($tt !== ''): ?>
+                                        <span class="info-i" tabindex="0" title="Hilft außerdem im Einsatzplan — <?= htmlspecialchars($tt) ?>">i</span>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="bk-inhalt">
+                                    🍰 <?= $p['art'] !== '' ? htmlspecialchars($p['art']) : '<span class="empty-hint">ohne Angabe</span>' ?>
+                                    <?php if ($p['nuesse']): ?><span class="nuesse-badge">⚠️ enthält Nüsse</span><?php endif; ?>
+                                </div>
+                                <div class="bk-contact">
+                                    <a href="mailto:<?= htmlspecialchars($k['email']) ?>"><?= htmlspecialchars($k['email']) ?></a>
+                                    <a href="tel:<?= htmlspecialchars($k['phone']) ?>"><?= htmlspecialchars($k['phone']) ?></a>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
                     </div>
                 <?php endif; ?>
             </section>
@@ -164,34 +141,23 @@ function einsatzTooltip(array $einsatzProHelfer, int $helferId): string {
                 <?php if (empty($sonstiges)): ?>
                     <p class="empty-hint">Noch keine sonstige Unterstützung angeboten.</p>
                 <?php else: ?>
-                    <div class="table-wrap">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Kontakt</th>
-                                    <th>Angebotene Unterstützung</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($sonstiges as $s): ?>
-                                    <?php $tt = einsatzTooltip($einsatzProHelfer, (int) $s['id']); ?>
-                                    <tr>
-                                        <td class="name-cell">
-                                            <strong><?= htmlspecialchars($s['vorname'] . ' ' . $s['nachname']) ?></strong>
-                                            <?php if ($tt !== ''): ?>
-                                                <span class="info-i" tabindex="0" title="Hilft außerdem im Einsatzplan — <?= htmlspecialchars($tt) ?>">i</span>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td class="contact-cell">
-                                            <a href="mailto:<?= htmlspecialchars($s['email']) ?>"><?= htmlspecialchars($s['email']) ?></a>
-                                            <a href="tel:<?= htmlspecialchars($s['phone']) ?>"><?= htmlspecialchars($s['phone']) ?></a>
-                                        </td>
-                                        <td><?= nl2br(htmlspecialchars((string) $s['freitext'])) ?: '<span class="empty-hint">ohne Angabe</span>' ?></td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
+                    <div class="kachel-grid">
+                        <?php foreach ($sonstiges as $s): ?>
+                            <?php $tt = einsatzTooltip($einsatzProHelfer, (int) $s['id']); ?>
+                            <div class="kachel beitrag-kachel">
+                                <div class="bk-name">
+                                    <?= htmlspecialchars($s['vorname'] . ' ' . $s['nachname']) ?>
+                                    <?php if ($tt !== ''): ?>
+                                        <span class="info-i" tabindex="0" title="Hilft außerdem im Einsatzplan — <?= htmlspecialchars($tt) ?>">i</span>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="bk-inhalt"><?= nl2br(htmlspecialchars((string) $s['freitext'])) ?: '<span class="empty-hint">ohne Angabe</span>' ?></div>
+                                <div class="bk-contact">
+                                    <a href="mailto:<?= htmlspecialchars($s['email']) ?>"><?= htmlspecialchars($s['email']) ?></a>
+                                    <a href="tel:<?= htmlspecialchars($s['phone']) ?>"><?= htmlspecialchars($s['phone']) ?></a>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
                     </div>
                 <?php endif; ?>
             </section>
