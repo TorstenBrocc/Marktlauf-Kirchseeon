@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/src/auth.php';
 require_once __DIR__ . '/src/db.php';
+require_once __DIR__ . '/src/helfer_aufgaben.php';
 
 function isValidAccessToken(string $token): bool {
     if ($token === '' || strlen($token) > 64) {
@@ -96,32 +97,89 @@ $basePath = '';
             color: var(--gray-500);
             margin-top: var(--space-xs);
         }
-        .timetable {
-            display: grid;
-            grid-template-columns: auto repeat(2, 1fr);
-            gap: var(--space-xs);
-            margin-top: var(--space-sm);
+        .anmeldung-hinweis {
+            background: #fffbea;
+            border: 1px solid #f59e0b;
+            border-radius: var(--radius-md);
+            padding: var(--space-sm) var(--space-md);
+            font-size: var(--text-sm);
+            line-height: 1.5;
+            margin-bottom: var(--space-lg);
         }
-        .timetable-header {
+        .aufgaben-tag {
+            margin-top: var(--space-md);
+        }
+        .aufgaben-tag-titel {
+            font-size: var(--text-base);
+            font-weight: 700;
+            color: var(--gray-800);
+            padding: var(--space-sm) 0 var(--space-xs);
+            border-bottom: 2px solid var(--primary);
+            margin-bottom: var(--space-xs);
+        }
+        .aufgaben-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: var(--text-sm);
+        }
+        .aufgaben-table th,
+        .aufgaben-table td {
+            text-align: left;
+            padding: var(--space-sm);
+            border-bottom: 1px solid var(--gray-200);
+            vertical-align: middle;
+        }
+        .aufgaben-table th {
+            font-size: var(--text-sm);
+            color: var(--gray-500);
             font-weight: 600;
+        }
+        .aufgaben-table td label {
+            font-weight: normal;
+            margin: 0;
+            cursor: pointer;
+            color: var(--gray-800);
+        }
+        .aufgaben-zeit {
+            white-space: nowrap;
+            color: var(--gray-600);
+        }
+        .aufgaben-check-col {
             text-align: center;
-            padding: var(--space-sm);
-            background: var(--gray-100);
-            border-radius: var(--radius-sm);
+            width: 64px;
         }
-        .timetable-day {
-            padding: var(--space-sm);
-            background: var(--gray-100);
-            border-radius: var(--radius-sm);
-        }
-        .timetable-cell {
-            text-align: center;
-            padding: var(--space-sm);
-        }
-        .timetable-cell input {
+        .aufgaben-check-col input {
             width: 20px;
             height: 20px;
             cursor: pointer;
+        }
+        .foto-fieldset {
+            border: 1px solid var(--gray-300);
+            border-radius: var(--radius-md);
+            padding: var(--space-md);
+            margin: var(--space-lg) 0;
+        }
+        .foto-fieldset legend {
+            font-weight: 700;
+            padding: 0 var(--space-xs);
+            color: var(--gray-800);
+        }
+        .foto-step {
+            font-size: var(--text-sm);
+            margin-bottom: var(--space-xs);
+            color: var(--gray-700);
+        }
+        .foto-consent-text {
+            font-size: var(--text-sm);
+            line-height: 1.55;
+            color: var(--gray-700);
+            background: var(--gray-100);
+            border-radius: var(--radius-md);
+            padding: var(--space-sm) var(--space-md);
+            margin-bottom: var(--space-md);
+        }
+        .foto-consent-text a {
+            color: var(--primary);
         }
         .checkbox-group {
             display: flex;
@@ -290,6 +348,7 @@ $basePath = '';
             <div class="container">
                 <div class="helfer-form">
                     <h2 class="text-center">Helfer-Anmeldung</h2>
+                    <p class="anmeldung-hinweis"><strong>HINWEIS:</strong> Für eindeutige Einteilungen braucht es bitte eine Anmeldung pro Helfer.</p>
 
                     <?php if ($error): ?>
                         <div class="alert alert-error"><?= htmlspecialchars($error) ?></div>
@@ -330,37 +389,35 @@ $basePath = '';
                         </div>
 
                         <div class="form-group">
-                            <label class="required">Wann hast du Zeit?</label>
-                            <p class="form-hint">Markiere die Zeitfenster, in denen du helfen kannst.</p>
-                            <div class="timetable">
-                                <div></div>
-                                <div class="timetable-header">Vormittag</div>
-                                <div class="timetable-header">Nachmittag</div>
-
-                                <div class="timetable-day">Freitag (Aufbau)</div>
-                                <div class="timetable-cell">
-                                    <input type="checkbox" name="slots[]" value="2026-10-09_vormittag" id="slot_fr_vm">
+                            <label>Wann und wobei kannst du helfen?</label>
+                            <p class="form-hint">Wähle die Aufgaben aus, bei denen du dabei sein kannst – gern mehrere.</p>
+                            <?php foreach (helferAufgabenKatalog() as $tag => $day): ?>
+                                <div class="aufgaben-tag">
+                                    <h3 class="aufgaben-tag-titel"><?= htmlspecialchars($day['label']) ?></h3>
+                                    <table class="aufgaben-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Aufgabe</th>
+                                                <th>Zeitfenster</th>
+                                                <th class="aufgaben-check-col">Dabei?</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php foreach ($day['aufgaben'] as $a): ?>
+                                                <tr>
+                                                    <td>
+                                                        <label for="slot_<?= htmlspecialchars($a['key']) ?>"><?= htmlspecialchars($a['beschreibung']) ?></label>
+                                                    </td>
+                                                    <td class="aufgaben-zeit"><?= htmlspecialchars($a['zeitfenster']) ?></td>
+                                                    <td class="aufgaben-check-col">
+                                                        <input type="checkbox" name="slots[]" value="<?= htmlspecialchars($a['key']) ?>" id="slot_<?= htmlspecialchars($a['key']) ?>">
+                                                    </td>
+                                                </tr>
+                                            <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
                                 </div>
-                                <div class="timetable-cell">
-                                    <input type="checkbox" name="slots[]" value="2026-10-09_nachmittag" id="slot_fr_nm">
-                                </div>
-
-                                <div class="timetable-day">Samstag (Aufbau)</div>
-                                <div class="timetable-cell">
-                                    <input type="checkbox" name="slots[]" value="2026-10-10_vormittag" id="slot_sa_vm">
-                                </div>
-                                <div class="timetable-cell">
-                                    <input type="checkbox" name="slots[]" value="2026-10-10_nachmittag" id="slot_sa_nm">
-                                </div>
-
-                                <div class="timetable-day">Sonntag (Renntag)</div>
-                                <div class="timetable-cell">
-                                    <input type="checkbox" name="slots[]" value="2026-10-11_vormittag" id="slot_so_vm">
-                                </div>
-                                <div class="timetable-cell">
-                                    <input type="checkbox" name="slots[]" value="2026-10-11_nachmittag" id="slot_so_nm">
-                                </div>
-                            </div>
+                            <?php endforeach; ?>
                         </div>
 
                         <div class="form-group">
@@ -395,8 +452,76 @@ $basePath = '';
                             </div>
                         </div>
 
+                        <fieldset class="foto-fieldset">
+                            <legend>Fotoeinwilligung</legend>
+
+                            <div class="form-group">
+                                <p class="foto-step"><strong>Schritt 1:</strong> Für wen erfolgt die Anmeldung?</p>
+                                <div class="checkbox-group">
+                                    <label>
+                                        <input type="radio" name="is_minor" value="0" id="minor_no" required>
+                                        Ich bin volljährig und melde mich selbst an.
+                                    </label>
+                                    <label>
+                                        <input type="radio" name="is_minor" value="1" id="minor_yes">
+                                        Ich bin erziehungsberechtigt und melde eine minderjährige Person an.
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="foto-consent-text" id="consent-text-adult">
+                                Ich willige ein, dass der ATSV Kirchseeon e.V. Foto- und Videoaufnahmen von mir beim Marktlauf für die Öffentlichkeitsarbeit des Vereins (Website, Social Media, Presse und Vereinsarchiv) einschließlich der Bewerbung künftiger Veranstaltungen verwendet (Art. 6 Abs. 1 lit. a DSGVO). Die Einwilligung ist freiwillig, hat keinen Einfluss auf die Teilnahme und ist jederzeit mit Wirkung für die Zukunft widerrufbar an <a href="mailto:atsv@atsv-kirchseeon.de">atsv@atsv-kirchseeon.de</a>. Die <a href="https://atsv-kirchseeon-marktlauf.de/datenschutz.html" target="_blank" rel="noopener noreferrer">Datenschutzhinweise</a> habe ich gelesen.
+                            </div>
+
+                            <div class="foto-consent-text" id="consent-text-minor" hidden>
+                                Ich willige als erziehungsberechtigte Person ein, dass der ATSV Kirchseeon e.V. Foto- und Videoaufnahmen des von mir angemeldeten Kindes beim Marktlauf für die Öffentlichkeitsarbeit des Vereins (Website, Social Media, Presse und Vereinsarchiv) einschließlich der Bewerbung künftiger Veranstaltungen verwendet (Art. 6 Abs. 1 lit. a DSGVO). Die Einwilligung ist freiwillig, hat keinen Einfluss auf die Teilnahme und ist jederzeit mit Wirkung für die Zukunft widerrufbar an <a href="mailto:atsv@atsv-kirchseeon.de">atsv@atsv-kirchseeon.de</a>. Die <a href="https://atsv-kirchseeon-marktlauf.de/datenschutz.html" target="_blank" rel="noopener noreferrer">Datenschutzhinweise</a> habe ich gelesen.
+                            </div>
+
+                            <div class="form-group">
+                                <p class="foto-step"><strong>Schritt 2:</strong> Willigst du in die Nutzung der Aufnahmen ein?</p>
+                                <div class="checkbox-group">
+                                    <label>
+                                        <input type="radio" name="consent_photo" value="yes" id="consent_yes" required>
+                                        Ja, ich willige ein.
+                                    </label>
+                                    <label>
+                                        <input type="radio" name="consent_photo" value="no" id="consent_no">
+                                        Nein, ich willige nicht ein.
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="form-group" id="guardian-name-group" hidden>
+                                <label for="guardian_name" class="required">Vollständiger Name der erziehungsberechtigten Person</label>
+                                <input type="text" id="guardian_name" name="guardian_name" maxlength="255">
+                            </div>
+                        </fieldset>
+
                         <button type="submit" class="btn btn-primary btn-block">Anmeldung absenden</button>
                     </form>
+
+                    <script>
+                    (function () {
+                        const minorYes = document.getElementById('minor_yes');
+                        const minorNo = document.getElementById('minor_no');
+                        const adultText = document.getElementById('consent-text-adult');
+                        const minorText = document.getElementById('consent-text-minor');
+                        const guardianGroup = document.getElementById('guardian-name-group');
+                        const guardianInput = document.getElementById('guardian_name');
+
+                        function sync() {
+                            const isMinor = minorYes.checked;
+                            adultText.hidden = isMinor;
+                            minorText.hidden = !isMinor;
+                            guardianGroup.hidden = !isMinor;
+                            guardianInput.required = isMinor;
+                            if (!isMinor) { guardianInput.value = ''; }
+                        }
+                        minorYes.addEventListener('change', sync);
+                        minorNo.addEventListener('change', sync);
+                        sync();
+                    })();
+                    </script>
                     <?php endif; ?>
                 </div>
             </div>

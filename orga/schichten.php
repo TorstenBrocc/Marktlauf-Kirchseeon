@@ -40,7 +40,7 @@ foreach ($zStmt as $row) {
 // Bestätigte Helfer + Verfügbarkeit (für Zuteil-Dropdown)
 $confirmedHelfer = $pdo->query('
     SELECT h.id, h.vorname, h.nachname,
-           GROUP_CONCAT(CONCAT(DATE_FORMAT(hs.tag, "%a %d.%m."), " ", hs.zeitfenster)
+           GROUP_CONCAT(CONCAT(DATE_FORMAT(hs.tag, "%a %d.%m."), " ", COALESCE(CONCAT(hs.aufgabe, " – "), ""), hs.zeitfenster)
                ORDER BY hs.tag SEPARATOR ", ") AS slots
     FROM helfer h
     LEFT JOIN helfer_slots hs ON h.id = hs.helfer_id

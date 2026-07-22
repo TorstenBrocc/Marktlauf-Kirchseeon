@@ -28,7 +28,7 @@ if ($helferId <= 0) {
 $pdo = getDbConnection();
 $stmt = $pdo->prepare('
     SELECT h.*,
-           GROUP_CONCAT(DISTINCT CONCAT(hs.tag, " ", hs.zeitfenster) ORDER BY hs.tag SEPARATOR ", ") AS slots,
+           GROUP_CONCAT(DISTINCT CONCAT(DATE_FORMAT(hs.tag, "%a %d.%m."), " ", COALESCE(CONCAT(hs.aufgabe, " – "), ""), hs.zeitfenster) ORDER BY hs.tag SEPARATOR ", ") AS slots,
            GROUP_CONCAT(DISTINCT CONCAT(hb.typ, COALESCE(CONCAT(": ", hb.freitext), "")) SEPARATOR ", ") AS beitraege
     FROM helfer h
     LEFT JOIN helfer_slots hs ON h.id = hs.helfer_id
@@ -161,10 +161,21 @@ if (!$helfer) {
 
                     <div class="form-card">
                         <h2>Anmeldung (read-only)</h2>
+                        <?php
+                        $consentLabel = ($helfer['consent_photo'] ?? 'no') === 'yes' ? 'Ja' : 'Nein';
+                        $consentTs = !empty($helfer['consent_ts']) ? date('d.m.Y H:i', strtotime((string) $helfer['consent_ts'])) : '–';
+                        ?>
                         <p class="readonly-info">
                             <strong>Angemeldet am:</strong> <?= date('d.m.Y H:i', strtotime((string) $helfer['created_at'])) ?><br>
-                            <strong>Slots:</strong> <?= htmlspecialchars((string) ($helfer['slots'] ?? '')) ?: '–' ?><br>
+                            <strong>Aufgaben:</strong> <?= htmlspecialchars((string) ($helfer['slots'] ?? '')) ?: '–' ?><br>
                             <strong>Beiträge:</strong> <?= htmlspecialchars((string) ($helfer['beitraege'] ?? '')) ?: '–' ?>
+                        </p>
+                        <p class="readonly-info" style="margin-top:0.75rem;">
+                            <strong>Fotoeinwilligung:</strong> <?= $consentLabel ?> (erteilt am <?= $consentTs ?>)<br>
+                            <strong>Anmeldung für:</strong> <?= ((int) ($helfer['is_minor'] ?? 0) === 1) ? 'minderjährige Person' : 'volljährige Person (selbst)' ?><br>
+                            <?php if ((int) ($helfer['is_minor'] ?? 0) === 1): ?>
+                            <strong>Erziehungsberechtigte Person:</strong> <?= htmlspecialchars((string) ($helfer['guardian_name'] ?? '')) ?: '–' ?>
+                            <?php endif; ?>
                         </p>
                     </div>
 

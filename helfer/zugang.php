@@ -32,7 +32,7 @@ if ($uuid === '' || strlen($uuid) > 64) {
             $error = true;
         } else {
             $slotStmt = $pdo->prepare('
-                SELECT tag, zeitfenster FROM helfer_slots WHERE helfer_id = :id ORDER BY tag, zeitfenster
+                SELECT tag, zeitfenster, aufgabe FROM helfer_slots WHERE helfer_id = :id ORDER BY tag, zeitfenster
             ');
             $slotStmt->execute(['id' => $helfer['id']]);
             $slots = $slotStmt->fetchAll();
@@ -467,9 +467,13 @@ $basePath = '../';
                         <?php foreach ($slots as $slot): ?>
                             <?php
                             $tagFormatted = date('D, d.m.', strtotime($slot['tag']));
-                            $zeitLabel = $slot['zeitfenster'] === 'vormittag' ? 'Vormittag' : 'Nachmittag';
+                            // Legacy-Werte (vormittag/nachmittag) hübsch, sonst Freitext-Zeitfenster
+                            $zf = (string) $slot['zeitfenster'];
+                            $zeitLabel = $zf === 'vormittag' ? 'Vormittag' : ($zf === 'nachmittag' ? 'Nachmittag' : $zf);
+                            $aufgabe = trim((string) ($slot['aufgabe'] ?? ''));
+                            $slotText = $tagFormatted . ' ' . ($aufgabe !== '' ? $aufgabe . ' – ' : '') . $zeitLabel;
                             ?>
-                            <span class="slot-badge"><?= htmlspecialchars($tagFormatted . ' ' . $zeitLabel) ?></span>
+                            <span class="slot-badge"><?= htmlspecialchars($slotText) ?></span>
                         <?php endforeach; ?>
                     </div>
                 </div>
