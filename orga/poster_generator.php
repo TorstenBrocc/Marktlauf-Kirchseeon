@@ -1,9 +1,11 @@
 <?php
 /**
- * Kampagnen-Poster-Generator (Frei-Editor) — Marketing-Qualitaet aus dem Tool.
- * Formate (Portrait/Quadrat/Story), editierbare Inhalte, Logos + Sponsoren auf
- * weissen Kacheln. Jeder Block ist frei verschiebbar (ziehen) + skalierbar (Regler).
- * Export als PNG (2x).
+ * Kampagnen-Poster-Generator (Frei-Editor v2) — Marketing-Qualitaet aus dem Tool.
+ * - Vorschau-Feld resizable (Poster waechst mit), Formate (Portrait/Quadrat/Story)
+ * - Bloecke frei verschieben (Drag) mit Snapping + Ausrichtungslinien
+ * - Groesse per Eck-Handle ODER Regler
+ * - Eigene Kacheln (Beschriftung + Logo, skalierbar)
+ * - Logos + Sponsoren auf weissen Kacheln, QR, PNG-Export (2x)
  */
 declare(strict_types=1);
 require_once __DIR__ . '/api/_auth.php';
@@ -37,10 +39,10 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
         .pg-row input[type=text], .pg-row input[type=url], .pg-row select { width: 100%; padding: 0.45rem 0.6rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; box-sizing: border-box; background:#fff; }
         .pg-row input + input { margin-top: 0.35rem; }
         .pg-hint { font-size: 0.82rem; color: var(--text-light); }
-        .pg-sel-panel { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem; margin-bottom: 0.75rem; }
+        .pg-sel-panel { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 0.75rem; margin-bottom: 0.75rem; }
         .pg-sel-panel b { font-size: 0.88rem; }
 
-        .pg-stage { position: relative; width: 100%; max-width: 400px; overflow: hidden; border: 1px solid var(--border); border-radius: 10px; background: #eef1ee; }
+        .pg-stage { position: relative; width: 400px; max-width: 100%; min-width: 260px; overflow: hidden; border: 1px solid var(--border); border-radius: 10px; background: #eef1ee; resize: horizontal; }
         #pg-poster {
             position: absolute; top: 0; left: 0; transform-origin: top left;
             width: 1080px; height: 1350px; overflow: hidden;
@@ -51,10 +53,14 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
         #pg-poster .pg-ov { position: absolute; inset: 0; z-index: 1;
             background: linear-gradient(120deg, rgba(0,86,42,0.92) 0%, rgba(0,118,48,0.78) 46%, rgba(0,118,48,0.15) 100%); }
 
-        /* Frei positionierbare Bloecke */
         .pb { position: absolute; z-index: 2; transform-origin: top left; cursor: grab; }
-        .pb.sel { outline: 3px dashed rgba(255,255,255,0.95); outline-offset: 6px; }
         .pb.dragging { cursor: grabbing; }
+
+        /* Auswahlrahmen + Resize-Handle + Fanglinien (UI-Overlay, nicht im Export) */
+        .pg-selbox { position: absolute; z-index: 8; border: 3px dashed #ff6b35; box-sizing: border-box; display: none; pointer-events: none; }
+        .pg-selbox-h { position: absolute; right: -26px; bottom: -26px; width: 52px; height: 52px; background: #fff; border: 5px solid #ff6b35; border-radius: 8px; pointer-events: auto; cursor: nwse-resize; }
+        .pg-guide-v { position: absolute; top: 0; width: 0; border-left: 3px dashed #ff8c42; z-index: 9; display: none; }
+        .pg-guide-h { position: absolute; left: 0; height: 0; border-top: 3px dashed #ff8c42; z-index: 9; display: none; }
 
         .pg-lock { background: #fff; border-radius: 18px; padding: 16px 22px; display: flex; align-items: center; gap: 16px; }
         .pg-lock img.pg-l-ml { height: 62px; width: auto; }
@@ -89,6 +95,11 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
         .pg-scan-head { font-weight: 900; font-size: 24px; color: #007230; margin-bottom: 12px; line-height: 1.1; }
         .pg-domain { font-size: 19px; font-weight: 700; color: #007230; margin-top: 12px; }
         #pg-qr { width: 190px; height: 190px; display: block; margin: 0 auto; }
+
+        /* Eigene Kachel */
+        .pg-ctile { background: #fff; color: #0d3b1e; border-radius: 16px; padding: 18px 22px; display: flex; align-items: center; gap: 14px; }
+        .pg-ctile img { height: 52px; width: auto; max-width: 200px; object-fit: contain; }
+        .pg-ct-text { font-size: 30px; font-weight: 800; white-space: nowrap; }
     </style>
 </head>
 <body>
@@ -97,25 +108,33 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
     <main class="main-content">
         <header class="content-header">
             <h1>Kampagnen-Poster (Frei-Editor)</h1>
-            <p class="content-subtitle">Blöcke frei verschieben (ziehen) &amp; skalieren (Regler), Logos/Sponsoren auf Kacheln, PNG-Export</p>
+            <p class="content-subtitle">Vorschau ziehbar · Blöcke verschieben/skalieren mit Fanglinien · eigene Kacheln · PNG-Export</p>
         </header>
 
         <p style="margin:0 0 1rem"><a href="social_orchestrator.php">&larr; zur Social-Media-Seite</a></p>
-        <p class="pg-hint" style="max-width:780px;margin-bottom:1.25rem">
-            <strong>Entwurf.</strong> Block im Poster <strong>anklicken</strong> → er ist ausgewählt (gestrichelter Rahmen) →
-            mit der Maus <strong>ziehen</strong> zum Verschieben, <strong>Größe per Regler</strong> (erscheint links).
-            Texte/Format/Foto/Sponsoren links einstellen, QR-URL setzen, dann <strong>PNG exportieren</strong>.
+        <p class="pg-hint" style="max-width:820px;margin-bottom:1.25rem">
+            <strong>Vorschau vergrößern:</strong> unten rechts am Vorschau-Feld ziehen (Poster wächst mit).
+            <strong>Block:</strong> anklicken → ziehen zum Verschieben (mit Fanglinien), <strong>orangenes Eck-Quadrat</strong> ziehen oder Regler links = Größe.
+            <strong>Eigene Kachel</strong> per Button hinzufügen (Beschriftung + Logo im Panel links).
         </p>
 
         <div class="pg-wrap">
             <div class="pg-controls">
-                <!-- Auswahl-Panel -->
                 <div class="pg-sel-panel" id="pg-sel-panel" style="display:none">
                     <b id="pg-sel-name">Kein Block ausgewählt</b>
                     <div class="pg-row" style="margin:0.5rem 0 0"><label>Größe: <span id="pg-sel-scale-val">100</span> %</label>
-                        <input type="range" id="pg-sel-scale" min="40" max="220" value="100" style="width:100%"></div>
-                    <button class="btn btn-small btn-secondary" id="pg-deselect" type="button">Auswahl aufheben</button>
+                        <input type="range" id="pg-sel-scale" min="30" max="300" value="100" style="width:100%"></div>
+                    <div id="pg-custom-ctrl" style="display:none">
+                        <div class="pg-row"><label>Beschriftung</label><input type="text" id="pg-ct-label" value=""></div>
+                        <div class="pg-row"><label>Logo auf der Kachel</label><select id="pg-ct-logo"></select></div>
+                    </div>
+                    <div style="display:flex;gap:0.4rem;flex-wrap:wrap">
+                        <button class="btn btn-small btn-secondary" id="pg-deselect" type="button">Auswahl aufheben</button>
+                        <button class="btn btn-small btn-secondary" id="pg-del-block" type="button" style="display:none">Kachel löschen</button>
+                    </div>
                 </div>
+
+                <button class="btn btn-secondary" id="c-add-tile" type="button" style="margin-bottom:0.75rem;width:100%">+ Eigene Kachel hinzufügen</button>
 
                 <div class="pg-row"><label>Format</label>
                     <select id="c-format">
@@ -145,7 +164,7 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
             </div>
 
             <div>
-                <p class="pg-hint" style="margin:0 0 0.4rem">Block anklicken → ziehen zum Verschieben, Regler links für die Größe.</p>
+                <p class="pg-hint" style="margin:0 0 0.4rem">Vorschau (rechts unten ziehen zum Vergrößern):</p>
                 <div class="pg-stage" id="pg-stage">
                     <div id="pg-poster">
                         <div class="pg-bg" id="pg-bg"></div>
@@ -173,6 +192,10 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
                                 <div class="pg-domain" id="p-domain">atsv-kirchseeon-marktlauf.de</div>
                             </div>
                         </div>
+
+                        <div class="pg-guide-v" id="pg-guide-v"></div>
+                        <div class="pg-guide-h" id="pg-guide-h"></div>
+                        <div class="pg-selbox" id="pg-selbox"><div class="pg-selbox-h" id="pg-selbox-h"></div></div>
                     </div>
                 </div>
             </div>
@@ -186,150 +209,185 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
     (function(){
         var SPONSORS = <?= json_encode($sponsors, JSON_UNESCAPED_SLASHES) ?>;
         var FORMATS = { portrait:{w:1080,h:1350}, square:{w:1080,h:1080}, story:{w:1080,h:1920} };
-        // Standard-Positionen (x,y in Poster-Pixeln) + Skalierung je Block
+        var LOGOS = {
+            'ATSV': '../assets/images/ATSV_Logo-750x968.png',
+            'Marktlauf': '../assets/images/Marktlauf-Logo-Schrift-1180x579%20freigestellt.png',
+            'Gemeinde': '../assets/images/Wort-u-Bildmarke-Gemeinde.png'
+        };
+        SPONSORS.forEach(function(u,i){ LOGOS['Sponsor '+(i+1)] = u; });
         var DEFAULTS = {
-            'b-logo':     {x:56,  y:44,   s:1},
-            'b-coop':     {x:748, y:44,   s:1},
-            'b-headline': {x:56,  y:250,  s:1},
-            'b-subline':  {x:56,  y:520,  s:1},
-            'b-features': {x:56,  y:630,  s:1},
-            'b-cta':      {x:56,  y:940,  s:1},
-            'b-sponsors': {x:56,  y:1060, s:1},
-            'b-details':  {x:56,  y:1130, s:1},
-            'b-scan':     {x:730, y:1030, s:1}
+            'b-logo':{x:56,y:44,s:1}, 'b-coop':{x:748,y:44,s:1}, 'b-headline':{x:56,y:250,s:1},
+            'b-subline':{x:56,y:520,s:1}, 'b-features':{x:56,y:630,s:1}, 'b-cta':{x:56,y:940,s:1},
+            'b-sponsors':{x:56,y:1060,s:1}, 'b-details':{x:56,y:1130,s:1}, 'b-scan':{x:730,y:1030,s:1}
         };
         var IC = {
-            shoe:  '<svg viewBox="0 0 24 24"><path d="M2 17h20v2a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-2z"/><path d="M2 17l1-6 5 1 4 3h8a2 2 0 0 1 2 2"/></svg>',
-            watch: '<svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="7"/><path d="M12 13V9M9 2h6"/></svg>',
-            leaf:  '<svg viewBox="0 0 24 24"><path d="M4 20C4 10 12 4 20 4c0 8-6 16-16 16z"/><path d="M4 20c4-6 8-8 12-9"/></svg>',
-            cal:   '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg>',
-            pin:   '<svg viewBox="0 0 24 24"><path d="M12 22s7-6 7-12a7 7 0 1 0-14 0c0 6 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>',
-            fam:   '<svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M2 20c0-3 3-5 6-5s6 2 6 5M14 20c0-2 2-4 4-4s4 1 4 3"/></svg>'
+            shoe:'<svg viewBox="0 0 24 24"><path d="M2 17h20v2a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-2z"/><path d="M2 17l1-6 5 1 4 3h8a2 2 0 0 1 2 2"/></svg>',
+            watch:'<svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="7"/><path d="M12 13V9M9 2h6"/></svg>',
+            leaf:'<svg viewBox="0 0 24 24"><path d="M4 20C4 10 12 4 20 4c0 8-6 16-16 16z"/><path d="M4 20c4-6 8-8 12-9"/></svg>',
+            cal:'<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg>',
+            pin:'<svg viewBox="0 0 24 24"><path d="M12 22s7-6 7-12a7 7 0 1 0-14 0c0 6 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>',
+            fam:'<svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M2 20c0-3 3-5 6-5s6 2 6 5M14 20c0-2 2-4 4-4s4 1 4 3"/></svg>'
         };
         var $ = function(id){ return document.getElementById(id); };
-        var poster = $('pg-poster'), stage = $('pg-stage');
-        var curW = 1080, curH = 1350;
-        var pos = {}; // aktuelle {x,y,s} je Block
-        var sel = null;
+        var poster=$('pg-poster'), stage=$('pg-stage'), selbox=$('pg-selbox'), gv=$('pg-guide-v'), gh=$('pg-guide-h');
+        var curW=1080, curH=1350, pos={}, sel=null, customN=0;
 
         function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-        function applyBlock(id){ var b=$(id), p=pos[id]; b.style.left=p.x+'px'; b.style.top=p.y+'px'; b.style.transform='scale('+p.s+')'; }
+        function natW(id){ return $(id).offsetWidth; }
+        function natH(id){ return $(id).offsetHeight; }
+        function rect(id){ var p=pos[id]; return {x:p.x, y:p.y, w:natW(id)*p.s, h:natH(id)*p.s}; }
+        function applyBlock(id){ var b=$(id),p=pos[id]; b.style.left=p.x+'px'; b.style.top=p.y+'px'; b.style.transform='scale('+p.s+')'; if(id===sel) updateSelbox(); }
         function applyAll(){ Object.keys(pos).forEach(applyBlock); }
-        function resetLayout(){ pos = JSON.parse(JSON.stringify(DEFAULTS)); applyAll(); }
 
+        // ---- Content ----
         function renderFeatures(){
-            $('p-features').innerHTML =
-                [['shoe','c-f1t','c-f1s'],['watch','c-f2t','c-f2s'],['leaf','c-f3t','c-f3s']].map(function(f){
-                    return '<div class="pg-feat"><div class="pg-ic">'+IC[f[0]]+'</div><div><div class="pg-ft">'+
-                        esc($(f[1]).value)+'</div><div class="pg-fs">'+esc($(f[2]).value)+'</div></div></div>';
-                }).join('');
+            $('p-features').innerHTML=[['shoe','c-f1t','c-f1s'],['watch','c-f2t','c-f2s'],['leaf','c-f3t','c-f3s']].map(function(f){
+                return '<div class="pg-feat"><div class="pg-ic">'+IC[f[0]]+'</div><div><div class="pg-ft">'+esc($(f[1]).value)+'</div><div class="pg-fs">'+esc($(f[2]).value)+'</div></div></div>';
+            }).join('');
         }
         function renderDetails(){
-            $('p-details').innerHTML =
-                [[IC.cal,'c-date'],[IC.pin,'c-loc'],[IC.fam,'c-fam']].map(function(d){
-                    var v = esc($(d[1]).value).split('·');
-                    return '<div class="pg-dcard">'+d[0]+'<b>'+(v[0]||'')+'</b><span>'+(v.slice(1).join('·')||'')+'</span></div>';
-                }).join('');
+            $('p-details').innerHTML=[[IC.cal,'c-date'],[IC.pin,'c-loc'],[IC.fam,'c-fam']].map(function(d){
+                var v=esc($(d[1]).value).split('·'); return '<div class="pg-dcard">'+d[0]+'<b>'+(v[0]||'')+'</b><span>'+(v.slice(1).join('·')||'')+'</span></div>';
+            }).join('');
         }
         function renderSponsors(){
             var blk=$('b-sponsors');
-            if(!$('c-show-sponsors').checked || !SPONSORS.length){ blk.style.display='none'; return; }
-            $('p-sponsors').innerHTML = SPONSORS.map(function(u){ return '<div class="pg-sp"><img src="'+u+'" alt=""></div>'; }).join('');
-            blk.style.display='block';
+            if(!$('c-show-sponsors').checked||!SPONSORS.length){ blk.style.display='none'; if(sel==='b-sponsors') deselect(); return; }
+            $('p-sponsors').innerHTML=SPONSORS.map(function(u){ return '<div class="pg-sp"><img src="'+u+'" alt=""></div>'; }).join(''); blk.style.display='block';
         }
-        function bindText(cid, pid){ var el=$(cid); el.addEventListener('input', function(){ $(pid).textContent = el.value; }); }
-        bindText('c-headline','p-headline'); bindText('c-subline','p-subline');
-        bindText('c-cta','p-cta'); bindText('c-domain','p-domain');
-        ['c-f1t','c-f1s','c-f2t','c-f2s','c-f3t','c-f3s'].forEach(function(id){ $(id).addEventListener('input', renderFeatures); });
-        ['c-date','c-loc','c-fam'].forEach(function(id){ $(id).addEventListener('input', renderDetails); });
+        function bindText(cid,pid){ $(cid).addEventListener('input',function(){ $(pid).textContent=this.value; if(sel) updateSelbox(); }); }
+        bindText('c-headline','p-headline'); bindText('c-subline','p-subline'); bindText('c-cta','p-cta'); bindText('c-domain','p-domain');
+        ['c-f1t','c-f1s','c-f2t','c-f2s','c-f3t','c-f3s'].forEach(function(id){ $(id).addEventListener('input',function(){ renderFeatures(); if(sel) updateSelbox(); }); });
+        ['c-date','c-loc','c-fam'].forEach(function(id){ $(id).addEventListener('input',function(){ renderDetails(); if(sel) updateSelbox(); }); });
         $('c-show-sponsors').addEventListener('change', renderSponsors);
         renderFeatures(); renderDetails(); renderSponsors();
 
-        // Foto
-        $('c-photo').addEventListener('change', function(e){
-            var f=e.target.files[0]; if(!f) return;
-            var r=new FileReader(); r.onload=function(){ $('pg-bg').style.backgroundImage='url('+r.result+')'; }; r.readAsDataURL(f);
-        });
-        $('c-photo-clear').addEventListener('click', function(){ $('pg-bg').style.backgroundImage=''; $('c-photo').value=''; });
+        $('c-photo').addEventListener('change',function(e){ var f=e.target.files[0]; if(!f) return; var r=new FileReader(); r.onload=function(){ $('pg-bg').style.backgroundImage='url('+r.result+')'; }; r.readAsDataURL(f); });
+        $('c-photo-clear').addEventListener('click',function(){ $('pg-bg').style.backgroundImage=''; $('c-photo').value=''; });
 
-        // QR
         function updateQr(){
-            var url=($('c-qr-url').value||'').trim(); var img=$('pg-qr');
-            if(!url){ img.removeAttribute('src'); return; }
-            try{
-                var qr=qrcode(0,'H'); qr.addData(url); qr.make();
-                var n=qr.getModuleCount(), cell=8, q=2, size=(n+q*2)*cell;
-                var cv=document.createElement('canvas'); cv.width=cv.height=size;
-                var x=cv.getContext('2d'); x.fillStyle='#fff'; x.fillRect(0,0,size,size); x.fillStyle='#000';
+            var url=($('c-qr-url').value||'').trim(), img=$('pg-qr'); if(!url){ img.removeAttribute('src'); return; }
+            try{ var qr=qrcode(0,'H'); qr.addData(url); qr.make(); var n=qr.getModuleCount(),cell=8,q=2,size=(n+q*2)*cell;
+                var cv=document.createElement('canvas'); cv.width=cv.height=size; var x=cv.getContext('2d');
+                x.fillStyle='#fff'; x.fillRect(0,0,size,size); x.fillStyle='#000';
                 for(var r=0;r<n;r++)for(var c=0;c<n;c++) if(qr.isDark(r,c)) x.fillRect((c+q)*cell,(r+q)*cell,cell,cell);
                 img.src=cv.toDataURL('image/png');
             }catch(e){ img.removeAttribute('src'); }
         }
-        $('c-qr-url').addEventListener('input', updateQr);
+        $('c-qr-url').addEventListener('input',updateQr);
 
-        // ---- Auswahl + Verschieben + Skalieren ----
+        // ---- Auswahl / Selbox ----
+        function updateSelbox(){
+            if(!sel){ selbox.style.display='none'; return; }
+            var r=rect(sel);
+            selbox.style.left=r.x+'px'; selbox.style.top=r.y+'px'; selbox.style.width=r.w+'px'; selbox.style.height=r.h+'px'; selbox.style.display='block';
+        }
         function select(id){
-            if(sel) $(sel).classList.remove('sel');
-            sel=id; $(id).classList.add('sel');
+            sel=id; updateSelbox();
             $('pg-sel-panel').style.display='block';
             $('pg-sel-name').textContent='Ausgewählt: '+$(id).getAttribute('data-name');
-            $('pg-sel-scale').value=Math.round(pos[id].s*100);
-            $('pg-sel-scale-val').textContent=Math.round(pos[id].s*100);
+            $('pg-sel-scale').value=Math.round(pos[id].s*100); $('pg-sel-scale-val').textContent=Math.round(pos[id].s*100);
+            var isCustom=$(id).getAttribute('data-custom')==='1';
+            $('pg-custom-ctrl').style.display=isCustom?'block':'none';
+            $('pg-del-block').style.display=isCustom?'inline-flex':'none';
+            if(isCustom){ $('pg-ct-label').value=$(id).querySelector('.pg-ct-text').textContent; syncLogoSelect(id); }
         }
-        function deselect(){ if(sel){ $(sel).classList.remove('sel'); sel=null; } $('pg-sel-panel').style.display='none'; }
-        $('pg-deselect').addEventListener('click', deselect);
-        $('pg-sel-scale').addEventListener('input', function(){
-            if(!sel) return; pos[sel].s=parseInt(this.value,10)/100; $('pg-sel-scale-val').textContent=this.value; applyBlock(sel);
-        });
+        function deselect(){ sel=null; selbox.style.display='none'; $('pg-sel-panel').style.display='none'; }
+        $('pg-deselect').addEventListener('click',deselect);
+        $('pg-sel-scale').addEventListener('input',function(){ if(!sel) return; pos[sel].s=parseInt(this.value,10)/100; $('pg-sel-scale-val').textContent=this.value; applyBlock(sel); });
 
-        var drag=null;
-        Array.prototype.forEach.call(document.querySelectorAll('.pb'), function(b){
-            b.addEventListener('mousedown', function(e){
-                e.preventDefault();
-                select(b.id);
-                var scale=poster._scale||1;
-                drag={ id:b.id, sx:e.clientX, sy:e.clientY, ox:pos[b.id].x, oy:pos[b.id].y, scale:scale };
-                b.classList.add('dragging');
-            });
-        });
-        window.addEventListener('mousemove', function(e){
-            if(!drag) return;
-            var dx=(e.clientX-drag.sx)/drag.scale, dy=(e.clientY-drag.sy)/drag.scale;
-            pos[drag.id].x=Math.round(drag.ox+dx); pos[drag.id].y=Math.round(drag.oy+dy);
-            applyBlock(drag.id);
-        });
-        window.addEventListener('mouseup', function(){ if(drag){ $(drag.id).classList.remove('dragging'); drag=null; } });
-
-        // Format + Skalierung der Vorschau
-        function applyFormat(){
-            var fmt=FORMATS[$('c-format').value]||FORMATS.portrait;
-            curW=fmt.w; curH=fmt.h;
-            poster.style.width=curW+'px'; poster.style.height=curH+'px';
-            fit();
+        // ---- Snapping ----
+        function snap(nx,ny,id){
+            var r=rect(id), w=r.w, h=r.h, TH=12;
+            var mv=[nx,nx+w/2,nx+w], mh=[ny,ny+h/2,ny+h];
+            var cV=[0,curW/2,curW], cH=[0,curH/2,curH];
+            Object.keys(pos).forEach(function(o){ if(o===id||$(o).style.display==='none') return; var rr=rect(o); cV.push(rr.x,rr.x+rr.w/2,rr.x+rr.w); cH.push(rr.y,rr.y+rr.h/2,rr.y+rr.h); });
+            var ox=nx, oy=ny, gvx=null, ghy=null, bd=TH+1;
+            mv.forEach(function(m){ cV.forEach(function(c){ var d=Math.abs(m-c); if(d<bd){ bd=d; ox=nx+(c-m); gvx=c; } }); });
+            bd=TH+1;
+            mh.forEach(function(m){ cH.forEach(function(c){ var d=Math.abs(m-c); if(d<bd){ bd=d; oy=ny+(c-m); ghy=c; } }); });
+            if(gvx!==null){ gv.style.left=gvx+'px'; gv.style.height=curH+'px'; gv.style.display='block'; } else gv.style.display='none';
+            if(ghy!==null){ gh.style.top=ghy+'px'; gh.style.width=curW+'px'; gh.style.display='block'; } else gh.style.display='none';
+            return {x:Math.round(ox),y:Math.round(oy)};
         }
-        function fit(){ var w=stage.clientWidth, scale=w/curW; poster.style.transform='scale('+scale+')'; poster._scale=scale; stage.style.height=(curH*scale)+'px'; }
-        $('c-format').addEventListener('change', applyFormat);
-        window.addEventListener('resize', fit);
+        function hideGuides(){ gv.style.display='none'; gh.style.display='none'; }
 
-        $('c-reset').addEventListener('click', function(){ resetLayout(); deselect(); });
+        // ---- Drag (move) + Resize (handle) ----
+        var mode=null, st=null;
+        function onDown(id,e){ e.preventDefault(); select(id); var sc=poster._scale||1; mode='move'; st={id:id,sx:e.clientX,sy:e.clientY,ox:pos[id].x,oy:pos[id].y,sc:sc}; $(id).classList.add('dragging'); }
+        function attach(b){ b.addEventListener('mousedown',function(e){ if(e.target===$('pg-selbox-h')) return; onDown(b.id,e); }); }
+        Array.prototype.forEach.call(document.querySelectorAll('.pb'),attach);
 
-        // Export
-        $('c-export').addEventListener('click', async function(){
-            var st=$('c-status'); st.textContent='⏳ Rendert …';
-            var hadSel=sel; if(sel) $(sel).classList.remove('sel');
-            var savedTransform=poster.style.transform, savedH=stage.style.height;
-            poster.style.transform='none';
+        $('pg-selbox-h').addEventListener('mousedown',function(e){ e.preventDefault(); e.stopPropagation(); if(!sel) return; mode='resize'; st={id:sel,sc:poster._scale||1}; });
+
+        window.addEventListener('mousemove',function(e){
+            if(!mode||!st) return;
+            var sc=poster._scale||1, prect=poster.getBoundingClientRect();
+            if(mode==='move'){
+                var dx=(e.clientX-st.sx)/st.sc, dy=(e.clientY-st.sy)/st.sc;
+                var snapped=snap(st.ox+dx, st.oy+dy, st.id);
+                pos[st.id].x=snapped.x; pos[st.id].y=snapped.y; applyBlock(st.id);
+            } else if(mode==='resize'){
+                var px=(e.clientX-prect.left)/sc, py=(e.clientY-prect.top)/sc;
+                var W=natW(st.id), H=natH(st.id);
+                var sByW=(px-pos[st.id].x)/W, sByH=(py-pos[st.id].y)/H;
+                var ns=Math.max(sByW,sByH); ns=Math.max(0.3,Math.min(3.5,ns));
+                pos[st.id].s=ns; applyBlock(st.id);
+                $('pg-sel-scale').value=Math.round(ns*100); $('pg-sel-scale-val').textContent=Math.round(ns*100);
+            }
+        });
+        window.addEventListener('mouseup',function(){ if(mode==='move'&&st) $(st.id).classList.remove('dragging'); mode=null; st=null; hideGuides(); });
+
+        // Klick auf leeren Poster-Hintergrund = Auswahl aufheben
+        poster.addEventListener('mousedown',function(e){ if(e.target===poster||e.target===$('pg-bg')||e.target.classList.contains('pg-ov')) deselect(); });
+
+        // ---- Eigene Kacheln ----
+        function syncLogoSelect(id){
+            var sel2=$('pg-ct-logo'), cur=$(id).getAttribute('data-logo')||'';
+            sel2.innerHTML='<option value="">— kein Logo —</option>'+Object.keys(LOGOS).map(function(k){ return '<option value="'+k+'"'+(k===cur?' selected':'')+'>'+k+'</option>'; }).join('');
+        }
+        function addTile(){
+            customN++; var id='custom'+customN;
+            var b=document.createElement('div'); b.className='pb'; b.id=id; b.setAttribute('data-name','Eigene Kachel '+customN); b.setAttribute('data-custom','1'); b.setAttribute('data-logo','');
+            b.innerHTML='<div class="pg-ctile"><img class="pg-ct-img" style="display:none" alt=""><span class="pg-ct-text">Neue Kachel</span></div>';
+            poster.appendChild(b);
+            pos[id]={x:Math.round(curW/2-140),y:Math.round(curH/2-40),s:1};
+            attach(b); applyBlock(id); select(id);
+        }
+        $('c-add-tile').addEventListener('click',addTile);
+        $('pg-ct-label').addEventListener('input',function(){ if(sel&&$(sel).getAttribute('data-custom')==='1'){ $(sel).querySelector('.pg-ct-text').textContent=this.value; updateSelbox(); } });
+        $('pg-ct-logo').addEventListener('change',function(){ if(!sel) return; var img=$(sel).querySelector('.pg-ct-img'); var k=this.value; $(sel).setAttribute('data-logo',k);
+            if(k&&LOGOS[k]){ img.src=LOGOS[k]; img.style.display='block'; } else { img.removeAttribute('src'); img.style.display='none'; } updateSelbox(); });
+        $('pg-del-block').addEventListener('click',function(){ if(!sel) return; if($(sel).getAttribute('data-custom')!=='1') return; var id=sel; deselect(); $(id).remove(); delete pos[id]; });
+
+        // ---- Format + Fit + Vorschau-Resize ----
+        function applyFormat(){ var f=FORMATS[$('c-format').value]||FORMATS.portrait; curW=f.w; curH=f.h; poster.style.width=curW+'px'; poster.style.height=curH+'px'; fit(); if(sel) updateSelbox(); }
+        function fit(){ var w=stage.clientWidth, sc=w/curW; poster.style.transform='scale('+sc+')'; poster._scale=sc; stage.style.height=(curH*sc)+'px'; }
+        $('c-format').addEventListener('change',applyFormat);
+        var lastW=0;
+        try{ new ResizeObserver(function(){ if(stage.clientWidth!==lastW){ lastW=stage.clientWidth; fit(); if(sel) updateSelbox(); } }).observe(stage); }catch(e){ window.addEventListener('resize',fit); }
+
+        $('c-reset').addEventListener('click',function(){
+            Object.keys(pos).forEach(function(id){ if(/^custom/.test(id)){ var el=$(id); if(el) el.remove(); } });
+            pos=JSON.parse(JSON.stringify(DEFAULTS)); applyAll(); deselect();
+        });
+
+        // ---- Export ----
+        $('c-export').addEventListener('click',async function(){
+            var s=$('c-status'); s.textContent='⏳ Rendert …';
+            var keep=sel; selbox.style.display='none'; hideGuides();
+            var sv=poster.style.transform, sh=stage.style.height; poster.style.transform='none';
             try{
-                if(document.fonts && document.fonts.ready) await document.fonts.ready;
+                if(document.fonts&&document.fonts.ready) await document.fonts.ready;
                 var canvas=await html2canvas(poster,{width:curW,height:curH,scale:2,useCORS:false,backgroundColor:'#007230',logging:false});
                 var a=document.createElement('a'); a.download='marktlauf-poster.png'; a.href=canvas.toDataURL('image/png'); a.click();
-                st.textContent='✓ Exportiert ('+curW+'×'+curH+').';
-            }catch(err){ st.textContent='⚠️ Fehler beim Export: '+err; }
-            finally{ poster.style.transform=savedTransform; stage.style.height=savedH; if(hadSel) $(hadSel).classList.add('sel'); }
+                s.textContent='✓ Exportiert ('+curW+'×'+curH+').';
+            }catch(err){ s.textContent='⚠️ Fehler beim Export: '+err; }
+            finally{ poster.style.transform=sv; stage.style.height=sh; sel=keep; if(sel) updateSelbox(); }
         });
 
         // Init
-        resetLayout(); applyFormat(); updateQr();
+        pos=JSON.parse(JSON.stringify(DEFAULTS)); applyAll(); applyFormat(); updateQr(); lastW=stage.clientWidth;
 
         var bg=$('burger-btn'), sb=$('sidebar'), ov=$('sidebar-overlay');
         if(bg){ bg.addEventListener('click',function(){ sb.classList.toggle('open'); ov.classList.toggle('active'); });
