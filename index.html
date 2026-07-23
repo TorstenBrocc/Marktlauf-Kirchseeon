@@ -499,9 +499,61 @@
                     })();
                     </script>
                 </div>
-                <p class="text-center" style="margin-top: var(--space-lg);">
-                    <a href="anmeldung-familie.php" class="btn btn-secondary">👨‍👩‍👧 Familie / mehrere Personen anmelden</a>
-                </p>
+                <!-- Familien- / Sammelanmeldung: aufklappbar auf dieser Seite -->
+                <div class="sammel-accordion" style="margin-top: var(--space-lg);">
+                    <button type="button" class="sammel-toggle" id="sammel-toggle" aria-expanded="false" aria-controls="sammel-panel">
+                        <span class="sammel-toggle-icon" aria-hidden="true">👨‍👩‍👧</span>
+                        <span class="sammel-toggle-text">
+                            <span class="sammel-toggle-title">Familie oder mehrere Personen anmelden</span>
+                            <span class="sammel-toggle-sub">Alle in einem Vorgang &ndash; hier aufklappen</span>
+                        </span>
+                        <span class="sammel-toggle-chevron" aria-hidden="true"></span>
+                    </button>
+                    <div class="sammel-panel" id="sammel-panel" role="region" aria-labelledby="sammel-toggle" hidden>
+                        <div class="sammel-panel-inner">
+                            <iframe class="sammel-iframe" id="sammel-iframe"
+                                    title="Familien- und Sammelanmeldung"
+                                    data-src="anmeldung-familie.php?embed=1"
+                                    scrolling="no" loading="lazy" style="height: 600px;"></iframe>
+                        </div>
+                    </div>
+                </div>
+                <script>
+                (function () {
+                    var btn   = document.getElementById('sammel-toggle');
+                    var panel = document.getElementById('sammel-panel');
+                    var frame = document.getElementById('sammel-iframe');
+                    if (!btn || !panel || !frame) return;
+
+                    function isOpen() { return btn.getAttribute('aria-expanded') === 'true'; }
+
+                    btn.addEventListener('click', function () {
+                        if (isOpen()) {
+                            btn.setAttribute('aria-expanded', 'false');
+                            panel.style.maxHeight = '0px';
+                            panel.addEventListener('transitionend', function te() {
+                                if (!isOpen()) panel.hidden = true;
+                                panel.removeEventListener('transitionend', te);
+                            });
+                        } else {
+                            if (!frame.src) frame.src = frame.getAttribute('data-src'); // lazy-load beim ersten Öffnen
+                            panel.hidden = false;
+                            void panel.offsetHeight; // Reflow erzwingen, damit die Transition greift
+                            btn.setAttribute('aria-expanded', 'true');
+                            panel.style.maxHeight = panel.scrollHeight + 'px';
+                        }
+                    });
+
+                    // Auto-Resize: Höhe aus dem iframe übernehmen und Panel mitwachsen lassen
+                    window.addEventListener('message', function (e) {
+                        if (e.source !== frame.contentWindow) return;
+                        if (e.data && e.data.type === 'rr-embed-height' && e.data.height) {
+                            frame.style.height = (e.data.height + 8) + 'px';
+                            if (isOpen()) panel.style.maxHeight = panel.scrollHeight + 'px';
+                        }
+                    });
+                })();
+                </script>
             </div>
         </section>
 

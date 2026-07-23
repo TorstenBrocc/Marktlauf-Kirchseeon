@@ -1048,6 +1048,106 @@
     text-align: center;
 }
 
+/* Familien- / Sammelanmeldung – aufklappbar (Akkordeon) */
+.sammel-accordion {
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.sammel-toggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    text-align: left;
+    cursor: pointer;
+    padding: 1.1rem var(--space-md);
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+    color: var(--white);
+    border: none;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    transition: transform 0.15s ease, box-shadow 0.2s ease, border-radius 0.25s ease;
+}
+
+.sammel-toggle:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-lg);
+}
+
+.sammel-toggle:focus-visible {
+    outline: 3px solid var(--color-accent-yellow);
+    outline-offset: 2px;
+}
+
+.sammel-toggle[aria-expanded="true"] {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.sammel-toggle-icon {
+    font-size: 1.6rem;
+    line-height: 1;
+    flex: 0 0 auto;
+}
+
+.sammel-toggle-text {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.sammel-toggle-title {
+    font-weight: 700;
+    font-size: 1.05rem;
+}
+
+.sammel-toggle-sub {
+    font-size: 0.85rem;
+    opacity: 0.9;
+}
+
+.sammel-toggle-chevron {
+    flex: 0 0 auto;
+    width: 12px;
+    height: 12px;
+    border-right: 2.5px solid currentColor;
+    border-bottom: 2.5px solid currentColor;
+    transform: rotate(45deg);
+    transition: transform 0.25s ease;
+    margin-right: 4px;
+}
+
+.sammel-toggle[aria-expanded="true"] .sammel-toggle-chevron {
+    transform: rotate(-135deg);
+}
+
+.sammel-panel {
+    max-height: 0;
+    overflow: hidden;
+    background-color: var(--white);
+    border: 1px solid var(--gray-200);
+    border-top: none;
+    border-bottom-left-radius: var(--radius-lg);
+    border-bottom-right-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    transition: max-height 0.4s ease;
+}
+
+.sammel-panel-inner {
+    padding: var(--space-md);
+}
+
+.sammel-iframe {
+    width: 100%;
+    border: none;
+    display: block;
+    overflow: hidden;
+    transition: height 0.2s ease;
+}
+
 /* Hero Logo */
 .hero-logo-container {
     position: relative;
