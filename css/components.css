@@ -1109,11 +1109,6 @@
     transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-.anmeldung-toggle[aria-expanded="true"] .anmeldung-icon {
-    background-color: var(--color-primary);
-    color: var(--white);
-}
-
 .anmeldung-toggle-text {
     display: flex;
     flex-direction: column;
@@ -1165,6 +1160,21 @@
     display: block;
     overflow: hidden;
     transition: height 0.2s ease;
+}
+
+/*
+  RaceResult-Formular ins CI holen. Die Schritt-Navigation (RRReg_Nav) und die
+  Buttons kommen ab Werk in Rot; per RR-Theme-Variablen auf Marktlauf-Grün ziehen.
+  Gilt für Einzel- (inline in index.html) und Sammelanmeldung (iframe-Embed) –
+  components.css wird in beiden Kontexten geladen, daher einmal zentral hier.
+*/
+.RRReg {
+    --navigation-background: var(--color-primary) !important;
+    --navigation-selected: var(--color-primary-dark) !important;
+    --navigation-text: var(--white) !important;
+    --button: var(--color-primary) !important;
+    --button-disabled: var(--gray-300) !important;
+    --button-text: var(--white) !important;
 }
 
 /* Hero Logo */
