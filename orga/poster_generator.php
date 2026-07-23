@@ -75,10 +75,10 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
         .pb.pg-grouped::after { content:''; position:absolute; inset:-4px; border:2px dotted rgba(255,140,66,0.55); border-radius:6px; pointer-events:none; z-index:7; }
 
         /* Auswahlrahmen + Resize-Handle + Fanglinien (UI-Overlay, nicht im Export) */
-        .pg-selbox { position: absolute; z-index: 8; border: 3px dashed #ff6b35; box-sizing: border-box; display: none; pointer-events: none; }
+        .pg-selbox { position: absolute; z-index: 9000; border: 3px dashed #ff6b35; box-sizing: border-box; display: none; pointer-events: none; }
         .pg-selbox-h { position: absolute; right: -26px; bottom: -26px; width: 52px; height: 52px; background: #fff; border: 5px solid #ff6b35; border-radius: 8px; pointer-events: auto; cursor: nwse-resize; }
-        .pg-guide-v { position: absolute; width: 0; border-left: 3px dashed #ff8c42; z-index: 9; display: none; }
-        .pg-guide-h { position: absolute; height: 0; border-top: 3px dashed #ff8c42; z-index: 9; display: none; }
+        .pg-guide-v { position: absolute; width: 0; border-left: 3px dashed #ff8c42; z-index: 9001; display: none; }
+        .pg-guide-h { position: absolute; height: 0; border-top: 3px dashed #ff8c42; z-index: 9001; display: none; }
 
         /* Logo-Kachel (einzeln, Bild tauschbar + skalierbar) */
         .pg-logo-tile { background: #fff; border-radius: 18px; padding: 16px 22px; display: flex; align-items: center; justify-content: center; }
@@ -133,6 +133,10 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
         .pg-ctile.pg-notile { background: transparent; box-shadow: none; padding: 0; color:#fff; }
         .pg-ctile.pg-notile .pg-ct-text { color:#fff; text-shadow: 0 2px 10px rgba(0,0,0,0.28); }
         .pg-ctile.pg-notile .pg-ct-ic svg { stroke:#fff; }
+
+        /* Freie Fläche / Kachel (Breite & Höhe unabhängig) */
+        .pg-shape { border-radius: 24px; background: #fff; box-shadow: 0 8px 24px rgba(0,0,0,0.12); box-sizing: border-box; }
+        .pg-shape.pg-shape-noshadow { box-shadow: none; }
     </style>
 </head>
 <body>
@@ -173,16 +177,37 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
 
                     <div class="pg-row" id="pg-tile-row" style="display:none;margin-top:0.3rem"><label style="display:flex;align-items:center;gap:0.4rem;margin:0"><input type="checkbox" id="pg-el-tile"> weiße Kachel als Hintergrund</label></div>
 
+                    <div id="pg-shape-ctrl" style="display:none">
+                        <div class="pg-row" style="margin-bottom:0.4rem"><label>Breite: <span id="pg-sh-wv">400</span> px</label><input type="range" id="pg-sh-w" min="30" max="1400" value="400"></div>
+                        <div class="pg-row" style="margin-bottom:0.4rem"><label>Höhe: <span id="pg-sh-hv">200</span> px</label><input type="range" id="pg-sh-h" min="30" max="1400" value="200"></div>
+                        <div class="pg-row" style="margin-bottom:0.4rem"><label>Eck-Radius: <span id="pg-sh-rv">24</span> px</label><input type="range" id="pg-sh-r" min="0" max="120" value="24"></div>
+                        <div class="pg-row" style="margin-bottom:0.2rem"><label>Füllfarbe</label>
+                            <div style="display:flex;gap:0.3rem;align-items:center;flex-wrap:wrap">
+                                <input type="color" id="pg-sh-fill" value="#ffffff" style="width:44px;height:30px;padding:2px;border:1px solid var(--border);border-radius:6px;background:#fff">
+                                <button class="btn btn-small btn-secondary pg-sh-preset" type="button" data-fill="#ffffff">Weiß</button>
+                                <button class="btn btn-small btn-secondary pg-sh-preset" type="button" data-fill="#007230">Grün</button>
+                                <button class="btn btn-small btn-secondary pg-sh-preset" type="button" data-fill="#f4b81e">Gelb</button>
+                                <label style="display:flex;align-items:center;gap:0.25rem;margin:0;font-size:0.82rem"><input type="checkbox" id="pg-sh-transp"> transparent</label>
+                            </div>
+                        </div>
+                        <p class="pg-hint" style="margin:0.15rem 0 0">Tipp: Breite/Höhe auch direkt am orangenen Eck-Quadrat frei ziehen.</p>
+                    </div>
+
                     <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-top:0.5rem">
                         <button class="btn btn-small btn-secondary" id="pg-group" type="button" style="display:none">🔗 Gruppieren</button>
                         <button class="btn btn-small btn-secondary" id="pg-ungroup" type="button" style="display:none">Gruppierung lösen</button>
+                        <button class="btn btn-small btn-secondary" id="pg-front" type="button">↑ nach vorne</button>
+                        <button class="btn btn-small btn-secondary" id="pg-back" type="button">↓ nach hinten</button>
                         <button class="btn btn-small btn-secondary" id="pg-deselect" type="button">Auswahl aufheben</button>
                         <button class="btn btn-small btn-secondary" id="pg-del-block" type="button" style="display:none">Element löschen</button>
                     </div>
                     <p class="pg-hint" style="margin:0.5rem 0 0">Mehrfachauswahl: <b>Shift-Klick</b>. Neben das Poster ziehen = ablegen (nicht im Export).</p>
                 </div>
 
-                <button class="btn btn-secondary" id="c-add-tile" type="button" style="margin-bottom:0.75rem;width:100%">+ Eigenes Element (Text/Icon/Logo)</button>
+                <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem">
+                    <button class="btn btn-secondary" id="c-add-tile" type="button" style="flex:1">+ Element (Text/Icon/Logo)</button>
+                    <button class="btn btn-secondary" id="c-add-shape" type="button" style="flex:1">+ Fläche / Kachel</button>
+                </div>
 
                 <div class="pg-row"><label>Format</label>
                     <select id="c-format">
@@ -346,7 +371,7 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
         var $ = function(id){ return document.getElementById(id); };
         var scene=$('pg-scene'), art=$('pg-art'), stage=$('pg-stage'), canvas=$('pg-canvas'),
             selbox=$('pg-selbox'), gv=$('pg-guide-v'), gh=$('pg-guide-h');
-        var curW=1080, curH=1350, sceneW=0, sceneH=0, pos={}, selIds=[], sel=null, customN=0;
+        var curW=1080, curH=1350, sceneW=0, sceneH=0, pos={}, selIds=[], sel=null, customN=0, shapeN=0;
         var groupOf={}, groupSeq=0, fitScale=1, zoom=1;
 
         function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -356,7 +381,8 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
         function natH(id){ return $(id).offsetHeight; }
         // pos ist in SZENEN-Koordinaten (inkl. PAD-Offset). Poster-Ecke oben-links = (PAD,PAD).
         function rect(id){ var p=pos[id]; return {x:p.x, y:p.y, w:natW(id)*p.s, h:natH(id)*p.s}; }
-        function applyBlock(id){ var b=$(id),p=pos[id]; b.style.left=p.x+'px'; b.style.top=p.y+'px'; b.style.transform='scale('+p.s+')'; }
+        function defaultZ(id){ return kindOf(id)==='shape' ? 5 : 10; }
+        function applyBlock(id){ var b=$(id),p=pos[id]; b.style.left=p.x+'px'; b.style.top=p.y+'px'; b.style.transform='scale('+p.s+')'; b.style.zIndex=(p.z!=null?p.z:defaultZ(id)); }
         function applyAll(){ Object.keys(pos).forEach(applyBlock); if(selIds.length) updateSelbox(); }
         function bbox(ids){ var x0=1e9,y0=1e9,x1=-1e9,y1=-1e9; ids.forEach(function(id){ var r=rect(id); x0=Math.min(x0,r.x); y0=Math.min(y0,r.y); x1=Math.max(x1,r.x+r.w); y1=Math.max(y1,r.y+r.h); }); return {x:x0,y:y0,w:x1-x0,h:y1-y0}; }
 
@@ -384,9 +410,13 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
             var img=el.querySelector('.pg-ct-img'), u=imgUrl(m.img);
             if(u){ img.src=u; img.style.display='inline-block'; } else { img.removeAttribute('src'); img.style.display='none'; }
             el.classList.toggle('pg-notile', !m.tile); }
+        function renderShape(id){ var m=meta[id]||{}, el=$(id).querySelector('.pg-shape');
+            el.style.width=(m.w||400)+'px'; el.style.height=(m.h||200)+'px'; el.style.borderRadius=(m.radius!=null?m.radius:24)+'px';
+            var transp=(m.fill==='none'); el.style.background=transp?'transparent':(m.fill||'#ffffff');
+            el.classList.toggle('pg-shape-noshadow', transp); }
         function renderEl(id){ var k=kindOf(id);
             if(k==='logo') renderLogo(id); else if(k==='coop') renderCoop(id); else if(k==='dcard') renderDcard(id);
-            else if(k==='features') renderFeatures(); else if(k==='custom') renderCustom(id); }
+            else if(k==='features') renderFeatures(); else if(k==='custom') renderCustom(id); else if(k==='shape') renderShape(id); }
         function renderStatic(){
             $('p-headline').textContent=$('c-headline').value; $('p-subline').textContent=$('c-subline').value;
             $('p-cta').textContent=$('c-cta').value; $('p-domain').textContent=$('c-domain').value;
@@ -397,7 +427,7 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
             $('p-sponsors').innerHTML=SPONSORS.map(function(u){ return '<div class="pg-sp"><img src="'+u+'" alt=""></div>'; }).join(''); blk.style.display='block';
         }
         function renderAll(){ renderStatic(); ['b-logo1','b-logo2','b-coop','b-date','b-loc','b-fam'].forEach(renderEl);
-            Object.keys(meta).forEach(function(id){ if(/^custom/.test(id)&&$(id)) renderCustom(id); });
+            Object.keys(meta).forEach(function(id){ if(/^custom/.test(id)&&$(id)) renderCustom(id); else if(/^shape/.test(id)&&$(id)) renderShape(id); });
             renderFeatures(); renderSponsors(); }
 
         // ---- Content-Bindings ----
@@ -465,15 +495,16 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
             var grp=currentGroup(), one=(n===1)?selIds[0]:null, k=one?kindOf(one):null;
             $('pg-sel-name').textContent = (n===1)?('Ausgewählt: '+$(one).getAttribute('data-name'))
                 : (grp?('Gruppe · '+n+' Elemente'):(n+' Elemente ausgewählt'));
-            show('pg-scale-row', n===1);
-            if(n===1){ $('pg-sel-scale').value=Math.round(pos[one].s*100); $('pg-sel-scale-val').textContent=Math.round(pos[one].s*100); }
+            var isCustom=(k==='custom'), isShape=(k==='shape');
+            show('pg-scale-row', n===1 && !isShape);
+            if(n===1 && !isShape){ $('pg-sel-scale').value=Math.round(pos[one].s*100); $('pg-sel-scale-val').textContent=Math.round(pos[one].s*100); }
             // kind-spezifische Zeilen
-            var isCustom=(k==='custom');
             show('pg-text-row', isCustom);
             show('pg-icon-row', k==='dcard'||isCustom);
             show('pg-img-row', k==='logo'||k==='coop'||isCustom);
             show('pg-cap-row', k==='coop');
             show('pg-tile-row', k==='logo'||k==='coop'||k==='dcard'||isCustom);
+            $('pg-shape-ctrl').style.display=isShape?'block':'none';
             if(n===1){
                 var m=meta[one]||{};
                 if($('pg-icon-row').style.display!=='none'){ fillIconSelect($('pg-el-icon'), m.icon||''); $('pg-el-icon-prev').innerHTML=(m.icon&&ICONS[m.icon])?ICONS[m.icon]:''; }
@@ -481,10 +512,13 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
                 if($('pg-cap-row').style.display!=='none'){ $('pg-el-cap').value=m.cap||''; }
                 if($('pg-tile-row').style.display!=='none'){ $('pg-el-tile').checked=!!m.tile; }
                 if(isCustom){ $('pg-el-text').value=$(one).querySelector('.pg-ct-text').textContent; }
+                if(isShape){ $('pg-sh-w').value=m.w; $('pg-sh-wv').textContent=m.w; $('pg-sh-h').value=m.h; $('pg-sh-hv').textContent=m.h;
+                    $('pg-sh-r').value=(m.radius!=null?m.radius:24); $('pg-sh-rv').textContent=(m.radius!=null?m.radius:24);
+                    $('pg-sh-transp').checked=(m.fill==='none'); if(m.fill&&m.fill!=='none') $('pg-sh-fill').value=m.fill; }
             }
             $('pg-group').style.display=(n>1 && !grp)?'inline-flex':'none';
             $('pg-ungroup').style.display=(grp)?'inline-flex':'none';
-            $('pg-del-block').style.display=isCustom?'inline-flex':'none';
+            $('pg-del-block').style.display=(isCustom||isShape)?'inline-flex':'none';
         }
         function setSel(ids){ selIds=ids.filter(function(id){ return $(id) && $(id).style.display!=='none'; });
             sel=(selIds.length===1)?selIds[0]:null; updateSelbox(); showPanel(); }
@@ -503,6 +537,20 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
         $('pg-el-img-file').addEventListener('change',function(e){ var f=e.target.files[0]; if(!f||!sel) return; var r=new FileReader(); r.onload=function(){ var key='Eigenes Bild '+(++uploadN); LOGOS[key]=r.result; meta[sel]=meta[sel]||{}; meta[sel].img=key; buildImgSelect(key); renderEl(sel); updateSelbox(); }; r.readAsDataURL(f); this.value=''; });
         $('pg-el-cap').addEventListener('input',function(){ if(!sel) return; meta[sel]=meta[sel]||{}; meta[sel].cap=this.value; renderEl(sel); updateSelbox(); });
         $('pg-el-tile').addEventListener('change',function(){ if(!sel) return; meta[sel]=meta[sel]||{}; meta[sel].tile=this.checked; renderEl(sel); updateSelbox(); });
+
+        // Shape-Editoren
+        function shapeSet(prop,val){ if(!sel||kindOf(sel)!=='shape') return; meta[sel][prop]=val; renderShape(sel); updateSelbox(); }
+        $('pg-sh-w').addEventListener('input',function(){ $('pg-sh-wv').textContent=this.value; shapeSet('w',parseInt(this.value,10)); });
+        $('pg-sh-h').addEventListener('input',function(){ $('pg-sh-hv').textContent=this.value; shapeSet('h',parseInt(this.value,10)); });
+        $('pg-sh-r').addEventListener('input',function(){ $('pg-sh-rv').textContent=this.value; shapeSet('radius',parseInt(this.value,10)); });
+        $('pg-sh-fill').addEventListener('input',function(){ $('pg-sh-transp').checked=false; shapeSet('fill',this.value); });
+        $('pg-sh-transp').addEventListener('change',function(){ if(this.checked){ shapeSet('fill','none'); } else { shapeSet('fill',$('pg-sh-fill').value); } });
+        Array.prototype.forEach.call(document.querySelectorAll('.pg-sh-preset'),function(btn){ btn.addEventListener('click',function(){ var c=this.getAttribute('data-fill'); $('pg-sh-fill').value=c; $('pg-sh-transp').checked=false; shapeSet('fill',c); }); });
+
+        // Reihenfolge (z-index)
+        function zRange(){ var mn=1e9,mx=-1e9; Object.keys(pos).forEach(function(id){ var z=(pos[id].z!=null?pos[id].z:defaultZ(id)); if(z<mn)mn=z; if(z>mx)mx=z; }); return {mn:mn,mx:mx}; }
+        $('pg-front').addEventListener('click',function(){ if(!selIds.length) return; var r=zRange(),i=1; selIds.forEach(function(id){ pos[id].z=r.mx+(i++); applyBlock(id); }); });
+        $('pg-back').addEventListener('click',function(){ if(!selIds.length) return; var r=zRange(),i=1; selIds.forEach(function(id){ pos[id].z=r.mn-(i++); applyBlock(id); }); });
 
         $('pg-group').addEventListener('click',function(){ if(selIds.length<2) return; var gid='g'+(++groupSeq); selIds.forEach(function(id){ groupOf[id]=gid; }); refreshGroupMarks(); showPanel(); });
         $('pg-ungroup').addEventListener('click',function(){ selIds.forEach(function(id){ delete groupOf[id]; }); refreshGroupMarks(); showPanel(); });
@@ -537,8 +585,12 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
         Array.prototype.forEach.call(document.querySelectorAll('.pb'),attach);
 
         $('pg-selbox-h').addEventListener('mousedown',function(e){ e.preventDefault(); e.stopPropagation(); if(!selIds.length) return;
-            mode='resize'; var b=bbox(selIds), orig={}; selIds.forEach(function(x){ orig[x]={x:pos[x].x,y:pos[x].y,s:pos[x].s}; });
-            st={sc:scene._scale||1,b0:b,orig:orig,ids:selIds.slice()};
+            mode='resize';
+            // Einzelne Fläche: Breite/Höhe frei ziehen (nicht proportional)
+            var single=(selIds.length===1)?selIds[0]:null;
+            if(single && kindOf(single)==='shape'){ st={sc:scene._scale||1, shape:single}; return; }
+            var b=bbox(selIds), orig={}, origMeta={}; selIds.forEach(function(x){ orig[x]={x:pos[x].x,y:pos[x].y,s:pos[x].s}; if(kindOf(x)==='shape'){ origMeta[x]={w:meta[x].w,h:meta[x].h}; } });
+            st={sc:scene._scale||1,b0:b,orig:orig,origMeta:origMeta,ids:selIds.slice()};
         });
 
         window.addEventListener('mousemove',function(e){
@@ -553,12 +605,19 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
             } else if(mode==='resize'){
                 var srect=scene.getBoundingClientRect();
                 var px=(e.clientX-srect.left)/sc, py=(e.clientY-srect.top)/sc;
+                if(st.shape){ var m=meta[st.shape], p=pos[st.shape];
+                    m.w=Math.max(30,Math.round(px-p.x)); m.h=Math.max(30,Math.round(py-p.y)); renderShape(st.shape); updateSelbox();
+                    $('pg-sh-w').value=m.w; $('pg-sh-wv').textContent=m.w; $('pg-sh-h').value=m.h; $('pg-sh-hv').textContent=m.h;
+                    return;
+                }
                 var k=Math.max((px-st.b0.x)/st.b0.w,(py-st.b0.y)/st.b0.h);
                 if(!isFinite(k)||k<=0) k=0.05;
-                st.ids.forEach(function(x){ var o=st.orig[x]; var ns=Math.max(0.2,Math.min(4,o.s*k));
-                    pos[x].s=ns; pos[x].x=st.b0.x+(o.x-st.b0.x)*k; pos[x].y=st.b0.y+(o.y-st.b0.y)*k; applyBlock(x); });
+                st.ids.forEach(function(x){ var o=st.orig[x];
+                    if(kindOf(x)==='shape'){ var om=st.origMeta[x]; meta[x].w=Math.max(30,Math.round(om.w*k)); meta[x].h=Math.max(30,Math.round(om.h*k)); renderShape(x); }
+                    else { pos[x].s=Math.max(0.2,Math.min(4,o.s*k)); }
+                    pos[x].x=st.b0.x+(o.x-st.b0.x)*k; pos[x].y=st.b0.y+(o.y-st.b0.y)*k; applyBlock(x); });
                 updateSelbox();
-                if(selIds.length===1){ $('pg-sel-scale').value=Math.round(pos[selIds[0]].s*100); $('pg-sel-scale-val').textContent=Math.round(pos[selIds[0]].s*100); }
+                if(selIds.length===1 && kindOf(selIds[0])!=='shape'){ $('pg-sel-scale').value=Math.round(pos[selIds[0]].s*100); $('pg-sel-scale-val').textContent=Math.round(pos[selIds[0]].s*100); }
             }
         });
         window.addEventListener('mouseup',function(){ if(mode==='move'&&st){ st.ids.forEach(function(x){ if($(x)) $(x).classList.remove('dragging'); }); } mode=null; st=null; hideGuides(); });
@@ -574,11 +633,21 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
             b.innerHTML='<div class="pg-ctile"><span class="pg-ct-ic"></span><img class="pg-ct-img" style="display:none" alt=""><span class="pg-ct-text">Neuer Text</span></div>';
             scene.appendChild(b);
             meta[id]={tile:true,icon:'',img:''};
-            pos[id]={x:Math.round(PAD+curW/2-120),y:Math.round(PAD+curH/2-30),s:1};
+            pos[id]={x:Math.round(PAD+curW/2-120),y:Math.round(PAD+curH/2-30),s:1,z:10};
             attach(b); renderCustom(id); applyBlock(id); setSel([id]);
         }
         $('c-add-tile').addEventListener('click',addTile);
-        $('pg-del-block').addEventListener('click',function(){ if(!sel||kindOf(sel)!=='custom') return; var id=sel; deselect(); delete groupOf[id]; delete meta[id]; $(id).remove(); delete pos[id]; });
+        function addShape(){
+            var id='shape'+(++shapeN);
+            var b=document.createElement('div'); b.className='pb'; b.id=id; b.setAttribute('data-name','Fläche '+shapeN); b.setAttribute('data-kind','shape');
+            b.innerHTML='<div class="pg-shape"></div>';
+            scene.appendChild(b);
+            meta[id]={w:520,h:220,radius:24,fill:'#ffffff'};
+            pos[id]={x:Math.round(PAD+curW/2-260),y:Math.round(PAD+curH/2-110),s:1,z:5};
+            attach(b); renderShape(id); applyBlock(id); setSel([id]);
+        }
+        $('c-add-shape').addEventListener('click',addShape);
+        $('pg-del-block').addEventListener('click',function(){ if(!sel||(kindOf(sel)!=='custom'&&kindOf(sel)!=='shape')) return; var id=sel; deselect(); delete groupOf[id]; delete meta[id]; $(id).remove(); delete pos[id]; });
 
         // ---- Format + Zoom + Fit ----
         function refit(){ fitScale = stage.clientWidth / sceneW; }
@@ -607,9 +676,9 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
         var lastW=0;
         try{ new ResizeObserver(function(){ if(stage.clientWidth!==lastW){ lastW=stage.clientWidth; refit(); applyView(); if(selIds.length) updateSelbox(); } }).observe(stage); }catch(e){ window.addEventListener('resize',function(){ refit(); applyView(); }); }
 
-        function baseDefaults(){ var o={}; Object.keys(DEFAULTS).forEach(function(k){ var d=DEFAULTS[k]; o[k]={x:d.x+PAD,y:d.y+PAD,s:d.s}; }); return o; }
+        function baseDefaults(){ var o={}; Object.keys(DEFAULTS).forEach(function(k){ var d=DEFAULTS[k]; o[k]={x:d.x+PAD,y:d.y+PAD,s:d.s,z:10}; }); return o; }
         $('c-reset').addEventListener('click',function(){
-            Object.keys(pos).forEach(function(id){ if(/^custom/.test(id)){ var el=$(id); if(el) el.remove(); } });
+            Object.keys(pos).forEach(function(id){ if(/^(custom|shape)/.test(id)){ var el=$(id); if(el) el.remove(); } });
             pos=baseDefaults(); groupOf={}; meta=baseMeta(); featIcons=['shoe','stopwatch','leaf'];
             [['c-f1i',0],['c-f2i',1],['c-f3i',2]].forEach(function(m){ fillIconSelect($(m[0]),featIcons[m[1]]); });
             refreshGroupMarks(); renderAll(); applyAll(); deselect();
