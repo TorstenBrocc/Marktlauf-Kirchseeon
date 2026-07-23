@@ -99,12 +99,13 @@ $embed = isset($_GET['embed']) && $_GET['embed'] === '1';
         <script>
         (function () {
             var last = 0;
+            // WICHTIG: Höhe aus dem Inhalts-Wrapper messen, NICHT aus document/documentElement.
+            // documentElement.scrollHeight ist nie kleiner als die iframe-Höhe selbst -> sonst
+            // Feedback-Schleife (Setzen der iframe-Höhe vergrößert die Messung -> wächst endlos).
             function report(){
-                var h = Math.max(
-                    document.body.scrollHeight,
-                    document.documentElement.scrollHeight
-                );
-                if (h && h !== last) {
+                var el = document.querySelector('.embed-wrap') || document.body;
+                var h = Math.ceil(el.getBoundingClientRect().height);
+                if (h && Math.abs(h - last) > 1) {
                     last = h;
                     parent.postMessage({ type: 'rr-embed-height', height: h }, '*');
                 }
@@ -112,7 +113,7 @@ $embed = isset($_GET['embed']) && $_GET['embed'] === '1';
             window.addEventListener('load', report);
             window.addEventListener('resize', report);
             new MutationObserver(report).observe(document.body, { childList: true, subtree: true, attributes: true });
-            setInterval(report, 800);
+            setInterval(report, 1000);
             report();
         })();
         </script>
