@@ -45,19 +45,25 @@ function initMobileMenu() {
  * Tab Logic (Newsletter/Contact)
  */
 function initTabs() {
-    const tabBtns = document.querySelectorAll(".tab-btn");
-    const tabContents = document.querySelectorAll(".tab-content");
-    if (!tabBtns.length || !tabContents.length) return;
+    // Pro Tab-Gruppe scopen (.tab-nav + zugehörige .tab-content im selben Container),
+    // damit mehrere Tab-Blöcke auf einer Seite sich nicht gegenseitig umschalten.
+    document.querySelectorAll(".tab-nav").forEach(nav => {
+        const scope = nav.parentElement;
+        if (!scope) return;
+        const btns = nav.querySelectorAll(".tab-btn");
+        const contents = scope.querySelectorAll(".tab-content");
+        if (!btns.length || !contents.length) return;
 
-    tabBtns.forEach(btn => {
-        btn.addEventListener("click", () => {
-            const target = btn.getAttribute("data-tab");
+        btns.forEach(btn => {
+            btn.addEventListener("click", () => {
+                const target = btn.getAttribute("data-tab");
 
-            tabBtns.forEach(b => b.classList.remove("active"));
-            tabContents.forEach(c => c.classList.remove("active"));
+                btns.forEach(b => b.classList.remove("active"));
+                contents.forEach(c => c.classList.remove("active"));
 
-            btn.classList.add("active");
-            document.getElementById(`tab-${target}`)?.classList.add("active");
+                btn.classList.add("active");
+                scope.querySelector(`#tab-${target}`)?.classList.add("active");
+            });
         });
     });
 }
