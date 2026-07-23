@@ -33,10 +33,13 @@
     flex-shrink: 0;
 }
 
+/* Wortmarke ist auf ihren Inhalt zugeschnitten (marktlauf-wordmark.png, kein
+   transparenter Rand) -> CSS-Höhe == sichtbare Texthöhe. Bewusst etwas unter
+   der ATSV-Wappenhöhe (46px), damit beide optisch gleich hoch wirken. */
 .logo-plakette .logo-wordmark {
-    height: 40px;
+    height: 42px;
     width: auto;
-    max-height: 40px;
+    max-height: 42px;
     flex-shrink: 0;
     object-fit: contain;
 }
@@ -191,7 +194,7 @@
 }
 
 .main-header.scrolled .logo-plakette .logo-wordmark {
-    height: 50px;
+    height: 39px;
 }
 
 .main-header.scrolled .logo-plakette .logo-atsv {
@@ -223,11 +226,10 @@
     object-fit: contain;
 }
 
-/* Marktlauf-Wortmarke: freigestelltes PNG hat oben/unten transparenten Rand
-   (Schrift ~58% der Canvas-Höhe). Größere Elementhöhe, damit die sichtbaren
-   Ober-/Unterkanten mit dem ATSV-Wappen fluchten. */
+/* Marktlauf-Wortmarke (marktlauf-wordmark.png, auf Inhalt zugeschnitten):
+   Höhe == sichtbare Texthöhe, knapp unter dem ATSV-Wappen (42.5px). */
 .marktlauf-logo {
-    height: 86px;
+    height: 40px;
 }
 
 @media (max-width: 480px) {
@@ -235,7 +237,7 @@
         height: 30px;
     }
     .marktlauf-logo {
-        height: 52px;
+        height: 40px;
     }
     .nav-container {
         gap: var(--space-xs);
@@ -246,7 +248,7 @@
         gap: 10px;
     }
     .logo-plakette .logo-wordmark {
-        height: 28px;
+        height: 31px;
     }
     .logo-plakette .logo-atsv {
         height: 34px;
@@ -426,7 +428,7 @@
     }
 
     .logo-plakette .logo-wordmark {
-        height: 32px;
+        height: 35px;
     }
 
     .logo-plakette .logo-atsv {
@@ -516,7 +518,7 @@
     }
 
     .logo-plakette .logo-wordmark {
-        height: 26px;
+        height: 29px;
     }
 
     .logo-plakette .logo-atsv {
