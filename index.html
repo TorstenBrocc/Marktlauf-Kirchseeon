@@ -464,94 +464,122 @@
                     Sichere dir jetzt deinen Startplatz für den Marktlauf 2026!
                 </p>
                 
-                <div class="registration-container">
-                    <!-- RaceResult Snippet Start -->
-                    <script type="text/javascript">
-                    <!--
-                        var RRReg_eventid="412617";
-                        var RRReg_name="Anmeldung Marktlauf 2026";
-                        var RRReg_key="JDwE1JRSUcb1";
-                        var RRReg_server="https://events2.raceresult.com";
-                    -->
-                    </script>
-                    <script type="text/javascript" src="https://events2.raceresult.com/registrations/init.js?lang=de-de"></script>
-                    <style>
-                        /* Eigenes CSS zum Anpassen der RaceResult-Anmeldung hier einfuegen */
-                    </style>
-                    <!-- RaceResult Snippet End -->
-                    <!-- Deutsches Datum in der RR-Vor-Oeffnungs-Meldung (ISO -> lesbar) -->
-                    <script>
-                    (function () {
-                        var MON = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
-                        var TAG = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
-                        var ISO = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:[+-]\d{2}:\d{2}|Z)?/;
-                        function fmt(iso){ var d=new Date(iso); if(isNaN(d.getTime())) return null;
-                            var h=('0'+d.getHours()).slice(-2), m=('0'+d.getMinutes()).slice(-2);
-                            return TAG[d.getDay()]+', '+d.getDate()+'. '+MON[d.getMonth()]+' '+d.getFullYear()+' um '+h+':'+m+' Uhr'; }
-                        function fix(root){ if(!root) return;
-                            var w=document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null), n;
-                            while((n=w.nextNode())){ var m=n.nodeValue.match(ISO); if(m){ var s=fmt(m[0]);
-                                if(s){ n.nodeValue=n.nodeValue.replace(m[0], s).replace(/\.\s*$/, ''); } } } }
-                        var t=document.getElementById('anmeldung')||document.body;
-                        fix(t);
-                        new MutationObserver(function(ms){ ms.forEach(function(){ fix(t); }); })
-                            .observe(t,{childList:true,subtree:true,characterData:true});
-                    })();
-                    </script>
-                </div>
-                <!-- Familien- / Sammelanmeldung: aufklappbar auf dieser Seite -->
-                <div class="sammel-accordion" style="margin-top: var(--space-lg);">
-                    <button type="button" class="sammel-toggle" id="sammel-toggle" aria-expanded="false" aria-controls="sammel-panel">
-                        <span class="sammel-toggle-icon" aria-hidden="true">👨‍👩‍👧</span>
-                        <span class="sammel-toggle-text">
-                            <span class="sammel-toggle-title">Familie oder mehrere Personen anmelden</span>
-                            <span class="sammel-toggle-sub">Alle in einem Vorgang &ndash; hier aufklappen</span>
-                        </span>
-                        <span class="sammel-toggle-chevron" aria-hidden="true"></span>
-                    </button>
-                    <div class="sammel-panel" id="sammel-panel" role="region" aria-labelledby="sammel-toggle" hidden>
-                        <div class="sammel-panel-inner">
-                            <iframe class="sammel-iframe" id="sammel-iframe"
-                                    title="Familien- und Sammelanmeldung"
-                                    data-src="anmeldung-familie.php?embed=1"
-                                    scrolling="no" loading="lazy" style="height: 600px;"></iframe>
+                <div class="anmeldung-accordion">
+                    <!-- Einzelanmeldung -->
+                    <div class="anmeldung-item">
+                        <button type="button" class="anmeldung-toggle" id="einzel-toggle" aria-expanded="true" aria-controls="einzel-panel">
+                            <span class="anmeldung-icon" aria-hidden="true">🏃</span>
+                            <span class="anmeldung-toggle-text">
+                                <span class="anmeldung-toggle-title">Einzelanmeldung</span>
+                                <span class="anmeldung-toggle-sub">Eine Person anmelden</span>
+                            </span>
+                            <span class="anmeldung-chevron" aria-hidden="true"></span>
+                        </button>
+                        <div class="anmeldung-panel" id="einzel-panel" role="region" aria-labelledby="einzel-toggle" style="max-height:none">
+                            <div class="anmeldung-panel-inner">
+                                <!-- RaceResult Snippet Start -->
+                                <script type="text/javascript">
+                                <!--
+                                    var RRReg_eventid="412617";
+                                    var RRReg_name="Anmeldung Marktlauf 2026";
+                                    var RRReg_key="JDwE1JRSUcb1";
+                                    var RRReg_server="https://events2.raceresult.com";
+                                -->
+                                </script>
+                                <script type="text/javascript" src="https://events2.raceresult.com/registrations/init.js?lang=de-de"></script>
+                                <!-- RaceResult Snippet End -->
+                                <!-- Deutsches Datum in der RR-Vor-Oeffnungs-Meldung (ISO -> lesbar) -->
+                                <script>
+                                (function () {
+                                    var MON = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+                                    var TAG = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+                                    var ISO = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:[+-]\d{2}:\d{2}|Z)?/;
+                                    function fmt(iso){ var d=new Date(iso); if(isNaN(d.getTime())) return null;
+                                        var h=('0'+d.getHours()).slice(-2), m=('0'+d.getMinutes()).slice(-2);
+                                        return TAG[d.getDay()]+', '+d.getDate()+'. '+MON[d.getMonth()]+' '+d.getFullYear()+' um '+h+':'+m+' Uhr'; }
+                                    function fix(root){ if(!root) return;
+                                        var w=document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null), n;
+                                        while((n=w.nextNode())){ var m=n.nodeValue.match(ISO); if(m){ var s=fmt(m[0]);
+                                            if(s){ n.nodeValue=n.nodeValue.replace(m[0], s).replace(/\.\s*$/, ''); } } } }
+                                    var t=document.getElementById('einzel-panel')||document.body;
+                                    fix(t);
+                                    new MutationObserver(function(ms){ ms.forEach(function(){ fix(t); }); })
+                                        .observe(t,{childList:true,subtree:true,characterData:true});
+                                })();
+                                </script>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Familien- / Sammelanmeldung -->
+                    <div class="anmeldung-item">
+                        <button type="button" class="anmeldung-toggle" id="sammel-toggle" aria-expanded="false" aria-controls="sammel-panel">
+                            <span class="anmeldung-icon" aria-hidden="true">👨‍👩‍👧</span>
+                            <span class="anmeldung-toggle-text">
+                                <span class="anmeldung-toggle-title">Familie / mehrere Personen</span>
+                                <span class="anmeldung-toggle-sub">Alle in einem Vorgang anmelden</span>
+                            </span>
+                            <span class="anmeldung-chevron" aria-hidden="true"></span>
+                        </button>
+                        <div class="anmeldung-panel" id="sammel-panel" role="region" aria-labelledby="sammel-toggle" hidden>
+                            <div class="anmeldung-panel-inner">
+                                <iframe class="anmeldung-iframe" id="sammel-iframe"
+                                        title="Familien- und Sammelanmeldung"
+                                        data-src="anmeldung-familie.php?embed=1"
+                                        scrolling="no" loading="lazy" style="height: 600px;"></iframe>
+                            </div>
                         </div>
                     </div>
                 </div>
                 <script>
                 (function () {
-                    var btn   = document.getElementById('sammel-toggle');
-                    var panel = document.getElementById('sammel-panel');
-                    var frame = document.getElementById('sammel-iframe');
-                    if (!btn || !panel || !frame) return;
+                    function setup(btn) {
+                        var panel = document.getElementById(btn.getAttribute('aria-controls'));
+                        if (!panel) return;
+                        var frame = panel.querySelector('iframe[data-src]');
+                        function isOpen() { return btn.getAttribute('aria-expanded') === 'true'; }
 
-                    function isOpen() { return btn.getAttribute('aria-expanded') === 'true'; }
-
-                    btn.addEventListener('click', function () {
-                        if (isOpen()) {
+                        function open() {
+                            if (frame && !frame.src) frame.src = frame.getAttribute('data-src'); // lazy
+                            panel.hidden = false;
+                            void panel.offsetHeight; // Reflow, damit die Transition greift
+                            btn.setAttribute('aria-expanded', 'true');
+                            panel.style.maxHeight = panel.scrollHeight + 'px';
+                            panel.addEventListener('transitionend', function te(e) {
+                                if (e.propertyName !== 'max-height') return;
+                                if (isOpen()) panel.style.maxHeight = 'none'; // kein Clipping bei späterem Wachsen
+                                panel.removeEventListener('transitionend', te);
+                            });
+                        }
+                        function close() {
+                            panel.style.maxHeight = panel.scrollHeight + 'px'; // von 'none' auf konkreten Wert
+                            void panel.offsetHeight;
                             btn.setAttribute('aria-expanded', 'false');
                             panel.style.maxHeight = '0px';
-                            panel.addEventListener('transitionend', function te() {
+                            panel.addEventListener('transitionend', function te(e) {
+                                if (e.propertyName !== 'max-height') return;
                                 if (!isOpen()) panel.hidden = true;
                                 panel.removeEventListener('transitionend', te);
                             });
-                        } else {
-                            if (!frame.src) frame.src = frame.getAttribute('data-src'); // lazy-load beim ersten Öffnen
-                            panel.hidden = false;
-                            void panel.offsetHeight; // Reflow erzwingen, damit die Transition greift
-                            btn.setAttribute('aria-expanded', 'true');
-                            panel.style.maxHeight = panel.scrollHeight + 'px';
                         }
-                    });
+                        btn.addEventListener('click', function () { isOpen() ? close() : open(); });
 
-                    // Auto-Resize: Höhe aus dem iframe übernehmen und Panel mitwachsen lassen
-                    window.addEventListener('message', function (e) {
-                        if (e.source !== frame.contentWindow) return;
-                        if (e.data && e.data.type === 'rr-embed-height' && e.data.height) {
-                            frame.style.height = (e.data.height + 8) + 'px';
-                            if (isOpen()) panel.style.maxHeight = panel.scrollHeight + 'px';
+                        // Initialzustand
+                        if (isOpen()) { panel.hidden = false; panel.style.maxHeight = 'none'; }
+                        else { panel.hidden = true; panel.style.maxHeight = '0px'; }
+
+                        // Auto-Resize für eingebettete Formulare (iframe)
+                        if (frame) {
+                            window.addEventListener('message', function (e) {
+                                if (e.source !== frame.contentWindow) return;
+                                if (e.data && e.data.type === 'rr-embed-height' && e.data.height) {
+                                    frame.style.height = (e.data.height + 8) + 'px';
+                                    if (isOpen() && panel.style.maxHeight !== 'none') panel.style.maxHeight = panel.scrollHeight + 'px';
+                                }
+                            });
                         }
-                    });
+                    }
+                    document.querySelectorAll('.anmeldung-toggle').forEach(setup);
                 })();
                 </script>
             </div>
