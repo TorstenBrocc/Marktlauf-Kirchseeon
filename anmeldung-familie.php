@@ -24,11 +24,18 @@ $embed = isset($_GET['embed']) && $_GET['embed'] === '1';
     <?php require_once __DIR__ . '/src/layout/head.php'; ?>
     <?php if ($embed): ?>
     <style>
-        /* Embed-Modus: kein Seiten-Chrome, transparenter Hintergrund fuers iframe */
+        /* Embed-Modus: kein Seiten-Chrome, flush im Akkordeon-Panel (keine Karte-in-Karte) */
         html, body { background: transparent; }
         body { margin: 0; }
         .embed-wrap { padding: 0; }
-        .embed-wrap .registration-container { margin: 0 auto; }
+        .embed-wrap .registration-container {
+            max-width: none;
+            margin: 0;
+            padding: 0;
+            background: transparent;
+            border: none;
+            box-shadow: none;
+        }
     </style>
     <?php endif; ?>
 </head>

@@ -1048,14 +1048,24 @@
     text-align: center;
 }
 
-/* Familien- / Sammelanmeldung – aufklappbar (Akkordeon) */
-.sammel-accordion {
+/* Anmeldung – aufklappbare Menüs (Einzel- & Sammelanmeldung), dezent im CI */
+.anmeldung-accordion {
     max-width: 900px;
-    margin-left: auto;
-    margin-right: auto;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
 }
 
-.sammel-toggle {
+.anmeldung-item {
+    background-color: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+
+.anmeldung-toggle {
     width: 100%;
     display: flex;
     align-items: center;
@@ -1063,84 +1073,93 @@
     text-align: left;
     cursor: pointer;
     padding: 1.1rem var(--space-md);
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
-    color: var(--white);
+    background: none;
+    color: var(--gray-800);
     border: none;
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-md);
-    transition: transform 0.15s ease, box-shadow 0.2s ease, border-radius 0.25s ease;
+    border-bottom: 1px solid transparent;
+    font-family: inherit;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
-.sammel-toggle:hover {
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-lg);
+.anmeldung-toggle:hover {
+    background-color: var(--gray-50);
 }
 
-.sammel-toggle:focus-visible {
-    outline: 3px solid var(--color-accent-yellow);
-    outline-offset: 2px;
+.anmeldung-toggle:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: -2px;
 }
 
-.sammel-toggle[aria-expanded="true"] {
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
+.anmeldung-toggle[aria-expanded="true"] {
+    border-bottom-color: var(--gray-200);
 }
 
-.sammel-toggle-icon {
-    font-size: 1.6rem;
-    line-height: 1;
+.anmeldung-icon {
     flex: 0 0 auto;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: var(--gray-100);
+    color: var(--gray-600);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    line-height: 1;
+    transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-.sammel-toggle-text {
+.anmeldung-toggle[aria-expanded="true"] .anmeldung-icon {
+    background-color: var(--color-primary);
+    color: var(--white);
+}
+
+.anmeldung-toggle-text {
     display: flex;
     flex-direction: column;
     flex: 1 1 auto;
     min-width: 0;
 }
 
-.sammel-toggle-title {
+.anmeldung-toggle-title {
+    font-family: var(--font-heading);
     font-weight: 700;
     font-size: 1.05rem;
+    color: var(--gray-800);
 }
 
-.sammel-toggle-sub {
+.anmeldung-toggle-sub {
     font-size: 0.85rem;
-    opacity: 0.9;
+    color: var(--gray-500);
 }
 
-.sammel-toggle-chevron {
+.anmeldung-chevron {
     flex: 0 0 auto;
-    width: 12px;
-    height: 12px;
-    border-right: 2.5px solid currentColor;
-    border-bottom: 2.5px solid currentColor;
+    width: 10px;
+    height: 10px;
+    border-right: 2px solid var(--gray-400);
+    border-bottom: 2px solid var(--gray-400);
     transform: rotate(45deg);
-    transition: transform 0.25s ease;
+    transition: transform 0.25s ease, border-color 0.2s ease;
     margin-right: 4px;
 }
 
-.sammel-toggle[aria-expanded="true"] .sammel-toggle-chevron {
+.anmeldung-toggle[aria-expanded="true"] .anmeldung-chevron {
     transform: rotate(-135deg);
+    border-color: var(--color-primary);
 }
 
-.sammel-panel {
+.anmeldung-panel {
     max-height: 0;
     overflow: hidden;
-    background-color: var(--white);
-    border: 1px solid var(--gray-200);
-    border-top: none;
-    border-bottom-left-radius: var(--radius-lg);
-    border-bottom-right-radius: var(--radius-lg);
-    box-shadow: var(--shadow-md);
     transition: max-height 0.4s ease;
 }
 
-.sammel-panel-inner {
+.anmeldung-panel-inner {
     padding: var(--space-md);
 }
 
-.sammel-iframe {
+.anmeldung-iframe {
     width: 100%;
     border: none;
     display: block;
