@@ -1049,9 +1049,21 @@
 }
 
 /* Anmeldung – Umschalter Einzel/Sammel, nutzt das Tab-Muster (.connect-card/.tab-*) */
-.anmeldung-tabs {
-    max-width: 900px;
+/* Höhere Spezifität als .connect-tabs (max-width:560px), sonst würde der 5-stufige
+   RaceResult-Kopf gestaucht. Breitere Karte + weniger Innenabstand für den Formular-Platz. */
+.connect-tabs.anmeldung-tabs {
+    max-width: 800px;
     margin: 0 auto;
+}
+
+.anmeldung-tabs .connect-card {
+    padding: var(--space-md);
+}
+
+/* Schrittbalken entspannen, damit alle 5 Stufen (Einzelanmeldung) ohne Abschneiden passen */
+.RRReg .RRReg_Nav > div > div {
+    letter-spacing: 0.3px !important;
+    padding: 0 6px !important;
 }
 
 /* Sammel-Formular liegt im iframe; bündig im Tab, keine Karte-in-Karte */
