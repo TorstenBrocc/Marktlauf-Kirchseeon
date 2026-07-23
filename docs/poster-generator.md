@@ -8,19 +8,22 @@
 
 ---
 
-## Funktionsumfang (aktuell = Stufe 3)
+## Funktionsumfang (aktuell = Stufe 4)
 
 - **Formate:** Portrait 1080×1350, Quadrat 1080×1080, Story 1080×1920. Export in 2× (scharf).
 - **Editierbare Inhalte (Panel links):** Headline, Subline, Button-Text, 3 Feature-Zeilen (Titel/Zusatz), Datum, Ort, Familie, Domain, QR-Ziel-URL.
 - **Logos auf weißen Kacheln (fix):** Marktlauf + ATSV (oben links), Gemeinde „IN KOOPERATION MIT" (oben rechts).
 - **Sponsoren (variabel):** automatisch aus `assets/images/sponsoren/` geladen, je Sponsor eine weiße Kachel, per Häkchen ein-/ausblendbar. Neuer Sponsor = Datei in den Ordner legen.
 - **Frei-Editor:** jeden Block anklicken → **ziehen** (verschieben) → **skalieren** per Eck-Handle *oder* Regler.
-- **Snapping:** beim Verschieben rasten Kanten/Mittelachsen an anderen Blöcken und an der Poster-Mitte ein; **orangene Fanglinien** zeigen die Ausrichtung.
-- **Vorschau-Feld resizable:** unten rechts am Vorschaurahmen ziehen → Poster wächst mit.
+- **Arbeitsfläche (Pasteboard):** rund um das Poster liegt eine graue Arbeitsfläche (PAD = 340 px allseitig). Blöcke lassen sich **neben das Poster ziehen und dort „ablegen"** — abgelegte Elemente erscheinen **nicht** im Export (nur der Poster-Bereich wird ausgeschnitten). Poster-Optik (`#pg-art`, geclippt) ist von den Blöcken (Szene `#pg-scene`) getrennt.
+- **Gruppieren:** mit **Shift-Klick** mehrere Blöcke wählen → **„🔗 Gruppieren"**. Gruppen werden gemeinsam verschoben und (über das Eck-Handle) gemeinsam skaliert; gestrichelte Umrandung markiert Gruppenmitglieder. **„Gruppierung lösen"** hebt sie wieder auf.
+- **Justierbarer Marken-Verlauf:** Hintergrund-Verlauf an/aus, **Winkel** (0–360°), **zwei Farben** (Default Marken-Grün `#00562a` / `#007230`) und **Foto-Durchsicht am Rand** (Transparenz des Endstopps). Liegt als Overlay über dem optionalen Hintergrundfoto.
+- **Snapping:** beim Verschieben rasten Kanten/Mittelachsen (der Auswahl-Bounding-Box) an anderen Blöcken und an Poster-Kanten/-Mitte ein; **orangene Fanglinien** zeigen die Ausrichtung.
+- **Vorschau-Feld resizable:** unten rechts am Vorschaurahmen ziehen → Szene (Poster + Arbeitsfläche) wächst mit.
 - **Eigene Kacheln:** „+ Eigene Kachel" → weiße Kachel mit **Beschriftung** + **Logo** (Dropdown: ATSV/Marktlauf/Gemeinde/Sponsoren), frei verschieb-/skalierbar, löschbar.
 - **QR-Code:** aus der QR-Ziel-URL erzeugt (lokal, ohne externe Abhängigkeit), sitzt in der „Scan"-Kachel.
-- **Hintergrundfoto:** optionaler Upload (Vollflächen-BG unter grünem Verlauf).
-- **„Layout zurücksetzen":** stellt Standard-Positionen her, entfernt eigene Kacheln.
+- **Hintergrundfoto:** optionaler Upload (Vollflächen-BG unter dem Verlauf).
+- **„Layout zurücksetzen":** stellt Standard-Positionen her, entfernt eigene Kacheln und alle Gruppierungen.
 
 ---
 
@@ -33,7 +36,8 @@
 | *(Fix)* | `c5d86e4` | `$pdo`/`$user`/`$isAdmin` für `_sidebar.php` gesetzt + `dashboard-layout`-`<div>` geschlossen — Seite lud sonst nicht (Fatal). |
 | **1 – Formate & Kacheln** | `972a345` | Format-Auswahl (Portrait/Quadrat/Story), fixe Vorschaugröße (kein Abschneiden), echte Logos + Sponsoren auf weißen Kacheln (Sponsoren per PHP-glob). |
 | **2 – Frei-Editor** | `73047c3` | Blöcke frei verschiebbar (Drag) + skalierbar (Größen-Regler); löst Overflow/Cutoff (Nutzer positioniert selbst). |
-| **3 – Editor v2** *(aktuell)* | `87830e0` | Vorschau-Feld resizable (Poster wächst mit), Eck-Handle-Resize direkt am Element, Snapping + Fang-/Ausrichtungslinien, eigene Kacheln (Text + Logo, skalierbar). |
+| **3 – Editor v2** | `87830e0` | Vorschau-Feld resizable (Poster wächst mit), Eck-Handle-Resize direkt am Element, Snapping + Fang-/Ausrichtungslinien, eigene Kacheln (Text + Logo, skalierbar). |
+| **4 – Arbeitsfläche + Gruppen + Verlauf** *(aktuell)* | `bae18ec` | **Arbeitsfläche (Pasteboard)** rund ums Poster (Elemente ablegen, nicht im Export — Trennung `#pg-scene`/`#pg-art`, Szenen-Koordinaten mit PAD-Offset, Export croppt Poster-Bereich per `drawImage`); **Gruppieren** per Shift-Klick (bbox-basiertes gemeinsames Verschieben/Skalieren); **justierbarer Marken-Verlauf** (an/aus, Winkel, 2 Farben, Rand-Durchsicht). |
 
 ---
 
@@ -42,12 +46,16 @@
 - **Orga-Seiten-Muster:** eigene `<head>` mit `css/orga.css` (relativ) + `<?php $activeNav='…'; require _sidebar.php; ?>` + `<main class="main-content">`; `_sidebar.php` braucht `$pdo`, `$user`, `$isAdmin` und öffnet `<div class="dashboard-layout">`, das die Seite mit `</div>` nach `</main>` selbst schließt. **Nicht** `src/layout/head.php|header.php` verwenden (die sind für die öffentliche Website).
 - **QR-Bibliothek:** `assets/js/qrcode.js` (qrcode-generator, MIT, lokal — keine externe Runtime-Abhängigkeit). Rendering via Canvas → PNG-DataURL.
 - **Export:** `html2canvas` (CDN) mit `scale:2`; Auswahlrahmen/Fanglinien werden vor dem Export ausgeblendet.
-- **Blöcke:** absolut positioniert (`.pb`, Poster-Pixel-Koordinaten), Größe via `transform: scale()`. Standard-Positionen im JS-Objekt `DEFAULTS`.
+- **Szene vs. Artboard (ab Stufe 4):** `#pg-scene` ist die skalierte Bühne (Poster + Arbeitsfläche, Größe `curW/curH + 2·PAD`). `#pg-art` ist das geclippte Poster-Rechteck bei `(PAD,PAD)` und trägt Hintergrund/Verlauf. Blöcke (`.pb`), Selbox und Fanglinien liegen als Kinder von `#pg-scene` in **Szenen-Koordinaten** (Poster-Koordinate + PAD). `DEFAULTS` bleiben in Poster-Koordinaten und werden via `baseDefaults()` um PAD verschoben. `scene._scale` hält den Fit-Faktor.
+- **Blöcke:** absolut positioniert (`.pb`), Größe via `transform: scale()`. Standard-Positionen im JS-Objekt `DEFAULTS` (Poster-Koordinaten).
+- **Gruppen (ab Stufe 4):** `groupOf[blockId] = gid`; Auswahl (`selIds[]`) expandiert beim Anklicken auf alle Gruppenmitglieder. Verschieben/Skalieren rechnen über die gemeinsame Bounding-Box (`bbox()`).
+- **Verlauf (ab Stufe 4):** `applyGrad()` baut den `linear-gradient` für `#pg-ov` aus den Reglern (Winkel/Farben/Rand-Alpha). Feste Marken-Stopps 0.92/0.78 bei 0 %/46 %, Endstopp variabel.
+- **Export-Crop (ab Stufe 4):** `html2canvas(scene, {scale:2})` rendert die ganze Szene, dann kopiert `drawImage` nur das Poster-Rechteck (`PAD·2 … curW·2`) in das Ausgabe-Canvas — abgelegte Pasteboard-Elemente fallen weg.
 - **Schrift:** aktuell Montserrat (Google Fonts) als Platzhalter → soll gegen die Marken-Schrift (`.woff2`) getauscht werden.
 
 ## Offene Punkte / Roadmap
 
-- **Export-Fidelity prüfen:** html2canvas + `transform: scale` — exportiertes PNG mit der Vorschau abgleichen; falls Abweichung, Skalierung vor Export in echte Maße umrechnen.
+- **Export-Fidelity prüfen:** html2canvas rendert die Szene bei `scale:2`, der Crop schneidet den Poster-Bereich exakt aus — exportiertes PNG stichprobenartig mit der Vorschau abgleichen (v. a. Schrift-Kerning/Schatten).
 - **Marken-Schrift** (`.woff2`) statt Montserrat einsetzen.
 - **Lizenziertes Läufer-Foto** hinterlegen (Marketing-Motiv; Lizenz klären).
 - **Quadrat/Story-Layout** feintunen (Standard-Positionen sind auf Portrait optimiert).
@@ -60,7 +68,7 @@
 2. Skill `/remote-control` aufrufen **oder** direkt schreiben.
 3. Diesen Satz als Einstieg verwenden (Copy-Paste):
 
-   > **„Weiter am Kampagnen-Poster-Generator (`orga/poster_generator.php`). Aktueller Stand: Stufe 3 (`87830e0`), dokumentiert in `website/docs/poster-generator.md`. Bitte Doku + `git log --oneline -- orga/poster_generator.php` lesen, dann: [dein Anliegen]."**
+   > **„Weiter am Kampagnen-Poster-Generator (`orga/poster_generator.php`). Aktueller Stand: Stufe 4 (`bae18ec`), dokumentiert in `website/docs/poster-generator.md`. Bitte Doku + `git log --oneline -- orga/poster_generator.php` lesen, dann: [dein Anliegen]."**
 
 4. Sinnvolle nächste Themen stehen unter **„Offene Punkte / Roadmap"** (Export-Fidelity prüfen, Marken-Schrift `.woff2`, lizenziertes Foto, Quadrat/Story-Feintuning).
 
