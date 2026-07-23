@@ -1,11 +1,11 @@
 <?php
 /**
- * Kampagnen-Poster-Generator (Frei-Editor v2) — Marketing-Qualitaet aus dem Tool.
- * - Vorschau-Feld resizable (Poster waechst mit), Formate (Portrait/Quadrat/Story)
- * - Bloecke frei verschieben (Drag) mit Snapping + Ausrichtungslinien
- * - Groesse per Eck-Handle ODER Regler
- * - Eigene Kacheln (Beschriftung + Logo, skalierbar)
- * - Logos + Sponsoren auf weissen Kacheln, QR, PNG-Export (2x)
+ * Kampagnen-Poster-Generator (Frei-Editor v3) — Marketing-Qualitaet aus dem Tool.
+ * - Arbeitsflaeche (Pasteboard) rund um das Poster: Elemente daneben ablegen (nicht im Export)
+ * - Bloecke gruppieren (Shift-Klick + Gruppieren) -> gemeinsam verschieben/skalieren
+ * - Justierbarer Marken-Verlauf (an/aus, Winkel, 2 Farben, Rand-Durchsicht)
+ * - Vorschau-Feld resizable, Formate (Portrait/Quadrat/Story), Snapping + Fanglinien
+ * - Groesse per Eck-Handle ODER Regler, eigene Kacheln, Logos + Sponsoren, QR, PNG-Export (2x)
  */
 declare(strict_types=1);
 require_once __DIR__ . '/api/_auth.php';
@@ -37,30 +37,37 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
         .pg-row { margin-bottom: 0.65rem; }
         .pg-row label { font-size: 0.8rem; color: var(--text-light); margin-bottom: 0.2rem; display: block; }
         .pg-row input[type=text], .pg-row input[type=url], .pg-row select { width: 100%; padding: 0.45rem 0.6rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; box-sizing: border-box; background:#fff; }
+        .pg-row input[type=range] { width: 100%; }
         .pg-row input + input { margin-top: 0.35rem; }
         .pg-hint { font-size: 0.82rem; color: var(--text-light); }
         .pg-sel-panel { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 0.75rem; margin-bottom: 0.75rem; }
         .pg-sel-panel b { font-size: 0.88rem; }
+        .pg-grad { border: 1px solid var(--border); border-radius: 8px; padding: 0.6rem 0.7rem; margin: 0.6rem 0; background:#fafbfa; }
+        .pg-grad > label { display:flex; align-items:center; gap:0.4rem; font-weight:700; font-size:0.9rem; margin-bottom:0.5rem; }
+        .pg-grad input[type=range] { width: 100%; }
 
-        .pg-stage { position: relative; width: 400px; max-width: 100%; min-width: 260px; overflow: hidden; border: 1px solid var(--border); border-radius: 10px; background: #eef1ee; resize: horizontal; }
-        #pg-poster {
-            position: absolute; top: 0; left: 0; transform-origin: top left;
-            width: 1080px; height: 1350px; overflow: hidden;
-            font-family: 'Montserrat', 'Arial Black', system-ui, sans-serif;
-            color: #fff; background: #007230;
-        }
-        #pg-poster .pg-bg { position: absolute; inset: 0; background-size: cover; background-position: center; z-index: 0; }
-        #pg-poster .pg-ov { position: absolute; inset: 0; z-index: 1;
+        /* Arbeitsflaeche (Pasteboard) + geclipptes Poster-Artboard */
+        .pg-stage { position: relative; width: 600px; max-width: 100%; min-width: 300px; overflow: hidden; border: 1px solid var(--border); border-radius: 10px; background: #cfd4cf; resize: horizontal; }
+        #pg-scene { position: absolute; top: 0; left: 0; transform-origin: top left; background: #cfd4cf;
+            background-image: linear-gradient(45deg,#c7ccc7 25%,transparent 25%,transparent 75%,#c7ccc7 75%),linear-gradient(45deg,#c7ccc7 25%,transparent 25%,transparent 75%,#c7ccc7 75%);
+            background-size: 40px 40px; background-position: 0 0, 20px 20px; }
+        #pg-art { position: absolute; overflow: hidden;
+            font-family: 'Montserrat', 'Arial Black', system-ui, sans-serif; color:#fff; background: #007230;
+            box-shadow: 0 0 0 1px rgba(0,0,0,0.18), 0 14px 50px rgba(0,0,0,0.28); }
+        #pg-art .pg-bg { position: absolute; inset: 0; background-size: cover; background-position: center; z-index: 0; }
+        #pg-art .pg-ov { position: absolute; inset: 0; z-index: 1;
             background: linear-gradient(120deg, rgba(0,86,42,0.92) 0%, rgba(0,118,48,0.78) 46%, rgba(0,118,48,0.15) 100%); }
 
-        .pb { position: absolute; z-index: 2; transform-origin: top left; cursor: grab; }
+        .pb { position: absolute; z-index: 2; transform-origin: top left; cursor: grab;
+            font-family: 'Montserrat', 'Arial Black', system-ui, sans-serif; color:#fff; }
         .pb.dragging { cursor: grabbing; }
+        .pb.pg-grouped::after { content:''; position:absolute; inset:-4px; border:2px dotted rgba(255,140,66,0.55); border-radius:6px; pointer-events:none; z-index:7; }
 
         /* Auswahlrahmen + Resize-Handle + Fanglinien (UI-Overlay, nicht im Export) */
         .pg-selbox { position: absolute; z-index: 8; border: 3px dashed #ff6b35; box-sizing: border-box; display: none; pointer-events: none; }
         .pg-selbox-h { position: absolute; right: -26px; bottom: -26px; width: 52px; height: 52px; background: #fff; border: 5px solid #ff6b35; border-radius: 8px; pointer-events: auto; cursor: nwse-resize; }
-        .pg-guide-v { position: absolute; top: 0; width: 0; border-left: 3px dashed #ff8c42; z-index: 9; display: none; }
-        .pg-guide-h { position: absolute; left: 0; height: 0; border-top: 3px dashed #ff8c42; z-index: 9; display: none; }
+        .pg-guide-v { position: absolute; width: 0; border-left: 3px dashed #ff8c42; z-index: 9; display: none; }
+        .pg-guide-h { position: absolute; height: 0; border-top: 3px dashed #ff8c42; z-index: 9; display: none; }
 
         .pg-lock { background: #fff; border-radius: 18px; padding: 16px 22px; display: flex; align-items: center; gap: 16px; }
         .pg-lock img.pg-l-ml { height: 62px; width: auto; }
@@ -108,31 +115,35 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
     <main class="main-content">
         <header class="content-header">
             <h1>Kampagnen-Poster (Frei-Editor)</h1>
-            <p class="content-subtitle">Vorschau ziehbar · Blöcke verschieben/skalieren mit Fanglinien · eigene Kacheln · PNG-Export</p>
+            <p class="content-subtitle">Arbeitsfläche rund ums Poster · Blöcke verschieben/skalieren/gruppieren · justierbarer Verlauf · PNG-Export</p>
         </header>
 
         <p style="margin:0 0 1rem"><a href="social_orchestrator.php">&larr; zur Social-Media-Seite</a>
             <a href="../docs/poster-generator.md" target="_blank" rel="noopener" style="margin-left:1rem">ℹ️ Doku &amp; Ausbaustufen</a></p>
         <p class="pg-hint" style="max-width:820px;margin-bottom:1.25rem">
-            <strong>Vorschau vergrößern:</strong> unten rechts am Vorschau-Feld ziehen (Poster wächst mit).
-            <strong>Block:</strong> anklicken → ziehen zum Verschieben (mit Fanglinien), <strong>orangenes Eck-Quadrat</strong> ziehen oder Regler links = Größe.
-            <strong>Eigene Kachel</strong> per Button hinzufügen (Beschriftung + Logo im Panel links).
+            <strong>Arbeitsfläche:</strong> das Poster liegt auf einer grauen Fläche — Blöcke lassen sich <strong>neben das Poster ziehen</strong> und dort „ablegen" (erscheinen nicht im Export).
+            <strong>Block:</strong> anklicken → ziehen (mit Fanglinien), <strong>orangenes Eck-Quadrat</strong> ziehen oder Regler = Größe.
+            <strong>Gruppieren:</strong> mit <strong>Shift-Klick</strong> mehrere Blöcke wählen → „🔗 Gruppieren".
+            <strong>Vorschau vergrößern:</strong> unten rechts am Vorschau-Feld ziehen.
         </p>
 
         <div class="pg-wrap">
             <div class="pg-controls">
                 <div class="pg-sel-panel" id="pg-sel-panel" style="display:none">
                     <b id="pg-sel-name">Kein Block ausgewählt</b>
-                    <div class="pg-row" style="margin:0.5rem 0 0"><label>Größe: <span id="pg-sel-scale-val">100</span> %</label>
-                        <input type="range" id="pg-sel-scale" min="30" max="300" value="100" style="width:100%"></div>
+                    <div class="pg-row" id="pg-scale-row" style="margin:0.5rem 0 0"><label>Größe: <span id="pg-sel-scale-val">100</span> %</label>
+                        <input type="range" id="pg-sel-scale" min="30" max="300" value="100"></div>
                     <div id="pg-custom-ctrl" style="display:none">
                         <div class="pg-row"><label>Beschriftung</label><input type="text" id="pg-ct-label" value=""></div>
                         <div class="pg-row"><label>Logo auf der Kachel</label><select id="pg-ct-logo"></select></div>
                     </div>
-                    <div style="display:flex;gap:0.4rem;flex-wrap:wrap">
+                    <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-top:0.5rem">
+                        <button class="btn btn-small btn-secondary" id="pg-group" type="button" style="display:none">🔗 Gruppieren</button>
+                        <button class="btn btn-small btn-secondary" id="pg-ungroup" type="button" style="display:none">Gruppierung lösen</button>
                         <button class="btn btn-small btn-secondary" id="pg-deselect" type="button">Auswahl aufheben</button>
                         <button class="btn btn-small btn-secondary" id="pg-del-block" type="button" style="display:none">Kachel löschen</button>
                     </div>
+                    <p class="pg-hint" style="margin:0.5rem 0 0">Mehrfachauswahl: <b>Shift-Klick</b>. Element neben das Poster ziehen = ablegen (nicht im Export).</p>
                 </div>
 
                 <button class="btn btn-secondary" id="c-add-tile" type="button" style="margin-bottom:0.75rem;width:100%">+ Eigene Kachel hinzufügen</button>
@@ -156,6 +167,17 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
                 <div class="pg-row"><label>Domain</label><input type="text" id="c-domain" value="atsv-kirchseeon-marktlauf.de"></div>
                 <div class="pg-row"><label><input type="checkbox" id="c-show-sponsors"> Sponsoren-Kacheln anzeigen</label></div>
                 <div class="pg-row"><label>QR-Ziel-URL</label><input type="url" id="c-qr-url" value="https://atsv-kirchseeon-marktlauf.de/#anmeldung"></div>
+
+                <div class="pg-grad">
+                    <label><input type="checkbox" id="c-grad-on" checked> Marken-Verlauf (Hintergrund)</label>
+                    <div class="pg-row" style="margin-bottom:0.5rem"><label>Winkel: <span id="c-grad-angle-val">120</span>°</label><input type="range" id="c-grad-angle" min="0" max="360" value="120"></div>
+                    <div style="display:flex;gap:0.6rem">
+                        <div class="pg-row" style="flex:1;margin-bottom:0.5rem"><label>Farbe 1</label><input type="color" id="c-grad-c1" value="#00562a" style="width:100%;height:34px;padding:2px;border:1px solid var(--border);border-radius:6px;background:#fff"></div>
+                        <div class="pg-row" style="flex:1;margin-bottom:0.5rem"><label>Farbe 2</label><input type="color" id="c-grad-c2" value="#007230" style="width:100%;height:34px;padding:2px;border:1px solid var(--border);border-radius:6px;background:#fff"></div>
+                    </div>
+                    <div class="pg-row" style="margin-bottom:0"><label>Foto-Durchsicht am Rand: <span id="c-grad-fade-val">15</span> %</label><input type="range" id="c-grad-fade" min="0" max="90" value="15"></div>
+                </div>
+
                 <div class="pg-row"><label>Hintergrundfoto (optional)</label><input type="file" id="c-photo" accept="image/*"> <button class="btn btn-small btn-secondary" id="c-photo-clear" type="button">entfernen</button></div>
                 <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.6rem">
                     <button class="btn btn-primary" id="c-export" type="button">PNG exportieren</button>
@@ -165,11 +187,13 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
             </div>
 
             <div>
-                <p class="pg-hint" style="margin:0 0 0.4rem">Vorschau (rechts unten ziehen zum Vergrößern):</p>
+                <p class="pg-hint" style="margin:0 0 0.4rem">Vorschau + Arbeitsfläche (rechts unten ziehen zum Vergrößern):</p>
                 <div class="pg-stage" id="pg-stage">
-                    <div id="pg-poster">
-                        <div class="pg-bg" id="pg-bg"></div>
-                        <div class="pg-ov"></div>
+                    <div id="pg-scene">
+                        <div id="pg-art">
+                            <div class="pg-bg" id="pg-bg"></div>
+                            <div class="pg-ov" id="pg-ov"></div>
+                        </div>
 
                         <div class="pb" id="b-logo" data-name="Logo (Marktlauf + ATSV)">
                             <div class="pg-lock">
@@ -210,12 +234,14 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
     (function(){
         var SPONSORS = <?= json_encode($sponsors, JSON_UNESCAPED_SLASHES) ?>;
         var FORMATS = { portrait:{w:1080,h:1350}, square:{w:1080,h:1080}, story:{w:1080,h:1920} };
+        var PAD = 340; // Arbeitsflaeche rings um das Poster (in Poster-Pixeln)
         var LOGOS = {
             'ATSV': '../assets/images/ATSV_Logo-750x968.png',
             'Marktlauf': '../assets/images/Marktlauf-Logo-Schrift-1180x579%20freigestellt.png',
             'Gemeinde': '../assets/images/Wort-u-Bildmarke-Gemeinde.png'
         };
         SPONSORS.forEach(function(u,i){ LOGOS['Sponsor '+(i+1)] = u; });
+        // Standard-Positionen in POSTER-Koordinaten (0,0 = obere linke Poster-Ecke)
         var DEFAULTS = {
             'b-logo':{x:56,y:44,s:1}, 'b-coop':{x:748,y:44,s:1}, 'b-headline':{x:56,y:250,s:1},
             'b-subline':{x:56,y:520,s:1}, 'b-features':{x:56,y:630,s:1}, 'b-cta':{x:56,y:940,s:1},
@@ -230,17 +256,20 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
             fam:'<svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M2 20c0-3 3-5 6-5s6 2 6 5M14 20c0-2 2-4 4-4s4 1 4 3"/></svg>'
         };
         var $ = function(id){ return document.getElementById(id); };
-        var poster=$('pg-poster'), stage=$('pg-stage'), selbox=$('pg-selbox'), gv=$('pg-guide-v'), gh=$('pg-guide-h');
-        var curW=1080, curH=1350, pos={}, sel=null, customN=0;
+        var scene=$('pg-scene'), art=$('pg-art'), stage=$('pg-stage'), selbox=$('pg-selbox'), gv=$('pg-guide-v'), gh=$('pg-guide-h');
+        var curW=1080, curH=1350, sceneW=0, sceneH=0, pos={}, selIds=[], sel=null, customN=0;
+        var groupOf={}, groupSeq=0;
 
         function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
         function natW(id){ return $(id).offsetWidth; }
         function natH(id){ return $(id).offsetHeight; }
+        // pos ist in SZENEN-Koordinaten (inkl. PAD-Offset). Poster-Ecke oben-links = (PAD,PAD).
         function rect(id){ var p=pos[id]; return {x:p.x, y:p.y, w:natW(id)*p.s, h:natH(id)*p.s}; }
-        function applyBlock(id){ var b=$(id),p=pos[id]; b.style.left=p.x+'px'; b.style.top=p.y+'px'; b.style.transform='scale('+p.s+')'; if(id===sel) updateSelbox(); }
-        function applyAll(){ Object.keys(pos).forEach(applyBlock); }
+        function applyBlock(id){ var b=$(id),p=pos[id]; b.style.left=p.x+'px'; b.style.top=p.y+'px'; b.style.transform='scale('+p.s+')'; }
+        function applyAll(){ Object.keys(pos).forEach(applyBlock); if(selIds.length) updateSelbox(); }
+        function bbox(ids){ var x0=1e9,y0=1e9,x1=-1e9,y1=-1e9; ids.forEach(function(id){ var r=rect(id); x0=Math.min(x0,r.x); y0=Math.min(y0,r.y); x1=Math.max(x1,r.x+r.w); y1=Math.max(y1,r.y+r.h); }); return {x:x0,y:y0,w:x1-x0,h:y1-y0}; }
 
-        // ---- Content ----
+        // ---- Content (unveraendert) ----
         function renderFeatures(){
             $('p-features').innerHTML=[['shoe','c-f1t','c-f1s'],['watch','c-f2t','c-f2s'],['leaf','c-f3t','c-f3s']].map(function(f){
                 return '<div class="pg-feat"><div class="pg-ic">'+IC[f[0]]+'</div><div><div class="pg-ft">'+esc($(f[1]).value)+'</div><div class="pg-fs">'+esc($(f[2]).value)+'</div></div></div>';
@@ -253,15 +282,30 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
         }
         function renderSponsors(){
             var blk=$('b-sponsors');
-            if(!$('c-show-sponsors').checked||!SPONSORS.length){ blk.style.display='none'; if(sel==='b-sponsors') deselect(); return; }
+            if(!$('c-show-sponsors').checked||!SPONSORS.length){ blk.style.display='none'; if(selIds.indexOf('b-sponsors')!==-1) deselect(); return; }
             $('p-sponsors').innerHTML=SPONSORS.map(function(u){ return '<div class="pg-sp"><img src="'+u+'" alt=""></div>'; }).join(''); blk.style.display='block';
         }
-        function bindText(cid,pid){ $(cid).addEventListener('input',function(){ $(pid).textContent=this.value; if(sel) updateSelbox(); }); }
+        function bindText(cid,pid){ $(cid).addEventListener('input',function(){ $(pid).textContent=this.value; if(selIds.length) updateSelbox(); }); }
         bindText('c-headline','p-headline'); bindText('c-subline','p-subline'); bindText('c-cta','p-cta'); bindText('c-domain','p-domain');
-        ['c-f1t','c-f1s','c-f2t','c-f2s','c-f3t','c-f3s'].forEach(function(id){ $(id).addEventListener('input',function(){ renderFeatures(); if(sel) updateSelbox(); }); });
-        ['c-date','c-loc','c-fam'].forEach(function(id){ $(id).addEventListener('input',function(){ renderDetails(); if(sel) updateSelbox(); }); });
+        ['c-f1t','c-f1s','c-f2t','c-f2s','c-f3t','c-f3s'].forEach(function(id){ $(id).addEventListener('input',function(){ renderFeatures(); if(selIds.length) updateSelbox(); }); });
+        ['c-date','c-loc','c-fam'].forEach(function(id){ $(id).addEventListener('input',function(){ renderDetails(); if(selIds.length) updateSelbox(); }); });
         $('c-show-sponsors').addEventListener('change', renderSponsors);
         renderFeatures(); renderDetails(); renderSponsors();
+
+        // ---- Marken-Verlauf (justierbar) ----
+        function hexRgb(h){ h=(h||'').replace('#',''); return parseInt(h.substr(0,2),16)+','+parseInt(h.substr(2,2),16)+','+parseInt(h.substr(4,2),16); }
+        function applyGrad(){
+            var ov=$('pg-ov');
+            if(!$('c-grad-on').checked){ ov.style.background='none'; return; }
+            var a=$('c-grad-angle').value, c1=hexRgb($('c-grad-c1').value), c2=hexRgb($('c-grad-c2').value), fade=parseInt($('c-grad-fade').value,10)/100;
+            ov.style.background='linear-gradient('+a+'deg, rgba('+c1+',0.92) 0%, rgba('+c2+',0.78) 46%, rgba('+c2+','+fade+') 100%)';
+        }
+        $('c-grad-on').addEventListener('change',applyGrad);
+        $('c-grad-c1').addEventListener('input',applyGrad);
+        $('c-grad-c2').addEventListener('input',applyGrad);
+        $('c-grad-angle').addEventListener('input',function(){ $('c-grad-angle-val').textContent=this.value; applyGrad(); });
+        $('c-grad-fade').addEventListener('input',function(){ $('c-grad-fade-val').textContent=this.value; applyGrad(); });
+        applyGrad();
 
         $('c-photo').addEventListener('change',function(e){ var f=e.target.files[0]; if(!f) return; var r=new FileReader(); r.onload=function(){ $('pg-bg').style.backgroundImage='url('+r.result+')'; }; r.readAsDataURL(f); });
         $('c-photo-clear').addEventListener('click',function(){ $('pg-bg').style.backgroundImage=''; $('c-photo').value=''; });
@@ -277,70 +321,119 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
         }
         $('c-qr-url').addEventListener('input',updateQr);
 
-        // ---- Auswahl / Selbox ----
-        function updateSelbox(){
-            if(!sel){ selbox.style.display='none'; return; }
-            var r=rect(sel);
-            selbox.style.left=r.x+'px'; selbox.style.top=r.y+'px'; selbox.style.width=r.w+'px'; selbox.style.height=r.h+'px'; selbox.style.display='block';
+        // ---- Gruppen-Helfer ----
+        function membersOfGroup(gid){ return Object.keys(groupOf).filter(function(id){ return groupOf[id]===gid && $(id); }); }
+        function expand(id){ var g=groupOf[id]; return g?membersOfGroup(g):[id]; }
+        function currentGroup(){ if(!selIds.length) return null; var g=groupOf[selIds[0]]; if(!g) return null;
+            for(var i=0;i<selIds.length;i++) if(groupOf[selIds[i]]!==g) return null; return g; }
+        function refreshGroupMarks(){
+            Array.prototype.forEach.call(document.querySelectorAll('.pb'),function(b){ b.classList.toggle('pg-grouped', !!groupOf[b.id]); });
         }
-        function select(id){
-            sel=id; updateSelbox();
-            $('pg-sel-panel').style.display='block';
-            $('pg-sel-name').textContent='Ausgewählt: '+$(id).getAttribute('data-name');
-            $('pg-sel-scale').value=Math.round(pos[id].s*100); $('pg-sel-scale-val').textContent=Math.round(pos[id].s*100);
-            var isCustom=$(id).getAttribute('data-custom')==='1';
+
+        // ---- Auswahl / Selbox / Panel ----
+        function updateSelbox(){
+            if(!selIds.length){ selbox.style.display='none'; return; }
+            var b=bbox(selIds);
+            selbox.style.left=b.x+'px'; selbox.style.top=b.y+'px'; selbox.style.width=b.w+'px'; selbox.style.height=b.h+'px'; selbox.style.display='block';
+        }
+        function showPanel(){
+            var n=selIds.length; var panel=$('pg-sel-panel');
+            if(!n){ panel.style.display='none'; return; }
+            panel.style.display='block';
+            var grp=currentGroup();
+            if(n===1){ $('pg-sel-name').textContent='Ausgewählt: '+$(selIds[0]).getAttribute('data-name'); }
+            else if(grp){ $('pg-sel-name').textContent='Gruppe · '+n+' Elemente'; }
+            else { $('pg-sel-name').textContent=n+' Elemente ausgewählt'; }
+            // Groesse-Regler nur bei Einzelauswahl
+            $('pg-scale-row').style.display=(n===1)?'block':'none';
+            if(n===1){ $('pg-sel-scale').value=Math.round(pos[selIds[0]].s*100); $('pg-sel-scale-val').textContent=Math.round(pos[selIds[0]].s*100); }
+            // Gruppen-Buttons
+            $('pg-group').style.display=(n>1 && !grp)?'inline-flex':'none';
+            $('pg-ungroup').style.display=(grp)?'inline-flex':'none';
+            // Eigene-Kachel-Controls nur bei Einzelauswahl einer Custom-Kachel
+            var isCustom=(n===1 && $(selIds[0]).getAttribute('data-custom')==='1');
             $('pg-custom-ctrl').style.display=isCustom?'block':'none';
             $('pg-del-block').style.display=isCustom?'inline-flex':'none';
-            if(isCustom){ $('pg-ct-label').value=$(id).querySelector('.pg-ct-text').textContent; syncLogoSelect(id); }
+            if(isCustom){ $('pg-ct-label').value=$(selIds[0]).querySelector('.pg-ct-text').textContent; syncLogoSelect(selIds[0]); }
         }
-        function deselect(){ sel=null; selbox.style.display='none'; $('pg-sel-panel').style.display='none'; }
+        function setSel(ids){
+            selIds=ids.filter(function(id){ return $(id) && $(id).style.display!=='none'; });
+            sel=(selIds.length===1)?selIds[0]:null;
+            updateSelbox(); showPanel();
+        }
+        function toggle(id){
+            var grp=expand(id), isIn=selIds.indexOf(id)!==-1;
+            if(isIn){ selIds=selIds.filter(function(x){ return grp.indexOf(x)===-1; }); }
+            else { grp.forEach(function(x){ if(selIds.indexOf(x)===-1) selIds.push(x); }); }
+            setSel(selIds);
+        }
+        function deselect(){ selIds=[]; sel=null; selbox.style.display='none'; $('pg-sel-panel').style.display='none'; }
         $('pg-deselect').addEventListener('click',deselect);
-        $('pg-sel-scale').addEventListener('input',function(){ if(!sel) return; pos[sel].s=parseInt(this.value,10)/100; $('pg-sel-scale-val').textContent=this.value; applyBlock(sel); });
+        $('pg-sel-scale').addEventListener('input',function(){ if(selIds.length!==1) return; pos[selIds[0]].s=parseInt(this.value,10)/100; $('pg-sel-scale-val').textContent=this.value; applyBlock(selIds[0]); updateSelbox(); });
 
-        // ---- Snapping ----
-        function snap(nx,ny,id){
-            var r=rect(id), w=r.w, h=r.h, TH=12;
-            var mv=[nx,nx+w/2,nx+w], mh=[ny,ny+h/2,ny+h];
-            var cV=[0,curW/2,curW], cH=[0,curH/2,curH];
-            Object.keys(pos).forEach(function(o){ if(o===id||$(o).style.display==='none') return; var rr=rect(o); cV.push(rr.x,rr.x+rr.w/2,rr.x+rr.w); cH.push(rr.y,rr.y+rr.h/2,rr.y+rr.h); });
+        $('pg-group').addEventListener('click',function(){ if(selIds.length<2) return; var gid='g'+(++groupSeq); selIds.forEach(function(id){ groupOf[id]=gid; }); refreshGroupMarks(); showPanel(); });
+        $('pg-ungroup').addEventListener('click',function(){ selIds.forEach(function(id){ delete groupOf[id]; }); refreshGroupMarks(); showPanel(); });
+
+        // ---- Snapping (bbox-basiert) ----
+        function snap(nx,ny,w,h,ex){
+            var TH=12; var mv=[nx,nx+w/2,nx+w], mh=[ny,ny+h/2,ny+h];
+            var cV=[PAD,PAD+curW/2,PAD+curW], cH=[PAD,PAD+curH/2,PAD+curH];
+            Object.keys(pos).forEach(function(o){ if(ex.indexOf(o)!==-1||$(o).style.display==='none') return; var rr=rect(o); cV.push(rr.x,rr.x+rr.w/2,rr.x+rr.w); cH.push(rr.y,rr.y+rr.h/2,rr.y+rr.h); });
             var ox=nx, oy=ny, gvx=null, ghy=null, bd=TH+1;
             mv.forEach(function(m){ cV.forEach(function(c){ var d=Math.abs(m-c); if(d<bd){ bd=d; ox=nx+(c-m); gvx=c; } }); });
             bd=TH+1;
             mh.forEach(function(m){ cH.forEach(function(c){ var d=Math.abs(m-c); if(d<bd){ bd=d; oy=ny+(c-m); ghy=c; } }); });
-            if(gvx!==null){ gv.style.left=gvx+'px'; gv.style.height=curH+'px'; gv.style.display='block'; } else gv.style.display='none';
-            if(ghy!==null){ gh.style.top=ghy+'px'; gh.style.width=curW+'px'; gh.style.display='block'; } else gh.style.display='none';
+            if(gvx!==null){ gv.style.left=gvx+'px'; gv.style.top=PAD+'px'; gv.style.height=curH+'px'; gv.style.display='block'; } else gv.style.display='none';
+            if(ghy!==null){ gh.style.top=ghy+'px'; gh.style.left=PAD+'px'; gh.style.width=curW+'px'; gh.style.display='block'; } else gh.style.display='none';
             return {x:Math.round(ox),y:Math.round(oy)};
         }
         function hideGuides(){ gv.style.display='none'; gh.style.display='none'; }
 
         // ---- Drag (move) + Resize (handle) ----
         var mode=null, st=null;
-        function onDown(id,e){ e.preventDefault(); select(id); var sc=poster._scale||1; mode='move'; st={id:id,sx:e.clientX,sy:e.clientY,ox:pos[id].x,oy:pos[id].y,sc:sc}; $(id).classList.add('dragging'); }
+        function onDown(id,e){
+            e.preventDefault();
+            if(e.shiftKey){ toggle(id); return; }
+            if(selIds.indexOf(id)===-1) setSel(expand(id));
+            var sc=scene._scale||1; mode='move';
+            var b=bbox(selIds), orig={}; selIds.forEach(function(x){ orig[x]={x:pos[x].x,y:pos[x].y}; });
+            st={sx:e.clientX,sy:e.clientY,sc:sc,orig:orig,bx:b.x,by:b.y,bw:b.w,bh:b.h,ids:selIds.slice()};
+            selIds.forEach(function(x){ $(x).classList.add('dragging'); });
+        }
         function attach(b){ b.addEventListener('mousedown',function(e){ if(e.target===$('pg-selbox-h')) return; onDown(b.id,e); }); }
         Array.prototype.forEach.call(document.querySelectorAll('.pb'),attach);
 
-        $('pg-selbox-h').addEventListener('mousedown',function(e){ e.preventDefault(); e.stopPropagation(); if(!sel) return; mode='resize'; st={id:sel,sc:poster._scale||1}; });
+        $('pg-selbox-h').addEventListener('mousedown',function(e){ e.preventDefault(); e.stopPropagation(); if(!selIds.length) return;
+            mode='resize'; var b=bbox(selIds), orig={}; selIds.forEach(function(x){ orig[x]={x:pos[x].x,y:pos[x].y,s:pos[x].s}; });
+            st={sc:scene._scale||1,b0:b,orig:orig,ids:selIds.slice()};
+        });
 
         window.addEventListener('mousemove',function(e){
             if(!mode||!st) return;
-            var sc=poster._scale||1, prect=poster.getBoundingClientRect();
+            var sc=scene._scale||1;
             if(mode==='move'){
                 var dx=(e.clientX-st.sx)/st.sc, dy=(e.clientY-st.sy)/st.sc;
-                var snapped=snap(st.ox+dx, st.oy+dy, st.id);
-                pos[st.id].x=snapped.x; pos[st.id].y=snapped.y; applyBlock(st.id);
+                var sn=snap(st.bx+dx, st.by+dy, st.bw, st.bh, st.ids);
+                var adx=sn.x-st.bx, ady=sn.y-st.by;
+                st.ids.forEach(function(x){ pos[x].x=st.orig[x].x+adx; pos[x].y=st.orig[x].y+ady; applyBlock(x); });
+                updateSelbox();
             } else if(mode==='resize'){
-                var px=(e.clientX-prect.left)/sc, py=(e.clientY-prect.top)/sc;
-                var W=natW(st.id), H=natH(st.id);
-                var sByW=(px-pos[st.id].x)/W, sByH=(py-pos[st.id].y)/H;
-                var ns=Math.max(sByW,sByH); ns=Math.max(0.3,Math.min(3.5,ns));
-                pos[st.id].s=ns; applyBlock(st.id);
-                $('pg-sel-scale').value=Math.round(ns*100); $('pg-sel-scale-val').textContent=Math.round(ns*100);
+                var srect=scene.getBoundingClientRect();
+                var px=(e.clientX-srect.left)/sc, py=(e.clientY-srect.top)/sc;
+                var k=Math.max((px-st.b0.x)/st.b0.w,(py-st.b0.y)/st.b0.h);
+                if(!isFinite(k)||k<=0) k=0.05;
+                st.ids.forEach(function(x){ var o=st.orig[x]; var ns=Math.max(0.3,Math.min(3.5,o.s*k));
+                    pos[x].s=ns; pos[x].x=st.b0.x+(o.x-st.b0.x)*k; pos[x].y=st.b0.y+(o.y-st.b0.y)*k; applyBlock(x); });
+                updateSelbox();
+                if(selIds.length===1){ $('pg-sel-scale').value=Math.round(pos[selIds[0]].s*100); $('pg-sel-scale-val').textContent=Math.round(pos[selIds[0]].s*100); }
             }
         });
-        window.addEventListener('mouseup',function(){ if(mode==='move'&&st) $(st.id).classList.remove('dragging'); mode=null; st=null; hideGuides(); });
+        window.addEventListener('mouseup',function(){ if(mode==='move'&&st){ st.ids.forEach(function(x){ if($(x)) $(x).classList.remove('dragging'); }); } mode=null; st=null; hideGuides(); });
 
-        // Klick auf leeren Poster-Hintergrund = Auswahl aufheben
-        poster.addEventListener('mousedown',function(e){ if(e.target===poster||e.target===$('pg-bg')||e.target.classList.contains('pg-ov')) deselect(); });
+        // Klick auf leere Flaeche (Poster-Hintergrund oder Arbeitsflaeche) = Auswahl aufheben
+        scene.addEventListener('mousedown',function(e){ var t=e.target;
+            if((t===scene||t===art||t===$('pg-bg')||t===$('pg-ov')) && !e.shiftKey) deselect();
+        });
 
         // ---- Eigene Kacheln ----
         function syncLogoSelect(id){
@@ -351,44 +444,56 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
             customN++; var id='custom'+customN;
             var b=document.createElement('div'); b.className='pb'; b.id=id; b.setAttribute('data-name','Eigene Kachel '+customN); b.setAttribute('data-custom','1'); b.setAttribute('data-logo','');
             b.innerHTML='<div class="pg-ctile"><img class="pg-ct-img" style="display:none" alt=""><span class="pg-ct-text">Neue Kachel</span></div>';
-            poster.appendChild(b);
-            pos[id]={x:Math.round(curW/2-140),y:Math.round(curH/2-40),s:1};
-            attach(b); applyBlock(id); select(id);
+            scene.appendChild(b);
+            pos[id]={x:Math.round(PAD+curW/2-140),y:Math.round(PAD+curH/2-40),s:1};
+            attach(b); applyBlock(id); setSel([id]);
         }
         $('c-add-tile').addEventListener('click',addTile);
         $('pg-ct-label').addEventListener('input',function(){ if(sel&&$(sel).getAttribute('data-custom')==='1'){ $(sel).querySelector('.pg-ct-text').textContent=this.value; updateSelbox(); } });
         $('pg-ct-logo').addEventListener('change',function(){ if(!sel) return; var img=$(sel).querySelector('.pg-ct-img'); var k=this.value; $(sel).setAttribute('data-logo',k);
             if(k&&LOGOS[k]){ img.src=LOGOS[k]; img.style.display='block'; } else { img.removeAttribute('src'); img.style.display='none'; } updateSelbox(); });
-        $('pg-del-block').addEventListener('click',function(){ if(!sel) return; if($(sel).getAttribute('data-custom')!=='1') return; var id=sel; deselect(); $(id).remove(); delete pos[id]; });
+        $('pg-del-block').addEventListener('click',function(){ if(!sel) return; if($(sel).getAttribute('data-custom')!=='1') return; var id=sel; deselect(); delete groupOf[id]; $(id).remove(); delete pos[id]; });
 
         // ---- Format + Fit + Vorschau-Resize ----
-        function applyFormat(){ var f=FORMATS[$('c-format').value]||FORMATS.portrait; curW=f.w; curH=f.h; poster.style.width=curW+'px'; poster.style.height=curH+'px'; fit(); if(sel) updateSelbox(); }
-        function fit(){ var w=stage.clientWidth, sc=w/curW; poster.style.transform='scale('+sc+')'; poster._scale=sc; stage.style.height=(curH*sc)+'px'; }
+        function applyFormat(){
+            var f=FORMATS[$('c-format').value]||FORMATS.portrait; curW=f.w; curH=f.h;
+            sceneW=curW+2*PAD; sceneH=curH+2*PAD;
+            scene.style.width=sceneW+'px'; scene.style.height=sceneH+'px';
+            art.style.left=PAD+'px'; art.style.top=PAD+'px'; art.style.width=curW+'px'; art.style.height=curH+'px';
+            fit(); if(selIds.length) updateSelbox();
+        }
+        function fit(){ var w=stage.clientWidth, sc=w/sceneW; scene.style.transform='scale('+sc+')'; scene._scale=sc; stage.style.height=(sceneH*sc)+'px'; }
         $('c-format').addEventListener('change',applyFormat);
         var lastW=0;
-        try{ new ResizeObserver(function(){ if(stage.clientWidth!==lastW){ lastW=stage.clientWidth; fit(); if(sel) updateSelbox(); } }).observe(stage); }catch(e){ window.addEventListener('resize',fit); }
+        try{ new ResizeObserver(function(){ if(stage.clientWidth!==lastW){ lastW=stage.clientWidth; fit(); if(selIds.length) updateSelbox(); } }).observe(stage); }catch(e){ window.addEventListener('resize',fit); }
 
+        function baseDefaults(){ var o={}; Object.keys(DEFAULTS).forEach(function(k){ var d=DEFAULTS[k]; o[k]={x:d.x+PAD,y:d.y+PAD,s:d.s}; }); return o; }
         $('c-reset').addEventListener('click',function(){
             Object.keys(pos).forEach(function(id){ if(/^custom/.test(id)){ var el=$(id); if(el) el.remove(); } });
-            pos=JSON.parse(JSON.stringify(DEFAULTS)); applyAll(); deselect();
+            pos=baseDefaults(); groupOf={}; refreshGroupMarks(); applyAll(); deselect();
         });
 
-        // ---- Export ----
+        // ---- Export (nur Poster-Bereich, Arbeitsflaeche wird weggeschnitten) ----
         $('c-export').addEventListener('click',async function(){
             var s=$('c-status'); s.textContent='⏳ Rendert …';
-            var keep=sel; selbox.style.display='none'; hideGuides();
-            var sv=poster.style.transform, sh=stage.style.height; poster.style.transform='none';
+            selbox.style.display='none'; hideGuides();
+            var marks=Array.prototype.slice.call(document.querySelectorAll('.pb.pg-grouped'));
+            marks.forEach(function(b){ b.classList.remove('pg-grouped'); });
+            var sv=scene.style.transform, sh=stage.style.height; scene.style.transform='none';
             try{
                 if(document.fonts&&document.fonts.ready) await document.fonts.ready;
-                var canvas=await html2canvas(poster,{width:curW,height:curH,scale:2,useCORS:false,backgroundColor:'#007230',logging:false});
-                var a=document.createElement('a'); a.download='marktlauf-poster.png'; a.href=canvas.toDataURL('image/png'); a.click();
+                var full=await html2canvas(scene,{scale:2,useCORS:false,backgroundColor:null,logging:false});
+                var out=document.createElement('canvas'); out.width=curW*2; out.height=curH*2;
+                var cx=out.getContext('2d'); cx.fillStyle='#007230'; cx.fillRect(0,0,out.width,out.height);
+                cx.drawImage(full, PAD*2, PAD*2, curW*2, curH*2, 0, 0, curW*2, curH*2);
+                var a=document.createElement('a'); a.download='marktlauf-poster.png'; a.href=out.toDataURL('image/png'); a.click();
                 s.textContent='✓ Exportiert ('+curW+'×'+curH+').';
             }catch(err){ s.textContent='⚠️ Fehler beim Export: '+err; }
-            finally{ poster.style.transform=sv; stage.style.height=sh; sel=keep; if(sel) updateSelbox(); }
+            finally{ scene.style.transform=sv; stage.style.height=sh; marks.forEach(function(b){ b.classList.add('pg-grouped'); }); if(selIds.length) updateSelbox(); }
         });
 
         // Init
-        pos=JSON.parse(JSON.stringify(DEFAULTS)); applyAll(); applyFormat(); updateQr(); lastW=stage.clientWidth;
+        pos=baseDefaults(); applyFormat(); applyAll(); updateQr(); lastW=stage.clientWidth;
 
         var bg=$('burger-btn'), sb=$('sidebar'), ov=$('sidebar-overlay');
         if(bg){ bg.addEventListener('click',function(){ sb.classList.toggle('open'); ov.classList.toggle('active'); });
