@@ -1048,112 +1048,13 @@
     text-align: center;
 }
 
-/* Anmeldung – aufklappbare Menüs (Einzel- & Sammelanmeldung), dezent im CI */
-.anmeldung-accordion {
+/* Anmeldung – Umschalter Einzel/Sammel, nutzt das Tab-Muster (.connect-card/.tab-*) */
+.anmeldung-tabs {
     max-width: 900px;
     margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-md);
 }
 
-.anmeldung-item {
-    background-color: var(--white);
-    border: 1px solid var(--gray-200);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
-    overflow: hidden;
-}
-
-.anmeldung-toggle {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    gap: var(--space-sm);
-    text-align: left;
-    cursor: pointer;
-    padding: 1.1rem var(--space-md);
-    background: none;
-    color: var(--gray-800);
-    border: none;
-    border-bottom: 1px solid transparent;
-    font-family: inherit;
-    transition: background-color 0.2s ease, border-color 0.2s ease;
-}
-
-.anmeldung-toggle:hover {
-    background-color: var(--gray-50);
-}
-
-.anmeldung-toggle:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: -2px;
-}
-
-.anmeldung-toggle[aria-expanded="true"] {
-    border-bottom-color: var(--gray-200);
-}
-
-.anmeldung-icon {
-    flex: 0 0 auto;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: var(--gray-100);
-    color: var(--gray-600);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.2rem;
-    line-height: 1;
-    transition: background-color 0.2s ease, color 0.2s ease;
-}
-
-.anmeldung-toggle-text {
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 auto;
-    min-width: 0;
-}
-
-.anmeldung-toggle-title {
-    font-family: var(--font-heading);
-    font-weight: 700;
-    font-size: 1.05rem;
-    color: var(--gray-800);
-}
-
-.anmeldung-toggle-sub {
-    font-size: 0.85rem;
-    color: var(--gray-500);
-}
-
-.anmeldung-chevron {
-    flex: 0 0 auto;
-    width: 10px;
-    height: 10px;
-    border-right: 2px solid var(--gray-400);
-    border-bottom: 2px solid var(--gray-400);
-    transform: rotate(45deg);
-    transition: transform 0.25s ease, border-color 0.2s ease;
-    margin-right: 4px;
-}
-
-.anmeldung-toggle[aria-expanded="true"] .anmeldung-chevron {
-    transform: rotate(-135deg);
-    border-color: var(--color-primary);
-}
-
-.anmeldung-panel {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.4s ease;
-}
-
-.anmeldung-panel-inner {
-    padding: var(--space-md);
-}
-
+/* Sammel-Formular liegt im iframe; bündig im Tab, keine Karte-in-Karte */
 .anmeldung-iframe {
     width: 100%;
     border: none;
@@ -1163,10 +1064,11 @@
 }
 
 /*
-  RaceResult-Formular ins CI holen. Die Schritt-Navigation (RRReg_Nav) und die
-  Buttons kommen ab Werk in Rot; per RR-Theme-Variablen auf Marktlauf-Grün ziehen.
-  Gilt für Einzel- (inline in index.html) und Sammelanmeldung (iframe-Embed) –
-  components.css wird in beiden Kontexten geladen, daher einmal zentral hier.
+  RaceResult-Formular ins CI holen. Schritt-Navigation (RRReg_Nav), Buttons und die
+  roten Pflichtfeld-Markierungen kommen ab Werk in Rot; per RR-Theme-Variablen auf
+  Marktlauf-Grün ziehen. Gilt für Einzel- (inline in index.html) und Sammelanmeldung
+  (iframe-Embed) – components.css wird in beiden Kontexten geladen, daher zentral hier.
+  Fehler-Rot (nach fehlgeschlagenem Absenden) bleibt bewusst rot.
 */
 .RRReg {
     --navigation-background: var(--color-primary) !important;
@@ -1175,6 +1077,7 @@
     --button: var(--color-primary) !important;
     --button-disabled: var(--gray-300) !important;
     --button-text: var(--white) !important;
+    --mandatory-border: var(--color-primary) !important;
 }
 
 /* Hero Logo */
