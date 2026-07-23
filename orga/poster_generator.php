@@ -111,7 +111,8 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
             <p class="content-subtitle">Vorschau ziehbar · Blöcke verschieben/skalieren mit Fanglinien · eigene Kacheln · PNG-Export</p>
         </header>
 
-        <p style="margin:0 0 1rem"><a href="social_orchestrator.php">&larr; zur Social-Media-Seite</a></p>
+        <p style="margin:0 0 1rem"><a href="social_orchestrator.php">&larr; zur Social-Media-Seite</a>
+            <a href="../docs/poster-generator.md" target="_blank" rel="noopener" style="margin-left:1rem">ℹ️ Doku &amp; Ausbaustufen</a></p>
         <p class="pg-hint" style="max-width:820px;margin-bottom:1.25rem">
             <strong>Vorschau vergrößern:</strong> unten rechts am Vorschau-Feld ziehen (Poster wächst mit).
             <strong>Block:</strong> anklicken → ziehen zum Verschieben (mit Fanglinien), <strong>orangenes Eck-Quadrat</strong> ziehen oder Regler links = Größe.

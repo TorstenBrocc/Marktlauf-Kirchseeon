@@ -54,4 +54,18 @@
 
 ---
 
+## Im nächsten Chat am Poster weiterarbeiten
+
+1. Neuen Chat öffnen (Claude Code im Repo `Marktlauf-Projekt/website`).
+2. Skill `/remote-control` aufrufen **oder** direkt schreiben.
+3. Diesen Satz als Einstieg verwenden (Copy-Paste):
+
+   > **„Weiter am Kampagnen-Poster-Generator (`orga/poster_generator.php`). Aktueller Stand: Stufe 3 (`87830e0`), dokumentiert in `website/docs/poster-generator.md`. Bitte Doku + `git log --oneline -- orga/poster_generator.php` lesen, dann: [dein Anliegen]."**
+
+4. Sinnvolle nächste Themen stehen unter **„Offene Punkte / Roadmap"** (Export-Fidelity prüfen, Marken-Schrift `.woff2`, lizenziertes Foto, Quadrat/Story-Feintuning).
+
+> Merke: Poster-Arbeit = **Website-Repo** (dieser Ordner). Die **RR14-Timing-/Anmelde-Themen (Phase 4 usw.)** laufen getrennt über das RaceResult-Setup — dafür gibt es einen eigenen Einstieg („Weiter mit RR14 Phase 4").
+
+---
+
 *Verwandt:* QR-Code **auf der Ergebnis-Grafik** (Modul 3 der Social-Seite) sowie das **Anlass/Thema-Dropdown „Contentplan 2026"** sind separat in `orga/social_orchestrator.php` umgesetzt (Commits `37d9484`, `3b089af`).
