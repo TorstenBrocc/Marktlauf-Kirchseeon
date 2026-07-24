@@ -9,6 +9,7 @@ require_once __DIR__ . '/../db.php';
 require_once __DIR__ . '/../mailer.php';
 require_once __DIR__ . '/../logger.php';
 require_once __DIR__ . '/../sponsor_brief.php';
+require_once __DIR__ . '/../verein_brief.php';
 
 /**
  * BCC-Adresse für ausgehende Mails: bei JEDEM Versand bekommt info@ eine
@@ -200,6 +201,45 @@ function sendSponsorAnschreiben(
     $pdo      = getDbConnection();
     $vorlage  = sponsorBriefLoad($pdo, $typ);
     $ctx      = sponsorBriefContext($pdo, $userId, $anrede, $vorname, $nachname, $firma, $paket);
+    $subject  = sponsorBriefBetreff($vorlage['betreff'], $ctx);
+    $htmlBody = sponsorBriefRenderHtml($vorlage['koerper_md'], $ctx);
+    $textBody = sponsorBriefRenderText($vorlage['koerper_md'], $ctx);
+    return sendMail($to, $subject, $textBody, $htmlBody);
+}
+
+/**
+ * Vereins-/Laufevent-Anschreiben versenden (nativer SMTP-Mailer, HTML + Text).
+ *
+ * Inhalt (Betreff + Körper) stammt aus der editierbaren Vorlage
+ * verein_briefvorlagen bzw. – solange dort nichts gespeichert ist – aus dem
+ * Code-Default (vereinBriefDefaults). Rendering nutzt bewusst die generischen,
+ * abgesicherten Renderer der Sponsoren (sponsorBriefRenderHtml/Text).
+ *
+ * $kategorie ∈ verein | laufevent   (bestimmt Anrede-Ton)
+ * $typ       ∈ verein | laufevent   (Vorlagen-Slug; Default = $kategorie)
+ */
+function sendVereinAnschreiben(
+    string $to,
+    string $anrede,
+    string $vorname,
+    string $nachname,
+    string $name,
+    string $kategorie = 'verein',
+    string $typ = '',
+    int $userId = 0
+): bool {
+    if ($kategorie !== 'laufevent') {
+        $kategorie = 'verein';
+    }
+    if (!vereinBriefSlugValid($typ)) {
+        $typ = $kategorie;
+    }
+    if ($userId === 0) {
+        $userId = (int) ($_SESSION['user_id'] ?? 0);
+    }
+    $pdo      = getDbConnection();
+    $vorlage  = vereinBriefLoad($pdo, $typ);
+    $ctx      = vereinBriefContext($pdo, $userId, $kategorie, $anrede, $vorname, $nachname, $name);
     $subject  = sponsorBriefBetreff($vorlage['betreff'], $ctx);
     $htmlBody = sponsorBriefRenderHtml($vorlage['koerper_md'], $ctx);
     $textBody = sponsorBriefRenderText($vorlage['koerper_md'], $ctx);
