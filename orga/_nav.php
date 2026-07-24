@@ -139,6 +139,38 @@ return [
         },
     ],
     [
+        'key'     => 'vereine',
+        'label'   => 'Vereine & Laufevents',
+        'section' => 'VEREINE & LAUFEVENTS',
+        'href'    => 'vereine.php',
+        'kpi'   => static function (PDO $pdo): array {
+            $anzahl = (int) $pdo->query('SELECT COUNT(*) FROM vereine')->fetchColumn();
+            $events = (int) $pdo->query("SELECT COUNT(*) FROM vereine WHERE kategorie = 'laufevent'")->fetchColumn();
+            return [
+                'value'  => (string) $anzahl,
+                'label'  => 'Kontakte' . ($events > 0 ? " · {$events} Laufevents" : ''),
+                'signal' => 'neutral',
+            ];
+        },
+    ],
+    [
+        'key'     => 'vereine_briefe',
+        'label'   => 'Vereins-Anschreiben',
+        'section' => 'VEREINE & LAUFEVENTS',
+        'href'    => 'vereine_briefe.php',
+        'kpi'   => static function (PDO $pdo): array {
+            $offen  = (int) $pdo->query("SELECT COUNT(*) FROM verein_versand_queue WHERE status = 'offen'")->fetchColumn();
+            $fehler = (int) $pdo->query("SELECT COUNT(*) FROM verein_versand_queue WHERE status = 'fehler'")->fetchColumn();
+            $label = 'offen in Versand-Queue';
+            if ($fehler > 0) { $label .= " · {$fehler} Fehler"; }
+            return [
+                'value'  => (string) $offen,
+                'label'  => $label,
+                'signal' => ($offen > 0 || $fehler > 0) ? 'attention' : 'ok',
+            ];
+        },
+    ],
+    [
         'key'     => 'social_media',
         'label'   => 'Social-Media',
         'section' => 'KOMMUNIKATION',
