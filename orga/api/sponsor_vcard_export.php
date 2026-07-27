@@ -12,6 +12,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/_auth.php';
 require_once __DIR__ . '/../../src/db.php';
 require_once __DIR__ . '/../../src/sponsor_status.php';
+require_once __DIR__ . '/../../src/helpers.php';
 
 $filterStatus = $_GET['status'] ?? '';
 $filterPaket  = $_GET['paket'] ?? '';
@@ -55,7 +56,7 @@ function vcardEscape(string $v): string {
 $filename = 'sponsoren_kontakte_' . date('Y-m-d') . '.vcf';
 
 header('Content-Type: text/vcard; charset=utf-8');
-header('Content-Disposition: attachment; filename="' . $filename . '"');
+content_disposition($filename);
 header('Cache-Control: no-store');
 
 $eol = "\r\n"; // vCard verlangt CRLF

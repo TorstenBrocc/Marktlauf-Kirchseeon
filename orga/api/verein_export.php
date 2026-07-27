@@ -9,6 +9,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/_auth.php';
 require_once __DIR__ . '/../../src/db.php';
 require_once __DIR__ . '/../../src/verein_status.php';
+require_once __DIR__ . '/../../src/helpers.php';
 
 $filterKategorie = $_GET['kategorie'] ?? '';
 $filterStatus = $_GET['status'] ?? '';
@@ -34,7 +35,7 @@ $stmt->execute($params);
 
 $filename = 'vereine_export_' . date('Y-m-d') . '.csv';
 header('Content-Type: text/csv; charset=utf-8');
-header('Content-Disposition: attachment; filename="' . $filename . '"');
+content_disposition($filename);
 
 $out = fopen('php://output', 'w');
 fwrite($out, "\xEF\xBB\xBF"); // UTF-8 BOM
