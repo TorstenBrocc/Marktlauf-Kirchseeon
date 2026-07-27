@@ -8,6 +8,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../src/db.php';
 require_once __DIR__ . '/../src/logger.php';
+require_once __DIR__ . '/../src/helpers.php';
 
 $fileId = (int) ($_GET['id'] ?? 0);
 $uuid = trim($_GET['uuid'] ?? '');
@@ -46,7 +47,7 @@ try {
     }
 
     header('Content-Type: ' . $file['mimetype']);
-    header('Content-Disposition: attachment; filename="' . addslashes($file['originalname']) . '"');
+    content_disposition($file['originalname']);
     header('Content-Length: ' . $file['groesse']);
     header('Cache-Control: no-cache, must-revalidate');
     header('Pragma: no-cache');

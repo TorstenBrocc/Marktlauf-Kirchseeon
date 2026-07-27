@@ -8,6 +8,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/_auth.php';
 require_once __DIR__ . '/../../src/db.php';
 require_once __DIR__ . '/../../src/logger.php';
+require_once __DIR__ . '/../../src/helpers.php';
 
 $fileId = (int) ($_GET['id'] ?? 0);
 
@@ -41,7 +42,7 @@ try {
     $disposition = $inline ? 'inline' : 'attachment';
 
     header('Content-Type: ' . $file['mimetype']);
-    header('Content-Disposition: ' . $disposition . '; filename="' . addslashes($file['originalname']) . '"');
+    content_disposition($file['originalname'], $disposition);
     header('Content-Length: ' . $file['groesse']);
     header('Cache-Control: no-cache, must-revalidate');
     header('Pragma: no-cache');

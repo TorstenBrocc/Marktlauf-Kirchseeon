@@ -1,6 +1,11 @@
 <?php
 declare(strict_types=1);
 
+function content_disposition(string $filename, string $disposition = 'attachment'): void {
+    $safe = str_replace(["\r", "\n"], '', $filename);
+    header('Content-Disposition: ' . $disposition . '; filename="' . addslashes($safe) . '"');
+}
+
 function uuid(): string {
     return sprintf(
         '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
