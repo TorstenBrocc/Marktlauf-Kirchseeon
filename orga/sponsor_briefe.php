@@ -194,6 +194,7 @@ if (!empty($briefSettings['sponsoring_pakete'])) {
                         <div>
                             <div class="brief-split-head">
                                 <h3>Markdown</h3>
+                                <?= sponsorMarkdownLegende() ?>
                             </div>
                             <textarea id="koerper_md" name="koerper_md"><?= htmlspecialchars($vorlage['koerper_md']) ?></textarea>
                         </div>
