@@ -336,6 +336,60 @@ function sponsorLevelText(string $paket): string {
 }
 
 /**
+ * Formatierungs-Legende für die Brief-Editoren (Sponsoren + Vereine).
+ *
+ * Bewusst hier im Code neben dem Renderer und nicht als Text in den beiden
+ * Seiten: eine handgeschriebene Legende läuft irgendwann von dem auseinander,
+ * was sponsorMiniMarkdown/sponsorMiniInline tatsächlich beherrschen — und eine
+ * falsche Legende ist schlechter als keine. Wer den Konverter erweitert, ändert
+ * die Liste hier gleich mit.
+ *
+ * Der Abschnitt "geht nicht" ist kein Beiwerk: numerierte Listen und Tabellen
+ * probieren Leute erfahrungsgemäß zuerst, und beide erscheinen still als
+ * roher Text statt als Formatierung.
+ */
+function sponsorMarkdownLegende(): string
+{
+    $kann = [
+        ['**fett**',                    '<strong>fett</strong>'],
+        ['*kursiv*',                    '<em>kursiv</em>'],
+        ['## Große Überschrift',        '<span style="font-size:1.15em;font-weight:700">Große Überschrift</span>'],
+        ['### Mittlere Überschrift',    '<span style="font-weight:700;color:#009640">Mittlere Überschrift</span>'],
+        ['#### Kleine Überschrift',     '<span style="font-weight:700">Kleine Überschrift</span>'],
+        ['- Punkt (oder * Punkt)',      'Aufzählung mit Punkten'],
+        ['[Marktlauf](https://…)',      '<span style="text-decoration:underline;color:#009640">Marktlauf</span> als Link'],
+        ['Leerzeile dazwischen',        'neuer Absatz'],
+    ];
+    $kannNicht = [
+        'Numerierte Listen (<code>1.</code>) — erscheinen als normaler Text',
+        'Tabellen, Bilder, Zitate (<code>&gt;</code>) und Code (<code>`</code>)',
+        'Getipptes HTML wie <code>&lt;b&gt;</code> — wird als Text angezeigt, nie ausgeführt',
+    ];
+
+    $zeilen = '';
+    foreach ($kann as [$syntax, $ergebnis]) {
+        $zeilen .= '<tr>'
+            . '<td class="md-syntax"><code>' . htmlspecialchars($syntax) . '</code></td>'
+            . '<td class="md-ergebnis">' . $ergebnis . '</td>'
+            . '</tr>';
+    }
+    $nicht = '';
+    foreach ($kannNicht as $eintrag) {
+        $nicht .= '<li>' . $eintrag . '</li>';
+    }
+
+    return '<details class="md-legende">'
+        . '<summary>Formatierung</summary>'
+        . '<div class="md-legende-body">'
+        . '<table class="md-tabelle"><tbody>' . $zeilen . '</tbody></table>'
+        . '<p class="md-hinweis"><strong>Zwei Fallstricke:</strong> Eine Aufzählung braucht eine '
+        . 'Leerzeile davor, sonst wird sie Teil des Absatzes. Und <code>{{…}}</code>-Platzhalter '
+        . 'bitte unverändert stehen lassen — die werden beim Versand ersetzt.</p>'
+        . '<p class="md-hinweis"><em>Geht nicht:</em></p><ul class="md-nicht">' . $nicht . '</ul>'
+        . '</div></details>';
+}
+
+/**
  * Social-Media-Block für alle Anschreiben-Signaturen — eine Quelle für
  * Sponsoren- und Vereins-Briefe (verein_brief.php lädt diese Datei).
  *

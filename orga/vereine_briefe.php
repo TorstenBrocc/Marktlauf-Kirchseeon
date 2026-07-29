@@ -59,6 +59,9 @@ $plakate = plakateAnhang($pdo);
         .brief-split { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
         @media (max-width: 900px) { .brief-split { grid-template-columns: 1fr; } }
         .brief-split h3 { font-size: 0.9rem; margin: 0 0 0.5rem; color: var(--text-light); }
+        /* Kopfzeile wie im Sponsoren-Editor, damit die Legende rechts andockt */
+        .brief-split-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
+        .brief-split-head h3 { margin: 0; }
         #koerper_md {
             width: 100%; min-height: 460px; padding: 0.75rem; border: 1px solid var(--border);
             border-radius: 4px; font-family: monospace; font-size: 0.85rem; line-height: 1.5;
@@ -117,7 +120,10 @@ $plakate = plakateAnhang($pdo);
 
                     <div class="brief-split">
                         <div>
-                            <h3>Markdown</h3>
+                            <div class="brief-split-head">
+                                <h3>Markdown</h3>
+                                <?= sponsorMarkdownLegende() ?>
+                            </div>
                             <textarea id="koerper_md" name="koerper_md"><?= htmlspecialchars($vorlage['koerper_md']) ?></textarea>
                         </div>
                         <div>
