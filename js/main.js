@@ -307,9 +307,44 @@ function initSponsorMarquee() {
 
     wrap.classList.add('is-draggable');
 
-    let half = 0;
+    // Ein "Satz" ist die Logo-Folge, die sich wiederholt — im Markup liegt
+    // sie doppelt vor. perSet wird vor dem Klonen bestimmt, denn die Kopien
+    // tragen alle aria-hidden.
+    const perSet = track.querySelectorAll('.sponsor-item:not([aria-hidden])').length;
+    let period = 0;
+
+    // Abstand zwischen einem Item und seinem Gegenstueck im naechsten Satz.
+    // Bewusst ueber offsetLeft und nicht scrollWidth/2: der Abstand enthaelt
+    // die Luecke zwischen den Saetzen, scrollWidth/2 nicht.
+    function measurePeriod() {
+        const items = track.children;
+        if (perSet > 0 && items.length > perSet) {
+            period = items[perSet].offsetLeft - items[0].offsetLeft;
+        }
+    }
+
+    // scrollLeft begrenzt der Browser auf scrollWidth - clientWidth. Ist der
+    // Track nicht mindestens period + clientWidth breit, liegt die
+    // Sprungmarke hinter dem Anschlag und der Durchlauf bleibt dort stehen.
+    // Auf breiten Monitoren reichen zwei Saetze nicht — dann weitere anhaengen.
+    function ensureWidth() {
+        if (perSet <= 0 || period <= 0) return;
+        const base = Array.prototype.slice.call(track.children, 0, perSet);
+        let guard = 0;
+        while (track.scrollWidth - wrap.clientWidth < period && guard++ < 12) {
+            base.forEach(function(item) {
+                const copy = item.cloneNode(true);
+                copy.setAttribute('aria-hidden', 'true');
+                copy.querySelectorAll('a').forEach(function(a) { a.setAttribute('tabindex', '-1'); });
+                copy.querySelectorAll('img').forEach(function(img) { img.setAttribute('alt', ''); });
+                track.appendChild(copy);
+            });
+        }
+    }
+
     function measure() {
-        half = track.scrollWidth / 2;
+        measurePeriod();
+        ensureWidth();
     }
     measure();
     window.addEventListener('resize', measure);
@@ -317,13 +352,13 @@ function initSponsorMarquee() {
     window.addEventListener('load', measure);
 
     // Haelt scrollLeft im ersten Satz — die Position wirkt dadurch endlos.
-    // Beim Ruecksprung bewusst auf half-1 statt +half: landete er genau auf
-    // half, wuerde die Vorwaerts-Bedingung sofort wieder greifen und die
-    // Position in jedem Frame zwischen 0 und half hin- und herkippen.
+    // Beim Ruecksprung bewusst auf period-1 statt +period: landete er genau
+    // auf period, wuerde die Vorwaerts-Bedingung sofort wieder greifen und
+    // die Position in jedem Frame zwischen 0 und period hin- und herkippen.
     function normalize() {
-        if (half <= 0) return;
-        if (wrap.scrollLeft >= half) wrap.scrollLeft -= half;
-        else if (wrap.scrollLeft <= 0) wrap.scrollLeft = half - 1;
+        if (period <= 0) return;
+        if (wrap.scrollLeft >= period) wrap.scrollLeft -= period;
+        else if (wrap.scrollLeft <= 0) wrap.scrollLeft = period - 1;
     }
 
     let hovering = false;
@@ -343,8 +378,8 @@ function initSponsorMarquee() {
     function frame(now) {
         const dt = last ? Math.min((now - last) / 1000, 0.1) : 0;
         last = now;
-        if (running(now) && half > 0) {
-            wrap.scrollLeft += (half / SPEED) * dt;
+        if (running(now) && period > 0) {
+            wrap.scrollLeft += (period / SPEED) * dt;
         }
         normalize();
         requestAnimationFrame(frame);
