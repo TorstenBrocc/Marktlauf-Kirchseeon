@@ -133,9 +133,32 @@ Damit wir Ihren Markenauftritt optimal vorbereiten können, bitten wir Sie, uns 
 - Haben Sie konkrete Vorstellungen zur Platzierung? Aktuell vorgesehen: Plakat und Startnummern.
 - Haben Sie Flyer oder Give-aways, die wir auslegen oder in den Startetüten verteilen dürfen?
 
+**2. Banner / Hussen**
+
+Für unsere Absperrgitter empfehlen wir **Hussen** statt klassischer Banner – geringerer Aufwand, kein Kabelbinder-Abfall nach dem Event. Die Bemaßungen finden Sie hier: [Absperrgitter Bemaßungen (PNG)](https://atsv-kirchseeon-marktlauf.de/assets/images/Werbefl%C3%A4chen/Absperrgitter%20Bema%C3%9Fungen.png)
+
+Lieferadresse:
+
+ATSV Kirchseeon
+c/o ORGA Marktlauf, z. Hd. Frau Jenny Fischer
+Sportplatzweg 1
+85614 Kirchseeon
+
+**3. Digitale Vernetzung**
+
+Unsere Social-Media-Auftritte sind auf [atsv-kirchseeon-marktlauf.de](https://atsv-kirchseeon-marktlauf.de) im Footer verlinkt. Wie möchten Sie digital vernetzt werden? Gibt es Kanäle oder Links, die wir besonders hervorheben sollen?
+
 **4. Ablauf am Renntag**
 
 Wie und wo möchten Sie sich am Renntag aufbauen? Zu welcher Zeit sollen wir mit Ihnen rechnen?
+
+**5. Nachlauf & Social Media**
+
+Wie soll der Nachlauf gestaltet werden? Benötigen Sie von uns Fotos, Logos oder Ergebnis-Highlights für Ihre Social-Media-Kanäle?
+
+**6. Gutscheinfunktion**
+
+Gutscheine gemäß Ihrem Paket werden Ihnen zeitnah zugesandt.
 
 **7. Rechnungsanschrift**
 
@@ -170,7 +193,7 @@ function sponsorBestaetigungSektionen(): array {
         [
             'id'      => 's2',
             'titel'   => '2. Banner / Hussen',
-            'checked' => false,
+            'checked' => true,
             'text'    => "**2. Banner / Hussen**\n\n"
                        . "Für unsere Absperrgitter empfehlen wir **Hussen** statt klassischer Banner – "
                        . "geringerer Aufwand, kein Kabelbinder-Abfall nach dem Event. "
@@ -184,7 +207,7 @@ function sponsorBestaetigungSektionen(): array {
         [
             'id'      => 's3',
             'titel'   => '3. Digitale Vernetzung',
-            'checked' => false,
+            'checked' => true,
             'text'    => "**3. Digitale Vernetzung**\n\n"
                        . "Unsere Social-Media-Auftritte sind auf [atsv-kirchseeon-marktlauf.de](https://atsv-kirchseeon-marktlauf.de) "
                        . "im Footer verlinkt. Wie möchten Sie digital vernetzt werden? "
@@ -200,7 +223,7 @@ function sponsorBestaetigungSektionen(): array {
         [
             'id'      => 's5',
             'titel'   => '5. Nachlauf & Social Media',
-            'checked' => false,
+            'checked' => true,
             'text'    => "**5. Nachlauf & Social Media**\n\n"
                        . "Wie soll der Nachlauf gestaltet werden? Benötigen Sie von uns Fotos, Logos oder "
                        . "Ergebnis-Highlights für Ihre Social-Media-Kanäle?",
@@ -208,7 +231,7 @@ function sponsorBestaetigungSektionen(): array {
         [
             'id'      => 's6',
             'titel'   => '6. Gutscheinfunktion',
-            'checked' => false,
+            'checked' => true,
             'text'    => "**6. Gutscheinfunktion**\n\n"
                        . "Gutscheine gemäß Ihrem Paket werden Ihnen zeitnah zugesandt.",
         ],
