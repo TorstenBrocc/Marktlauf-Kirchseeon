@@ -98,7 +98,7 @@ function vereinBriefPlatzhalterHilfe(): array {
         '{{vorname}}'     => 'Vorname des Ansprechpartners',
         '{{name}}'        => 'Name des Vereins bzw. des Laufevents',
         '{{event_datum}}' => 'Datum des Marktlaufs (aus Einstellungen, sonst 20. September 2026)',
-        '{{signatur}}'    => "Signatur-Block (Sportliche Grüße, Name, Aufgabe, Telefon, E-Mail)\n"
+        '{{signatur}}'    => "Signatur-Block (Sportliche Grüße, Name, Aufgabe, Telefon, E-Mail, Social-Media-Logos)\n"
                              . "Die persönlichen Daten stammen aus der Benutzerverwaltung (dein Profil).",
     ];
 }
@@ -172,25 +172,22 @@ function vereinSignatur(PDO $pdo, int $userId): array {
     $roleLine     = $role !== '' ? htmlspecialchars($role) . '<br>' : '';
     $sigPhoneHtml = $sig['phone'] !== '' ? 'T: ' . htmlspecialchars($sig['phone']) : '';
     $sigEmailHtml = $sig['email'] !== '' ? ($sigPhoneHtml !== '' ? ' | ' : '') . 'M: <a href="mailto:' . htmlspecialchars($sig['email']) . '">' . htmlspecialchars($sig['email']) . '</a>' : '';
-    $socialHtml = '<br>📷 <a href="https://www.instagram.com/atsv_marktlauf_kirchseeon">Instagram</a>'
-        . ' · 👍 <a href="https://www.facebook.com/profile.php?id=61591689790244">Facebook</a>'
-        . ' · 🏃 <a href="https://www.strava.com/clubs/2252807">Strava</a>';
+    // Logos statt Emoji-Zeile — dieselbe Quelle wie die Sponsoren-Signatur
+    $social = marktlaufSocialLinks();
 
     $html = '<p>Sportliche Grüße<br><br>'
         . '<strong>' . htmlspecialchars($sig['name']) . '</strong><br>'
         . $sigRoleHtml
         . ($sigPhoneHtml . $sigEmailHtml !== '' ? $sigPhoneHtml . $sigEmailHtml . '<br>' : '')
-        . 'W: <a href="https://atsv-kirchseeon-marktlauf.de">atsv-kirchseeon-marktlauf.de</a>'
-        . $socialHtml . '</p>';
+        . 'W: <a href="https://atsv-kirchseeon-marktlauf.de">atsv-kirchseeon-marktlauf.de</a><br><br>'
+        . $social['html'] . '</p>';
 
     $parts = [];
     if ($sig['phone'] !== '') $parts[] = 'T: ' . $sig['phone'];
     if ($sig['email'] !== '') $parts[] = 'M: ' . $sig['email'];
     $parts[] = 'W: atsv-kirchseeon-marktlauf.de';
-    $parts[] = 'Instagram: instagram.com/atsv_marktlauf_kirchseeon';
-    $parts[] = 'Facebook: facebook.com/profile.php?id=61591689790244';
-    $parts[] = 'Strava: strava.com/clubs/2252807';
-    $text = "Sportliche Grüße\n\n{$sig['name']}\nMarktlauf-Organisationsteam · ATSV Kirchseeon 1906 e.V.\n" . implode(' | ', $parts);
+    $text = "Sportliche Grüße\n\n{$sig['name']}\nMarktlauf-Organisationsteam · ATSV Kirchseeon 1906 e.V.\n"
+        . implode(' | ', $parts) . "\n\n" . $social['text'];
 
     return ['html' => $html, 'text' => $text];
 }
