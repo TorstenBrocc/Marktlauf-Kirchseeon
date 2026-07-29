@@ -98,6 +98,13 @@ if (!empty($briefSettings['sponsoring_pakete'])) {
         }
         .brief-actions { display: flex; gap: 1rem; margin-top: 1.25rem; align-items: center; }
         .brief-hint { font-size: 0.8rem; color: var(--text-light); }
+        .baustein-panel { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.85rem 1rem; margin-bottom: 1rem; }
+        .baustein-panel > h4 { font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-light); margin: 0 0 0.6rem; }
+        .baustein-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0; border-bottom: 1px solid var(--border); }
+        .baustein-row:last-of-type { border-bottom: none; }
+        .baustein-row label { font-size: 0.875rem; cursor: pointer; flex: 1; user-select: none; }
+        .baustein-row input[type=checkbox] { accent-color: var(--primary); cursor: pointer; }
+        .baustein-actions { margin-top: 0.6rem; }
     </style>
 </head>
 <body>
@@ -136,6 +143,23 @@ if (!empty($briefSettings['sponsoring_pakete'])) {
                             <span class="ph-chip" data-ph="<?= htmlspecialchars($ph) ?>" title="<?= htmlspecialchars($beschreibung) ?>"><?= htmlspecialchars($ph) ?></span>
                         <?php endforeach; ?>
                     </div>
+
+                    <?php if ($slug === 'bestaetigung'): ?>
+                    <div class="baustein-panel">
+                        <h4>Abschnitte</h4>
+                        <?php foreach (sponsorBestaetigungSektionen() as $sek): ?>
+                        <div class="baustein-row">
+                            <input type="checkbox" id="baustein-<?= $sek['id'] ?>" class="baustein-cb"
+                                   data-id="<?= htmlspecialchars($sek['id']) ?>"
+                                   <?= $sek['checked'] ? 'checked' : '' ?>>
+                            <label for="baustein-<?= $sek['id'] ?>"><?= htmlspecialchars($sek['titel']) ?></label>
+                        </div>
+                        <?php endforeach; ?>
+                        <div class="baustein-actions">
+                            <button type="button" class="btn btn-secondary btn-small" id="btn-zusammenstellen">Zusammenstellen →</button>
+                        </div>
+                    </div>
+                    <?php endif; ?>
 
                     <div class="brief-split">
                         <div>
@@ -269,7 +293,50 @@ if (!empty($briefSettings['sponsoring_pakete'])) {
             betreff.value = defaultBetreff;
             renderPreview();
         });
+
+        // Vorschau-Höhe beim manuellen Resize der Textarea nachziehen
+        if (typeof ResizeObserver !== 'undefined') {
+            new ResizeObserver(function(entries) {
+                for (var entry of entries) {
+                    frame.style.height = entry.contentRect.height + 'px';
+                }
+            }).observe(ta);
+        }
     })();
+
+    <?php if ($slug === 'bestaetigung'): ?>
+    (function() {
+        const sektionen = <?= json_encode(sponsorBestaetigungSektionen(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+        const INTRO = <?= json_encode(
+            "{{anrede}}\n\nherzlichen Dank, dass Sie den Marktlauf Kirchseeon am **{{event_datum}}** als **{{paket_text}}** unterstützen. Wir freuen uns sehr über Ihre Zusage und die Zusammenarbeit!\n\nDamit wir Ihren Markenauftritt optimal vorbereiten können, bitten wir Sie, uns folgende Unterlagen und Informationen zukommen zu lassen:",
+            JSON_UNESCAPED_UNICODE
+        ) ?>;
+        const OUTRO = <?= json_encode(
+            "Sollte Ihnen etwas fehlen oder Sie noch Fragen haben, kommen Sie jederzeit gerne auf mich zu.\n\nVielen Dank für Ihre Unterstützung und Ihr Vertrauen – gemeinsam machen wir den Marktlauf Kirchseeon zu einem unvergesslichen Erlebnis!\n\n{{signatur}}",
+            JSON_UNESCAPED_UNICODE
+        ) ?>;
+
+        const ta = document.getElementById('koerper_md');
+        const btn = document.getElementById('btn-zusammenstellen');
+        if (!btn || !ta) return;
+
+        btn.addEventListener('click', function() {
+            if (ta.value.trim() !== '' && !confirm('Den aktuellen Text überschreiben und neu zusammenstellen?')) {
+                return;
+            }
+            var parts = [INTRO];
+            document.querySelectorAll('.baustein-cb').forEach(function(cb) {
+                if (!cb.checked) return;
+                var id = cb.dataset.id;
+                var sek = sektionen.find(function(s) { return s.id === id; });
+                if (sek) parts.push(sek.text);
+            });
+            parts.push(OUTRO);
+            ta.value = parts.join('\n\n');
+            ta.dispatchEvent(new Event('input'));
+        });
+    })();
+    <?php endif; ?>
 
     (function() {
         const burger = document.getElementById('burger-btn');

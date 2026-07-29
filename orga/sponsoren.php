@@ -518,6 +518,7 @@ try {
                     <select id="anschreiben_typ" name="anschreiben_typ">
                         <option value="erstanschreiben">Erstanschreiben</option>
                         <option value="folgejahr">Folgejahr / Bestandssponsor</option>
+                        <option value="bestaetigung">Bestätigung Sponsoring</option>
                         <option value="frei">Freier Brief</option>
                     </select>
                     <button type="submit" class="btn btn-small btn-primary">Ausgewählte anschreiben</button>
@@ -783,7 +784,7 @@ try {
                 return false;
             }
             const typ = document.getElementById('anschreiben_typ');
-            const typLabels = { folgejahr: 'Folgejahr-Anschreiben', frei: 'Freier Brief', erstanschreiben: 'Erstanschreiben' };
+            const typLabels = { folgejahr: 'Folgejahr-Anschreiben', frei: 'Freier Brief', erstanschreiben: 'Erstanschreiben', bestaetigung: 'Bestätigung Sponsoring' };
             const typLabel = (typ && typLabels[typ.value]) || 'Erstanschreiben';
             if (n === 1) {
                 return confirm('1 Empfänger auswählt.\n\n' + typLabel + ' jetzt sofort senden?');
