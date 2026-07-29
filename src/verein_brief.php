@@ -49,6 +49,8 @@ https://atsv-kirchseeon-marktlauf.de
 
 Über eine Weitergabe an Eure Mitglieder und ein zahlreiches Wiedersehen an der Startlinie freuen wir uns sehr.
 
+Sportliche Grüße
+
 {{signatur}}
 MD;
 
@@ -69,6 +71,8 @@ Verratet Ihr uns Eure Online-Kanäle (Website, Instagram, Facebook)? Dann könne
 Mehr zu unserem Lauf: https://atsv-kirchseeon-marktlauf.de
 
 Über eine kurze Rückmeldung, ob Ihr Lust auf so eine Vernetzung habt, freuen wir uns sehr.
+
+Sportliche Grüße
 
 {{signatur}}
 MD;
@@ -98,8 +102,9 @@ function vereinBriefPlatzhalterHilfe(): array {
         '{{vorname}}'     => 'Vorname des Ansprechpartners',
         '{{name}}'        => 'Name des Vereins bzw. des Laufevents',
         '{{event_datum}}' => 'Datum des Marktlaufs (aus Einstellungen, sonst 20. September 2026)',
-        '{{signatur}}'    => "Signatur-Block (Sportliche Grüße, Name, Aufgabe, Telefon, E-Mail, Social-Media-Logos)\n"
-                             . "Die persönlichen Daten stammen aus der Benutzerverwaltung (dein Profil).",
+        '{{signatur}}'    => "Signatur-Block (Name, Aufgabe, Telefon, E-Mail, Social-Media-Logos)\n"
+                             . "Die persönlichen Daten stammen aus der Benutzerverwaltung (dein Profil).\n"
+                             . "Enthält KEINE Grußformel – die schreibst du frei in den Text darüber.",
     ];
 }
 
@@ -159,8 +164,11 @@ function vereinAnrede(string $kategorie, string $anrede, string $nachname, strin
 
 /**
  * Signatur-Block (HTML + Text). Nutzt dieselbe Datenquelle wie die Sponsoren
- * (Benutzerprofil bzw. Config-Fallback), aber mit „Sportliche Grüße" und
- * Vereins-Rolle statt Sponsoring-Rolle.
+ * (Benutzerprofil bzw. Config-Fallback), aber mit Vereins-Rolle statt
+ * Sponsoring-Rolle.
+ *
+ * Ohne Grußformel — die steht als freier Text in der Vorlage, damit sie pro
+ * Brief angepasst werden kann.
  */
 function vereinSignatur(PDO $pdo, int $userId): array {
     $sig = sponsorSignatur($pdo, $userId);
@@ -175,7 +183,8 @@ function vereinSignatur(PDO $pdo, int $userId): array {
     // Logos statt Emoji-Zeile — dieselbe Quelle wie die Sponsoren-Signatur
     $social = marktlaufSocialLinks();
 
-    $html = '<p>Sportliche Grüße<br><br>'
+    // Ohne Grußformel: die schreibt der Absender frei in den Brieftext.
+    $html = '<p>'
         . '<strong>' . htmlspecialchars($sig['name']) . '</strong><br>'
         . $sigRoleHtml
         . ($sigPhoneHtml . $sigEmailHtml !== '' ? $sigPhoneHtml . $sigEmailHtml . '<br>' : '')
@@ -186,7 +195,7 @@ function vereinSignatur(PDO $pdo, int $userId): array {
     if ($sig['phone'] !== '') $parts[] = 'T: ' . $sig['phone'];
     if ($sig['email'] !== '') $parts[] = 'M: ' . $sig['email'];
     $parts[] = 'W: atsv-kirchseeon-marktlauf.de';
-    $text = "Sportliche Grüße\n\n{$sig['name']}\nMarktlauf-Organisationsteam · ATSV Kirchseeon 1906 e.V.\n"
+    $text = "{$sig['name']}\nMarktlauf-Organisationsteam · ATSV Kirchseeon 1906 e.V.\n"
         . implode(' | ', $parts) . "\n\n" . $social['text'];
 
     return ['html' => $html, 'text' => $text];

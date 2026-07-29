@@ -69,6 +69,8 @@ Sachsponsoring (z. B. Verpflegung, Preise für die Siegerehrung) und individuell
 
 Ich freue mich auf Ihre Rückmeldung und darauf, Sie am 20. September persönlich begrüßen zu dürfen.
 
+Herzliche Grüße
+
 {{signatur}}
 MD;
 
@@ -91,11 +93,15 @@ Sachsponsoring (z. B. Verpflegung, Preise für die Siegerehrung) und individuell
 
 Ich freue mich auf Ihre Rückmeldung und darauf, Sie am 20. September persönlich begrüßen zu dürfen.
 
+Herzliche Grüße
+
 {{signatur}}
 MD;
 
     $frei = <<<MD
 {{anrede}}
+
+Herzliche Grüße
 
 {{signatur}}
 MD;
@@ -167,6 +173,8 @@ Damit wir Ihnen die Rechnung korrekt ausstellen können, benötigen wir Ihre vol
 Sollte Ihnen etwas fehlen oder Sie noch Fragen haben, kommen Sie jederzeit gerne auf mich zu.
 
 Vielen Dank für Ihre Unterstützung und Ihr Vertrauen – gemeinsam machen wir den Marktlauf Kirchseeon zu einem unvergesslichen Erlebnis!
+
+Herzliche Grüße
 
 {{signatur}}
 MD,
@@ -260,7 +268,8 @@ function sponsorBriefPlatzhalterHilfe(): array {
         '{{paket_text}}'    => 'Paketname (Hauptsponsor / Gold-Sponsor / Silber-Sponsor / Bronze-Sponsor)',
         '{{paket_tabelle}}' => 'Tabelle aller Sponsoring-Pakete mit Preisen und Highlights',
         '{{signatur}}'      => "Signatur-Block (Name, Aufgabe, Telefon, E-Mail, Social-Media-Logos)\n"
-                               . "Die persönlichen Daten stammen aus der Benutzerverwaltung (dein Profil).",
+                               . "Die persönlichen Daten stammen aus der Benutzerverwaltung (dein Profil).\n"
+                               . "Enthält KEINE Grußformel – die schreibst du frei in den Text darüber.",
         '{{event_datum}}'   => 'Datum des Marktlaufs (aus Einstellungen)',
         '{{antwort_bis}}'   => 'Rückmeldefrist (aus Einstellungen)',
     ];
@@ -466,8 +475,9 @@ function sponsorBriefContext(PDO $pdo, int $userId, string $anrede, string $vorn
     $sigRoleHtml  = $sig['role']  !== '' ? htmlspecialchars($sig['role'])  . '<br>' : '';
     $sigPhoneHtml = $sig['phone'] !== '' ? 'T: ' . htmlspecialchars($sig['phone']) : '';
     $sigEmailHtml = $sig['email'] !== '' ? ($sigPhoneHtml !== '' ? ' | ' : '') . 'M: <a href="mailto:' . htmlspecialchars($sig['email']) . '">' . htmlspecialchars($sig['email']) . '</a>' : '';
+    // Ohne Grußformel: die schreibt der Absender frei in den Brieftext.
     $social  = marktlaufSocialLinks();
-    $sigHtml = '<p>Herzliche Grüße<br><br>'
+    $sigHtml = '<p>'
         . '<strong>' . htmlspecialchars($sig['name']) . '</strong><br>'
         . $sigRoleHtml
         . ($sigPhoneHtml . $sigEmailHtml !== '' ? $sigPhoneHtml . $sigEmailHtml . '<br>' : '')
@@ -479,7 +489,7 @@ function sponsorBriefContext(PDO $pdo, int $userId, string $anrede, string $vorn
     if ($sig['email'] !== '') $sigParts[] = 'M: ' . $sig['email'];
     $sigParts[] = 'W: atsv-kirchseeon-marktlauf.de';
     $sigRoleText = $sig['role'] !== '' ? $sig['role'] . "\n" : '';
-    $sigText = "Herzliche Grüße\n\n{$sig['name']}\n{$sigRoleText}" . implode(' | ', $sigParts)
+    $sigText = "{$sig['name']}\n{$sigRoleText}" . implode(' | ', $sigParts)
         . "\n\n" . $social['text'];
 
     return [
