@@ -9,6 +9,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     initHeaderScroll();
     initCountdown();
     initScrollAnimations();
+    initSponsorMarquee();
     await initLanguage();
 });
 
@@ -282,4 +283,124 @@ function initScrollAnimations() {
     document.querySelectorAll('.reveal').forEach(function(el) {
         observer.observe(el);
     });
+}
+
+/**
+ * Sponsor-Marquee: laeuft von selbst und laesst sich mit der Maus schieben
+ *
+ * Die CSS-Keyframe-Animation ist der No-JS-Fallback. Sobald diese Funktion
+ * greift, uebernimmt sie per scrollLeft — dadurch funktionieren Maus-Drag,
+ * Trackpad, Mausrad und Touch-Swipe mit demselben Mechanismus.
+ * Der Sprung bei der halben Track-Breite ist unsichtbar, weil das Markup
+ * den Logo-Satz doppelt enthaelt (zweiter Satz aria-hidden).
+ */
+function initSponsorMarquee() {
+    const wrap = document.querySelector('.sponsor-marquee-wrap');
+    const track = wrap && wrap.querySelector('.sponsor-marquee-track');
+    if (!wrap || !track) return;
+
+    const SPEED = 28;          // Sekunden pro Halbrunde — wie die CSS-Animation
+    const RESUME_DELAY = 2000; // ms Ruhe nach einem Drag, bevor es weiterlaeuft
+    const DRAG_THRESHOLD = 5;  // px, ab dann gilt es als Ziehen und nicht als Klick
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    wrap.classList.add('is-draggable');
+
+    let half = 0;
+    function measure() {
+        half = track.scrollWidth / 2;
+    }
+    measure();
+    window.addEventListener('resize', measure);
+    // Bilder liefern ihre Maße teils erst nach dem Laden nach
+    window.addEventListener('load', measure);
+
+    // Haelt scrollLeft im ersten Satz — die Position wirkt dadurch endlos.
+    // Beim Ruecksprung bewusst auf half-1 statt +half: landete er genau auf
+    // half, wuerde die Vorwaerts-Bedingung sofort wieder greifen und die
+    // Position in jedem Frame zwischen 0 und half hin- und herkippen.
+    function normalize() {
+        if (half <= 0) return;
+        if (wrap.scrollLeft >= half) wrap.scrollLeft -= half;
+        else if (wrap.scrollLeft <= 0) wrap.scrollLeft = half - 1;
+    }
+
+    let hovering = false;
+    let dragging = false;
+    let touching = false;
+    let resumeAt = 0;
+    let startX = 0;
+    let startScroll = 0;
+    let moved = 0;
+    let last = 0;
+
+    function running(now) {
+        return !dragging && !touching && !hovering && !document.hidden &&
+               !reduceMotion.matches && now >= resumeAt;
+    }
+
+    function frame(now) {
+        const dt = last ? Math.min((now - last) / 1000, 0.1) : 0;
+        last = now;
+        if (running(now) && half > 0) {
+            wrap.scrollLeft += (half / SPEED) * dt;
+        }
+        normalize();
+        requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+
+    wrap.addEventListener('mouseenter', function() { hovering = true; });
+    wrap.addEventListener('mouseleave', function() { hovering = false; });
+
+    wrap.addEventListener('pointerdown', function(e) {
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        moved = 0;
+        // Touch dem Browser lassen: der entscheidet die Achse und haelt
+        // damit das vertikale Seiten-Scrollen frei
+        if (e.pointerType === 'touch') { touching = true; return; }
+        dragging = true;
+        startX = e.clientX;
+        startScroll = wrap.scrollLeft;
+        wrap.classList.add('is-dragging');
+        // Schlaegt der Capture fehl, laeuft das Ziehen ueber die normale
+        // Event-Bubbling-Kette weiter — nur nicht ausserhalb des Elements
+        try { wrap.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+    });
+
+    wrap.addEventListener('pointermove', function(e) {
+        if (!dragging) return;
+        const dx = e.clientX - startX;
+        moved = Math.max(moved, Math.abs(dx));
+        wrap.scrollLeft = startScroll - dx;
+        normalize();
+    });
+
+    function endDrag(e) {
+        resumeAt = performance.now() + RESUME_DELAY;
+        if (e.pointerType === 'touch') { touching = false; return; }
+        if (!dragging) return;
+        dragging = false;
+        wrap.classList.remove('is-dragging');
+    }
+    wrap.addEventListener('pointerup', endDrag);
+    wrap.addEventListener('pointercancel', endDrag);
+
+    // Ein Drag ueber ein Logo darf den Sponsor-Link nicht oeffnen
+    wrap.addEventListener('click', function(e) {
+        if (moved > DRAG_THRESHOLD) {
+            e.preventDefault();
+            e.stopPropagation();
+            moved = 0;
+        }
+    }, true);
+
+    // Natives Bild-Drag&Drop unterdruecken
+    wrap.addEventListener('dragstart', function(e) { e.preventDefault(); });
+
+    // Nach Mausrad/Trackpad kurz Ruhe geben, dann weiterlaufen
+    wrap.addEventListener('wheel', function() {
+        resumeAt = performance.now() + RESUME_DELAY;
+    }, { passive: true });
 }
