@@ -157,7 +157,10 @@ return [
         'key'     => 'vereine_briefe',
         'label'   => 'Vereins-Anschreiben',
         'section' => 'VEREINE & LAUFEVENTS',
-        'href'    => 'vereine.php',
+        // Sidebar führt direkt in den Editor, die Cockpit-Kachel bewusst auf die
+        // Vereinsliste — dort werden zuerst die Empfänger gewählt.
+        'href'       => 'vereine_briefe.php',
+        'href_tile'  => 'vereine.php',
         'kpi'   => static function (PDO $pdo): array {
             $offen  = (int) $pdo->query("SELECT COUNT(*) FROM verein_versand_queue WHERE status = 'offen'")->fetchColumn();
             $fehler = (int) $pdo->query("SELECT COUNT(*) FROM verein_versand_queue WHERE status = 'fehler'")->fetchColumn();

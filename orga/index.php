@@ -53,7 +53,10 @@ $renderTile = static function (array $tile): void {
             . '</h3><p class="card-label">Noch nicht verfügbar</p></div>';
         return;
     }
-    echo '<a class="card card-tile signal-' . htmlspecialchars($kpi['signal'] ?? 'neutral') . '" href="' . htmlspecialchars($item['href']) . '">'
+    // Optionales eigenes Kachel-Ziel: manche Module wollen im Cockpit woanders
+    // hin als in der Sidebar (siehe href_tile in _nav.php).
+    $tileHref = $item['href_tile'] ?? $item['href'];
+    echo '<a class="card card-tile signal-' . htmlspecialchars($kpi['signal'] ?? 'neutral') . '" href="' . htmlspecialchars($tileHref) . '">'
         . '<h3>' . htmlspecialchars($item['label']) . '</h3>';
     if ($kpi !== null) {
         echo '<p class="card-stat">' . htmlspecialchars($kpi['value']) . '</p>'
