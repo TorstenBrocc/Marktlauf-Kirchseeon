@@ -87,24 +87,47 @@ if (!empty($briefSettings['sponsoring_pakete'])) {
         .ph-chip:hover { background: var(--border); }
         .brief-split { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
         @media (max-width: 900px) { .brief-split { grid-template-columns: 1fr; } }
-        .brief-split h3 { font-size: 0.9rem; margin: 0 0 0.5rem; color: var(--text-light); }
+        .brief-split-head h3 { font-size: 0.9rem; color: var(--text-light); }
         #koerper_md {
             width: 100%; min-height: 460px; padding: 0.75rem; border: 1px solid var(--border);
             border-radius: 4px; font-family: monospace; font-size: 0.85rem; line-height: 1.5;
             box-sizing: border-box; resize: vertical;
         }
         #preview-frame {
-            width: 100%; min-height: 460px; border: 1px solid var(--border); border-radius: 4px; background: #fff;
+            width: 100%; height: 460px; border: 1px solid var(--border); border-radius: 4px; background: #fff;
         }
+        .brief-split-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
+        .brief-split-head h3 { margin: 0; }
+        .preview-toggle-btn {
+            font-size: 0.78rem; background: none; border: 1px solid var(--border);
+            border-radius: 4px; padding: 0.15rem 0.55rem; cursor: pointer; color: var(--text-light); line-height: 1.5;
+        }
+        .preview-toggle-btn:hover { background: var(--border); color: var(--text); }
+        .brief-split.preview-hidden { grid-template-columns: 1fr; }
+        .brief-split.preview-hidden .preview-col { display: none; }
         .brief-actions { display: flex; gap: 1rem; margin-top: 1.25rem; align-items: center; }
         .brief-hint { font-size: 0.8rem; color: var(--text-light); }
         .baustein-panel { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.85rem 1rem; margin-bottom: 1rem; }
-        .baustein-panel > h4 { font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-light); margin: 0 0 0.6rem; }
-        .baustein-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0; border-bottom: 1px solid var(--border); }
-        .baustein-row:last-of-type { border-bottom: none; }
-        .baustein-row label { font-size: 0.875rem; cursor: pointer; flex: 1; user-select: none; }
-        .baustein-row input[type=checkbox] { accent-color: var(--primary); cursor: pointer; }
-        .baustein-actions { margin-top: 0.6rem; }
+        .baustein-panel > h4 { font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-light); margin: 0 0 0.4rem; }
+        .baustein-item { border-bottom: 1px solid var(--border); }
+        .baustein-item:last-of-type { border-bottom: none; }
+        .baustein-header { display: flex; align-items: center; gap: 0.5rem; padding: 0.3rem 0; }
+        .baustein-header label { font-size: 0.875rem; cursor: pointer; flex: 1; user-select: none; }
+        .baustein-header input[type=checkbox] { accent-color: var(--primary); cursor: pointer; flex-shrink: 0; }
+        .baustein-expand-btn {
+            font-size: 0.72rem; background: none; border: 1px solid var(--border);
+            border-radius: 3px; padding: 0.1rem 0.4rem; cursor: pointer; color: var(--text-light);
+            white-space: nowrap; line-height: 1.5;
+        }
+        .baustein-expand-btn:hover { background: var(--border); color: var(--text); }
+        .baustein-body { padding: 0.3rem 0 0.6rem 1.4rem; }
+        .baustein-text {
+            width: 100%; min-height: 72px; padding: 0.35rem 0.5rem;
+            border: 1px solid var(--border); border-radius: 4px;
+            font-family: monospace; font-size: 0.78rem; line-height: 1.4;
+            box-sizing: border-box; resize: vertical; background: var(--white);
+        }
+        .baustein-actions { margin-top: 0.65rem; }
     </style>
 </head>
 <body>
@@ -148,11 +171,17 @@ if (!empty($briefSettings['sponsoring_pakete'])) {
                     <div class="baustein-panel">
                         <h4>Abschnitte</h4>
                         <?php foreach (sponsorBestaetigungSektionen() as $sek): ?>
-                        <div class="baustein-row">
-                            <input type="checkbox" id="baustein-<?= $sek['id'] ?>" class="baustein-cb"
-                                   data-id="<?= htmlspecialchars($sek['id']) ?>"
-                                   <?= $sek['checked'] ? 'checked' : '' ?>>
-                            <label for="baustein-<?= $sek['id'] ?>"><?= htmlspecialchars($sek['titel']) ?></label>
+                        <div class="baustein-item">
+                            <div class="baustein-header">
+                                <input type="checkbox" id="baustein-<?= $sek['id'] ?>" class="baustein-cb"
+                                       data-id="<?= htmlspecialchars($sek['id']) ?>"
+                                       <?= $sek['checked'] ? 'checked' : '' ?>>
+                                <label for="baustein-<?= $sek['id'] ?>"><?= htmlspecialchars($sek['titel']) ?></label>
+                                <button type="button" class="baustein-expand-btn" data-id="<?= $sek['id'] ?>">Text ▾</button>
+                            </div>
+                            <div class="baustein-body" id="baustein-body-<?= $sek['id'] ?>" hidden>
+                                <textarea class="baustein-text" data-id="<?= htmlspecialchars($sek['id']) ?>"><?= htmlspecialchars($sek['text']) ?></textarea>
+                            </div>
                         </div>
                         <?php endforeach; ?>
                         <div class="baustein-actions">
@@ -161,13 +190,18 @@ if (!empty($briefSettings['sponsoring_pakete'])) {
                     </div>
                     <?php endif; ?>
 
-                    <div class="brief-split">
+                    <div class="brief-split" id="brief-split">
                         <div>
-                            <h3>Markdown</h3>
+                            <div class="brief-split-head">
+                                <h3>Markdown</h3>
+                            </div>
                             <textarea id="koerper_md" name="koerper_md"><?= htmlspecialchars($vorlage['koerper_md']) ?></textarea>
                         </div>
-                        <div>
-                            <h3>Vorschau (Beispieldaten)</h3>
+                        <div class="preview-col">
+                            <div class="brief-split-head">
+                                <h3>Vorschau (Beispieldaten)</h3>
+                                <button type="button" class="preview-toggle-btn" id="preview-toggle">Vorschau ausblenden</button>
+                            </div>
                             <iframe id="preview-frame" sandbox="" title="Vorschau"></iframe>
                         </div>
                     </div>
@@ -294,19 +328,28 @@ if (!empty($briefSettings['sponsoring_pakete'])) {
             renderPreview();
         });
 
-        // Vorschau-Höhe beim manuellen Resize der Textarea nachziehen
+        // Vorschau-Höhe beim manuellen Resize der Textarea nachziehen (max 700px)
         if (typeof ResizeObserver !== 'undefined') {
             new ResizeObserver(function(entries) {
                 for (var entry of entries) {
-                    frame.style.height = entry.contentRect.height + 'px';
+                    frame.style.height = Math.min(entry.contentRect.height, 700) + 'px';
                 }
             }).observe(ta);
+        }
+
+        // Preview-Toggle
+        var previewToggle = document.getElementById('preview-toggle');
+        var briefSplit = document.getElementById('brief-split');
+        if (previewToggle && briefSplit) {
+            previewToggle.addEventListener('click', function() {
+                var hidden = briefSplit.classList.toggle('preview-hidden');
+                previewToggle.textContent = hidden ? 'Vorschau einblenden' : 'Vorschau ausblenden';
+            });
         }
     })();
 
     <?php if ($slug === 'bestaetigung'): ?>
     (function() {
-        const sektionen = <?= json_encode(sponsorBestaetigungSektionen(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
         const INTRO = <?= json_encode(
             "{{anrede}}\n\nherzlichen Dank, dass Sie den Marktlauf Kirchseeon am **{{event_datum}}** als **{{paket_text}}** unterstützen. Wir freuen uns sehr über Ihre Zusage und die Zusammenarbeit!\n\nDamit wir Ihren Markenauftritt optimal vorbereiten können, bitten wir Sie, uns folgende Unterlagen und Informationen zukommen zu lassen:",
             JSON_UNESCAPED_UNICODE
@@ -320,6 +363,19 @@ if (!empty($briefSettings['sponsoring_pakete'])) {
         const btn = document.getElementById('btn-zusammenstellen');
         if (!btn || !ta) return;
 
+        // Klappmenü: Text ▾ / ▴ toggle
+        document.querySelectorAll('.baustein-expand-btn').forEach(function(expandBtn) {
+            expandBtn.addEventListener('click', function() {
+                var id = expandBtn.dataset.id;
+                var body = document.getElementById('baustein-body-' + id);
+                if (!body) return;
+                var open = body.hidden;
+                body.hidden = !open;
+                expandBtn.textContent = open ? 'Text ▴' : 'Text ▾';
+            });
+        });
+
+        // Zusammenstellen: liest Text aus den editierbaren Baustein-Textareas
         btn.addEventListener('click', function() {
             if (ta.value.trim() !== '' && !confirm('Den aktuellen Text überschreiben und neu zusammenstellen?')) {
                 return;
@@ -327,9 +383,8 @@ if (!empty($briefSettings['sponsoring_pakete'])) {
             var parts = [INTRO];
             document.querySelectorAll('.baustein-cb').forEach(function(cb) {
                 if (!cb.checked) return;
-                var id = cb.dataset.id;
-                var sek = sektionen.find(function(s) { return s.id === id; });
-                if (sek) parts.push(sek.text);
+                var textArea = document.querySelector('.baustein-text[data-id="' + cb.dataset.id + '"]');
+                if (textArea && textArea.value.trim() !== '') parts.push(textArea.value);
             });
             parts.push(OUTRO);
             ta.value = parts.join('\n\n');
