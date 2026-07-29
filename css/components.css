@@ -1163,6 +1163,14 @@
     justify-content: center;
 }
 
+/* Clickable sponsor logos: the anchor must not change the box the image gets */
+.sponsor-item a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+}
+
 .sponsor-item img {
     width: 210px;
     height: 105px;
