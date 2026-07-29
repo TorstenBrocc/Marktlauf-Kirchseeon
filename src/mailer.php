@@ -45,10 +45,11 @@ class SmtpMailer
     }
 
     /**
-     * @param string[] $bcc Blindkopie-Empfänger (kein Header, nur zusätzliches RCPT TO).
-     *                       Ein fehlgeschlagenes BCC-RCPT bricht den Hauptversand NICHT ab.
+     * @param string[]                                      $bcc         Blindkopie-Empfänger (kein Header, nur zusätzliches RCPT TO).
+     *                                                                   Ein fehlgeschlagenes BCC-RCPT bricht den Hauptversand NICHT ab.
+     * @param array<array{path:string,name:string,mime:string}> $attachments Dateianhänge; jeder Eintrag: path=abs. Pfad, name=Dateiname, mime=MIME-Type.
      */
-    public function send(string $to, string $subject, string $textBody, string $htmlBody = '', array $bcc = []): bool
+    public function send(string $to, string $subject, string $textBody, string $htmlBody = '', array $bcc = [], array $attachments = []): bool
     {
         $this->lastError = null;
         $this->bccReport = [];
@@ -74,7 +75,7 @@ class SmtpMailer
                 $accepted = $this->rcptToOptional($bccAddr);
                 $this->bccReport[$bccAddr] = $accepted ? 'accepted (250)' : ('REJECTED: ' . ($this->lastError ?? '?'));
             }
-            $this->data($to, $subject, $textBody, $htmlBody);
+            $this->data($to, $subject, $textBody, $htmlBody, $attachments);
             $this->quit();
             return true;
         } catch (Exception $e) {
@@ -154,12 +155,12 @@ class SmtpMailer
         }
     }
 
-    private function data(string $to, string $subject, string $textBody, string $htmlBody): void
+    private function data(string $to, string $subject, string $textBody, string $htmlBody, array $attachments = []): void
     {
         $this->sendCommand('DATA');
         $this->expectCode(354);
 
-        $message = $this->buildMessage($to, $subject, $textBody, $htmlBody);
+        $message = $this->buildMessage($to, $subject, $textBody, $htmlBody, $attachments);
         $this->sendCommand($message . "\r\n.");
         $this->expectCode(250);
     }
@@ -208,9 +209,8 @@ class SmtpMailer
         return $response;
     }
 
-    private function buildMessage(string $to, string $subject, string $textBody, string $htmlBody): string
+    private function buildMessage(string $to, string $subject, string $textBody, string $htmlBody, array $attachments = []): string
     {
-        $boundary = '----=_Part_' . bin2hex(random_bytes(16));
         $date = date('r');
         $messageId = '<' . bin2hex(random_bytes(16)) . '@' . parse_url($this->host, PHP_URL_HOST) . '>';
 
@@ -232,7 +232,15 @@ class SmtpMailer
             'MIME-Version: 1.0',
         ];
 
-        if ($htmlBody !== '') {
+        $validAttachments = array_filter($attachments, static fn ($a) => is_file($a['path'] ?? ''));
+
+        if (!empty($validAttachments)) {
+            // multipart/mixed wraps content + attachments
+            $outerBoundary = '----=_Mixed_' . bin2hex(random_bytes(16));
+            $headers[] = "Content-Type: multipart/mixed; boundary=\"$outerBoundary\"";
+            $body = $this->buildMixedBody($textBody, $htmlBody, $outerBoundary, $validAttachments);
+        } elseif ($htmlBody !== '') {
+            $boundary = '----=_Part_' . bin2hex(random_bytes(16));
             $headers[] = "Content-Type: multipart/alternative; boundary=\"$boundary\"";
             $body = $this->buildMultipartBody($textBody, $htmlBody, $boundary);
         } else {
@@ -261,6 +269,44 @@ class SmtpMailer
         $parts[] = chunk_split(base64_encode($htmlBody));
 
         $parts[] = "--$boundary--";
+
+        return implode("\r\n", $parts);
+    }
+
+    /** multipart/mixed: Text+HTML-Block gefolgt von Dateianhängen. */
+    private function buildMixedBody(string $textBody, string $htmlBody, string $outerBoundary, array $attachments): string
+    {
+        $parts = [];
+
+        if ($htmlBody !== '') {
+            $innerBoundary = '----=_Alt_' . bin2hex(random_bytes(16));
+            $parts[] = "--$outerBoundary";
+            $parts[] = "Content-Type: multipart/alternative; boundary=\"$innerBoundary\"";
+            $parts[] = '';
+            $parts[] = $this->buildMultipartBody($textBody, $htmlBody, $innerBoundary);
+        } else {
+            $parts[] = "--$outerBoundary";
+            $parts[] = 'Content-Type: text/plain; charset=UTF-8';
+            $parts[] = 'Content-Transfer-Encoding: base64';
+            $parts[] = '';
+            $parts[] = chunk_split(base64_encode($textBody));
+        }
+
+        foreach ($attachments as $att) {
+            $data = @file_get_contents($att['path']);
+            if ($data === false) {
+                continue;
+            }
+            $encodedName = '=?UTF-8?B?' . base64_encode($att['name']) . '?=';
+            $parts[] = "--$outerBoundary";
+            $parts[] = 'Content-Type: ' . $att['mime'] . '; name="' . $encodedName . '"';
+            $parts[] = 'Content-Transfer-Encoding: base64';
+            $parts[] = 'Content-Disposition: attachment; filename="' . $encodedName . '"';
+            $parts[] = '';
+            $parts[] = chunk_split(base64_encode($data));
+        }
+
+        $parts[] = "--$outerBoundary--";
 
         return implode("\r\n", $parts);
     }

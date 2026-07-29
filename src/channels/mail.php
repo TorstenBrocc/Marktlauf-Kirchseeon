@@ -28,14 +28,17 @@ function mailBccAddress(): string {
     return $bcc;
 }
 
-function sendMail(string $to, string $subject, string $textBody, string $htmlBody = ''): bool {
+/**
+ * @param array<array{path:string,name:string,mime:string}> $attachments Dateianhänge.
+ */
+function sendMail(string $to, string $subject, string $textBody, string $htmlBody = '', array $attachments = []): bool {
     $bccAddr = mailBccAddress();
     $bcc = ($bccAddr !== '' && strcasecmp($bccAddr, $to) !== 0) ? [$bccAddr] : [];
 
     $mailer = getSmtpMailer();
 
     if ($mailer !== null) {
-        $result = $mailer->send($to, $subject, $textBody, $htmlBody, $bcc);
+        $result = $mailer->send($to, $subject, $textBody, $htmlBody, $bcc, $attachments);
         if (!$result) {
             logError('SMTP error: ' . $mailer->getLastError());
         }
@@ -208,6 +211,33 @@ function sendSponsorAnschreiben(
 }
 
 /**
+ * Aktuelle Plakat-PDFs aus der dateien-Tabelle als Anhang-Array laden.
+ * @return array<array{path:string,name:string,mime:string}>
+ */
+function plakateAnhang(PDO $pdo): array {
+    try {
+        $stmt = $pdo->query("SELECT dateiname, originalname FROM dateien WHERE bereich = 'orga' AND kategorie = 'plakat' ORDER BY id ASC");
+        $rows = $stmt->fetchAll();
+    } catch (PDOException $e) {
+        logError('plakateAnhang DB error: ' . $e->getMessage());
+        return [];
+    }
+    $base = __DIR__ . '/../../storage/files/orga/';
+    $result = [];
+    foreach ($rows as $row) {
+        $path = $base . $row['dateiname'];
+        if (is_file($path)) {
+            $result[] = [
+                'path' => $path,
+                'name' => $row['originalname'],
+                'mime' => 'application/pdf',
+            ];
+        }
+    }
+    return $result;
+}
+
+/**
  * Vereins-/Laufevent-Anschreiben versenden (nativer SMTP-Mailer, HTML + Text).
  *
  * Inhalt (Betreff + Körper) stammt aus der editierbaren Vorlage
@@ -237,13 +267,14 @@ function sendVereinAnschreiben(
     if ($userId === 0) {
         $userId = (int) ($_SESSION['user_id'] ?? 0);
     }
-    $pdo      = getDbConnection();
-    $vorlage  = vereinBriefLoad($pdo, $typ);
-    $ctx      = vereinBriefContext($pdo, $userId, $kategorie, $anrede, $vorname, $nachname, $name);
-    $subject  = sponsorBriefBetreff($vorlage['betreff'], $ctx);
-    $htmlBody = sponsorBriefRenderHtml($vorlage['koerper_md'], $ctx);
-    $textBody = sponsorBriefRenderText($vorlage['koerper_md'], $ctx);
-    return sendMail($to, $subject, $textBody, $htmlBody);
+    $pdo         = getDbConnection();
+    $vorlage     = vereinBriefLoad($pdo, $typ);
+    $ctx         = vereinBriefContext($pdo, $userId, $kategorie, $anrede, $vorname, $nachname, $name);
+    $subject     = sponsorBriefBetreff($vorlage['betreff'], $ctx);
+    $htmlBody    = sponsorBriefRenderHtml($vorlage['koerper_md'], $ctx);
+    $textBody    = sponsorBriefRenderText($vorlage['koerper_md'], $ctx);
+    $attachments = plakateAnhang($pdo);
+    return sendMail($to, $subject, $textBody, $htmlBody, $attachments);
 }
 
 function sendAufgabeErinnerung(string $to, string $name, string $aufgabeTitel, string $faelligAm): bool {

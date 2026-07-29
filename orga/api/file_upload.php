@@ -126,7 +126,11 @@ try {
     $_SESSION['flash_error'] = 'Datenbankfehler beim Speichern.';
 }
 
-header('Location: ../dateien.php?tab=' . $bereich);
+$redirectTarget = '../dateien.php?tab=' . $bereich;
+if (!empty($_POST['redirect_after']) && preg_match('/^[\w\-]+\.php(\?[\w=&%]+)?$/', $_POST['redirect_after'])) {
+    $redirectTarget = '../' . $_POST['redirect_after'];
+}
+header('Location: ' . $redirectTarget);
 exit;
 
 /**

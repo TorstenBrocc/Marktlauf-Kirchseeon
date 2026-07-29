@@ -10,6 +10,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/api/_auth.php';
 require_once __DIR__ . '/../src/db.php';
 require_once __DIR__ . '/../src/verein_brief.php';
+require_once __DIR__ . '/../src/channels/mail.php';
 
 $user = getCurrentUserFromGuard();
 $isAdmin = isAdminFromGuard();
@@ -29,6 +30,7 @@ $vorlage = vereinBriefLoad($pdo, $slug);
 $defaults = vereinBriefDefaults();
 $default = $defaults[$slug];
 $platzhalter = vereinBriefPlatzhalterHilfe();
+$plakate = plakateAnhang($pdo);
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -65,6 +67,15 @@ $platzhalter = vereinBriefPlatzhalterHilfe();
         #preview-frame { width: 100%; min-height: 460px; border: 1px solid var(--border); border-radius: 4px; background: #fff; }
         .brief-actions { display: flex; gap: 1rem; margin-top: 1.25rem; align-items: center; flex-wrap: wrap; }
         .brief-hint { font-size: 0.8rem; color: var(--text-light); }
+        .plakat-liste { list-style: none; margin: 0.75rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+        .plakat-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0.75rem; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; }
+        .plakat-item span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .plakat-item .btn-del { flex-shrink: 0; padding: 0.25rem 0.6rem; font-size: 0.8rem; }
+        .plakat-badge { display: inline-flex; align-items: center; gap: 0.3rem; background: var(--primary); color: #fff; border-radius: 12px; padding: 0.15rem 0.6rem; font-size: 0.75rem; font-weight: 600; }
+        .plakat-section { }
+        .plakat-section-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; flex-wrap: wrap; }
+        .plakat-anleitung { font-size: 0.85rem; color: var(--text-light); margin: 0.4rem 0 0.9rem; line-height: 1.55; }
+        .plakat-upload-form { margin-top: 0.75rem; display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
     </style>
 </head>
 <body>
@@ -119,6 +130,58 @@ $platzhalter = vereinBriefPlatzhalterHilfe();
                         <button type="submit" class="btn btn-primary">Speichern</button>
                         <button type="button" class="btn btn-secondary" id="reset-default">Standardtext wiederherstellen</button>
                         <span class="brief-hint">Leerer Text = Standardvorlage wird verwendet.</span>
+                    </div>
+
+                    <hr style="border:none;border-top:1px solid var(--border);margin:1.25rem 0;">
+
+                    <div class="plakat-section">
+                        <div class="plakat-section-header">
+                            <strong>📎 Plakate als PDF-Anhang</strong>
+                            <?php if (count($plakate) > 0): ?>
+                                <span class="plakat-badge"><?= count($plakate) ?> PDF<?= count($plakate) !== 1 ? 's' : '' ?> werden angehängt</span>
+                            <?php endif; ?>
+                        </div>
+                        <p class="plakat-anleitung">
+                            Hier hinterlegte PDFs werden automatisch an <strong>jedes</strong> Anschreiben angehängt — sowohl beim Einzel- als auch beim Massenversand.<br>
+                            <strong>Workflow:</strong> Aktuelles Plakat hochladen → bleibt gespeichert → bei Plakatwechsel altes löschen, neues hochladen.
+                        </p>
+
+                        <?php
+                        try {
+                            $stmtP = $pdo->query("SELECT id, originalname, groesse FROM dateien WHERE bereich = 'orga' AND kategorie = 'plakat' ORDER BY id ASC");
+                            $plakat_rows = $stmtP->fetchAll();
+                        } catch (PDOException $e) {
+                            $plakat_rows = [];
+                        }
+                        if (count($plakat_rows) > 0): ?>
+                        <ul class="plakat-liste">
+                            <?php foreach ($plakat_rows as $pr):
+                                $kb = round((int)$pr['groesse'] / 1024);
+                            ?>
+                                <li class="plakat-item">
+                                    <span title="<?= htmlspecialchars($pr['originalname']) ?>">📄 <?= htmlspecialchars($pr['originalname']) ?></span>
+                                    <small class="brief-hint"><?= $kb ?> KB</small>
+                                    <form method="post" action="api/plakat_loeschen.php" style="margin:0;" onsubmit="return confirm('Plakat löschen?');">
+                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                                        <input type="hidden" name="datei_id" value="<?= (int)$pr['id'] ?>">
+                                        <input type="hidden" name="redirect" value="vereine_briefe.php?slug=<?= urlencode($slug) ?>">
+                                        <button type="submit" class="btn btn-secondary btn-del">Löschen</button>
+                                    </form>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                        <?php else: ?>
+                        <p class="brief-hint" style="margin:0.5rem 0;">Noch keine Plakate hochgeladen — Anschreiben werden ohne Anhang gesendet.</p>
+                        <?php endif; ?>
+
+                        <form method="post" action="api/file_upload.php" enctype="multipart/form-data" class="plakat-upload-form">
+                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                            <input type="hidden" name="bereich" value="orga">
+                            <input type="hidden" name="kategorie" value="plakat">
+                            <input type="hidden" name="redirect_after" value="vereine_briefe.php?slug=<?= urlencode($slug) ?>">
+                            <input type="file" name="datei" accept="application/pdf" required style="font-size:0.9rem;">
+                            <button type="submit" class="btn btn-primary">PDF hochladen</button>
+                        </form>
                     </div>
                 </div>
             </form>
