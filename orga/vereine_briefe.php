@@ -143,11 +143,6 @@ $plakate = plakateAnhang($pdo);
                             <span class="plakat-badge"><?= count($plakate) ?> PDF<?= count($plakate) !== 1 ? 's' : '' ?> werden angehängt</span>
                         <?php endif; ?>
                     </div>
-                    <p class="plakat-anleitung">
-                        Hier hinterlegte PDFs werden automatisch an <strong>jedes</strong> Anschreiben angehängt — sowohl beim Einzel- als auch beim Massenversand.<br>
-                        <strong>Workflow:</strong> Aktuelles Plakat hochladen → bleibt gespeichert → bei Plakatwechsel altes löschen, neues hochladen.
-                    </p>
-
                     <?php
                     try {
                         $stmtP = $pdo->query("SELECT id, originalname, groesse FROM dateien WHERE bereich = 'orga' AND kategorie = 'plakat' ORDER BY id ASC");

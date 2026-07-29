@@ -76,7 +76,7 @@ MD;
     return [
         'verein' => [
             'name'       => 'Vereins-Einladung',
-            'betreff'    => 'Einladung zum Marktlauf Kirchseeon – lauft mit {{name}} mit!',
+            'betreff'    => 'Einladung zum Marktlauf Kirchseeon – lauft mit uns mit!',
             'koerper_md' => $verein,
         ],
         'laufevent' => [
