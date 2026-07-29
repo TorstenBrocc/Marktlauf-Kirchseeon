@@ -157,7 +157,7 @@ return [
         'key'     => 'vereine_briefe',
         'label'   => 'Vereins-Anschreiben',
         'section' => 'VEREINE & LAUFEVENTS',
-        'href'    => 'vereine_briefe.php',
+        'href'    => 'vereine.php',
         'kpi'   => static function (PDO $pdo): array {
             $offen  = (int) $pdo->query("SELECT COUNT(*) FROM verein_versand_queue WHERE status = 'offen'")->fetchColumn();
             $fehler = (int) $pdo->query("SELECT COUNT(*) FROM verein_versand_queue WHERE status = 'fehler'")->fetchColumn();
