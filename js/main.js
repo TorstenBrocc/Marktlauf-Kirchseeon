@@ -369,6 +369,7 @@ function initSponsorMarquee() {
     let startScroll = 0;
     let moved = 0;
     let last = 0;
+    let pos = 0;   // Autoplay-Position als Fliesskommawert, siehe frame()
 
     function running(now) {
         return !dragging && !touching && !hovering && !document.hidden &&
@@ -379,9 +380,20 @@ function initSponsorMarquee() {
         const dt = last ? Math.min((now - last) / 1000, 0.1) : 0;
         last = now;
         if (running(now) && period > 0) {
-            wrap.scrollLeft += (period / SPEED) * dt;
+            // Position getrennt mitfuehren und erst dann zuweisen. Ein
+            // "wrap.scrollLeft += x" verliert den Bruchteil bei jedem Frame,
+            // sobald ein Browser scrollLeft auf ganze Pixel rundet — Safari
+            // tut das. Bei 120 Hz waeren das 0,5 px pro Frame, die restlos
+            // verworfen werden: der Durchlauf stand dort komplett still.
+            pos += (period / SPEED) * dt;
+            if (pos >= period) pos -= period;
+            else if (pos < 0) pos += period;
+            wrap.scrollLeft = pos;
+        } else {
+            // Hier fuehrt der Nutzer — seine Position uebernehmen
+            normalize();
+            pos = wrap.scrollLeft;
         }
-        normalize();
         requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);
