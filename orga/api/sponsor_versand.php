@@ -164,9 +164,19 @@ try {
         $queued++;
     }
 
-    $_SESSION['flash_success'] = "{$queued} Anschreiben in die Sende-Queue gestellt (Status „offen“). "
-        . 'ACHTUNG: Der Versand startet NICHT automatisch — er muss über das CLI-Script '
-        . 'ausgelöst werden (bin/sponsor_versand.php per SSH).' . $hinweis;
+    $scriptPath = realpath(__DIR__ . '/../../bin/sponsor_versand.php');
+    $launched = false;
+    if ($scriptPath && function_exists('exec') && !in_array('exec', array_map('trim', explode(',', ini_get('disable_functions'))))) {
+        exec('MARKTLAUF_CLI=1 php ' . escapeshellarg($scriptPath) . ' > /dev/null 2>&1 &');
+        $launched = true;
+    }
+
+    if ($launched) {
+        $_SESSION['flash_success'] = $queued . ' Anschreiben werden jetzt gesendet (läuft im Hintergrund).' . $hinweis;
+    } else {
+        $_SESSION['flash_success'] = $queued . ' Anschreiben in die Sende-Queue gestellt. '
+            . 'Versand starten: <code>MARKTLAUF_CLI=1 php bin/sponsor_versand.php</code> per SSH.' . $hinweis;
+    }
     header('Location: ../sponsoren.php');
     exit;
 } catch (PDOException $e) {
