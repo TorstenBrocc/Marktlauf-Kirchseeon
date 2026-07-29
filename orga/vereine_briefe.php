@@ -132,59 +132,60 @@ $plakate = plakateAnhang($pdo);
                         <span class="brief-hint">Leerer Text = Standardvorlage wird verwendet.</span>
                     </div>
 
-                    <hr style="border:none;border-top:1px solid var(--border);margin:1.25rem 0;">
-
-                    <div class="plakat-section">
-                        <div class="plakat-section-header">
-                            <strong>📎 Plakate als PDF-Anhang</strong>
-                            <?php if (count($plakate) > 0): ?>
-                                <span class="plakat-badge"><?= count($plakate) ?> PDF<?= count($plakate) !== 1 ? 's' : '' ?> werden angehängt</span>
-                            <?php endif; ?>
-                        </div>
-                        <p class="plakat-anleitung">
-                            Hier hinterlegte PDFs werden automatisch an <strong>jedes</strong> Anschreiben angehängt — sowohl beim Einzel- als auch beim Massenversand.<br>
-                            <strong>Workflow:</strong> Aktuelles Plakat hochladen → bleibt gespeichert → bei Plakatwechsel altes löschen, neues hochladen.
-                        </p>
-
-                        <?php
-                        try {
-                            $stmtP = $pdo->query("SELECT id, originalname, groesse FROM dateien WHERE bereich = 'orga' AND kategorie = 'plakat' ORDER BY id ASC");
-                            $plakat_rows = $stmtP->fetchAll();
-                        } catch (PDOException $e) {
-                            $plakat_rows = [];
-                        }
-                        if (count($plakat_rows) > 0): ?>
-                        <ul class="plakat-liste">
-                            <?php foreach ($plakat_rows as $pr):
-                                $kb = round((int)$pr['groesse'] / 1024);
-                            ?>
-                                <li class="plakat-item">
-                                    <span title="<?= htmlspecialchars($pr['originalname']) ?>">📄 <?= htmlspecialchars($pr['originalname']) ?></span>
-                                    <small class="brief-hint"><?= $kb ?> KB</small>
-                                    <form method="post" action="api/plakat_loeschen.php" style="margin:0;" onsubmit="return confirm('Plakat löschen?');">
-                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                                        <input type="hidden" name="datei_id" value="<?= (int)$pr['id'] ?>">
-                                        <input type="hidden" name="redirect" value="vereine_briefe.php?slug=<?= urlencode($slug) ?>">
-                                        <button type="submit" class="btn btn-secondary btn-del">Löschen</button>
-                                    </form>
-                                </li>
-                            <?php endforeach; ?>
-                        </ul>
-                        <?php else: ?>
-                        <p class="brief-hint" style="margin:0.5rem 0;">Noch keine Plakate hochgeladen — Anschreiben werden ohne Anhang gesendet.</p>
-                        <?php endif; ?>
-
-                        <form method="post" action="api/file_upload.php" enctype="multipart/form-data" class="plakat-upload-form">
-                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                            <input type="hidden" name="bereich" value="orga">
-                            <input type="hidden" name="kategorie" value="plakat">
-                            <input type="hidden" name="redirect_after" value="vereine_briefe.php?slug=<?= urlencode($slug) ?>">
-                            <input type="file" name="datei" accept="application/pdf" required style="font-size:0.9rem;">
-                            <button type="submit" class="btn btn-primary">PDF hochladen</button>
-                        </form>
-                    </div>
                 </div>
             </form>
+
+            <div class="brief-card">
+                <div class="plakat-section">
+                    <div class="plakat-section-header">
+                        <strong>📎 Plakate als PDF-Anhang</strong>
+                        <?php if (count($plakate) > 0): ?>
+                            <span class="plakat-badge"><?= count($plakate) ?> PDF<?= count($plakate) !== 1 ? 's' : '' ?> werden angehängt</span>
+                        <?php endif; ?>
+                    </div>
+                    <p class="plakat-anleitung">
+                        Hier hinterlegte PDFs werden automatisch an <strong>jedes</strong> Anschreiben angehängt — sowohl beim Einzel- als auch beim Massenversand.<br>
+                        <strong>Workflow:</strong> Aktuelles Plakat hochladen → bleibt gespeichert → bei Plakatwechsel altes löschen, neues hochladen.
+                    </p>
+
+                    <?php
+                    try {
+                        $stmtP = $pdo->query("SELECT id, originalname, groesse FROM dateien WHERE bereich = 'orga' AND kategorie = 'plakat' ORDER BY id ASC");
+                        $plakat_rows = $stmtP->fetchAll();
+                    } catch (PDOException $e) {
+                        $plakat_rows = [];
+                    }
+                    if (count($plakat_rows) > 0): ?>
+                    <ul class="plakat-liste">
+                        <?php foreach ($plakat_rows as $pr):
+                            $kb = round((int)$pr['groesse'] / 1024);
+                        ?>
+                            <li class="plakat-item">
+                                <span title="<?= htmlspecialchars($pr['originalname']) ?>">📄 <?= htmlspecialchars($pr['originalname']) ?></span>
+                                <small class="brief-hint"><?= $kb ?> KB</small>
+                                <form method="post" action="api/plakat_loeschen.php" style="margin:0;" onsubmit="return confirm('Plakat löschen?');">
+                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                                    <input type="hidden" name="datei_id" value="<?= (int)$pr['id'] ?>">
+                                    <input type="hidden" name="redirect" value="vereine_briefe.php?slug=<?= urlencode($slug) ?>">
+                                    <button type="submit" class="btn btn-secondary btn-del">Löschen</button>
+                                </form>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                    <?php else: ?>
+                    <p class="brief-hint" style="margin:0.5rem 0;">Noch keine Plakate hochgeladen — Anschreiben werden ohne Anhang gesendet.</p>
+                    <?php endif; ?>
+
+                    <form method="post" action="api/file_upload.php" enctype="multipart/form-data" class="plakat-upload-form">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                        <input type="hidden" name="bereich" value="orga">
+                        <input type="hidden" name="kategorie" value="plakat">
+                        <input type="hidden" name="redirect_after" value="vereine_briefe.php?slug=<?= urlencode($slug) ?>">
+                        <input type="file" name="datei" accept="application/pdf" required style="font-size:0.9rem;">
+                        <button type="submit" class="btn btn-primary">PDF hochladen</button>
+                    </form>
+                </div>
+            </div>
         </main>
     </div>
     <script>
