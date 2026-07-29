@@ -73,6 +73,43 @@ function sendMail(string $to, string $subject, string $textBody, string $htmlBod
     return mail($to, $encodedSubject, $textBody, $headerString);
 }
 
+/**
+ * Ergänzt eine reine Text-Mail um einen HTML-Teil, damit die Social-Logos
+ * genauso erscheinen wie in den Anschreiben-Signaturen.
+ *
+ * Hintergrund: die Transaktions-Mails unten waren text/plain ohne HTML-Teil,
+ * und Logos brauchen zwingend HTML. Statt fünf HTML-Vorlagen zu pflegen wird
+ * hier derselbe Text in HTML überführt — so bleibt der Wortlaut an einer
+ * Stelle und kann nicht auseinanderlaufen.
+ *
+ * Die Text-Fassung bekommt die URLs ausgeschrieben, weil sendMail() ohne SMTP
+ * auf text/plain zurückfällt und den HTML-Teil dann verwirft.
+ *
+ * Reihenfolge beim HTML: erst escapen, dann verlinken. Umgekehrt würde
+ * htmlspecialchars die gerade erzeugten Tags wieder zerlegen.
+ */
+function marktlaufMailBody(string $text): array {
+    $social = marktlaufSocialLinks();
+
+    $escaped = htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
+    // Satzzeichen am Ende nicht mit in den Link ziehen
+    $linked = preg_replace(
+        '~(https?://[^\s<]*[^\s<.,;:!?)])~',
+        '<a href="$1" style="color:#009640">$1</a>',
+        $escaped
+    );
+
+    $html = '<div style="font:14px/1.6 -apple-system,\'Segoe UI\',Helvetica,Arial,sans-serif;color:#222222">'
+        . nl2br($linked, false)
+        . '<div style="margin-top:16px">' . $social['html'] . '</div>'
+        . '</div>';
+
+    return [
+        'text' => rtrim($text) . "\n\n" . $social['text'],
+        'html' => $html,
+    ];
+}
+
 function sendHelferEingangsbestaetigung(string $to, string $name): bool {
     $subject = '✅ Du bist dabei – Marktlauf Kirchseeon';
     $body = <<<TEXT
@@ -91,7 +128,8 @@ ATSV Kirchseeon Marktlauf
 https://atsv-kirchseeon-marktlauf.de
 TEXT;
 
-    return sendMail($to, $subject, $body);
+    $mail = marktlaufMailBody($body);
+    return sendMail($to, $subject, $mail['text'], $mail['html']);
 }
 
 function sendHelferBestaetigung(string $to, string $name, string $zugangLink): bool {
@@ -116,7 +154,8 @@ ATSV Kirchseeon Marktlauf
 https://atsv-kirchseeon-marktlauf.de
 TEXT;
 
-    return sendMail($to, $subject, $body);
+    $mail = marktlaufMailBody($body);
+    return sendMail($to, $subject, $mail['text'], $mail['html']);
 }
 
 function sendUserInvite(string $to, string $name, string $inviteLink, string $role): bool {
@@ -142,7 +181,8 @@ ATSV Kirchseeon Marktlauf
 https://atsv-kirchseeon-marktlauf.de
 TEXT;
 
-    return sendMail($to, $subject, $body);
+    $mail = marktlaufMailBody($body);
+    return sendMail($to, $subject, $mail['text'], $mail['html']);
 }
 
 /**
@@ -172,7 +212,8 @@ ATSV Kirchseeon Marktlauf
 https://atsv-kirchseeon-marktlauf.de
 TEXT;
 
-    return sendMail($to, $subject, $body);
+    $mail = marktlaufMailBody($body);
+    return sendMail($to, $subject, $mail['text'], $mail['html']);
 }
 
 /**
@@ -299,5 +340,6 @@ ATSV Kirchseeon Marktlauf
 https://atsv-kirchseeon-marktlauf.de
 TEXT;
 
-    return sendMail($to, $subject, $body);
+    $mail = marktlaufMailBody($body);
+    return sendMail($to, $subject, $mail['text'], $mail['html']);
 }
