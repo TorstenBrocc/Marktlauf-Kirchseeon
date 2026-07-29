@@ -59,6 +59,8 @@ Am **{{event_datum}}** startet der **2. Marktlauf Kirchseeon** auf dem Westring,
 
 Gerade als lokales Unternehmen sind Sie hier mittendrin statt nur dabei: Ihre Kundinnen und Kunden laufen, jubeln oder schauen direkt vor Ihrer Haustür zu. Ich würde mich sehr freuen, wenn Sie mit Ihrer Marke ein Teil davon sind.
 
+### Unsere Sponsoring-Pakete im Überblick:
+
 {{paket_tabelle}}
 
 {{paket_text}}
@@ -82,6 +84,8 @@ schön, dass {{firma}} beim 1. Marktlauf Kirchseeon dabei war – dafür noch ei
 Am **{{event_datum}}** geht der **2. Marktlauf Kirchseeon** auf dem Westring an den Start – gemeinsam mit der Gemeinde im Rahmen des Energie- und Umwelttags, diesmal noch größer: **300 Läufer, rund 900 Gäste**. Wir würden uns sehr freuen, wenn Sie auch 2026 wieder mit an Bord wären.
 
 Gerade als lokales Unternehmen sind Sie hier mittendrin statt nur dabei: Ihre Kundinnen und Kunden laufen, jubeln oder schauen direkt vor Ihrer Haustür zu. Ich würde mich sehr freuen, wenn Sie mit Ihrer Marke ein Teil davon sind.
+
+### Unsere Sponsoring-Pakete im Überblick:
 
 {{paket_tabelle}}
 
@@ -434,8 +438,11 @@ function sponsorBriefPaketTabelleHtml(PDO $pdo): string {
             . '<td style="border: 1px solid #dddddd; padding: 8px;">' . htmlspecialchars((string) ($p['highlights'] ?? '')) . '</td>'
             . '</tr>';
     }
-    return '<h3>Unsere Sponsoring-Pakete im Überblick:</h3>'
-        . '<table style="width: 100%; border-collapse: collapse; margin: 20px 0;">'
+    // Bewusst ohne eigene Überschrift: die stand hier fest verdrahtet und war
+    // im Editor unerreichbar — zusammen mit der Tabellenkopfzeile ergab das
+    // zwei Titelzeilen in Folge. Der Block liefert jetzt nur noch Daten, die
+    // Überschrift steht als "### …" in der Vorlage und ist damit editierbar.
+    return '<table style="width: 100%; border-collapse: collapse; margin: 20px 0;">'
         . '<tr style="background-color: #f2f2f2;">'
         . '<th style="border: 1px solid #dddddd; text-align: left; padding: 8px;">Paket</th>'
         . '<th style="border: 1px solid #dddddd; text-align: left; padding: 8px;">Investition</th>'
@@ -444,8 +451,10 @@ function sponsorBriefPaketTabelleHtml(PDO $pdo): string {
 }
 
 function sponsorBriefPaketTextListe(PDO $pdo): string {
+    // Ebenfalls ohne Überschrift — die kommt als "### …" aus der Vorlage und
+    // landet über sponsorMdToText auch im Text-Teil. Sonst stünde sie doppelt.
     $pakete = sponsorBriefPaketeAusDb($pdo);
-    $lines = "Sponsoring-Pakete:\n";
+    $lines = '';
     foreach ($pakete as $p) {
         $lines .= '- ' . ($p['name'] ?? '') . ' (' . ($p['investition'] ?? '') . '): ' . ($p['highlights'] ?? '') . "\n";
     }
@@ -551,9 +560,38 @@ function sponsorMdToHtml(string $md): string {
         $pd->setSafeMode(true);       // filtert gefährliche URLs/Attribute
         $pd->setMarkupEscaped(true);  // getipptes Roh-HTML wird zu Text
         $pd->setBreaksEnabled(true);  // einfacher Zeilenumbruch => <br>
-        return $pd->text($md);
+        return sponsorStyleHeadings($pd->text($md));
     }
-    return sponsorMiniMarkdown($md);
+    return sponsorStyleHeadings(sponsorMiniMarkdown($md));
+}
+
+/**
+ * Gibt <h1>–<h6> aus dem Markdown-Rendering feste Inline-Styles.
+ *
+ * Nötig, weil Mail-Clients nackte Überschriften unterschiedlich groß setzen
+ * und Outlook eigene Abstände erfindet. Bewusst hier und nicht im Konverter,
+ * damit beide Rendering-Wege (Parsedown und Mini-Konverter) dasselbe Ergebnis
+ * liefern. Die vertrauenswürdigen Blöcke (Tabelle, Signatur) werden erst
+ * danach eingesetzt und sind deshalb nicht betroffen.
+ *
+ * Drei nutzbare Ebenen: ## groß, ### mittel (grün, die Stufe über der
+ * Paket-Tabelle), #### klein.
+ */
+function sponsorStyleHeadings(string $html): string {
+    $styles = [
+        1 => 'font-size:22px;line-height:1.25;font-weight:700;color:#1a1a1a;margin:24px 0 10px',
+        2 => 'font-size:19px;line-height:1.30;font-weight:700;color:#1a1a1a;margin:22px 0 9px',
+        3 => 'font-size:16px;line-height:1.35;font-weight:700;color:#009640;margin:20px 0 8px',
+        4 => 'font-size:14px;line-height:1.40;font-weight:700;color:#1a1a1a;margin:18px 0 6px',
+    ];
+    return (string) preg_replace_callback(
+        '~<h([1-6])>~',
+        static function (array $m) use ($styles): string {
+            $level = (int) $m[1];
+            return '<h' . $level . ' style="' . ($styles[$level] ?? $styles[4]) . '">';
+        },
+        $html
+    );
 }
 
 /** Minimaler, abhängigkeitsfreier Markdown->HTML-Fallback (immer HTML-escaped). */
@@ -574,12 +612,26 @@ function sponsorMiniMarkdown(string $md): string {
             $out[] = '<ul>' . $items . '</ul>';
             continue;
         }
-        if (preg_match('/^(#{1,6})\s+(.*)$/', $lines[0], $m)) {
-            $level = strlen($m[1]);
-            $out[] = "<h{$level}>" . sponsorMiniInline($m[2]) . "</h{$level}>";
-            continue;
+        // Überschriften zeilenweise behandeln. Vorher wurde nur die erste Zeile
+        // eines Blocks geprüft und mit "continue" alles danach verworfen — wer
+        // unter eine Überschrift ohne Leerzeile weiterschrieb, verlor diesen
+        // Text stillschweigend, auch in der Vorschau.
+        $para = [];
+        foreach ($lines as $line) {
+            if (preg_match('/^(#{1,6})\s+(.*)$/', $line, $m)) {
+                if ($para !== []) {
+                    $out[] = '<p>' . implode('<br>', array_map('sponsorMiniInline', $para)) . '</p>';
+                    $para = [];
+                }
+                $level = strlen($m[1]);
+                $out[] = "<h{$level}>" . sponsorMiniInline($m[2]) . "</h{$level}>";
+                continue;
+            }
+            $para[] = $line;
         }
-        $out[] = '<p>' . implode('<br>', array_map('sponsorMiniInline', $lines)) . '</p>';
+        if ($para !== []) {
+            $out[] = '<p>' . implode('<br>', array_map('sponsorMiniInline', $para)) . '</p>';
+        }
     }
     return implode("\n", $out);
 }
