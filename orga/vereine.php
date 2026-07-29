@@ -152,6 +152,33 @@ $katLabel = ['verein' => 'Verein', 'laufevent' => 'Laufevent'];
                 <div class="alert alert-error"><?= htmlspecialchars($flashError) ?></div>
             <?php endif; ?>
 
+            <?php
+            try {
+                $queueFehler = $pdo->query("SELECT vq.id, vq.name, vq.email, vq.fehler_text, vq.anschreiben_typ FROM verein_versand_queue vq WHERE vq.status = 'fehler' ORDER BY vq.id DESC LIMIT 20")->fetchAll();
+            } catch (PDOException $e) { $queueFehler = []; }
+            if (!empty($queueFehler)): ?>
+            <div class="alert alert-error" style="margin-bottom:1.25rem;">
+                <strong>⚠️ <?= count($queueFehler) ?> Versand-Fehler in der Queue</strong>
+                <table style="width:100%;margin-top:0.6rem;font-size:0.85rem;border-collapse:collapse;">
+                    <thead><tr style="text-align:left;border-bottom:1px solid rgba(0,0,0,.15);">
+                        <th style="padding:0.25rem 0.5rem 0.25rem 0;">Empfänger</th>
+                        <th style="padding:0.25rem 0.5rem;">E-Mail</th>
+                        <th style="padding:0.25rem 0;">Fehlermeldung</th>
+                    </tr></thead>
+                    <tbody>
+                    <?php foreach ($queueFehler as $fz): ?>
+                        <tr style="border-bottom:1px solid rgba(0,0,0,.07);">
+                            <td style="padding:0.25rem 0.5rem 0.25rem 0;"><?= htmlspecialchars($fz['name']) ?></td>
+                            <td style="padding:0.25rem 0.5rem;"><?= htmlspecialchars($fz['email']) ?></td>
+                            <td style="padding:0.25rem 0;color:#c0392b;"><?= htmlspecialchars($fz['fehler_text'] ?? '—') ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+                <p style="margin:0.6rem 0 0;font-size:0.82rem;">Zum erneuten Versuch: <code>MARKTLAUF_CLI=1 php bin/verein_versand.php --retry</code> per SSH.</p>
+            </div>
+            <?php endif; ?>
+
             <?php if (!empty($importReport)): ?>
                 <div class="import-report">
                     <strong>Import-Hinweise:</strong>
