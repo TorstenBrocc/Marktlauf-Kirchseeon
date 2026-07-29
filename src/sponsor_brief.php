@@ -38,7 +38,7 @@ function sponsorFormatDatum(string $ymd, string $fallback): string {
 
 /** Gültige Vorlagen-Slugs (= Anschreiben-Typen). */
 function sponsorBriefSlugs(): array {
-    return ['erstanschreiben', 'folgejahr', 'frei'];
+    return ['erstanschreiben', 'folgejahr', 'frei', 'bestaetigung'];
 }
 
 function sponsorBriefSlugValid(string $slug): bool {
@@ -115,6 +115,134 @@ MD;
             'name'       => 'Freier Brief',
             'betreff'    => 'Marktlauf Kirchseeon – {{firma}}',
             'koerper_md' => $frei,
+        ],
+        'bestaetigung' => [
+            'name'       => 'Bestätigung Sponsoring',
+            'betreff'    => 'Herzlichen Dank und nächste Schritte – Marktlauf Kirchseeon, {{firma}}',
+            'koerper_md' => <<<MD
+{{anrede}}
+
+herzlichen Dank, dass Sie den Marktlauf Kirchseeon am **{{event_datum}}** als **{{paket_text}}** unterstützen. Wir freuen uns sehr über Ihre Zusage und die Zusammenarbeit!
+
+Damit wir Ihren Markenauftritt optimal vorbereiten können, bitten wir Sie, uns folgende Unterlagen und Informationen zukommen zu lassen:
+
+**1. Logo & Platzierungen**
+
+- Bitte senden Sie uns Ihr Logo in allen Auflösungen für Web (bevorzugt SVG) und Druck.
+- Für die Website-Verlinkung benötigen wir den gewünschten Ziel-Link.
+- Haben Sie konkrete Vorstellungen zur Platzierung? Aktuell vorgesehen: Plakat und Startnummern.
+- Haben Sie Flyer oder Give-aways, die wir auslegen oder in den Startetüten verteilen dürfen?
+
+**2. Banner / Hussen**
+
+Für unsere Absperrgitter empfehlen wir **Hussen** statt klassischer Banner – geringerer Aufwand, kein Kabelbinder-Abfall nach dem Event. Die Bemaßungen finden Sie hier: [Absperrgitter Bemaßungen (PNG)](https://atsv-kirchseeon-marktlauf.de/assets/images/Werbefl%C3%A4chen/Absperrgitter%20Bema%C3%9Fungen.png)
+
+Lieferadresse:
+
+ATSV Kirchseeon
+c/o ORGA Marktlauf, z. Hd. Frau Jenny Fischer
+Sportplatzweg 1
+85614 Kirchseeon
+
+**3. Digitale Vernetzung**
+
+Unsere Social-Media-Auftritte sind auf [atsv-kirchseeon-marktlauf.de](https://atsv-kirchseeon-marktlauf.de) im Footer verlinkt. Wie möchten Sie digital vernetzt werden? Gibt es Kanäle oder Links, die wir besonders hervorheben sollen?
+
+**4. Ablauf am Renntag**
+
+Wie und wo möchten Sie sich am Renntag aufbauen? Zu welcher Zeit sollen wir mit Ihnen rechnen?
+
+**5. Nachlauf & Social Media**
+
+Wie soll der Nachlauf gestaltet werden? Benötigen Sie von uns Fotos, Logos oder Ergebnis-Highlights für Ihre Social-Media-Kanäle?
+
+**6. Gutscheinfunktion**
+
+Gutscheine gemäß Ihrem Paket werden Ihnen zeitnah zugesandt.
+
+**7. Rechnungsanschrift**
+
+Damit wir Ihnen die Rechnung korrekt ausstellen können, benötigen wir Ihre vollständige Rechnungsadresse sowie alle für die Buchhaltung notwendigen Informationen (z. B. Ansprechpartner Buchhaltung).
+
+Sollte Ihnen etwas fehlen oder Sie noch Fragen haben, kommen Sie jederzeit gerne auf mich zu.
+
+Vielen Dank für Ihre Unterstützung und Ihr Vertrauen – gemeinsam machen wir den Marktlauf Kirchseeon zu einem unvergesslichen Erlebnis!
+
+{{signatur}}
+MD,
+        ],
+    ];
+}
+
+/**
+ * Die 7 optionalen Abschnitte der Sponsoring-Bestätigung für den Bausteine-Selektor.
+ * @return array<int,array{id:string,titel:string,checked:bool,text:string}>
+ */
+function sponsorBestaetigungSektionen(): array {
+    return [
+        [
+            'id'      => 's1',
+            'titel'   => '1. Logo & Platzierungen',
+            'checked' => true,
+            'text'    => "**1. Logo & Platzierungen**\n\n"
+                       . "- Bitte senden Sie uns Ihr Logo in allen Auflösungen für Web (bevorzugt SVG) und Druck.\n"
+                       . "- Für die Website-Verlinkung benötigen wir den gewünschten Ziel-Link.\n"
+                       . "- Haben Sie konkrete Vorstellungen zur Platzierung? Aktuell vorgesehen: Plakat und Startnummern.\n"
+                       . "- Haben Sie Flyer oder Give-aways, die wir auslegen oder in den Startetüten verteilen dürfen?",
+        ],
+        [
+            'id'      => 's2',
+            'titel'   => '2. Banner / Hussen',
+            'checked' => false,
+            'text'    => "**2. Banner / Hussen**\n\n"
+                       . "Für unsere Absperrgitter empfehlen wir **Hussen** statt klassischer Banner – "
+                       . "geringerer Aufwand, kein Kabelbinder-Abfall nach dem Event. "
+                       . "Die Bemaßungen finden Sie hier: [Absperrgitter Bemaßungen (PNG)](https://atsv-kirchseeon-marktlauf.de/assets/images/Werbefl%C3%A4chen/Absperrgitter%20Bema%C3%9Fungen.png)\n\n"
+                       . "Lieferadresse:\n\n"
+                       . "ATSV Kirchseeon  \n"
+                       . "c/o ORGA Marktlauf, z. Hd. Frau Jenny Fischer  \n"
+                       . "Sportplatzweg 1  \n"
+                       . "85614 Kirchseeon",
+        ],
+        [
+            'id'      => 's3',
+            'titel'   => '3. Digitale Vernetzung',
+            'checked' => false,
+            'text'    => "**3. Digitale Vernetzung**\n\n"
+                       . "Unsere Social-Media-Auftritte sind auf [atsv-kirchseeon-marktlauf.de](https://atsv-kirchseeon-marktlauf.de) "
+                       . "im Footer verlinkt. Wie möchten Sie digital vernetzt werden? "
+                       . "Gibt es Kanäle oder Links, die wir besonders hervorheben sollen?",
+        ],
+        [
+            'id'      => 's4',
+            'titel'   => '4. Ablauf am Renntag',
+            'checked' => true,
+            'text'    => "**4. Ablauf am Renntag**\n\n"
+                       . "Wie und wo möchten Sie sich am Renntag aufbauen? Zu welcher Zeit sollen wir mit Ihnen rechnen?",
+        ],
+        [
+            'id'      => 's5',
+            'titel'   => '5. Nachlauf & Social Media',
+            'checked' => false,
+            'text'    => "**5. Nachlauf & Social Media**\n\n"
+                       . "Wie soll der Nachlauf gestaltet werden? Benötigen Sie von uns Fotos, Logos oder "
+                       . "Ergebnis-Highlights für Ihre Social-Media-Kanäle?",
+        ],
+        [
+            'id'      => 's6',
+            'titel'   => '6. Gutscheinfunktion',
+            'checked' => false,
+            'text'    => "**6. Gutscheinfunktion**\n\n"
+                       . "Gutscheine gemäß Ihrem Paket werden Ihnen zeitnah zugesandt.",
+        ],
+        [
+            'id'      => 's7',
+            'titel'   => '7. Rechnungsanschrift',
+            'checked' => true,
+            'text'    => "**7. Rechnungsanschrift**\n\n"
+                       . "Damit wir Ihnen die Rechnung korrekt ausstellen können, benötigen wir Ihre vollständige "
+                       . "Rechnungsadresse sowie alle für die Buchhaltung notwendigen Informationen "
+                       . "(z. B. Ansprechpartner Buchhaltung).",
         ],
     ];
 }
