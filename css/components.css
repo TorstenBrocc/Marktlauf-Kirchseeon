@@ -1132,6 +1132,13 @@
 /* Sponsors Section */
 /* ── Sponsor-Marquee ─────────────────────────────────────── */
 .sponsor-marquee-wrap {
+    /* Gleiche Breite wie der Header-Inhalt: .nav-container ist 1360px breit
+       bei 44px Innenabstand (layout.css:63), macht 1272px Inhaltsbreite.
+       Darunter mitwachsen, aber denselben Seitenabstand halten. */
+    width: calc(100% - 88px);
+    max-width: 1272px;
+    margin-left: auto;
+    margin-right: auto;
     overflow: hidden;
     margin-top: var(--space-lg);
     /* Weiche Kanten links/rechts */
@@ -1325,6 +1332,12 @@
 }
 
 @media (max-width: 768px) {
+    /* .nav-container wechselt hier auf var(--space-md) Innenabstand
+       (layout.css:411) — der Sponsor-Streifen zieht mit */
+    .sponsor-marquee-wrap {
+        width: calc(100% - 2 * var(--space-md));
+    }
+
     .hero-logo {
         width: 160px;
     }
