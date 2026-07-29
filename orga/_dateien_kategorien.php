@@ -19,6 +19,7 @@ function dateiKategorien(): array
         'einsatz'   => 'Einsatzplan',
         'presse'    => 'Social-Media Bilder',
         'finanzen'  => 'Finanzen',
+        'plakat'    => 'Plakate (Anschreiben-Anhang)',
         'sonstiges' => 'Sonstiges',
     ];
 }
