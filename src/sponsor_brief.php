@@ -259,7 +259,7 @@ function sponsorBriefPlatzhalterHilfe(): array {
         '{{firma}}'         => 'Firmenname des Sponsors',
         '{{paket_text}}'    => 'Paketname (Hauptsponsor / Gold-Sponsor / Silber-Sponsor / Bronze-Sponsor)',
         '{{paket_tabelle}}' => 'Tabelle aller Sponsoring-Pakete mit Preisen und Highlights',
-        '{{signatur}}'      => "Signatur-Block (Name, Aufgabe, Telefon, E-Mail)\n"
+        '{{signatur}}'      => "Signatur-Block (Name, Aufgabe, Telefon, E-Mail, Social-Media-Logos)\n"
                                . "Die persönlichen Daten stammen aus der Benutzerverwaltung (dein Profil).",
         '{{event_datum}}'   => 'Datum des Marktlaufs (aus Einstellungen)',
         '{{antwort_bis}}'   => 'Rückmeldefrist (aus Einstellungen)',
@@ -320,6 +320,46 @@ function sponsorLevelText(string $paket): string {
         'silber'       => 'Silber-Sponsor',
         default        => 'Bronze-Sponsor',
     };
+}
+
+/**
+ * Social-Media-Block für alle Anschreiben-Signaturen — eine Quelle für
+ * Sponsoren- und Vereins-Briefe (verein_brief.php lädt diese Datei).
+ *
+ * Layout wie im Website-Footer: Beschriftung plus die drei Marken-Kacheln
+ * (46px, radius 12px, weißes Glyph — layout.css:319ff), hier auf 24px
+ * skaliert und der Link direkt hinter dem Logo, ohne Text daneben.
+ *
+ * Bewusst <img> statt inline SVG: Gmail und Outlook entfernen <svg> aus
+ * E-Mails. Deshalb auch width/height als Attribute (Outlook ignoriert CSS)
+ * und ein sprechendes alt, damit bei blockierten Bildern der Netzwerkname
+ * lesbar bleibt. Die Text-Fassung trägt die URLs ausgeschrieben, denn ohne
+ * SMTP fällt sendMail() auf text/plain zurück (channels/mail.php:58).
+ */
+function marktlaufSocialLinks(): array {
+    $base = 'https://atsv-kirchseeon-marktlauf.de';
+    $netze = [
+        ['Instagram', 'https://www.instagram.com/atsv_marktlauf_kirchseeon',   'instagram.png'],
+        ['Facebook',  'https://www.facebook.com/profile.php?id=61591689790244', 'facebook.png'],
+        ['Strava',    'https://www.strava.com/clubs/2252807',                  'strava.png'],
+    ];
+
+    $icons = '';
+    $zeilen = [];
+    foreach ($netze as [$label, $url, $datei]) {
+        $icons .= '<a href="' . htmlspecialchars($url) . '" title="' . $label . '"'
+            . ' style="text-decoration:none;margin-right:6px">'
+            . '<img src="' . $base . '/assets/images/social-media/mail/' . $datei . '"'
+            . ' alt="' . $label . '" width="24" height="24"'
+            . ' style="width:24px;height:24px;border:0;border-radius:6px;vertical-align:middle">'
+            . '</a>';
+        $zeilen[] = $label . ': ' . $url;
+    }
+
+    return [
+        'html' => '<span style="vertical-align:middle">Folge uns:</span> ' . $icons,
+        'text' => "Folge uns:\n" . implode("\n", $zeilen),
+    ];
 }
 
 function sponsorSignatur(PDO $pdo, int $userId): array {
@@ -426,18 +466,21 @@ function sponsorBriefContext(PDO $pdo, int $userId, string $anrede, string $vorn
     $sigRoleHtml  = $sig['role']  !== '' ? htmlspecialchars($sig['role'])  . '<br>' : '';
     $sigPhoneHtml = $sig['phone'] !== '' ? 'T: ' . htmlspecialchars($sig['phone']) : '';
     $sigEmailHtml = $sig['email'] !== '' ? ($sigPhoneHtml !== '' ? ' | ' : '') . 'M: <a href="mailto:' . htmlspecialchars($sig['email']) . '">' . htmlspecialchars($sig['email']) . '</a>' : '';
+    $social  = marktlaufSocialLinks();
     $sigHtml = '<p>Herzliche Grüße<br><br>'
         . '<strong>' . htmlspecialchars($sig['name']) . '</strong><br>'
         . $sigRoleHtml
         . ($sigPhoneHtml . $sigEmailHtml !== '' ? $sigPhoneHtml . $sigEmailHtml . '<br>' : '')
-        . 'W: <a href="https://atsv-kirchseeon-marktlauf.de">atsv-kirchseeon-marktlauf.de</a></p>';
+        . 'W: <a href="https://atsv-kirchseeon-marktlauf.de">atsv-kirchseeon-marktlauf.de</a><br><br>'
+        . $social['html'] . '</p>';
 
     $sigParts = [];
     if ($sig['phone'] !== '') $sigParts[] = 'T: ' . $sig['phone'];
     if ($sig['email'] !== '') $sigParts[] = 'M: ' . $sig['email'];
     $sigParts[] = 'W: atsv-kirchseeon-marktlauf.de';
     $sigRoleText = $sig['role'] !== '' ? $sig['role'] . "\n" : '';
-    $sigText = "Herzliche Grüße\n\n{$sig['name']}\n{$sigRoleText}" . implode(' | ', $sigParts);
+    $sigText = "Herzliche Grüße\n\n{$sig['name']}\n{$sigRoleText}" . implode(' | ', $sigParts)
+        . "\n\n" . $social['text'];
 
     return [
         'inline' => [
