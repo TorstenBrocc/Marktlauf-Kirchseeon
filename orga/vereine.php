@@ -175,7 +175,13 @@ $katLabel = ['verein' => 'Verein', 'laufevent' => 'Laufevent'];
                     <?php endforeach; ?>
                     </tbody>
                 </table>
-                <p style="margin:0.6rem 0 0;font-size:0.82rem;">Zum erneuten Versuch: <code>MARKTLAUF_CLI=1 php bin/verein_versand.php --retry</code> per SSH.</p>
+                <div style="margin-top:0.75rem;display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center;">
+                    <form method="post" action="api/verein_queue_fehler_loeschen.php" onsubmit="return confirm('Alle Fehlereinträge aus der Queue löschen?');">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(generateCsrfToken()) ?>">
+                        <button type="submit" class="btn btn-secondary btn-small">Fehler bereinigen</button>
+                    </form>
+                    <span style="font-size:0.82rem;color:inherit;">Zum erneuten Versuch: <code>MARKTLAUF_CLI=1 php bin/verein_versand.php --retry</code> per SSH.</span>
+                </div>
             </div>
             <?php endif; ?>
 
