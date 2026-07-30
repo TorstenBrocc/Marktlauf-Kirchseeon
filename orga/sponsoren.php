@@ -21,6 +21,7 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error'], $_SESSION['import_re
 $filterStatus = $_GET['status'] ?? '';
 $filterPaket = $_GET['paket'] ?? '';
 $filterZustaendig = $_GET['zustaendig'] ?? '';
+$filterBranchen = array_values(array_filter((array) ($_GET['branchen'] ?? [])));
 
 $pdo = getDbConnection();
 
@@ -114,6 +115,22 @@ $sql .= ' ORDER BY kein_kontakt ASC, firma ASC';
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $sponsoren = $stmt->fetchAll();
+
+if (!empty($filterBranchen)) {
+    $sponsoren = array_values(array_filter($sponsoren, static function (array $s) use ($filterBranchen): bool {
+        if (empty($s['branche'])) {
+            return false;
+        }
+        $dec = json_decode((string) $s['branche'], true);
+        $arr = is_array($dec) ? $dec : [$s['branche']];
+        foreach ($filterBranchen as $fb) {
+            if (in_array($fb, $arr, true)) {
+                return true;
+            }
+        }
+        return false;
+    }));
+}
 
 $ansprechpartnerBySponsor = [];
 try {
@@ -614,7 +631,23 @@ try {
                         </select>
                     </div>
                     <?php endif; ?>
-                    <?php if ($filterStatus || $filterPaket || $filterZustaendig): ?>
+                    <?php if (!empty($branchen)): ?>
+                    <div class="form-group">
+                        <label>Branche</label>
+                        <div style="display:flex;flex-wrap:wrap;gap:0.3rem 0.8rem;margin-top:0.2rem">
+                            <?php foreach ($branchen as $b): ?>
+                                <label style="display:flex;align-items:center;gap:0.3rem;font-weight:400;cursor:pointer;white-space:nowrap">
+                                    <input type="checkbox" name="branchen[]"
+                                           value="<?= htmlspecialchars($b) ?>"
+                                           <?= in_array($b, $filterBranchen, true) ? 'checked' : '' ?>
+                                           onchange="this.form.submit()">
+                                    <?= htmlspecialchars($b) ?>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+                    <?php if ($filterStatus || $filterPaket || $filterZustaendig || !empty($filterBranchen)): ?>
                         <a href="sponsoren.php" class="btn btn-small btn-secondary">Filter zurücksetzen</a>
                     <?php endif; ?>
                 </form>
