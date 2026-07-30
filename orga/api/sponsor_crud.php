@@ -31,6 +31,27 @@ function sponsorStatusFromPost(mixed $raw): string {
     return sponsorStatusValid($v) ? $v : 'neu';
 }
 
+/**
+ * Konzern/Gruppe per Freitext-Autocomplete: bestehende Gruppe wiederverwenden
+ * (exakter Namensvergleich) statt bei jeder Eingabe eine neue anzulegen.
+ * Leere Eingabe = keine Gruppe (gruppe_id NULL).
+ */
+function sponsorGruppeIdFromPost(PDO $pdo, string $rawName): ?int {
+    $name = trim($rawName);
+    if ($name === '') {
+        return null;
+    }
+    $select = $pdo->prepare('SELECT id FROM sponsor_gruppen WHERE name = :name');
+    $select->execute(['name' => $name]);
+    $id = $select->fetchColumn();
+    if ($id !== false) {
+        return (int) $id;
+    }
+    $insert = $pdo->prepare('INSERT INTO sponsor_gruppen (name) VALUES (:name)');
+    $insert->execute(['name' => $name]);
+    return (int) $pdo->lastInsertId();
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: ../sponsoren.php');
     exit;
@@ -156,12 +177,13 @@ function saveAnsprechpartner(PDO $pdo, int $sponsorId, array $post): void {
     $funktionen = $post['ap_funktion'] ?? [];
     $telefone = $post['ap_telefon'] ?? [];
     $emails = $post['ap_email'] ?? [];
+    $imAnschreiben = $post['ap_im_anschreiben'] ?? [];
 
     if (!is_array($anreden)) return;
 
     $stmt = $pdo->prepare('
-        INSERT INTO sponsor_ansprechpartner (sponsor_id, anrede, vorname, nachname, funktion, telefon, email)
-        VALUES (:sponsor_id, :anrede, :vorname, :nachname, :funktion, :telefon, :email)
+        INSERT INTO sponsor_ansprechpartner (sponsor_id, anrede, vorname, nachname, funktion, telefon, email, im_anschreiben)
+        VALUES (:sponsor_id, :anrede, :vorname, :nachname, :funktion, :telefon, :email, :im_anschreiben)
     ');
 
     for ($i = 0; $i < count($anreden); $i++) {
@@ -174,13 +196,14 @@ function saveAnsprechpartner(PDO $pdo, int $sponsorId, array $post): void {
         }
 
         $stmt->execute([
-            'sponsor_id' => $sponsorId,
-            'anrede'     => $anreden[$i] ?? '',
-            'vorname'    => $vorname,
-            'nachname'   => $nachname,
-            'funktion'   => trim($funktionen[$i] ?? ''),
-            'telefon'    => trim($telefone[$i] ?? ''),
-            'email'      => $email,
+            'sponsor_id'     => $sponsorId,
+            'anrede'         => $anreden[$i] ?? '',
+            'vorname'        => $vorname,
+            'nachname'       => $nachname,
+            'funktion'       => trim($funktionen[$i] ?? ''),
+            'telefon'        => trim($telefone[$i] ?? ''),
+            'email'          => $email,
+            'im_anschreiben' => ($imAnschreiben[$i] ?? '1') === '0' ? 0 : 1,
         ]);
     }
 }
@@ -203,9 +226,11 @@ try {
                 $keinKontaktDatum = date('Y-m-d');
             }
 
+            $gruppeId = sponsorGruppeIdFromPost($pdo, $_POST['gruppe_name'] ?? '');
+
             $stmt = $pdo->prepare('
-                INSERT INTO sponsors (firma, paket, prioritaet, ort, summe, status, kein_kontakt, kein_kontakt_grund, kein_kontakt_wer, kein_kontakt_datum, notizen, wiedervorlage)
-                VALUES (:firma, :paket, :prioritaet, :ort, :summe, :status, :kein_kontakt, :kein_kontakt_grund, :kein_kontakt_wer, :kein_kontakt_datum, :notizen, :wiedervorlage)
+                INSERT INTO sponsors (firma, paket, prioritaet, ort, summe, status, kein_kontakt, kein_kontakt_grund, kein_kontakt_wer, kein_kontakt_datum, notizen, wiedervorlage, gruppe_id, rechnung_firma, rechnung_strasse, rechnung_plz, rechnung_ort, rechnung_email)
+                VALUES (:firma, :paket, :prioritaet, :ort, :summe, :status, :kein_kontakt, :kein_kontakt_grund, :kein_kontakt_wer, :kein_kontakt_datum, :notizen, :wiedervorlage, :gruppe_id, :rechnung_firma, :rechnung_strasse, :rechnung_plz, :rechnung_ort, :rechnung_email)
             ');
             $stmt->execute([
                 'firma'              => $firma,
@@ -220,6 +245,12 @@ try {
                 'kein_kontakt_datum' => $keinKontakt ? ($keinKontaktDatum ?: null) : null,
                 'notizen'            => trim($_POST['notizen'] ?? '') ?: null,
                 'wiedervorlage'      => $_POST['wiedervorlage'] ?: null,
+                'gruppe_id'          => $gruppeId,
+                'rechnung_firma'     => trim($_POST['rechnung_firma'] ?? '') ?: null,
+                'rechnung_strasse'   => trim($_POST['rechnung_strasse'] ?? '') ?: null,
+                'rechnung_plz'       => trim($_POST['rechnung_plz'] ?? '') ?: null,
+                'rechnung_ort'       => trim($_POST['rechnung_ort'] ?? '') ?: null,
+                'rechnung_email'     => trim($_POST['rechnung_email'] ?? '') ?: null,
             ]);
 
             $newSponsorId = (int) $pdo->lastInsertId();
@@ -282,6 +313,8 @@ try {
                 $keinKontaktDatum = $full['kein_kontakt_datum'];
             }
 
+            $gruppeId = sponsorGruppeIdFromPost($pdo, $_POST['gruppe_name'] ?? '');
+
             $stmt = $pdo->prepare('
                 UPDATE sponsors SET
                     firma = :firma,
@@ -295,7 +328,13 @@ try {
                     kein_kontakt_wer = :kein_kontakt_wer,
                     kein_kontakt_datum = :kein_kontakt_datum,
                     notizen = :notizen,
-                    wiedervorlage = :wiedervorlage
+                    wiedervorlage = :wiedervorlage,
+                    gruppe_id = :gruppe_id,
+                    rechnung_firma = :rechnung_firma,
+                    rechnung_strasse = :rechnung_strasse,
+                    rechnung_plz = :rechnung_plz,
+                    rechnung_ort = :rechnung_ort,
+                    rechnung_email = :rechnung_email
                 WHERE id = :id
             ');
             $stmt->execute([
@@ -311,6 +350,12 @@ try {
                 'kein_kontakt_datum' => $keinKontaktDatum ?: null,
                 'notizen'            => trim($_POST['notizen'] ?? '') ?: null,
                 'wiedervorlage'      => $_POST['wiedervorlage'] ?: null,
+                'gruppe_id'          => $gruppeId,
+                'rechnung_firma'     => trim($_POST['rechnung_firma'] ?? '') ?: null,
+                'rechnung_strasse'   => trim($_POST['rechnung_strasse'] ?? '') ?: null,
+                'rechnung_plz'       => trim($_POST['rechnung_plz'] ?? '') ?: null,
+                'rechnung_ort'       => trim($_POST['rechnung_ort'] ?? '') ?: null,
+                'rechnung_email'     => trim($_POST['rechnung_email'] ?? '') ?: null,
                 'id'                 => $sponsorId,
             ]);
 
