@@ -10,6 +10,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/api/_auth.php';
 require_once __DIR__ . '/../src/db.php';
 require_once __DIR__ . '/../src/sponsor_brief.php';
+require_once __DIR__ . '/../src/channels/mail.php';
 
 $user = getCurrentUserFromGuard();
 $isAdmin = isAdminFromGuard();
@@ -231,6 +232,55 @@ if (!empty($briefSettings['sponsoring_pakete'])) {
                     </div>
                 </div>
             </form>
+
+            <?php if ($slug === 'frei'):
+                try {
+                    $stmtP = $pdo->query("SELECT id, originalname, groesse FROM dateien WHERE bereich = 'orga' AND kategorie = 'plakat' ORDER BY id ASC");
+                    $plakat_rows = $stmtP->fetchAll();
+                } catch (PDOException $e) {
+                    $plakat_rows = [];
+                }
+                $plakate = plakateAnhang($pdo);
+            ?>
+            <div class="brief-card" style="margin-top:1.25rem">
+                <div class="plakat-section">
+                    <div class="plakat-section-header">
+                        <strong>📎 Plakate als PDF-Anhang</strong>
+                        <?php if (count($plakate) > 0): ?>
+                            <span class="plakat-badge"><?= count($plakate) ?> PDF<?= count($plakate) !== 1 ? 's' : '' ?> werden angehängt</span>
+                        <?php endif; ?>
+                    </div>
+                    <?php if (count($plakat_rows) > 0): ?>
+                    <ul class="plakat-liste">
+                        <?php foreach ($plakat_rows as $pr):
+                            $kb = round((int)$pr['groesse'] / 1024);
+                        ?>
+                            <li class="plakat-item">
+                                <span title="<?= htmlspecialchars($pr['originalname']) ?>">📄 <?= htmlspecialchars($pr['originalname']) ?></span>
+                                <small class="brief-hint"><?= $kb ?> KB</small>
+                                <form method="post" action="api/plakat_loeschen.php" style="margin:0;" onsubmit="return confirm('Plakat löschen?');">
+                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                                    <input type="hidden" name="datei_id" value="<?= (int)$pr['id'] ?>">
+                                    <input type="hidden" name="redirect" value="sponsor_briefe.php?slug=frei">
+                                    <button type="submit" class="btn btn-secondary btn-del">Löschen</button>
+                                </form>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                    <?php else: ?>
+                    <p class="brief-hint" style="margin:0.5rem 0;">Noch keine Plakate hochgeladen — Anschreiben werden ohne Anhang gesendet.</p>
+                    <?php endif; ?>
+                    <form method="post" action="api/file_upload.php" enctype="multipart/form-data" class="plakat-upload-form">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                        <input type="hidden" name="bereich" value="orga">
+                        <input type="hidden" name="kategorie" value="plakat">
+                        <input type="hidden" name="redirect_after" value="sponsor_briefe.php?slug=frei">
+                        <input type="file" name="datei" accept="application/pdf" required style="font-size:0.9rem;">
+                        <button type="submit" class="btn btn-primary">PDF hochladen</button>
+                    </form>
+                </div>
+            </div>
+            <?php endif; ?>
 
             <form method="post" action="api/sponsor_brief_settings_save.php">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
