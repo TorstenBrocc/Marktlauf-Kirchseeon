@@ -499,6 +499,40 @@ if (!empty($briefSettings['sponsoring_pakete'])) {
             ta.dispatchEvent(new Event('input'));
         });
     })();
+
+    // localStorage-Persistenz für Abschnitt-Zustände (Checkboxen + Texte)
+    (function() {
+        var STORAGE_KEY = 'mkl_baustein_bestaetigung';
+
+        function saveBausteinState() {
+            var state = {};
+            document.querySelectorAll('.baustein-cb').forEach(function(cb) {
+                var id = cb.dataset.id;
+                var textEl = document.querySelector('.baustein-text[data-id="' + id + '"]');
+                state[id] = { checked: cb.checked, text: textEl ? textEl.value : '' };
+            });
+            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
+        }
+
+        try {
+            var saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+            document.querySelectorAll('.baustein-cb').forEach(function(cb) {
+                var id = cb.dataset.id;
+                if (id in saved) {
+                    cb.checked = saved[id].checked;
+                    var textEl = document.querySelector('.baustein-text[data-id="' + id + '"]');
+                    if (textEl && saved[id].text) textEl.value = saved[id].text;
+                }
+            });
+        } catch(e) {}
+
+        document.querySelectorAll('.baustein-cb').forEach(function(cb) {
+            cb.addEventListener('change', saveBausteinState);
+        });
+        document.querySelectorAll('.baustein-text').forEach(function(t) {
+            t.addEventListener('input', saveBausteinState);
+        });
+    })();
     <?php endif; ?>
 
     (function() {
