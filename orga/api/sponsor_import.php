@@ -325,7 +325,7 @@ try {
                 'ort'            => $get($row, $col, 'ORT') ?: null,
                 'status'         => $gesendet ? 'angefragt' : 'neu',
                 'gesendet_am'    => $gesendet ? date('Y-m-d H:i:s') : null,
-                'branche'        => $get($row, $col, 'BRANCHE') ?: null,
+                'branche'        => ($b = $get($row, $col, 'BRANCHE')) !== '' ? json_encode([$b]) : null,
                 'notizen'        => $get($row, $col, 'NOTIZEN') ?: null,
                 'foerderprogramm' => $get($row, $col, 'FOERDERPROGRAMM') ?: null,
                 'kontaktweg'     => $get($row, $col, 'KONTAKTWEG') ?: null,

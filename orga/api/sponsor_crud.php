@@ -104,14 +104,6 @@ if (($_POST['action'] ?? '') === 'inline_update') {
             exit;
         }
 
-        if ($field === 'branche') {
-            $branche = $value !== '' ? mb_substr(trim($value), 0, 100) : null;
-            $pdo->prepare('UPDATE sponsors SET branche = :v WHERE id = :id')
-                ->execute(['v' => $branche, 'id' => $sponsorId]);
-            echo json_encode(['ok' => true]);
-            exit;
-        }
-
         if ($field === 'zustaendig') {
             // Leer = Zuordnung entfernen; sonst muss es ein aktiver Nutzer sein.
             $uid = ($value !== '' && ctype_digit($value)) ? (int) $value : 0;
@@ -251,7 +243,7 @@ try {
                 'rechnung_plz'       => trim($_POST['rechnung_plz'] ?? '') ?: null,
                 'rechnung_ort'       => trim($_POST['rechnung_ort'] ?? '') ?: null,
                 'rechnung_email'     => trim($_POST['rechnung_email'] ?? '') ?: null,
-                'branche'            => trim($_POST['branche'] ?? '') ?: null,
+                'branche'            => !empty($_POST['branche']) ? json_encode(array_values(array_filter(array_map('trim', (array) $_POST['branche'])))) : null,
                 'foerderprogramm'    => trim($_POST['foerderprogramm'] ?? '') ?: null,
                 'kontaktweg'         => trim($_POST['kontaktweg'] ?? '') ?: null,
                 'website'            => trim($_POST['website'] ?? '') ?: null,
@@ -366,7 +358,7 @@ try {
                 'rechnung_plz'       => trim($_POST['rechnung_plz'] ?? '') ?: null,
                 'rechnung_ort'       => trim($_POST['rechnung_ort'] ?? '') ?: null,
                 'rechnung_email'     => trim($_POST['rechnung_email'] ?? '') ?: null,
-                'branche'            => trim($_POST['branche'] ?? '') ?: null,
+                'branche'            => !empty($_POST['branche']) ? json_encode(array_values(array_filter(array_map('trim', (array) $_POST['branche'])))) : null,
                 'foerderprogramm'    => trim($_POST['foerderprogramm'] ?? '') ?: null,
                 'kontaktweg'         => trim($_POST['kontaktweg'] ?? '') ?: null,
                 'website'            => trim($_POST['website'] ?? '') ?: null,
