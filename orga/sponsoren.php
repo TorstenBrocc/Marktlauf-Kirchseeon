@@ -723,13 +723,20 @@ try {
                                         <?php endif; ?>
                                     </td>
                                     <td>
-                                        <select class="inline-select branche-select"
-                                                data-id="<?= $s['id'] ?>" data-field="branche" title="Branche ändern">
-                                            <option value="" <?= empty($s['branche']) ? 'selected' : '' ?>>–</option>
-                                            <?php foreach ($branchen as $b): ?>
-                                                <option value="<?= htmlspecialchars($b) ?>" <?= ($s['branche'] ?? '') === $b ? 'selected' : '' ?>><?= htmlspecialchars($b) ?></option>
+                                        <?php
+                                        $bArr = [];
+                                        if (!empty($s['branche'])) {
+                                            $dec = json_decode($s['branche'], true);
+                                            $bArr = is_array($dec) ? $dec : [$s['branche']];
+                                        }
+                                        ?>
+                                        <?php if ($bArr): ?>
+                                            <?php foreach ($bArr as $bTag): ?>
+                                                <span style="display:inline-block;font-size:0.7rem;padding:0.1rem 0.4rem;background:var(--bg);border:1px solid var(--border);border-radius:3px;margin:0.1rem 0.1rem 0.1rem 0;white-space:nowrap"><?= htmlspecialchars($bTag) ?></span>
                                             <?php endforeach; ?>
-                                        </select>
+                                        <?php else: ?>
+                                            –
+                                        <?php endif; ?>
                                     </td>
                                     <td>
                                         <select class="inline-select paket-select paket-<?= $s['paket'] ?: 'none' ?>"

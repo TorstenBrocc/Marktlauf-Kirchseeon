@@ -380,13 +380,23 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                         </div>
 
                         <div class="form-group">
-                            <label for="branche">Branche</label>
-                            <select id="branche" name="branche">
-                                <option value="">– Keine –</option>
+                            <label>Branche <span style="font-weight:400;color:var(--text-light)">(Mehrfachauswahl)</span></label>
+                            <?php
+                            $selectedBranchen = [];
+                            if (!empty($sponsor['branche'])) {
+                                $dec = json_decode($sponsor['branche'], true);
+                                $selectedBranchen = is_array($dec) ? $dec : [$sponsor['branche']];
+                            }
+                            ?>
+                            <div style="display:flex;flex-wrap:wrap;gap:0.4rem 1rem;margin-top:0.25rem">
                                 <?php foreach ($branchen as $b): ?>
-                                    <option value="<?= htmlspecialchars($b) ?>" <?= ($sponsor['branche'] ?? '') === $b ? 'selected' : '' ?>><?= htmlspecialchars($b) ?></option>
+                                    <label style="display:flex;align-items:center;gap:0.35rem;font-weight:400;cursor:pointer">
+                                        <input type="checkbox" name="branche[]" value="<?= htmlspecialchars($b) ?>"
+                                               <?= in_array($b, $selectedBranchen, true) ? 'checked' : '' ?>>
+                                        <?= htmlspecialchars($b) ?>
+                                    </label>
                                 <?php endforeach; ?>
-                            </select>
+                            </div>
                         </div>
                     </div>
 
