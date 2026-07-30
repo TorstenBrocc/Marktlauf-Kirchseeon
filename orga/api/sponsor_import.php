@@ -13,6 +13,12 @@
  *   PRIORITAET     → sponsors.prioritaet (Hoch=1/Mittel=2/Niedrig=3 oder Zahl)
  *   ORT            → sponsors.ort
  *   GESENDET=Ja    → status=angefragt + gesendet_am gesetzt
+ *   BRANCHE        → sponsors.branche
+ *   NOTIZEN        → sponsors.notizen
+ *   FOERDERPROGRAMM → sponsors.foerderprogramm
+ *   KONTAKTWEG     → sponsors.kontaktweg
+ *   WEBSITE        → sponsors.website
+ *   QUELLENURL     → sponsors.quellenurl
  *
  * Dubletten-Check in PHP (kein Unique-Index): firma+email normalisiert.
  * Bei einer erkannten Dublette wird nicht neu angelegt, aber eine fehlende
@@ -217,8 +223,8 @@ try {
     }
 
     $insertSponsor = $pdo->prepare('
-        INSERT INTO sponsors (firma, paket, prioritaet, ort, status, gesendet_am)
-        VALUES (:firma, :paket, :prioritaet, :ort, :status, :gesendet_am)
+        INSERT INTO sponsors (firma, paket, prioritaet, ort, status, gesendet_am, branche, notizen, foerderprogramm, kontaktweg, website, quellenurl)
+        VALUES (:firma, :paket, :prioritaet, :ort, :status, :gesendet_am, :branche, :notizen, :foerderprogramm, :kontaktweg, :website, :quellenurl)
     ');
     $insertAp = $pdo->prepare('
         INSERT INTO sponsor_ansprechpartner (sponsor_id, anrede, nachname, telefon, email)
@@ -313,12 +319,18 @@ try {
 
         try {
             $insertSponsor->execute([
-                'firma'       => $firma,
-                'paket'       => $mapPaket($get($row, $col, 'TIER_VORSCHLAG')),
-                'prioritaet'  => $mapPrioritaet($get($row, $col, 'PRIORITAET')),
-                'ort'         => $get($row, $col, 'ORT') ?: null,
-                'status'      => $gesendet ? 'angefragt' : 'neu',
-                'gesendet_am' => $gesendet ? date('Y-m-d H:i:s') : null,
+                'firma'          => $firma,
+                'paket'          => $mapPaket($get($row, $col, 'TIER_VORSCHLAG')),
+                'prioritaet'     => $mapPrioritaet($get($row, $col, 'PRIORITAET')),
+                'ort'            => $get($row, $col, 'ORT') ?: null,
+                'status'         => $gesendet ? 'angefragt' : 'neu',
+                'gesendet_am'    => $gesendet ? date('Y-m-d H:i:s') : null,
+                'branche'        => $get($row, $col, 'BRANCHE') ?: null,
+                'notizen'        => $get($row, $col, 'NOTIZEN') ?: null,
+                'foerderprogramm' => $get($row, $col, 'FOERDERPROGRAMM') ?: null,
+                'kontaktweg'     => $get($row, $col, 'KONTAKTWEG') ?: null,
+                'website'        => $get($row, $col, 'WEBSITE') ?: null,
+                'quellenurl'     => $get($row, $col, 'QUELLENURL') ?: null,
             ]);
             $sponsorId = (int) $pdo->lastInsertId();
 
