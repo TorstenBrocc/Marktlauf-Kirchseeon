@@ -26,10 +26,18 @@ if (!vereinBriefSlugValid($slug)) {
 }
 
 $pdo = getDbConnection();
-$vorlage = vereinBriefLoad($pdo, $slug);
+$vorlage = vereinBriefLoad($pdo, $slug, (int) $user['id']);
 $defaults = vereinBriefDefaults();
 $default = $defaults[$slug];
 $platzhalter = vereinBriefPlatzhalterHilfe();
+
+$draftHinweis = '';
+if ($vorlage['draft'] && $vorlage['draft_ts'] !== '') {
+    $dt = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $vorlage['draft_ts']);
+    if ($dt) {
+        $draftHinweis = 'Eigener Entwurf vom ' . $dt->format('d.m.Y, H:i') . ' Uhr';
+    }
+}
 $plakate = plakateAnhang($pdo);
 ?>
 <!DOCTYPE html>
@@ -133,9 +141,10 @@ $plakate = plakateAnhang($pdo);
                     </div>
 
                     <div class="brief-actions">
-                        <button type="submit" class="btn btn-primary">Speichern</button>
+                        <button type="button" class="btn btn-secondary" id="btn-draft-save">Entwurf speichern</button>
+                        <button type="submit" class="btn btn-primary">Veröffentlichen</button>
                         <button type="button" class="btn btn-secondary" id="reset-default">Standardtext wiederherstellen</button>
-                        <span class="brief-hint">Leerer Text = Standardvorlage wird verwendet.</span>
+                        <span id="draft-status" class="brief-hint"><?= $draftHinweis !== '' ? htmlspecialchars($draftHinweis) : 'Leerer Text = Standardvorlage wird verwendet.' ?></span>
                     </div>
 
                 </div>
@@ -230,6 +239,33 @@ $plakate = plakateAnhang($pdo);
             ta.value = defaultText;
             betreff.value = defaultBetreff;
             renderPreview();
+        });
+
+        document.getElementById('btn-draft-save').addEventListener('click', function() {
+            const statusEl = document.getElementById('draft-status');
+            statusEl.textContent = 'Speichert…';
+            const body = new URLSearchParams();
+            body.set('csrf_token', csrf);
+            body.set('vorlage_art', 'verein');
+            body.set('slug', slug);
+            body.set('betreff', betreff.value);
+            body.set('koerper_md', ta.value);
+            fetch('api/draft_save.php', {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'fetch' },
+                body: body
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.ok) {
+                    var m = (data.gespeichert_am || '').match(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})/);
+                    var ts = m ? m[3] + '.' + m[2] + '.' + m[1] + ', ' + m[4] + ':' + m[5] + ' Uhr' : '';
+                    statusEl.textContent = 'Eigener Entwurf vom ' + ts;
+                } else {
+                    statusEl.textContent = 'Fehler: ' + (data.error || 'Unbekannt');
+                }
+            })
+            .catch(function() { statusEl.textContent = 'Entwurf konnte nicht gespeichert werden.'; });
         });
     })();
 

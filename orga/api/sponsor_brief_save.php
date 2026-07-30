@@ -60,7 +60,11 @@ try {
         'koerper2' => $koerper !== '' ? $koerper : null,
         'uid2'    => $userId,
     ]);
-    $_SESSION['flash_success'] = 'Briefvorlage gespeichert.';
+    if ($userId !== null) {
+        $pdo->prepare('DELETE FROM briefvorlagen_entwurf WHERE user_id = :uid AND vorlage_art = :art AND slug = :slug')
+            ->execute(['uid' => $userId, 'art' => 'sponsor', 'slug' => $slug]);
+    }
+    $_SESSION['flash_success'] = 'Briefvorlage veröffentlicht.';
 } catch (PDOException $e) {
     logError('Sponsor-Briefvorlage speichern: ' . $e->getMessage());
     $_SESSION['flash_error'] = 'Datenbankfehler beim Speichern.';
