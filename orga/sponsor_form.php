@@ -129,6 +129,76 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
             width: 18px;
             height: 18px;
         }
+        .multiselect {
+            position: relative;
+        }
+        .multiselect-trigger {
+            width: 100%;
+            padding: 0.5rem 2rem 0.5rem 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background: var(--white);
+            font-size: 0.9375rem;
+            color: var(--text);
+            text-align: left;
+            cursor: pointer;
+            position: relative;
+            min-height: 2.4rem;
+            box-sizing: border-box;
+            appearance: none;
+        }
+        .multiselect-trigger::after {
+            content: '';
+            position: absolute;
+            right: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            border: 5px solid transparent;
+            border-top-color: var(--text-light);
+            margin-top: 3px;
+        }
+        .multiselect-trigger.open::after {
+            border-top-color: transparent;
+            border-bottom-color: var(--text-light);
+            margin-top: -3px;
+        }
+        .multiselect-dropdown {
+            display: none;
+            position: absolute;
+            z-index: 200;
+            top: calc(100% + 2px);
+            left: 0;
+            right: 0;
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,.1);
+            max-height: 260px;
+            overflow-y: auto;
+        }
+        .multiselect-dropdown.open {
+            display: block;
+        }
+        .multiselect-option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        .multiselect-option:hover {
+            background: var(--bg);
+        }
+        .multiselect-option input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+        .multiselect-placeholder {
+            color: var(--text-light);
+        }
         .aufgaben-list {
             list-style: none;
             margin: 0;
@@ -388,14 +458,23 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                                 $selectedBranchen = is_array($dec) ? $dec : [$sponsor['branche']];
                             }
                             ?>
-                            <div style="display:flex;flex-wrap:wrap;gap:0.4rem 1rem;margin-top:0.25rem">
-                                <?php foreach ($branchen as $b): ?>
-                                    <label style="display:flex;align-items:center;gap:0.35rem;font-weight:400;cursor:pointer">
-                                        <input type="checkbox" name="branche[]" value="<?= htmlspecialchars($b) ?>"
-                                               <?= in_array($b, $selectedBranchen, true) ? 'checked' : '' ?>>
-                                        <?= htmlspecialchars($b) ?>
-                                    </label>
-                                <?php endforeach; ?>
+                            <div class="multiselect" id="branche-multiselect">
+                                <button type="button" class="multiselect-trigger" id="branche-trigger"
+                                        onclick="toggleBranchenDropdown()" aria-haspopup="listbox" aria-expanded="false">
+                                    <span id="branche-label" class="<?= empty($selectedBranchen) ? 'multiselect-placeholder' : '' ?>">
+                                        <?= empty($selectedBranchen) ? 'Bitte wählen …' : htmlspecialchars(implode(', ', $selectedBranchen)) ?>
+                                    </span>
+                                </button>
+                                <div class="multiselect-dropdown" id="branche-dropdown" role="listbox">
+                                    <?php foreach ($branchen as $b): ?>
+                                        <label class="multiselect-option">
+                                            <input type="checkbox" name="branche[]" value="<?= htmlspecialchars($b) ?>"
+                                                   onchange="updateBrancheLabel()"
+                                                   <?= in_array($b, $selectedBranchen, true) ? 'checked' : '' ?>>
+                                            <?= htmlspecialchars($b) ?>
+                                        </label>
+                                    <?php endforeach; ?>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -810,6 +889,35 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
 
     document.addEventListener('DOMContentLoaded', function() {
         updateRemoveButtons();
+    });
+
+    function toggleBranchenDropdown() {
+        var trigger = document.getElementById('branche-trigger');
+        var dropdown = document.getElementById('branche-dropdown');
+        var open = dropdown.classList.toggle('open');
+        trigger.classList.toggle('open', open);
+        trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+
+    function updateBrancheLabel() {
+        var checked = document.querySelectorAll('#branche-dropdown input[type="checkbox"]:checked');
+        var label = document.getElementById('branche-label');
+        if (checked.length === 0) {
+            label.textContent = 'Bitte wählen …';
+            label.className = 'multiselect-placeholder';
+        } else {
+            label.textContent = Array.from(checked).map(function(c) { return c.value; }).join(', ');
+            label.className = '';
+        }
+    }
+
+    document.addEventListener('click', function(e) {
+        var ms = document.getElementById('branche-multiselect');
+        if (ms && !ms.contains(e.target)) {
+            document.getElementById('branche-dropdown').classList.remove('open');
+            document.getElementById('branche-trigger').classList.remove('open');
+            document.getElementById('branche-trigger').setAttribute('aria-expanded', 'false');
+        }
     });
 
     // Mobile sidebar toggle
