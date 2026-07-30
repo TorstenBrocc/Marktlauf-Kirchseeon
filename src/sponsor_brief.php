@@ -280,13 +280,15 @@ function sponsorBriefPlatzhalterHilfe(): array {
 }
 
 /**
- * Vorlage laden: DB-Überschreibung über Default gemergt.
- * @return array{name:string, betreff:string, koerper_md:string}
+ * Vorlage laden: eigener Draft → DB-Master → Code-Default.
+ * $userId = 0 überspringt die Draft-Prüfung (Preview-APIs, CLI).
+ * @return array{name:string, betreff:string, koerper_md:string, draft:bool, draft_ts:string}
  */
-function sponsorBriefLoad(PDO $pdo, string $slug): array {
+function sponsorBriefLoad(PDO $pdo, string $slug, int $userId = 0): array {
     $defaults = sponsorBriefDefaults();
     $base = $defaults[$slug] ?? $defaults['erstanschreiben'];
 
+    $master = $base;
     try {
         $stmt = $pdo->prepare('SELECT name, betreff, koerper_md FROM sponsor_briefvorlagen WHERE slug = :slug');
         $stmt->execute(['slug' => $slug]);
@@ -294,7 +296,7 @@ function sponsorBriefLoad(PDO $pdo, string $slug): array {
         if ($row) {
             $betreff = trim((string) ($row['betreff'] ?? ''));
             $koerper = trim((string) ($row['koerper_md'] ?? ''));
-            return [
+            $master = [
                 'name'       => (string) ($row['name'] ?? $base['name']),
                 'betreff'    => $betreff !== '' ? $betreff : $base['betreff'],
                 'koerper_md' => $koerper !== '' ? $koerper : $base['koerper_md'],
@@ -304,7 +306,28 @@ function sponsorBriefLoad(PDO $pdo, string $slug): array {
         // Tabelle evtl. noch nicht migriert -> Default nutzen
     }
 
-    return $base;
+    if ($userId > 0) {
+        try {
+            $stmt = $pdo->prepare('SELECT betreff, koerper_md, gespeichert_am FROM briefvorlagen_entwurf WHERE user_id = :uid AND vorlage_art = :art AND slug = :slug');
+            $stmt->execute(['uid' => $userId, 'art' => 'sponsor', 'slug' => $slug]);
+            $draft = $stmt->fetch();
+            if ($draft) {
+                $dBetreff = trim((string) ($draft['betreff'] ?? ''));
+                $dKoerper = trim((string) ($draft['koerper_md'] ?? ''));
+                return [
+                    'name'       => $master['name'],
+                    'betreff'    => $dBetreff !== '' ? $dBetreff : $master['betreff'],
+                    'koerper_md' => $dKoerper !== '' ? $dKoerper : $master['koerper_md'],
+                    'draft'      => true,
+                    'draft_ts'   => (string) $draft['gespeichert_am'],
+                ];
+            }
+        } catch (PDOException $e) {
+            // Entwurf-Tabelle noch nicht migriert -> ignorieren
+        }
+    }
+
+    return array_merge($master, ['draft' => false, 'draft_ts' => '']);
 }
 
 /* ---- Platzhalter-Kontext (aus Empfängerdaten) ---------------------------- */
