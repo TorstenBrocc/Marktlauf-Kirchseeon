@@ -68,6 +68,19 @@ try {
     // Tabelle evtl. noch nicht angelegt
 }
 
+// Branchen-Liste aus Einstellungen laden.
+$branchen = [];
+try {
+    $pdo ??= getDbConnection();
+    $bStmt = $pdo->query("SELECT `value` FROM einstellungen WHERE `key` = 'sponsor_branchen'");
+    $bRow = $bStmt->fetchColumn();
+    if ($bRow) {
+        $branchen = json_decode($bRow, true) ?? [];
+    }
+} catch (PDOException $e) {
+    // ignore
+}
+
 $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
 ?>
 <!DOCTYPE html>
@@ -365,6 +378,16 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                                 <?php endforeach; ?>
                             </datalist>
                         </div>
+
+                        <div class="form-group">
+                            <label for="branche">Branche</label>
+                            <select id="branche" name="branche">
+                                <option value="">– Keine –</option>
+                                <?php foreach ($branchen as $b): ?>
+                                    <option value="<?= htmlspecialchars($b) ?>" <?= ($sponsor['branche'] ?? '') === $b ? 'selected' : '' ?>><?= htmlspecialchars($b) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
                     </div>
 
                     <div class="form-card">
@@ -561,6 +584,39 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                                 <label for="rechnung_ort">Ort</label>
                                 <input type="text" id="rechnung_ort" name="rechnung_ort" maxlength="120"
                                        value="<?= htmlspecialchars($sponsor['rechnung_ort'] ?? '') ?>">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-card">
+                        <h2>Recherche-Kontext</h2>
+                        <p style="font-size:0.8rem; color: var(--text-light); margin-top:-0.5rem; margin-bottom:1rem;">
+                            Infos aus der Recherche-Phase: Förderprogramm, Kontaktweg und Quellenbelege.
+                            Werden beim CSV-Import automatisch befüllt.
+                        </p>
+
+                        <div class="form-group">
+                            <label for="foerderprogramm">Förderprogramm / Sponsoring-Angebot</label>
+                            <textarea id="foerderprogramm" name="foerderprogramm" rows="3"><?= htmlspecialchars($sponsor['foerderprogramm'] ?? '') ?></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="kontaktweg">Antrag / Kontaktweg</label>
+                            <textarea id="kontaktweg" name="kontaktweg" rows="2"><?= htmlspecialchars($sponsor['kontaktweg'] ?? '') ?></textarea>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="website">Website</label>
+                                <input type="text" id="website" name="website" maxlength="255"
+                                       placeholder="z. B. beispiel.de"
+                                       value="<?= htmlspecialchars($sponsor['website'] ?? '') ?>">
+                            </div>
+                            <div class="form-group">
+                                <label for="quellenurl">Quellenlink (Recherche-Beleg)</label>
+                                <input type="url" id="quellenurl" name="quellenurl" maxlength="500"
+                                       placeholder="https://…"
+                                       value="<?= htmlspecialchars($sponsor['quellenurl'] ?? '') ?>">
                             </div>
                         </div>
                     </div>

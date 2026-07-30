@@ -229,8 +229,8 @@ try {
             $gruppeId = sponsorGruppeIdFromPost($pdo, $_POST['gruppe_name'] ?? '');
 
             $stmt = $pdo->prepare('
-                INSERT INTO sponsors (firma, paket, prioritaet, ort, summe, status, kein_kontakt, kein_kontakt_grund, kein_kontakt_wer, kein_kontakt_datum, notizen, wiedervorlage, gruppe_id, rechnung_firma, rechnung_strasse, rechnung_plz, rechnung_ort, rechnung_email)
-                VALUES (:firma, :paket, :prioritaet, :ort, :summe, :status, :kein_kontakt, :kein_kontakt_grund, :kein_kontakt_wer, :kein_kontakt_datum, :notizen, :wiedervorlage, :gruppe_id, :rechnung_firma, :rechnung_strasse, :rechnung_plz, :rechnung_ort, :rechnung_email)
+                INSERT INTO sponsors (firma, paket, prioritaet, ort, summe, status, kein_kontakt, kein_kontakt_grund, kein_kontakt_wer, kein_kontakt_datum, notizen, wiedervorlage, gruppe_id, rechnung_firma, rechnung_strasse, rechnung_plz, rechnung_ort, rechnung_email, branche, foerderprogramm, kontaktweg, website, quellenurl)
+                VALUES (:firma, :paket, :prioritaet, :ort, :summe, :status, :kein_kontakt, :kein_kontakt_grund, :kein_kontakt_wer, :kein_kontakt_datum, :notizen, :wiedervorlage, :gruppe_id, :rechnung_firma, :rechnung_strasse, :rechnung_plz, :rechnung_ort, :rechnung_email, :branche, :foerderprogramm, :kontaktweg, :website, :quellenurl)
             ');
             $stmt->execute([
                 'firma'              => $firma,
@@ -251,6 +251,11 @@ try {
                 'rechnung_plz'       => trim($_POST['rechnung_plz'] ?? '') ?: null,
                 'rechnung_ort'       => trim($_POST['rechnung_ort'] ?? '') ?: null,
                 'rechnung_email'     => trim($_POST['rechnung_email'] ?? '') ?: null,
+                'branche'            => trim($_POST['branche'] ?? '') ?: null,
+                'foerderprogramm'    => trim($_POST['foerderprogramm'] ?? '') ?: null,
+                'kontaktweg'         => trim($_POST['kontaktweg'] ?? '') ?: null,
+                'website'            => trim($_POST['website'] ?? '') ?: null,
+                'quellenurl'         => trim($_POST['quellenurl'] ?? '') ?: null,
             ]);
 
             $newSponsorId = (int) $pdo->lastInsertId();
@@ -334,7 +339,12 @@ try {
                     rechnung_strasse = :rechnung_strasse,
                     rechnung_plz = :rechnung_plz,
                     rechnung_ort = :rechnung_ort,
-                    rechnung_email = :rechnung_email
+                    rechnung_email = :rechnung_email,
+                    branche = :branche,
+                    foerderprogramm = :foerderprogramm,
+                    kontaktweg = :kontaktweg,
+                    website = :website,
+                    quellenurl = :quellenurl
                 WHERE id = :id
             ');
             $stmt->execute([
@@ -356,6 +366,11 @@ try {
                 'rechnung_plz'       => trim($_POST['rechnung_plz'] ?? '') ?: null,
                 'rechnung_ort'       => trim($_POST['rechnung_ort'] ?? '') ?: null,
                 'rechnung_email'     => trim($_POST['rechnung_email'] ?? '') ?: null,
+                'branche'            => trim($_POST['branche'] ?? '') ?: null,
+                'foerderprogramm'    => trim($_POST['foerderprogramm'] ?? '') ?: null,
+                'kontaktweg'         => trim($_POST['kontaktweg'] ?? '') ?: null,
+                'website'            => trim($_POST['website'] ?? '') ?: null,
+                'quellenurl'         => trim($_POST['quellenurl'] ?? '') ?: null,
                 'id'                 => $sponsorId,
             ]);
 
