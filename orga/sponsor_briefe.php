@@ -140,6 +140,14 @@ if (!empty($briefSettings['sponsoring_pakete'])) {
             box-sizing: border-box; resize: vertical; background: var(--white);
         }
         .baustein-actions { margin-top: 0.65rem; }
+        .plakat-liste { list-style: none; margin: 0.75rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+        .plakat-item { display: flex; align-items: center; flex-wrap: nowrap; gap: 0.75rem; padding: 0.5rem 0.75rem; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; }
+        .plakat-item span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+        .plakat-item .btn-del { flex-shrink: 0; padding: 0.25rem 0.6rem; font-size: 0.8rem; }
+        .plakat-section-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; flex-wrap: wrap; }
+        .plakat-badge { display: inline-flex; align-items: center; gap: 0.3rem; background: var(--primary); color: #fff; border-radius: 12px; padding: 0.15rem 0.6rem; font-size: 0.75rem; font-weight: 600; }
+        .plakat-hinweis { font-size: 0.8rem; color: var(--text-light); background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem 0.75rem; margin: 0.75rem 0 0.5rem; line-height: 1.5; }
+        .plakat-upload-form { margin-top: 0.75rem; display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
     </style>
 </head>
 <body>
@@ -270,6 +278,7 @@ if (!empty($briefSettings['sponsoring_pakete'])) {
                     <?php else: ?>
                     <p class="brief-hint" style="margin:0.5rem 0;">Noch keine Plakate hochgeladen — Anschreiben werden ohne Anhang gesendet.</p>
                     <?php endif; ?>
+                    <p class="plakat-hinweis">⚠️ Bitte immer auf Aktualität achten – es gibt keinen Automatismus, der die letzte Version hochlädt und anhängt. Im Sponsoring-Zirkel immer abstimmen.</p>
                     <form method="post" action="api/file_upload.php" enctype="multipart/form-data" class="plakat-upload-form">
                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                         <input type="hidden" name="bereich" value="orga">
