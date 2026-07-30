@@ -254,6 +254,61 @@ try {
             padding: 0.5rem;
             min-width: 150px;
         }
+        .branche-dd-wrap {
+            position: relative;
+        }
+        .branche-dd-btn {
+            padding: 0.5rem;
+            min-width: 150px;
+            width: 100%;
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            text-align: left;
+            cursor: pointer;
+            font-size: 0.875rem;
+            color: var(--text);
+            font-family: inherit;
+        }
+        .branche-dd-btn:hover {
+            border-color: var(--primary);
+        }
+        .branche-dd-panel {
+            display: none;
+            position: absolute;
+            top: calc(100% + 2px);
+            left: 0;
+            z-index: 50;
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            box-shadow: var(--shadow-card);
+            padding: 0.4rem 0;
+            min-width: 230px;
+            max-height: 320px;
+            overflow-y: auto;
+        }
+        .branche-dd-panel.open {
+            display: block;
+        }
+        .branche-dd-item {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.35rem 0.75rem;
+            cursor: pointer;
+            font-weight: 400;
+            font-size: 0.875rem;
+            white-space: nowrap;
+        }
+        .branche-dd-item:hover {
+            background: var(--bg);
+        }
+        .branche-dd-item input[type="checkbox"] {
+            width: 15px;
+            height: 15px;
+            flex-shrink: 0;
+        }
         .data-table {
             width: 100%;
             border-collapse: collapse;
@@ -634,16 +689,22 @@ try {
                     <?php if (!empty($branchen)): ?>
                     <div class="form-group">
                         <label>Branche</label>
-                        <div style="display:flex;flex-wrap:wrap;gap:0.3rem 0.8rem;margin-top:0.2rem">
-                            <?php foreach ($branchen as $b): ?>
-                                <label style="display:flex;align-items:center;gap:0.3rem;font-weight:400;cursor:pointer;white-space:nowrap">
-                                    <input type="checkbox" name="branchen[]"
-                                           value="<?= htmlspecialchars($b) ?>"
-                                           <?= in_array($b, $filterBranchen, true) ? 'checked' : '' ?>
-                                           onchange="this.form.submit()">
-                                    <?= htmlspecialchars($b) ?>
-                                </label>
-                            <?php endforeach; ?>
+                        <div class="branche-dd-wrap" id="branche-dd-wrap">
+                            <button type="button" class="branche-dd-btn" onclick="toggleBrancheDD()">
+                                <?php $bCnt = count($filterBranchen); ?>
+                                <?= $bCnt ? 'Branche (' . $bCnt . ')' : 'Alle Branchen' ?> ▾
+                            </button>
+                            <div class="branche-dd-panel" id="branche-dd-panel">
+                                <?php foreach ($branchen as $b): ?>
+                                    <label class="branche-dd-item">
+                                        <input type="checkbox" name="branchen[]"
+                                               value="<?= htmlspecialchars($b) ?>"
+                                               <?= in_array($b, $filterBranchen, true) ? 'checked' : '' ?>
+                                               onchange="this.form.submit()">
+                                        <?= htmlspecialchars($b) ?>
+                                    </label>
+                                <?php endforeach; ?>
+                            </div>
                         </div>
                     </div>
                     <?php endif; ?>
@@ -762,13 +823,17 @@ try {
                                             $dec = json_decode($s['branche'], true);
                                             $bArr = is_array($dec) ? $dec : [$s['branche']];
                                         }
+                                        $bFirst = $bArr[0] ?? '';
                                         ?>
-                                        <?php if ($bArr): ?>
-                                            <?php foreach ($bArr as $bTag): ?>
-                                                <span style="display:inline-block;font-size:0.7rem;padding:0.1rem 0.4rem;background:var(--bg);border:1px solid var(--border);border-radius:3px;margin:0.1rem 0.1rem 0.1rem 0;white-space:nowrap"><?= htmlspecialchars($bTag) ?></span>
+                                        <select class="inline-select branche-select"
+                                                data-id="<?= $s['id'] ?>" data-field="branche" title="Branche ändern">
+                                            <option value="" <?= $bFirst === '' ? 'selected' : '' ?>>–</option>
+                                            <?php foreach ($branchen as $b): ?>
+                                                <option value="<?= htmlspecialchars($b) ?>" <?= $bFirst === $b ? 'selected' : '' ?>><?= htmlspecialchars($b) ?></option>
                                             <?php endforeach; ?>
-                                        <?php else: ?>
-                                            –
+                                        </select>
+                                        <?php if (count($bArr) > 1): ?>
+                                            <div style="font-size:0.7rem;color:var(--text-light);margin-top:0.2rem">+<?= count($bArr) - 1 ?> weitere</div>
                                         <?php endif; ?>
                                     </td>
                                     <td>
@@ -1052,6 +1117,16 @@ try {
             link.addEventListener('click', closeSidebar);
         });
     })();
+
+    function toggleBrancheDD() {
+        document.getElementById('branche-dd-panel').classList.toggle('open');
+    }
+    document.addEventListener('click', function(e) {
+        var wrap = document.getElementById('branche-dd-wrap');
+        if (wrap && !wrap.contains(e.target)) {
+            document.getElementById('branche-dd-panel').classList.remove('open');
+        }
+    });
     </script>
 </body>
 </html>

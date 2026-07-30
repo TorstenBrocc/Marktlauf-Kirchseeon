@@ -104,6 +104,14 @@ if (($_POST['action'] ?? '') === 'inline_update') {
             exit;
         }
 
+        if ($field === 'branche') {
+            $branche = $value !== '' ? json_encode([mb_substr(trim($value), 0, 100)]) : null;
+            $pdo->prepare('UPDATE sponsors SET branche = :v WHERE id = :id')
+                ->execute(['v' => $branche, 'id' => $sponsorId]);
+            echo json_encode(['ok' => true]);
+            exit;
+        }
+
         if ($field === 'zustaendig') {
             // Leer = Zuordnung entfernen; sonst muss es ein aktiver Nutzer sein.
             $uid = ($value !== '' && ctype_digit($value)) ? (int) $value : 0;
