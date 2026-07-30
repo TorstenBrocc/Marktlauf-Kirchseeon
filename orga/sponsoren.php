@@ -46,6 +46,36 @@ try {
     // ignore
 }
 
+// Migration 030 (Rechnungsanschrift/Gruppen) evtl. noch nicht angewendet — graceful.
+$hasRechnung = false;
+try {
+    $hasRechnung = (bool) $pdo->query("SHOW COLUMNS FROM sponsors LIKE 'rechnung_firma'")->fetchColumn();
+} catch (PDOException $e) {
+    // ignore
+}
+
+$hasGruppe = false;
+$gruppeNameById = [];
+try {
+    $hasGruppe = (bool) $pdo->query("SHOW COLUMNS FROM sponsors LIKE 'gruppe_id'")->fetchColumn();
+    if ($hasGruppe) {
+        $gStmt = $pdo->query('SELECT id, name FROM sponsor_gruppen');
+        foreach ($gStmt->fetchAll() as $g) {
+            $gruppeNameById[(int) $g['id']] = $g['name'];
+        }
+    }
+} catch (PDOException $e) {
+    // ignore
+}
+
+$colCount = 10;
+if ($hasZustaendig) {
+    $colCount++;
+}
+if ($hasRechnung) {
+    $colCount++;
+}
+
 $sql = 'SELECT * FROM sponsors';
 $where = [];
 $params = [];
@@ -419,6 +449,27 @@ try {
             text-transform: uppercase;
             margin-left: 0.5rem;
         }
+        .gruppe-badge {
+            display: inline-block;
+            padding: 0.05rem 0.375rem;
+            background: #eef2ff;
+            color: #3730a3;
+            border-radius: 3px;
+            font-size: 0.625rem;
+            margin-left: 0.4rem;
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+        .col-rechnung {
+            text-align: center;
+        }
+        .rechnung-ja {
+            color: var(--primary);
+            font-weight: 600;
+        }
+        .rechnung-nein {
+            color: var(--text-light);
+        }
         .table-wrap {
             overflow-x: auto;
             border-radius: 8px;
@@ -592,6 +643,7 @@ try {
                             <th>Summe</th>
                             <th>Status</th>
                             <th>Wiedervorlage</th>
+                            <?php if ($hasRechnung): ?><th class="col-rechnung" title="Rechnungsanschrift hinterlegt?">Rechnung</th><?php endif; ?>
                             <?php if ($hasZustaendig): ?><th>Zuständig</th><?php endif; ?>
                             <th>Notiz</th>
                             <th>Aktion</th>
@@ -600,7 +652,7 @@ try {
                     <tbody>
                         <?php if (empty($sponsoren)): ?>
                             <tr>
-                                <td colspan="<?= $hasZustaendig ? 11 : 10 ?>">Keine Sponsoren gefunden.</td>
+                                <td colspan="<?= $colCount ?>">Keine Sponsoren gefunden.</td>
                             </tr>
                         <?php else: ?>
                             <?php
@@ -635,6 +687,9 @@ try {
                                         <a href="sponsor_form.php?id=<?= $s['id'] ?>">
                                             <strong><?= htmlspecialchars($s['firma']) ?></strong>
                                         </a>
+                                        <?php if ($hasGruppe && !empty($s['gruppe_id']) && isset($gruppeNameById[(int) $s['gruppe_id']])): ?>
+                                            <span class="gruppe-badge" title="Konzern/Gruppe"><?= htmlspecialchars($gruppeNameById[(int) $s['gruppe_id']]) ?></span>
+                                        <?php endif; ?>
                                         <?php if (isset($prioMeta[$prio])): ?>
                                             <span class="prio-badge <?= $prioMeta[$prio][1] ?>" title="Priorität"><?= $prioMeta[$prio][0] ?></span>
                                         <?php endif; ?>
@@ -701,6 +756,15 @@ try {
                                             –
                                         <?php endif; ?>
                                     </td>
+                                    <?php if ($hasRechnung): ?>
+                                        <?php
+                                        $hatRechnung = !empty($s['rechnung_firma']) || !empty($s['rechnung_strasse'])
+                                            || !empty($s['rechnung_plz']) || !empty($s['rechnung_ort']) || !empty($s['rechnung_email']);
+                                        ?>
+                                        <td class="col-rechnung" title="<?= $hatRechnung ? 'Rechnungsanschrift hinterlegt' : 'Keine Rechnungsanschrift hinterlegt' ?>">
+                                            <span class="<?= $hatRechnung ? 'rechnung-ja' : 'rechnung-nein' ?>"><?= $hatRechnung ? '✓' : '✗' ?></span>
+                                        </td>
+                                    <?php endif; ?>
                                     <?php if ($hasZustaendig): ?>
                                     <td>
                                         <?php $zustId = (int) ($s['zustaendig_user_id'] ?? 0); ?>
@@ -787,9 +851,10 @@ try {
             const typLabels = { folgejahr: 'Folgejahr-Anschreiben', frei: 'Freier Brief', erstanschreiben: 'Erstanschreiben', bestaetigung: 'Bestätigung Sponsoring' };
             const typLabel = (typ && typLabels[typ.value]) || 'Erstanschreiben';
             if (n === 1) {
-                return confirm('1 Empfänger auswählt.\n\n' + typLabel + ' jetzt sofort senden?');
+                return confirm('1 Sponsor ausgewählt.\n\n' + typLabel + ' jetzt senden?\n'
+                    + '(Hat der Sponsor mehrere Kontakte im Anschreiben markiert, gehen alle einzeln personalisiert raus.)');
             }
-            return confirm(n + ' Empfänger ausgewählt.\n\n' + typLabel + ' in die Sende-Queue stellen? '
+            return confirm(n + ' Sponsoren ausgewählt.\n\n' + typLabel + ' in die Sende-Queue stellen? '
                 + 'Der Versand läuft anschließend über das CLI-Script (15 Sek. Abstand pro Mail).');
         };
     })();

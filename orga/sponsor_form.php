@@ -49,6 +49,25 @@ if ($isEdit) {
     }
 }
 
+// Gruppen (Konzern-Zugehörigkeit) für Autocomplete + aktuellen Namen laden.
+$gruppen = [];
+$aktuelleGruppe = '';
+try {
+    $pdo ??= getDbConnection();
+    $gStmt = $pdo->query('SELECT id, name FROM sponsor_gruppen ORDER BY name');
+    $gruppen = $gStmt->fetchAll();
+    if ($isEdit && !empty($sponsor['gruppe_id'])) {
+        foreach ($gruppen as $g) {
+            if ((int) $g['id'] === (int) $sponsor['gruppe_id']) {
+                $aktuelleGruppe = $g['name'];
+                break;
+            }
+        }
+    }
+} catch (PDOException $e) {
+    // Tabelle evtl. noch nicht angelegt
+}
+
 $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
 ?>
 <!DOCTYPE html>
@@ -183,12 +202,22 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
         }
         .ap-row {
             display: grid;
-            grid-template-columns: 100px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) 40px;
+            grid-template-columns: 100px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) 90px 40px;
             gap: 0.5rem;
             align-items: end;
             margin-bottom: 0.75rem;
             padding-bottom: 0.75rem;
             border-bottom: 1px solid var(--border);
+        }
+        .ap-anschreiben {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding-bottom: 0.6rem;
+        }
+        .ap-anschreiben input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
         }
         .ap-row:last-of-type {
             border-bottom: none;
@@ -324,6 +353,18 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                             <input type="text" id="firma" name="firma" required
                                    value="<?= htmlspecialchars($sponsor['firma'] ?? '') ?>">
                         </div>
+
+                        <div class="form-group">
+                            <label for="gruppe">Konzern/Gruppe (optional)</label>
+                            <input type="text" id="gruppe" name="gruppe_name" list="gruppe-liste"
+                                   placeholder="z. B. Ahorn Gruppe"
+                                   value="<?= htmlspecialchars($aktuelleGruppe) ?>">
+                            <datalist id="gruppe-liste">
+                                <?php foreach ($gruppen as $g): ?>
+                                    <option value="<?= htmlspecialchars($g['name']) ?>">
+                                <?php endforeach; ?>
+                            </datalist>
+                        </div>
                     </div>
 
                     <div class="form-card">
@@ -361,6 +402,12 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                                     <label>E-Mail</label>
                                     <input type="email" name="ap_email[]">
                                 </div>
+                                <div class="ap-anschreiben">
+                                    <input type="hidden" name="ap_im_anschreiben[]" value="1">
+                                    <input type="checkbox" checked title="Ins Anschreiben aufnehmen"
+                                           onchange="this.previousElementSibling.value = this.checked ? '1' : '0'">
+                                    <label style="margin:0;">Anschreiben</label>
+                                </div>
                                 <button type="button" class="ap-remove" onclick="removeApRow(this)" disabled title="Löschen">×</button>
                             </div>
                             <?php else: ?>
@@ -394,6 +441,13 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                                     <div>
                                         <label>E-Mail</label>
                                         <input type="email" name="ap_email[]" value="<?= htmlspecialchars($ap['email']) ?>">
+                                    </div>
+                                    <?php $imAnschreiben = (int) ($ap['im_anschreiben'] ?? 1) === 1; ?>
+                                    <div class="ap-anschreiben">
+                                        <input type="hidden" name="ap_im_anschreiben[]" value="<?= $imAnschreiben ? '1' : '0' ?>">
+                                        <input type="checkbox" <?= $imAnschreiben ? 'checked' : '' ?> title="Ins Anschreiben aufnehmen"
+                                               onchange="this.previousElementSibling.value = this.checked ? '1' : '0'">
+                                        <label style="margin:0;">Anschreiben</label>
                                     </div>
                                     <button type="button" class="ap-remove" onclick="removeApRow(this)" <?= count($ansprechpartner) <= 1 ? 'disabled' : '' ?> title="Löschen">×</button>
                                 </div>
@@ -467,6 +521,48 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                             <?php endif; ?>
                         </p>
                         <?php endif; ?>
+                    </div>
+
+                    <div class="form-card">
+                        <h2>Rechnungsanschrift</h2>
+                        <p style="font-size:0.8rem; color: var(--text-light); margin-top:-0.5rem; margin-bottom:1rem;">
+                            Nur ausfüllen, falls die Rechnung an eine andere Adresse als die Firma
+                            gehen soll (z. B. zentrale Buchhaltung einer Unternehmensgruppe). In der
+                            Übersicht wird nur angezeigt, ob eine Rechnungsanschrift hinterlegt ist.
+                        </p>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="rechnung_firma">Firma / z. Hd.</label>
+                                <input type="text" id="rechnung_firma" name="rechnung_firma"
+                                       value="<?= htmlspecialchars($sponsor['rechnung_firma'] ?? '') ?>">
+                            </div>
+                            <div class="form-group">
+                                <label for="rechnung_email">Rechnungs-E-Mail</label>
+                                <input type="email" id="rechnung_email" name="rechnung_email"
+                                       placeholder="z. B. buchhaltung@firma.de"
+                                       value="<?= htmlspecialchars($sponsor['rechnung_email'] ?? '') ?>">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="rechnung_strasse">Straße + Hausnummer</label>
+                            <input type="text" id="rechnung_strasse" name="rechnung_strasse"
+                                   value="<?= htmlspecialchars($sponsor['rechnung_strasse'] ?? '') ?>">
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="rechnung_plz">PLZ</label>
+                                <input type="text" id="rechnung_plz" name="rechnung_plz" maxlength="10"
+                                       value="<?= htmlspecialchars($sponsor['rechnung_plz'] ?? '') ?>">
+                            </div>
+                            <div class="form-group">
+                                <label for="rechnung_ort">Ort</label>
+                                <input type="text" id="rechnung_ort" name="rechnung_ort" maxlength="120"
+                                       value="<?= htmlspecialchars($sponsor['rechnung_ort'] ?? '') ?>">
+                            </div>
+                        </div>
                     </div>
 
                     <div class="form-card">
@@ -608,6 +704,12 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                 <div>
                     <label>E-Mail</label>
                     <input type="email" name="ap_email[]">
+                </div>
+                <div class="ap-anschreiben">
+                    <input type="hidden" name="ap_im_anschreiben[]" value="1">
+                    <input type="checkbox" checked title="Ins Anschreiben aufnehmen"
+                           onchange="this.previousElementSibling.value = this.checked ? '1' : '0'">
+                    <label style="margin:0;">Anschreiben</label>
                 </div>
                 <button type="button" class="ap-remove" onclick="removeApRow(this)" title="Löschen">×</button>
             </div>

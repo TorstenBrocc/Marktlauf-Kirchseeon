@@ -65,19 +65,19 @@ try {
         $sponsoren[(int) $row['id']] = $row;
     }
 
-    // Ersten Ansprechpartner mit E-Mail je Sponsor holen
+    // Alle für das Anschreiben markierten Ansprechpartner mit E-Mail je Sponsor holen.
+    // Jeder bekommt eine eigene, individuell personalisierte Mail (kein CC/Sammel-Mail) —
+    // "im_anschreiben" lässt sich pro Kontakt im Formular abwählen (Default: an).
     $apStmt = $pdo->prepare("
         SELECT sponsor_id, anrede, vorname, nachname, email
         FROM sponsor_ansprechpartner
-        WHERE sponsor_id IN ($placeholders) AND email <> ''
+        WHERE sponsor_id IN ($placeholders) AND email <> '' AND im_anschreiben = 1
         ORDER BY sponsor_id, id
     ");
     $apStmt->execute($ids);
     $apBySponsor = [];
     foreach ($apStmt->fetchAll() as $row) {
-        if (!isset($apBySponsor[$row['sponsor_id']])) {
-            $apBySponsor[$row['sponsor_id']] = $row;
-        }
+        $apBySponsor[$row['sponsor_id']][] = $row;
     }
 
     $recipients = [];
@@ -93,20 +93,22 @@ try {
             $skippedKeinKontakt++;
             continue;
         }
-        $ap = $apBySponsor[$id] ?? null;
-        if ($ap === null || trim((string) $ap['email']) === '') {
+        $aps = $apBySponsor[$id] ?? [];
+        if (empty($aps)) {
             $skippedNoEmail++;
             continue;
         }
-        $recipients[] = [
-            'sponsor_id' => $id,
-            'email'      => trim((string) $ap['email']),
-            'anrede'     => (string) $ap['anrede'],
-            'vorname'    => (string) $ap['vorname'],
-            'nachname'   => (string) $ap['nachname'],
-            'firma'      => (string) $sponsor['firma'],
-            'paket'      => (string) ($sponsor['paket'] ?? ''),
-        ];
+        foreach ($aps as $ap) {
+            $recipients[] = [
+                'sponsor_id' => $id,
+                'email'      => trim((string) $ap['email']),
+                'anrede'     => (string) $ap['anrede'],
+                'vorname'    => (string) $ap['vorname'],
+                'nachname'   => (string) $ap['nachname'],
+                'firma'      => (string) $sponsor['firma'],
+                'paket'      => (string) ($sponsor['paket'] ?? ''),
+            ];
+        }
     }
 
     $hinweis = '';
