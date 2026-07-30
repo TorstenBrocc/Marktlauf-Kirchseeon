@@ -170,7 +170,11 @@ Wie soll der Nachlauf gestaltet werden? Benötigen Sie von uns Fotos, Logos oder
 
 Gutscheine gemäß Ihrem Paket werden Ihnen zeitnah zugesandt.
 
-**7. Rechnungsanschrift**
+**7. Plakate**
+
+zum Aushängen/Weiterleiten anbei
+
+**8. Rechnungsanschrift**
 
 Damit wir Ihnen die Rechnung korrekt ausstellen können, benötigen wir Ihre vollständige Rechnungsadresse sowie alle für die Buchhaltung notwendigen Informationen (z. B. Ansprechpartner Buchhaltung).
 
@@ -249,9 +253,15 @@ function sponsorBestaetigungSektionen(): array {
         ],
         [
             'id'      => 's7',
-            'titel'   => '7. Rechnungsanschrift',
+            'titel'   => '7. Plakate',
             'checked' => true,
-            'text'    => "**7. Rechnungsanschrift**\n\n"
+            'text'    => "**7. Plakate**\n\nzum Aushängen/Weiterleiten anbei",
+        ],
+        [
+            'id'      => 's8',
+            'titel'   => '8. Rechnungsanschrift',
+            'checked' => true,
+            'text'    => "**8. Rechnungsanschrift**\n\n"
                        . "Damit wir Ihnen die Rechnung korrekt ausstellen können, benötigen wir Ihre vollständige "
                        . "Rechnungsadresse sowie alle für die Buchhaltung notwendigen Informationen "
                        . "(z. B. Ansprechpartner Buchhaltung).",

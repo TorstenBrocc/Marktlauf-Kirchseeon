@@ -248,7 +248,7 @@ function sendSponsorAnschreiben(
     $subject     = sponsorBriefBetreff($vorlage['betreff'], $ctx);
     $htmlBody    = sponsorBriefRenderHtml($vorlage['koerper_md'], $ctx);
     $textBody    = sponsorBriefRenderText($vorlage['koerper_md'], $ctx);
-    $attachments = $typ === 'frei' ? plakateAnhang($pdo) : [];
+    $attachments = in_array($typ, ['frei', 'bestaetigung'], true) ? plakateAnhang($pdo) : [];
     return sendMail($to, $subject, $textBody, $htmlBody, $attachments);
 }
 
