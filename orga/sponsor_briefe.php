@@ -233,7 +233,7 @@ if (!empty($briefSettings['sponsoring_pakete'])) {
                 </div>
             </form>
 
-            <?php if ($slug === 'frei'):
+            <?php if (in_array($slug, ['frei', 'bestaetigung'], true)):
                 try {
                     $stmtP = $pdo->query("SELECT id, originalname, groesse FROM dateien WHERE bereich = 'orga' AND kategorie = 'plakat' ORDER BY id ASC");
                     $plakat_rows = $stmtP->fetchAll();
@@ -261,7 +261,7 @@ if (!empty($briefSettings['sponsoring_pakete'])) {
                                 <form method="post" action="api/plakat_loeschen.php" style="margin:0;" onsubmit="return confirm('Plakat löschen?');">
                                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                                     <input type="hidden" name="datei_id" value="<?= (int)$pr['id'] ?>">
-                                    <input type="hidden" name="redirect" value="sponsor_briefe.php?slug=frei">
+                                    <input type="hidden" name="redirect" value="sponsor_briefe.php?slug=<?= urlencode($slug) ?>">
                                     <button type="submit" class="btn btn-secondary btn-del">Löschen</button>
                                 </form>
                             </li>
@@ -274,7 +274,7 @@ if (!empty($briefSettings['sponsoring_pakete'])) {
                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                         <input type="hidden" name="bereich" value="orga">
                         <input type="hidden" name="kategorie" value="plakat">
-                        <input type="hidden" name="redirect_after" value="sponsor_briefe.php?slug=frei">
+                        <input type="hidden" name="redirect_after" value="sponsor_briefe.php?slug=<?= urlencode($slug) ?>">
                         <input type="file" name="datei" accept="application/pdf" required style="font-size:0.9rem;">
                         <button type="submit" class="btn btn-primary">PDF hochladen</button>
                     </form>
