@@ -30,11 +30,14 @@ $defaults = sponsorBriefDefaults();
 $default = $defaults[$slug];
 $platzhalter = sponsorBriefPlatzhalterHilfe();
 
+// Erstanschreiben = shared für alle; die anderen drei = user-scoped.
+$isUserScoped = in_array($slug, ['folgejahr', 'bestaetigung', 'frei'], true);
+$hasStandardtext = $slug !== 'frei';
 $draftHinweis = '';
-if ($vorlage['draft'] && $vorlage['draft_ts'] !== '') {
+if ($isUserScoped && $vorlage['draft'] && $vorlage['draft_ts'] !== '') {
     $dt = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $vorlage['draft_ts']);
     if ($dt) {
-        $draftHinweis = 'Eigener Entwurf vom ' . $dt->format('d.m.Y, H:i') . ' Uhr';
+        $draftHinweis = 'Gespeichert am ' . $dt->format('d.m.Y, H:i') . ' Uhr';
     }
 }
 
@@ -216,10 +219,15 @@ if (!empty($briefSettings['sponsoring_pakete'])) {
                     </div>
 
                     <div class="brief-actions">
-                        <button type="button" class="btn btn-secondary" id="btn-draft-save">Entwurf speichern</button>
-                        <button type="submit" class="btn btn-primary">Veröffentlichen</button>
-                        <button type="button" class="btn btn-secondary" id="reset-default">Standardtext wiederherstellen</button>
-                        <span id="draft-status" class="brief-hint"><?= $draftHinweis !== '' ? htmlspecialchars($draftHinweis) : 'Leerer Text = Standardvorlage wird verwendet.' ?></span>
+                        <?php if ($isUserScoped): ?>
+                            <button type="button" class="btn btn-primary" id="btn-save">Speichern</button>
+                        <?php else: ?>
+                            <button type="submit" class="btn btn-primary">Speichern</button>
+                        <?php endif; ?>
+                        <?php if ($hasStandardtext): ?>
+                            <button type="button" class="btn btn-secondary" id="reset-default">Standardtext wiederherstellen</button>
+                        <?php endif; ?>
+                        <span id="draft-status" class="brief-hint"><?= htmlspecialchars($draftHinweis) ?></span>
                     </div>
                 </div>
             </form>
@@ -329,6 +337,7 @@ if (!empty($briefSettings['sponsoring_pakete'])) {
             });
         });
 
+        <?php if ($hasStandardtext): ?>
         document.getElementById('reset-default').addEventListener('click', function() {
             if (!confirm('Text und Betreff auf die Standardvorlage zurücksetzen? Ungespeicherte Änderungen gehen verloren.')) {
                 return;
@@ -337,8 +346,10 @@ if (!empty($briefSettings['sponsoring_pakete'])) {
             betreff.value = defaultBetreff;
             renderPreview();
         });
+        <?php endif; ?>
 
-        document.getElementById('btn-draft-save').addEventListener('click', function() {
+        <?php if ($isUserScoped): ?>
+        document.getElementById('btn-save').addEventListener('click', function() {
             const statusEl = document.getElementById('draft-status');
             statusEl.textContent = 'Speichert…';
             const body = new URLSearchParams();
@@ -357,13 +368,14 @@ if (!empty($briefSettings['sponsoring_pakete'])) {
                 if (data.ok) {
                     var m = (data.gespeichert_am || '').match(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})/);
                     var ts = m ? m[3] + '.' + m[2] + '.' + m[1] + ', ' + m[4] + ':' + m[5] + ' Uhr' : '';
-                    statusEl.textContent = 'Eigener Entwurf vom ' + ts;
+                    statusEl.textContent = 'Gespeichert am ' + ts;
                 } else {
                     statusEl.textContent = 'Fehler: ' + (data.error || 'Unbekannt');
                 }
             })
-            .catch(function() { statusEl.textContent = 'Entwurf konnte nicht gespeichert werden.'; });
+            .catch(function() { statusEl.textContent = 'Speichern fehlgeschlagen.'; });
         });
+        <?php endif; ?>
 
         // Vorschau-Höhe beim manuellen Resize der Textarea nachziehen (max 700px)
         if (typeof ResizeObserver !== 'undefined') {
