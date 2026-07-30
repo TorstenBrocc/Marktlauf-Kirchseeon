@@ -242,13 +242,14 @@ function sendSponsorAnschreiben(
     if ($userId === 0) {
         $userId = (int) ($_SESSION['user_id'] ?? 0);
     }
-    $pdo      = getDbConnection();
-    $vorlage  = sponsorBriefLoad($pdo, $typ);
-    $ctx      = sponsorBriefContext($pdo, $userId, $anrede, $vorname, $nachname, $firma, $paket);
-    $subject  = sponsorBriefBetreff($vorlage['betreff'], $ctx);
-    $htmlBody = sponsorBriefRenderHtml($vorlage['koerper_md'], $ctx);
-    $textBody = sponsorBriefRenderText($vorlage['koerper_md'], $ctx);
-    return sendMail($to, $subject, $textBody, $htmlBody);
+    $pdo         = getDbConnection();
+    $vorlage     = sponsorBriefLoad($pdo, $typ, $userId);
+    $ctx         = sponsorBriefContext($pdo, $userId, $anrede, $vorname, $nachname, $firma, $paket);
+    $subject     = sponsorBriefBetreff($vorlage['betreff'], $ctx);
+    $htmlBody    = sponsorBriefRenderHtml($vorlage['koerper_md'], $ctx);
+    $textBody    = sponsorBriefRenderText($vorlage['koerper_md'], $ctx);
+    $attachments = $typ === 'frei' ? plakateAnhang($pdo) : [];
+    return sendMail($to, $subject, $textBody, $htmlBody, $attachments);
 }
 
 /**
