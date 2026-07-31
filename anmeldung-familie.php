@@ -62,7 +62,7 @@ $embed = isset($_GET['embed']) && $_GET['embed'] === '1';
                     <script type="text/javascript">
                     <!--
                         var RRReg_eventid="412617";
-                        var RRReg_name="Sammel-Anmeldung 2026";
+                        var RRReg_name="Sammelanmeldung Marktlauf 2026";
                         var RRReg_key="i9Y2QolpQVAk";
                         var RRReg_server="https://events2.raceresult.com";
                     -->
