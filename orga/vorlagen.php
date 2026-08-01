@@ -22,7 +22,7 @@ $isAdmin = isAdminFromGuard();
 $csrfToken = generateCsrfToken();
 
 // Logo-Assets (fix in v1; langfristig tauschbar = Folge-Schritt laut Spec §3/§4).
-$logoWortmarke = '../assets/images/Marktlauf-Logo-Schrift-1180x579 freigestellt.png';
+$logoWortmarke = '../assets/images/marktlauf-wordmark.png';
 $logoAtsv      = '../assets/images/ATSV_Logo-750x968.png';
 $logoGemeinde  = '../assets/images/Wort-u-Bildmarke-Gemeinde.png';
 ?>
@@ -103,9 +103,11 @@ $logoGemeinde  = '../assets/images/Wort-u-Bildmarke-Gemeinde.png';
         .vt-card .vt-inner { position: relative; z-index: 2; display: flex; flex-direction: column;
             height: 100%; padding: 72px 72px 64px; }
 
-        .vt-card .vt-logos { display: flex; align-items: center; gap: 34px; }
-        .vt-card .vt-logos img { height: 96px; width: auto; object-fit: contain; }
-        .vt-card .vt-logos img.vt-logo-mark { height: 118px; }
+        /* Marken-Logos sind gruen -> weisse Unterlage, sonst verschwinden sie (Farbverlauf UND Foto) */
+        .vt-card .vt-logos { display: inline-flex; align-items: center; gap: 30px; align-self: flex-start;
+            background: #fff; border-radius: 22px; padding: 20px 32px; box-shadow: 0 8px 22px rgba(0,0,0,0.18); }
+        .vt-card .vt-logos img { height: 82px; width: auto; object-fit: contain; }
+        .vt-card .vt-logos img.vt-logo-mark { height: 92px; }
 
         .vt-card .vt-body { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center; }
         .vt-card .vt-eyebrow { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 34px;
