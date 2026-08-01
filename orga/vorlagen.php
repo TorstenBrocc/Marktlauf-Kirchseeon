@@ -101,22 +101,25 @@ $runner        = '../assets/images/laeufer.png';
             box-shadow: 0 10px 30px rgba(0,0,0,.16); text-align: left; max-width: 360px; z-index: 3; }
         .poster .koop .kk { font-weight: 700; font-size: 15px; letter-spacing: 2px; color: #2f8f3f; text-transform: uppercase; margin-bottom: 8px; }
         .poster .koop img { height: 58px; width: auto; display: block; }
-        .poster .hero { position: absolute; left: 56px; top: 230px; width: 660px; z-index: 2; }
+        /* Fliessende Textspalte: Elemente schieben sich, statt sich zu ueberlappen (robust bei langem Text) */
+        .poster .content { position: absolute; left: 56px; top: 172px; width: 648px; bottom: 52px;
+            display: flex; flex-direction: column; justify-content: space-between; z-index: 2; }
+        .poster .hero { width: 640px; }
         .poster .hero h1 { font-family: 'Fredoka', 'Trebuchet MS', Verdana, sans-serif; font-weight: 700; font-size: 104px;
             line-height: .92; letter-spacing: -1px; text-transform: uppercase; text-shadow: 0 6px 20px rgba(0,0,0,.18); }
         .poster .hero .sub { font-family: 'Fredoka', 'Trebuchet MS', Verdana, sans-serif; font-weight: 600; font-size: 38px;
             line-height: 1.15; margin-top: 22px; color: #eafff0; }
-        .poster .feat { position: absolute; left: 60px; top: 648px; width: 600px; display: flex; flex-direction: column; gap: 26px; z-index: 2; }
+        .poster .feat { width: 600px; display: flex; flex-direction: column; gap: 26px; }
         .poster .frow { display: flex; align-items: center; gap: 22px; }
         .poster .fic { flex: 0 0 auto; width: 74px; height: 74px; border-radius: 50%; border: 3px solid rgba(255,255,255,.85);
             display: flex; align-items: center; justify-content: center; }
         .poster .fic svg { width: 38px; height: 38px; stroke: #fff; fill: none; stroke-width: 2.2; }
         .poster .ft b { font-family: 'Fredoka', 'Trebuchet MS', Verdana, sans-serif; font-weight: 600; font-size: 30px; color: #f4b81e; display: block; line-height: 1.1; }
         .poster .ft span { font-weight: 400; font-size: 23px; color: #eafff0; line-height: 1.2; }
-        .poster .cta { position: absolute; left: 60px; top: 975px; width: 520px; background: #f4b81e; border-radius: 18px;
-            padding: 24px 0; text-align: center; box-shadow: 0 12px 30px rgba(0,0,0,.20); z-index: 2; }
+        .poster .cta { width: 520px; background: #f4b81e; border-radius: 18px;
+            padding: 24px 0; text-align: center; box-shadow: 0 12px 30px rgba(0,0,0,.20); }
         .poster .cta span { font-family: 'Fredoka', 'Trebuchet MS', Verdana, sans-serif; font-weight: 700; font-size: 40px; color: #1f7a3a; letter-spacing: .5px; text-transform: uppercase; }
-        .poster .info { position: absolute; left: 56px; bottom: 56px; display: flex; gap: 22px; align-items: stretch; z-index: 2; }
+        .poster .info { display: flex; gap: 22px; align-items: stretch; }
         .poster .card { background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.28); border-radius: 20px; padding: 22px 26px; max-width: 250px; }
         .poster .card .ic { font-size: 26px; margin-bottom: 10px; display: block; }
         .poster .card .big { font-family: 'Fredoka', 'Trebuchet MS', Verdana, sans-serif; font-weight: 700; font-size: 34px; line-height: 1; }
@@ -178,7 +181,7 @@ $runner        = '../assets/images/laeufer.png';
                     <h3>Kopf</h3>
                     <div class="vt-field">
                         <label for="vt-headline">Schlagzeile</label>
-                        <input type="text" id="vt-headline" maxlength="40" value="Anmeldung geoeffnet!">
+                        <input type="text" id="vt-headline" maxlength="40" value="Anmeldung geöffnet!">
                     </div>
                     <div class="vt-field">
                         <label for="vt-sub">Unterzeile</label>
@@ -187,16 +190,16 @@ $runner        = '../assets/images/laeufer.png';
 
                     <h3>Drei Punkte</h3>
                     <div class="vt-field vt-two">
-                        <input type="text" id="vt-f1t" maxlength="40" value="Fuer alle Altersklassen" aria-label="Punkt 1 Titel">
-                        <input type="text" id="vt-f1s" maxlength="60" value="Bambini, Schueler, Jugend, Erwachsene" aria-label="Punkt 1 Text">
+                        <input type="text" id="vt-f1t" maxlength="40" value="Für alle Altersklassen" aria-label="Punkt 1 Titel">
+                        <input type="text" id="vt-f1s" maxlength="60" value="Bambini, Schüler, Jugend, Erwachsene" aria-label="Punkt 1 Text">
                     </div>
                     <div class="vt-field vt-two">
                         <input type="text" id="vt-f2t" maxlength="40" value="Verschiedene Distanzen" aria-label="Punkt 2 Titel">
                         <input type="text" id="vt-f2s" maxlength="60" value="500 m bis 10 km" aria-label="Punkt 2 Text">
                     </div>
                     <div class="vt-field vt-two">
-                        <input type="text" id="vt-f3t" maxlength="40" value="Gemeinsam fuer Umwelt &amp; Energie" aria-label="Punkt 3 Titel">
-                        <input type="text" id="vt-f3s" maxlength="60" value="Jeder Schritt zaehlt!" aria-label="Punkt 3 Text">
+                        <input type="text" id="vt-f3t" maxlength="40" value="Gemeinsam für Umwelt &amp; Energie" aria-label="Punkt 3 Titel">
+                        <input type="text" id="vt-f3s" maxlength="60" value="Jeder Schritt zählt!" aria-label="Punkt 3 Text">
                     </div>
                     <span class="vt-hint">Links der goldene Titel, rechts der Untertext. Icons sind fest.</span>
 
@@ -255,6 +258,7 @@ $runner        = '../assets/images/laeufer.png';
                         <div class="kk">In Kooperation mit</div>
                         <img src="<?= htmlspecialchars($logoGemeinde) ?>" alt="Markt Kirchseeon" id="vt-gemeinde">
                     </div>
+                    <div class="content">
                     <div class="hero">
                         <h1 id="c-headline"></h1>
                         <div class="sub" id="c-sub"></div>
@@ -278,6 +282,7 @@ $runner        = '../assets/images/laeufer.png';
                         <div class="card"><span class="ic">📅</span><div class="big" id="c-datum"></div><div class="lbl" id="c-datum-zusatz"></div></div>
                         <div class="card" id="c-ort-card"><span class="ic">📍</span><div class="lbl" id="c-ort"></div></div>
                     </div>
+                    </div><!-- /content -->
                     <div class="qr" id="c-qr" style="display:none;">
                         <div class="qh" id="c-qr-label"></div>
                         <img id="c-qr-img" alt="">
