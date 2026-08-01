@@ -188,6 +188,12 @@ return [
         },
     ],
     [
+        'key'     => 'vorlagen',
+        'label'   => 'Grafik-Vorlagen',
+        'section' => 'KOMMUNIKATION',
+        'href'    => 'vorlagen.php',
+    ],
+    [
         'key'     => 'live_ticker',
         'label'   => 'Live-Ticker',
         'section' => 'KOMMUNIKATION',

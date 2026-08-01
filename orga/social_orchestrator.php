@@ -77,7 +77,7 @@ $raceresultConfigured = $raceresultApiUrl !== '';
 
 // Repo-Assets (Logos/Marken) für die Grafik — rekursiver Scan über assets/images.
 // Statische Dateien → Vorschau lädt zuverlässig (kein Auth-Endpoint). SVG bewusst
-// ausgeklammert (html2canvas rastert SVG unzuverlässig).
+// ausgeklammert (der Grafik-Renderer rastert SVG-Logos nicht zuverlässig).
 $repoAssets = [];
 $assetsRoot = realpath(__DIR__ . '/../assets/images');
 if ($assetsRoot !== false && is_dir($assetsRoot)) {
@@ -647,7 +647,7 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
     </main>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="../assets/js/snapdom.js"></script>
 <!-- QR-Code Generator (lokale Lib, ohne externe Abhaengigkeit) — genutzt fuer QR auf der Grafik -->
 <script src="../assets/js/qrcode.js"></script>
 <script>
@@ -1019,7 +1019,7 @@ document.getElementById('so-render-card').addEventListener('click', async () => 
     applyQr();
 
     const card = document.getElementById('social-share-card');
-    // Logos + optionales Hintergrundfoto + QR vorab laden, damit html2canvas sie findet
+    // Logos + optionales Hintergrundfoto + QR vorab laden, damit snapDOM sie findet
     const logoImgs = Array.from(document.querySelectorAll('#sc-logos img'));
     await Promise.all([
         ...logoImgs.map(waitImg),
@@ -1028,14 +1028,12 @@ document.getElementById('so-render-card').addEventListener('click', async () => 
     ]);
 
     try {
-        const canvas = await html2canvas(card, {
+        const canvas = await snapdom.toCanvas(card, {
             width:        fmt.w,
             height:       fmt.h,
             scale:        1,
-            useCORS:      false,
-            allowTaint:   false,
+            dpr:          1,
             backgroundColor: '#007230',
-            logging:      false,
         });
         const dataUrl = canvas.toDataURL('image/png');
         lastCardDataUrl = dataUrl;
