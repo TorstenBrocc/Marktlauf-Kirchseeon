@@ -7,14 +7,34 @@ Standardmäßig geschieht das über einen **projekteigenen, abhängigkeitsfreien
 Minimal-Konverter** (`sponsorMiniMarkdown()`) — er beherrscht Absätze, Zeilenumbrüche,
 Fett/Kursiv, Überschriften, Listen und Links. Kein externer Code nötig.
 
-## Share-Card-Rendering (Social-Media-Orchestrator)
+## Grafik-Rendering (Share-Card + Postergenerator)
 
-`orga/social_orchestrator.php` lädt **html2canvas** per CDN zur clientseitigen PNG-Erzeugung.
+`orga/social_orchestrator.php` (Share-Card) und `orga/poster_generator.php` (Kampagnen-Poster)
+erzeugen ihre PNGs clientseitig mit **snapDOM**. Die Lib ist **lokal ins Repo vendored**
+(`assets/js/snapdom.js`) — kein CDN, keine externe Laufzeit-Abhängigkeit (robuster auf Strato,
+gleiches Muster wie `assets/js/qrcode.js`). Löste html2canvas 1.4.1 ab (bessere Render-Treue bei
+Schatten, Verläufen, Icon-Fonts).
 
-- **Version:** 1.4.1
-- **Lizenz:** MIT (Niklas von Hertzen)
-- **Quelle:** https://github.com/niklasvh/html2canvas
-- **CDN:** https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js
+- **Version:** 2.1.0 (gepinnt, IIFE-Build → globales `window.snapdom`)
+- **Lizenz:** MIT (Juan Martin Muda / zumerlab)
+- **Quelle:** https://github.com/zumerlab/snapdom
+- **Bezug:** https://unpkg.com/@zumer/snapdom@2.1.0/dist/snapdom.js
+- **SHA-256:** `d0aebcd90aa02c1438f8345e2b13669284c4d5b6298d2edf77866080da01f00a`
+
+**Wichtig:** Wie bei Parsedown wird der Server per Deploy aus dem Repo gespiegelt — `snapdom.js`
+muss daher eingecheckt bleiben, sonst verschwindet die Datei beim `rsync --delete`.
+
+## Schriften (Grafik-Vorlagen-Tool)
+
+`orga/vorlagen.php` rendert seine Grafiken mit zwei self-hosted Webfonts (kein Google-Fonts-CDN
+im Prod-Code — Strato-robust, und snapDOM muss die Fonts vor dem Rastern lokal laden können).
+Die woff2-Dateien liegen unter `assets/fonts/` und müssen — wie snapdom.js — **eingecheckt
+bleiben** (`rsync --delete`). Latin-Subset deckt Deutsch vollständig ab.
+
+- **Fredoka** (Headlines/Badges) — `assets/fonts/fredoka-latin.woff2` (variabel, Gewicht 500–700)
+- **Poppins** (Fließtext) — `assets/fonts/poppins-400-latin.woff2`, `assets/fonts/poppins-600-latin.woff2`
+- **Lizenz:** SIL Open Font License 1.1 (OFL)
+- **Quelle:** Google Fonts (`fonts.gstatic.com`), Fredoka v17 / Poppins v24
 
 ---
 

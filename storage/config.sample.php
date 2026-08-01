@@ -81,4 +81,12 @@ return [
     // erzeugte URL hier eintragen. Der Webhook bekommt JSON {text, image_url, channels, secret}.
     'make_webhook_url'    => '',  // z.B. 'https://hook.eu2.make.com/xxxxxxxxxxxx'
     'make_webhook_secret' => '',  // frei wählbares Shared Secret; im Make-Szenario gegenprüfen (optional, aber empfohlen)
+
+    // Brevo (Newsletter). REST-API v3, Header 'api-key'. Key im Brevo-Backend unter
+    // "SMTP & API" → "API Keys" generieren — NICHT der "MCP server API key".
+    // Leer lassen = Newsletter-Push aus; das Dashboard zeigt dann den Copy-Fallback.
+    'brevo_api_key'      => '',
+    'brevo_sender_name'  => 'ATSV Kirchseeon Marktlauf',
+    'brevo_sender_email' => 'info@atsv-kirchseeon-marktlauf.de',
+    'brevo_list_id'      => 0,    // ID der Newsletter-Empfängerliste in Brevo (für den Kampagnen-Entwurf)
 ];

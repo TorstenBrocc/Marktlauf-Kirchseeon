@@ -300,7 +300,7 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
     </main>
 </div><!-- /dashboard-layout -->
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="../assets/js/snapdom.js"></script>
     <script src="../assets/js/qrcode.js"></script>
     <script>
     (function(){
@@ -693,7 +693,7 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
             var sv=scene.style.transform, sh=stage.style.height, sox=stage.style.overflowX; scene.style.transform='none';
             try{
                 if(document.fonts&&document.fonts.ready) await document.fonts.ready;
-                var full=await html2canvas(scene,{scale:2,useCORS:false,backgroundColor:null,logging:false});
+                var full=await snapdom.toCanvas(scene,{scale:2,dpr:1,backgroundColor:null});
                 var out=document.createElement('canvas'); out.width=curW*2; out.height=curH*2;
                 var cx=out.getContext('2d'); cx.fillStyle='#007230'; cx.fillRect(0,0,out.width,out.height);
                 cx.drawImage(full, PAD*2, PAD*2, curW*2, curH*2, 0, 0, curW*2, curH*2);
