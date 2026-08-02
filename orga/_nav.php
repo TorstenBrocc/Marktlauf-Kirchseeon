@@ -197,7 +197,17 @@ return [
         'key'     => 'live_ticker',
         'label'   => 'Live-Ticker',
         'section' => 'KOMMUNIKATION',
-        'href'    => null, // noch nicht gebaut, nicht klickbar
+        'href'    => 'ticker.php',
+        'kpi'     => static function (PDO $pdo): array {
+            $aktiv = (int) $pdo->query(
+                "SELECT COUNT(*) FROM ticker_posts WHERE aktiv = 1"
+            )->fetchColumn();
+            return [
+                'value'  => (string) $aktiv,
+                'label'  => $aktiv === 1 ? 'aktive Meldung' : 'aktive Meldungen',
+                'signal' => $aktiv > 0 ? 'ok' : 'neutral',
+            ];
+        },
     ],
     [
         'key'     => 'dateien',
