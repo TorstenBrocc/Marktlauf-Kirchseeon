@@ -155,6 +155,69 @@
     <meta property="og:locale" content="de_DE">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:image" content="https://atsv-kirchseeon-marktlauf.de/assets/images/ATSV_Logo-750x968.png">
+    <style>
+        /* ── Live-Ticker-Banner ──────────────────────────────── */
+        .live-ticker-bar {
+            background: #1c3a1c;
+            color: #fff;
+            padding: 0.6rem 1rem;
+            font-size: 0.88rem;
+            line-height: 1.4;
+        }
+        .live-ticker-inner {
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+        .live-ticker-label {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-weight: 700;
+            white-space: nowrap;
+            padding-top: 1px;
+            color: #7dda8a;
+            text-transform: uppercase;
+            font-size: 0.78rem;
+            letter-spacing: 0.04em;
+        }
+        .live-ticker-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #7dda8a;
+            flex-shrink: 0;
+            animation: liveTickerPulse 1.4s ease-in-out infinite;
+        }
+        @keyframes liveTickerPulse {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.35; }
+        }
+        .live-ticker-messages {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+        .live-ticker-entry {
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
+        }
+        .live-ticker-typ {
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0.1rem 0.45rem;
+            border-radius: 10px;
+            flex-shrink: 0;
+        }
+        .live-ticker-typ-info     { background: #1a73e8; color: #fff; }
+        .live-ticker-typ-warnung  { background: #e67e22; color: #fff; }
+        .live-ticker-typ-ergebnis { background: #009640; color: #fff; }
+        .live-ticker-text { flex: 1; }
+    </style>
 </head>
 <body>
 
@@ -187,6 +250,17 @@
     </header>
 
     <main>
+        <!-- Live-Ticker Banner (nur sichtbar wenn aktive Meldungen vorhanden) -->
+        <div id="live-ticker-bar" class="live-ticker-bar" hidden aria-live="polite" aria-atomic="false">
+            <div class="live-ticker-inner">
+                <span class="live-ticker-label" aria-label="Live-Ticker">
+                    <span class="live-ticker-dot" aria-hidden="true"></span>
+                    Live
+                </span>
+                <div id="live-ticker-messages" class="live-ticker-messages"></div>
+            </div>
+        </div>
+
         <!-- Hero Section -->
         <section id="hero" class="hero">
             <div class="hero-blob-center"></div>
@@ -727,6 +801,54 @@
     </footer>
 
     <script src="js/main.js"></script>
+    <script>
+    (function () {
+        var bar      = document.getElementById('live-ticker-bar');
+        var messages = document.getElementById('live-ticker-messages');
+        if (!bar || !messages) return;
+
+        var POLL_INTERVAL = 30000; // 30 Sekunden
+        var FEED_URL      = 'data/status.json';
+
+        var typLabel = { info: 'Info', warnung: 'Warnung', ergebnis: 'Ergebnis' };
+
+        function renderTicker(data) {
+            var eintraege = (data && Array.isArray(data.eintraege)) ? data.eintraege : [];
+            if (eintraege.length === 0) {
+                bar.hidden = true;
+                return;
+            }
+            messages.innerHTML = '';
+            eintraege.forEach(function (e) {
+                var entry = document.createElement('div');
+                entry.className = 'live-ticker-entry';
+
+                var pill = document.createElement('span');
+                pill.className = 'live-ticker-typ live-ticker-typ-' + (e.typ || 'info');
+                pill.textContent = typLabel[e.typ] || e.typ;
+
+                var text = document.createElement('span');
+                text.className = 'live-ticker-text';
+                text.textContent = e.nachricht || '';
+
+                entry.appendChild(pill);
+                entry.appendChild(text);
+                messages.appendChild(entry);
+            });
+            bar.hidden = false;
+        }
+
+        function fetchTicker() {
+            fetch(FEED_URL + '?_=' + Date.now(), { cache: 'no-store' })
+                .then(function (r) { return r.ok ? r.json() : null; })
+                .then(function (data) { renderTicker(data); })
+                .catch(function () { /* still running — keep bar as-is */ });
+        }
+
+        fetchTicker();
+        setInterval(fetchTicker, POLL_INTERVAL);
+    }());
+    </script>
 
     <!-- Map Modal -->
     <div id="map-modal" class="map-modal">
