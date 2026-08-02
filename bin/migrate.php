@@ -24,6 +24,12 @@
 
 declare(strict_types=1);
 
+// STDERR ist im CLI-Modus automatisch definiert; auf Strato läuft PHP auch per
+// SSH als CGI — dann fehlt die Konstante und muss manuell gesetzt werden.
+if (!defined('STDERR')) {
+    define('STDERR', fopen('php://stderr', 'w'));
+}
+
 // Strato: SSH-Shell liefert cgi-fcgi statt cli → Bypass via MARKTLAUF_CLI=1
 if (php_sapi_name() !== 'cli' && getenv('MARKTLAUF_CLI') !== '1') {
     http_response_code(403);
