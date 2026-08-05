@@ -68,8 +68,9 @@ class RechnungPdf extends FPDF
         $this->Line($cursor, $y + 1, $cursor, $y + $h - 1);
         $cursor += 6;
         if (is_file($markt)) {
-            // Marktlauf-Wortmarke auf dieselbe Höhe wie das Vereinswappen
-            $this->Image($markt, $cursor, $y, 0, $h);
+            // Marktlauf-Wortmarke 10 % kleiner als das Wappen, vertikal mittig dazu
+            $mh = $h * 0.9;
+            $this->Image($markt, $cursor, $y + ($h - $mh) / 2, 0, $mh);
         }
         // feine grüne Linie unter dem Briefkopf
         $this->SetLineWidth(0.5);
