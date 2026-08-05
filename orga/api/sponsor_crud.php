@@ -229,8 +229,8 @@ try {
             $gruppeId = sponsorGruppeIdFromPost($pdo, $_POST['gruppe_name'] ?? '');
 
             $stmt = $pdo->prepare('
-                INSERT INTO sponsors (firma, paket, prioritaet, ort, summe, status, kein_kontakt, kein_kontakt_grund, kein_kontakt_wer, kein_kontakt_datum, notizen, wiedervorlage, gruppe_id, rechnung_firma, rechnung_strasse, rechnung_plz, rechnung_ort, rechnung_email, branche, foerderprogramm, kontaktweg, website, quellenurl)
-                VALUES (:firma, :paket, :prioritaet, :ort, :summe, :status, :kein_kontakt, :kein_kontakt_grund, :kein_kontakt_wer, :kein_kontakt_datum, :notizen, :wiedervorlage, :gruppe_id, :rechnung_firma, :rechnung_strasse, :rechnung_plz, :rechnung_ort, :rechnung_email, :branche, :foerderprogramm, :kontaktweg, :website, :quellenurl)
+                INSERT INTO sponsors (firma, paket, prioritaet, ort, summe, status, kein_kontakt, kein_kontakt_grund, kein_kontakt_wer, kein_kontakt_datum, notizen, wiedervorlage, gruppe_id, rechnung_firma, rechnung_strasse, rechnung_plz, rechnung_ort, rechnung_email, rechnung_leistung, leistung_zeitraum, branche, foerderprogramm, kontaktweg, website, quellenurl)
+                VALUES (:firma, :paket, :prioritaet, :ort, :summe, :status, :kein_kontakt, :kein_kontakt_grund, :kein_kontakt_wer, :kein_kontakt_datum, :notizen, :wiedervorlage, :gruppe_id, :rechnung_firma, :rechnung_strasse, :rechnung_plz, :rechnung_ort, :rechnung_email, :rechnung_leistung, :leistung_zeitraum, :branche, :foerderprogramm, :kontaktweg, :website, :quellenurl)
             ');
             $stmt->execute([
                 'firma'              => $firma,
@@ -251,6 +251,8 @@ try {
                 'rechnung_plz'       => trim($_POST['rechnung_plz'] ?? '') ?: null,
                 'rechnung_ort'       => trim($_POST['rechnung_ort'] ?? '') ?: null,
                 'rechnung_email'     => trim($_POST['rechnung_email'] ?? '') ?: null,
+                'rechnung_leistung'  => trim($_POST['rechnung_leistung'] ?? '') ?: null,
+                'leistung_zeitraum'  => trim($_POST['leistung_zeitraum'] ?? '') ?: null,
                 'branche'            => !empty($_POST['branche']) ? json_encode(array_values(array_filter(array_map('trim', (array) $_POST['branche'])))) : null,
                 'foerderprogramm'    => trim($_POST['foerderprogramm'] ?? '') ?: null,
                 'kontaktweg'         => trim($_POST['kontaktweg'] ?? '') ?: null,
@@ -340,6 +342,8 @@ try {
                     rechnung_plz = :rechnung_plz,
                     rechnung_ort = :rechnung_ort,
                     rechnung_email = :rechnung_email,
+                    rechnung_leistung = :rechnung_leistung,
+                    leistung_zeitraum = :leistung_zeitraum,
                     branche = :branche,
                     foerderprogramm = :foerderprogramm,
                     kontaktweg = :kontaktweg,
@@ -366,6 +370,8 @@ try {
                 'rechnung_plz'       => trim($_POST['rechnung_plz'] ?? '') ?: null,
                 'rechnung_ort'       => trim($_POST['rechnung_ort'] ?? '') ?: null,
                 'rechnung_email'     => trim($_POST['rechnung_email'] ?? '') ?: null,
+                'rechnung_leistung'  => trim($_POST['rechnung_leistung'] ?? '') ?: null,
+                'leistung_zeitraum'  => trim($_POST['leistung_zeitraum'] ?? '') ?: null,
                 'branche'            => !empty($_POST['branche']) ? json_encode(array_values(array_filter(array_map('trim', (array) $_POST['branche'])))) : null,
                 'foerderprogramm'    => trim($_POST['foerderprogramm'] ?? '') ?: null,
                 'kontaktweg'         => trim($_POST['kontaktweg'] ?? '') ?: null,
