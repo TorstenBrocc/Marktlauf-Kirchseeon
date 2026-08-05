@@ -12,10 +12,11 @@ declare(strict_types=1);
 require_once __DIR__ . '/rechnung.php';
 
 /**
- * Baut aus einer Sponsor-Zeile den Rechnungs-Snapshot (inkl. Beträge und
- * Leistungs-Fallbacks). Wirft InvalidArgumentException, wenn Pflichtdaten fehlen.
+ * Baut aus einer Sponsor-Zeile den Rechnungs-Snapshot. $paketDef ist die Definition des
+ * gebuchten Pakets (aus sponsoringPakete()). Leistung + Betrag kommen aus dem Paket, sofern
+ * nicht pro Sponsor überschrieben. Wirft InvalidArgumentException, wenn Pflichtdaten fehlen.
  */
-function rechnungSnapshotVonSponsor(array $sponsor): array
+function rechnungSnapshotVonSponsor(array $sponsor, array $paketDef = []): array
 {
     $firma = trim((string) ($sponsor['rechnung_firma'] ?? '')) !== ''
         ? trim((string) $sponsor['rechnung_firma'])
@@ -25,14 +26,19 @@ function rechnungSnapshotVonSponsor(array $sponsor): array
     $plz     = trim((string) ($sponsor['rechnung_plz'] ?? ''));
     $ort     = trim((string) ($sponsor['rechnung_ort'] ?? ''));
 
-    $netto = (float) ($sponsor['summe'] ?? 0);
-
-    // Pflichtprüfungen für eine gültige Rechnung
+    // Pflichtprüfungen (Adresse + Betrag) sammeln
     $fehlt = [];
-    if ($firma === '')                 { $fehlt[] = 'Firma/Empfänger'; }
-    if ($strasse === '')               { $fehlt[] = 'Straße (Rechnungsanschrift)'; }
-    if ($plz === '' || $ort === '')    { $fehlt[] = 'PLZ/Ort (Rechnungsanschrift)'; }
-    if ($netto <= 0)                   { $fehlt[] = 'Summe (Netto)'; }
+    if ($firma === '')              { $fehlt[] = 'Firma/Empfänger'; }
+    if ($strasse === '')            { $fehlt[] = 'Straße (Rechnungsanschrift)'; }
+    if ($plz === '' || $ort === '') { $fehlt[] = 'PLZ/Ort (Rechnungsanschrift)'; }
+
+    try {
+        $b = rechnungBetraegeFuerSponsor($sponsor, $paketDef);
+    } catch (InvalidArgumentException $e) {
+        $fehlt[] = $e->getMessage();
+        $b = null;
+    }
+
     if ($fehlt !== []) {
         throw new InvalidArgumentException(implode(', ', $fehlt));
     }
@@ -43,10 +49,8 @@ function rechnungSnapshotVonSponsor(array $sponsor): array
     }
     $leistung = trim((string) ($sponsor['rechnung_leistung'] ?? ''));
     if ($leistung === '') {
-        $leistung = paketLeistungDefault($sponsor['paket'] ?? null, $zeitraum);
+        $leistung = paketLeistung($paketDef, $zeitraum);
     }
-
-    $b = rechnungBetraege($netto);
 
     return [
         'empfaenger_firma'   => $firma,
@@ -76,7 +80,9 @@ function rechnungEntwurfErstellen(PDO $pdo, int $sponsorId, ?int $userId): array
         throw new RuntimeException('Sponsor nicht gefunden.');
     }
 
-    $snap = rechnungSnapshotVonSponsor($sponsor);
+    $pakete   = sponsoringPakete($pdo);
+    $paketDef = $pakete[$sponsor['paket'] ?? ''] ?? [];
+    $snap     = rechnungSnapshotVonSponsor($sponsor, $paketDef);
 
     $ins = $pdo->prepare('
         INSERT INTO sponsor_rechnungen

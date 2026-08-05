@@ -33,7 +33,7 @@ class RechnungPdf extends FPDF
         $this->s      = rechnungStammdaten();
         $this->r      = $snapshot;
         $this->nummer = $nummer;
-        $this->SetAutoPageBreak(true, 20);
+        $this->SetAutoPageBreak(true, 38); // Platz für den 3-spaltigen Footer
         $this->SetMargins(20, 18, 20);
         $this->SetTitle($this->t('Rechnung ' . ($nummer !== '' ? $nummer : 'Entwurf')));
         $this->SetCreator($this->t('ATSV Kirchseeon Marktlauf'));
@@ -50,31 +50,62 @@ class RechnungPdf extends FPDF
         return number_format($v, 2, ',', '.') . ' ' . "\xE2\x82\xAC"; // UTF-8 €, wird in t() konvertiert
     }
 
-    // --- Kopfzeile: Logo + grüner Akzentbalken ---
+    // --- Kopfzeile: ATSV-Wappen | Trennstrich | Marktlauf-Logo (gleiche Höhe) ---
     public function Header(): void
     {
-        $logo = __DIR__ . '/../assets/images/Marktlauf-Logo-Schrift-1180x579 freigestellt.png';
-        if (is_file($logo)) {
-            // 1180x579 -> Breite 52mm, Höhe proportional
-            $this->Image($logo, 20, 12, 52);
+        $x = 20; $y = 12; $h = 17;
+        $wappen = __DIR__ . '/../assets/images/ATSV_Logo-750x968.png';
+        $markt  = __DIR__ . '/../assets/images/Marktlauf-Logo-Schrift-1180x579 freigestellt.png';
+
+        $cursor = $x;
+        if (is_file($wappen)) {
+            $this->Image($wappen, $cursor, $y, 0, $h); // Breite aus Höhe (750x968)
+            $cursor += $h * 750 / 968 + 5;
         }
-        // Grüner Akzentbalken rechts oben
-        $this->SetFillColor(...$this->gruen);
-        $this->Rect(150, 14, 40, 3, 'F');
-        $this->SetFillColor(...$this->gold);
-        $this->Rect(150, 17, 40, 1.2, 'F');
-        $this->Ln(24);
+        // senkrechter Trennstrich
+        $this->SetDrawColor(...$this->gruen);
+        $this->SetLineWidth(0.5);
+        $this->Line($cursor, $y + 1, $cursor, $y + $h - 1);
+        $cursor += 6;
+        if (is_file($markt)) {
+            // Marktlauf-Wortmarke auf dieselbe Höhe wie das Vereinswappen
+            $this->Image($markt, $cursor, $y, 0, $h);
+        }
+        // feine grüne Linie unter dem Briefkopf
+        $this->SetLineWidth(0.5);
+        $this->SetDrawColor(...$this->gruen);
+        $this->Line(20, $y + $h + 5, 190, $y + $h + 5);
+        $this->SetLineWidth(0.2);
+        $this->SetY($y + $h + 12); // Cursor unter den Briefkopf für den Body
     }
 
+    // --- Fußzeile: 3-spaltiger Vereinsbriefkopf-Footer ---
     public function Footer(): void
     {
-        $this->SetY(-15);
-        $this->SetFont('Helvetica', '', 7.5);
+        $s = $this->s;
+        $this->SetY(-34);
+        $this->SetDrawColor(...$this->gruen);
+        $this->SetLineWidth(0.4);
+        $this->Line(20, $this->GetY(), 190, $this->GetY());
+        $this->SetLineWidth(0.2);
+        $this->Ln(2.5);
+
+        $yTop = $this->GetY();
+        $colW = (190 - 20) / 3;
+        $this->SetFont('Helvetica', '', 8.2);
         $this->SetTextColor(...$this->grau);
-        $foot = $this->s['verein'] . ' · ' . $this->s['abteilung'] . ' · '
-              . $this->s['strasse'] . ' · ' . $this->s['plz'] . ' ' . $this->s['ort']
-              . ' · USt-IdNr ' . $this->s['ust_id'];
-        $this->Cell(0, 5, $this->t($foot), 0, 0, 'C');
+
+        $col1 = [$s['verein'], $s['strasse'], $s['plz'] . ' ' . $s['ort'], $s['burozeiten']];
+        $col2 = ['Telefon: ' . $s['telefon'], 'Telefax: ' . $s['telefax'], $s['web'], $s['email']];
+        $col3 = [$s['bank1_name'], 'IBAN ' . $s['bank1_iban'], $s['bank2_name'], 'IBAN ' . $s['bank2_iban']];
+
+        foreach ([[20, $col1], [20 + $colW, $col2], [20 + 2 * $colW, $col3]] as [$cx, $lines]) {
+            $this->SetXY($cx, $yTop);
+            foreach ($lines as $ln) {
+                $this->SetX($cx);
+                $this->MultiCell($colW - 2, 4.3, $this->t($ln), 0, 'L');
+            }
+        }
     }
 
     public function render(): void
@@ -132,11 +163,11 @@ class RechnungPdf extends FPDF
         }
 
         // --- Titel ---
-        $this->SetY(84);
+        $this->SetY(92);
         $this->SetFont('Helvetica', 'B', 20);
         $this->SetTextColor(...$this->gruen);
         $this->Cell(0, 10, $this->t('Rechnung'), 0, 1, 'L');
-        $this->Ln(2);
+        $this->Ln(4);
 
         // --- Einleitung ---
         $this->SetFont('Helvetica', '', 10.5);
@@ -154,18 +185,18 @@ class RechnungPdf extends FPDF
         $this->positionsTabelle();
 
         // --- Zahlungshinweis ---
-        $this->Ln(8);
+        $this->Ln(14);
         $this->SetFont('Helvetica', '', 10.5);
         $this->SetTextColor(...$this->ink);
         $this->MultiCell(0, 5.5, $this->t(
             'Bitte überweisen Sie den Rechnungsbetrag innerhalb von 14 Tagen auf folgendes Konto:'
         ), 0, 'L');
-        $this->Ln(2);
+        $this->Ln(3);
 
         $this->zahlungsBox();
 
         // --- Dank ---
-        $this->Ln(8);
+        $this->Ln(14);
         $this->SetFont('Helvetica', '', 10.5);
         $this->MultiCell(0, 5.5, $this->t(
             'Vielen Dank für Ihre Unterstützung des Marktlaufs.'
@@ -179,7 +210,7 @@ class RechnungPdf extends FPDF
     private function positionsTabelle(): void
     {
         $x0 = 20;
-        $wBeschr = 108;
+        $wBeschr = 128;
         $wNetto  = 42;
 
         // Kopf
@@ -229,7 +260,7 @@ class RechnungPdf extends FPDF
     private function summeZeile(string $label, string $wert, bool $betont): void
     {
         $x0 = 20;
-        $wBeschr = 108;
+        $wBeschr = 128;
         $wNetto  = 42;
         $this->SetX($x0 + $wBeschr - 30);
         if ($betont) {
@@ -249,7 +280,7 @@ class RechnungPdf extends FPDF
     private function zahlungsBox(): void
     {
         $x0 = 20;
-        $w = 150;
+        $w = 170;
         $yStart = $this->GetY();
         $this->SetFillColor(247, 249, 247);
         $this->SetDrawColor(...$this->gruen);
