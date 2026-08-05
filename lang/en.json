@@ -180,5 +180,20 @@
   "legal.imprint.meta_title": "Imprint – ATSV Marktlauf Kirchseeon",
   "legal.imprint.meta_description": "Legal notice and imprint for the ATSV Marktlauf Kirchseeon, organised by ATSV Kirchseeon.",
   "legal.privacy.meta_title": "Privacy Policy – ATSV Marktlauf Kirchseeon",
-  "legal.privacy.meta_description": "Privacy policy for the ATSV Marktlauf Kirchseeon in accordance with GDPR."
+  "legal.privacy.meta_description": "Privacy policy for the ATSV Marktlauf Kirchseeon in accordance with GDPR.",
+  "faq.title": "Frequently Asked Questions",
+  "faq.q1": "How and until when can I register?",
+  "faq.a1": "Registration is online via the <a href=\"#anmeldung\">Registration</a> section on this page. The registration deadline is 13 September 2026. After that, late entries are still possible on race day – up to 30 minutes before the start of the respective run, as long as places are available.",
+  "faq.q2": "What is the minimum age – is there a family run?",
+  "faq.a2": "From the Bambini run (500 m) and the school runs (1 & 2 km) to 5 and 10 km, there is a distance for every age group. Children compete in their own age-appropriate categories – and families are welcome to start together.",
+  "faq.q3": "How much does it cost to take part?",
+  "faq.a3": "Your entry fee is shown to you directly as soon as you fill in the registration form in the <a href=\"#anmeldung\">Registration</a> section.",
+  "faq.q4": "When can I pick up my race number?",
+  "faq.a4": "Race numbers are handed out on race day from approximately 9:00 a.m. in the start/finish area (JEK, Westring 6, 85614 Kirchseeon).",
+  "faq.q5": "Where can I find my time and the results?",
+  "faq.a5": "All times and results are published via RaceResult on the same event page used for <a href=\"#anmeldung\">registration</a>.",
+  "faq.q6": "What happens in bad weather?",
+  "faq.a6": "The Marktlauf takes place in almost any weather. We announce any short-notice changes on this website, via our social media channels and – for everyone who registered with an email address – by notification through RaceResult.",
+  "faq.q7": "Can I transfer or change my registration?",
+  "faq.a7": "Would you like to transfer your place or change your registration? Please get in touch via our <a href=\"#connect\">contact form</a>."
 }

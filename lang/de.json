@@ -180,5 +180,20 @@
   "legal.imprint.meta_title": "Impressum – ATSV Marktlauf Kirchseeon",
   "legal.imprint.meta_description": "Impressum und rechtliche Angaben zum ATSV Marktlauf Kirchseeon, veranstaltet vom ATSV Kirchseeon.",
   "legal.privacy.meta_title": "Datenschutz – ATSV Marktlauf Kirchseeon",
-  "legal.privacy.meta_description": "Datenschutzerklärung des ATSV Marktlauf Kirchseeon gemäß DSGVO."
+  "legal.privacy.meta_description": "Datenschutzerklärung des ATSV Marktlauf Kirchseeon gemäß DSGVO.",
+  "faq.title": "Häufige Fragen",
+  "faq.q1": "Wie und bis wann kann ich mich anmelden?",
+  "faq.a1": "Die Anmeldung läuft online über den Bereich <a href=\"#anmeldung\">Anmeldung</a> auf dieser Seite. Anmeldeschluss ist der 13. September 2026. Danach sind am Renntag noch digitale Nachmeldungen möglich – jeweils bis 30 Minuten vor dem Start des entsprechenden Laufs, solange Startplätze frei sind.",
+  "faq.q2": "Ab welchem Alter kann man mitlaufen – gibt es einen Familienlauf?",
+  "faq.a2": "Vom Bambini-Lauf (500 m) über die Schülerläufe (1 & 2 km) bis zu 5 und 10 km ist für jede Altersgruppe etwas dabei. Kinder starten in eigenen, altersgerechten Wertungen – Familien können gemeinsam an den Start gehen.",
+  "faq.q3": "Was kostet die Teilnahme?",
+  "faq.a3": "Die Startgebühr wird dir direkt angezeigt, sobald du die Registrierungsmaske im Bereich <a href=\"#anmeldung\">Anmeldung</a> ausfüllst.",
+  "faq.q4": "Ab wann gibt es die Startnummern?",
+  "faq.a4": "Die Ausgabe der Startnummern erfolgt am Renntag voraussichtlich ab 9:00 Uhr im Start-/Zielbereich (JEK, Westring 6, 85614 Kirchseeon).",
+  "faq.q5": "Wo finde ich meine Zeit und die Ergebnisse?",
+  "faq.a5": "Alle Zeiten und Ergebnisse werden über RaceResult auf derselben Event-Seite veröffentlicht, über die auch die <a href=\"#anmeldung\">Anmeldung</a> läuft.",
+  "faq.q6": "Was passiert bei schlechtem Wetter?",
+  "faq.a6": "Der Marktlauf findet bei nahezu jedem Wetter statt. Kurzfristige Änderungen kommunizieren wir über diese Homepage, unsere Social-Media-Kanäle und – für alle, die sich mit E-Mail-Adresse registriert haben – per Benachrichtigung über RaceResult.",
+  "faq.q7": "Kann ich meine Anmeldung übertragen oder ändern?",
+  "faq.a7": "Du möchtest deinen Startplatz übertragen oder deine Anmeldung ändern? Melde dich bitte über unser <a href=\"#connect\">Kontaktformular</a> bei uns."
 }
