@@ -24,11 +24,25 @@ function rechnungStammdaten(): array
         'ort'           => 'Kirchseeon',
         'ust_id'        => 'DE400543484',      // USt-IdNr.
         'steuernummer'  => '114/107/00133',    // Steuernummer
-        'kontoinhaber'  => 'ATSV Kirchseeon e.V. – Abteilung Marktlauf',
-        'iban'          => 'DE65 7025 0150 0000 4428 48',
-        'bank'          => 'Kreissparkasse München Starnberg Ebersberg',
         'ust_satz'      => 19.0,               // Regelsteuersatz für aktive Werbeleistung
         'kassier_email' => 'kassier@atsv-kirchseeon.de', // Empfänger der Anstoß-Mail
+
+        // Zahlungskonto im Rechnungsblock: Kreissparkasse, Kontoinhaber ohne Abteilung
+        'kontoinhaber'  => 'ATSV Kirchseeon e. V.',
+        'iban'          => 'DE23 7025 0150 0000 4438 95',
+        'bank'          => 'Kreissparkasse München Starnberg Ebersberg',
+
+        // Footer-Kontaktdaten (aus dem Vereinsbriefkopf)
+        'telefon'       => '08091/9313',
+        'telefax'       => '08091/563966',
+        'web'           => 'www.atsv-kirchseeon.de',
+        'email'         => 'atsv@atsv-kirchseeon.de',
+        'burozeiten'    => 'Bürozeiten: Dienstag 18–19 Uhr',
+        // Footer-Bankverbindungen (beide)
+        'bank1_name'    => 'Kreissparkasse München Starnberg Ebersberg',
+        'bank1_iban'    => 'DE23 7025 0150 0000 4438 95',
+        'bank2_name'    => 'Raiffeisen-Volksbank Ebersberg',
+        'bank2_iban'    => 'DE06 7016 9450 0003 7176 58',
     ];
 }
 
@@ -41,26 +55,106 @@ function leistungszeitraumDefault(): string
 }
 
 /**
- * Vorbelegter, konkreter Leistungstext je Paket (§14 verlangt eine konkrete
- * Leistungsbeschreibung — nicht bloß "Sponsoring"). Frei überschreibbar in der Maske.
+ * Kanonische Paket-Definition (Fallback). Die maßgebliche Quelle ist die Einstellung
+ * `sponsoring_pakete` (JSON, im Sponsorenbrief-Bereich editierbar) — dieselben Werte wie
+ * die `paketeDefaults` in sponsor_briefe.php. Preise sind NETTO zu verstehen.
  */
-function paketLeistungDefault(?string $paket, string $zeitraum): string
+function sponsoringPaketeDefaults(): array
 {
-    $z = trim($zeitraum) !== '' ? $zeitraum : leistungszeitraumDefault();
-    switch ($paket) {
-        case 'hauptsponsor':
-            return "Hauptsponsoring $z: Logo auf Startnummer und Zieleinlauf-Banner, "
-                 . "Bandenwerbung, Nennung auf Website und in den Social-Media-Kanälen.";
-        case 'gold':
-            return "Gold-Sponsoring $z: Bandenwerbung am Veranstaltungsgelände, "
-                 . "Logo auf Website und in den Social-Media-Kanälen.";
-        case 'silber':
-            return "Silber-Sponsoring $z: Logo auf der Veranstaltungswebsite.";
-        case 'bronze':
-            return "Bronze-Sponsoring $z: namentliche Nennung auf der Veranstaltungswebsite.";
-        default:
-            return "Sponsoring $z gemäß unserer Vereinbarung.";
+    return [
+        'hauptsponsor' => ['name' => 'Hauptsponsor', 'investition' => 'auf Anfrage',
+            'highlights' => 'Zentraler Partner des Events, maximale Sichtbarkeit auf allen Kanälen'],
+        'gold' => ['name' => 'Gold', 'investition' => '1.000 €',
+            'highlights' => 'Banner zentral im Start-/Zielbereich, eigener Stand inkl. Fläche, 5 Startplätze, Moderations-Erwähnungen'],
+        'silber' => ['name' => 'Silber', 'investition' => '500 €',
+            'highlights' => 'Logo auf Startnummer & Streckenbanner, Namensnennung Presse, Logo auf Lauf-Shirt, 3 Startplätze'],
+        'bronze' => ['name' => 'Bronze', 'investition' => '250 €',
+            'highlights' => 'Logo auf Website, Startetüten-Branding, Urkunde, Dankesschreiben'],
+    ];
+}
+
+/**
+ * Paket-Definition als Map key=>['name','investition','highlights'], gemergt aus der
+ * Einstellung `sponsoring_pakete` (maßgeblich) über die Defaults.
+ */
+function sponsoringPakete(?PDO $pdo = null): array
+{
+    $pakete = sponsoringPaketeDefaults();
+    if ($pdo !== null) {
+        try {
+            $stmt = $pdo->query("SELECT `value` FROM einstellungen WHERE `key` = 'sponsoring_pakete'");
+            $json = $stmt ? $stmt->fetchColumn() : false;
+            if ($json) {
+                $decoded = json_decode((string) $json, true);
+                if (is_array($decoded)) {
+                    foreach ($decoded as $p) {
+                        if (!empty($p['key'])) {
+                            $pakete[$p['key']] = array_merge($pakete[$p['key']] ?? [], $p);
+                        }
+                    }
+                }
+            }
+        } catch (PDOException $e) {
+            // Einstellung/Tabelle nicht verfügbar -> Defaults
+        }
     }
+    return $pakete;
+}
+
+/**
+ * Parst einen investition-String ("1.000 €") zu einem Netto-Float; "auf Anfrage" -> null.
+ * Nur ganze Euro-Beträge erwartet (Paket-Listenpreise).
+ */
+function paketPreisNetto(?string $investition): ?float
+{
+    $digits = preg_replace('/[^0-9]/', '', (string) $investition);
+    if ($digits === '' || $digits === null) {
+        return null;
+    }
+    return (float) $digits;
+}
+
+/**
+ * Konkreter Leistungstext aus der Paket-Definition (§14: nicht bloß "Sponsoring").
+ */
+function paketLeistung(array $paketDef, string $zeitraum): string
+{
+    $z    = trim($zeitraum) !== '' ? $zeitraum : leistungszeitraumDefault();
+    $name = trim((string) ($paketDef['name'] ?? '')) ?: 'Sponsoring';
+    $high = trim((string) ($paketDef['highlights'] ?? ''));
+    if ($high === '') {
+        return "$name-Sponsoring $z gemäß unserer Vereinbarung.";
+    }
+    return "$name-Sponsoring $z: $high.";
+}
+
+/**
+ * Netto/USt/Brutto für einen Sponsor. Reihenfolge:
+ *   1) abweichender Betrag (netto — oder brutto, wenn rechnung_betrag_brutto)
+ *   2) Paket-Listenpreis (netto)
+ * Wirft InvalidArgumentException, wenn kein Betrag ermittelbar ist.
+ */
+function rechnungBetraegeFuerSponsor(array $sponsor, array $paketDef, ?float $ustSatz = null): array
+{
+    $satz     = $ustSatz ?? rechnungStammdaten()['ust_satz'];
+    $override = $sponsor['rechnung_betrag'] ?? null;
+
+    if ($override !== null && $override !== '' && (float) $override > 0) {
+        $betrag = (float) $override;
+        if (!empty($sponsor['rechnung_betrag_brutto'])) {
+            $brutto = round($betrag, 2);
+            $netto  = round($brutto / (1 + $satz / 100), 2);
+            $ust    = round($brutto - $netto, 2);
+            return ['netto' => $netto, 'ust_satz' => $satz, 'ust_betrag' => $ust, 'brutto' => $brutto];
+        }
+        return rechnungBetraege($betrag, $satz);
+    }
+
+    $preis = paketPreisNetto($paketDef['investition'] ?? null);
+    if ($preis === null || $preis <= 0) {
+        throw new InvalidArgumentException('Betrag (Paket ohne Festpreis — bitte abweichenden Betrag setzen)');
+    }
+    return rechnungBetraege($preis, $satz);
 }
 
 /**
