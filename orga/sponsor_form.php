@@ -678,6 +678,30 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                     </div>
 
                     <div class="form-card">
+                        <h2>Rechnung / Leistung</h2>
+                        <p style="font-size:0.8rem; color: var(--text-light); margin-top:-0.5rem; margin-bottom:1rem;">
+                            Wird für die Sponsoring-Rechnung verwendet. Die Leistungsbeschreibung
+                            muss konkret sein (§14 UStG) — nicht bloß „Sponsoring". Bleibt das Feld
+                            leer, setzt die Rechnung automatisch einen Standardtext passend zum Paket.
+                            Die Summe gilt als <strong>Nettobetrag</strong>; 19&nbsp;% USt kommen auf der
+                            Rechnung dazu.
+                        </p>
+
+                        <div class="form-group">
+                            <label for="rechnung_leistung">Leistungsbeschreibung</label>
+                            <textarea id="rechnung_leistung" name="rechnung_leistung" rows="3"
+                                      placeholder="z. B. Bandenwerbung Marktlauf 2026, Logo auf Startnummer und Website"><?= htmlspecialchars($sponsor['rechnung_leistung'] ?? '') ?></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="leistung_zeitraum">Leistungszeitraum</label>
+                            <input type="text" id="leistung_zeitraum" name="leistung_zeitraum" maxlength="120"
+                                   placeholder="z. B. Marktlauf 2026"
+                                   value="<?= htmlspecialchars($sponsor['leistung_zeitraum'] ?? '') ?>">
+                        </div>
+                    </div>
+
+                    <div class="form-card">
                         <h2>Recherche-Kontext</h2>
                         <p style="font-size:0.8rem; color: var(--text-light); margin-top:-0.5rem; margin-bottom:1rem;">
                             Infos aus der Recherche-Phase: Förderprogramm, Kontaktweg und Quellenbelege.

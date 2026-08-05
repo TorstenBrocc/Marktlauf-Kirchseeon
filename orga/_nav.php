@@ -139,6 +139,20 @@ return [
         },
     ],
     [
+        'key'     => 'rechnungen',
+        'label'   => 'Rechnungen',
+        'section' => 'SPONSOREN-HANDLING',
+        'href'    => 'rechnungen.php',
+        'kpi'   => static function (PDO $pdo): array {
+            $entwuerfe = (int) $pdo->query("SELECT COUNT(*) FROM sponsor_rechnungen WHERE status = 'entwurf'")->fetchColumn();
+            return [
+                'value'  => (string) $entwuerfe,
+                'label'  => 'Entwürfe ohne Nummer',
+                'signal' => $entwuerfe > 0 ? 'attention' : 'ok',
+            ];
+        },
+    ],
+    [
         'key'     => 'vereine',
         'label'   => 'Vereine & Laufevents',
         'section' => 'VEREINE & LAUFEVENTS',
