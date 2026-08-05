@@ -33,7 +33,7 @@ class RechnungPdf extends FPDF
         $this->s      = rechnungStammdaten();
         $this->r      = $snapshot;
         $this->nummer = $nummer;
-        $this->SetAutoPageBreak(true, 38); // Platz für den 3-spaltigen Footer
+        $this->SetAutoPageBreak(true, 42); // Platz für den 3-spaltigen Footer
         $this->SetMargins(20, 18, 20);
         $this->SetTitle($this->t('Rechnung ' . ($nummer !== '' ? $nummer : 'Entwurf')));
         $this->SetCreator($this->t('ATSV Kirchseeon Marktlauf'));
@@ -55,7 +55,7 @@ class RechnungPdf extends FPDF
     {
         $x = 20; $y = 12; $h = 17;
         $wappen = __DIR__ . '/../assets/images/ATSV_Logo-750x968.png';
-        $markt  = __DIR__ . '/../assets/images/Marktlauf-Logo-Schrift-1180x579 freigestellt.png';
+        $markt  = __DIR__ . '/../assets/images/marktlauf-wordmark.png'; // eng beschnitten (kein transparenter Rand)
 
         $cursor = $x;
         if (is_file($wappen)) {
@@ -83,7 +83,7 @@ class RechnungPdf extends FPDF
     public function Footer(): void
     {
         $s = $this->s;
-        $this->SetY(-34);
+        $this->SetY(-38);
         $this->SetDrawColor(...$this->gruen);
         $this->SetLineWidth(0.4);
         $this->Line(20, $this->GetY(), 190, $this->GetY());
@@ -92,7 +92,7 @@ class RechnungPdf extends FPDF
 
         $yTop = $this->GetY();
         $colW = (190 - 20) / 3;
-        $this->SetFont('Helvetica', '', 8.2);
+        $this->SetFont('Helvetica', '', 9.0);
         $this->SetTextColor(...$this->grau);
 
         $col1 = [$s['verein'], $s['strasse'], $s['plz'] . ' ' . $s['ort'], $s['burozeiten']];
@@ -103,7 +103,7 @@ class RechnungPdf extends FPDF
             $this->SetXY($cx, $yTop);
             foreach ($lines as $ln) {
                 $this->SetX($cx);
-                $this->MultiCell($colW - 2, 4.3, $this->t($ln), 0, 'L');
+                $this->MultiCell($colW - 2, 4.8, $this->t($ln), 0, 'L');
             }
         }
     }
@@ -185,7 +185,7 @@ class RechnungPdf extends FPDF
         $this->positionsTabelle();
 
         // --- Zahlungshinweis ---
-        $this->Ln(14);
+        $this->Ln(9);
         $this->SetFont('Helvetica', '', 10.5);
         $this->SetTextColor(...$this->ink);
         $this->MultiCell(0, 5.5, $this->t(
@@ -196,7 +196,7 @@ class RechnungPdf extends FPDF
         $this->zahlungsBox();
 
         // --- Dank ---
-        $this->Ln(14);
+        $this->Ln(9);
         $this->SetFont('Helvetica', '', 10.5);
         $this->MultiCell(0, 5.5, $this->t(
             'Vielen Dank für Ihre Unterstützung des Marktlaufs.'
