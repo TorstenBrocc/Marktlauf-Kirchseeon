@@ -170,10 +170,12 @@ entsprechend gehärtet. Umgesetzte Maßnahmen (Belege im Code):
 - **Impressum & Datenschutz:** `impressum.html`, `datenschutz.html` (öffentlich verlinkt).
 - **DSGVO-Grundhaltung:** Schriften self-hosted (kein Google-Fonts-CDN), keine
   Tracking-Cookies für Marketing; Session-Cookies sind technisch notwendig.
-- **Auftragsverarbeiter / Datenempfänger:** Brevo (Newsletter/Mail), RaceResult
-  (Anmeldung/Ergebnisse), Google (Gemini-LLM, Google Drive als Datei-Backend),
-  Mistral AI (alternativer LLM-Provider), Strato (Hosting/SMTP) — vollständig in
-  `datenschutz.html` benannt.
+- **Auftragsverarbeiter / Datenempfänger:** Brevo (Newsletter), RaceResult
+  (Anmeldung/Ergebnisse) und Strato (Hosting/SMTP) — mit AV-Vertrag und in
+  `datenschutz.html` benannt. Die LLM-Provider (Gemini/Mistral) und Google Drive
+  sind rein interne Orga-Werkzeuge **ohne Personenbezug** (LLMs erzeugen nur
+  Social-Media-Content; Drive speichert nur manuell hochgeladene Orga-Dateien) —
+  daher kein Datenschutz-Bezug. Details in [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md).
 - **Einwilligungen:** Newsletter per **Double-Opt-in** (Brevo); bei der Helfer-Anmeldung
   wird die Foto-Einwilligung (`consent_photo`) explizit erfasst.
 - **Kartendaten:** OpenStreetMap-Attribution (ODbL) auf den Streckenkarten sichtbar.
