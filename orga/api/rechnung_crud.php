@@ -14,7 +14,6 @@ require_once __DIR__ . '/../../src/db.php';
 require_once __DIR__ . '/../../src/logger.php';
 require_once __DIR__ . '/../../src/rechnung.php';
 require_once __DIR__ . '/../../src/rechnung_repo.php';
-require_once __DIR__ . '/../../src/rechnung_pdf.php';
 require_once __DIR__ . '/../../src/channels/mail.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -120,8 +119,8 @@ header('Location: ../rechnungen.php');
 exit;
 
 /**
- * Sendet die Anstoß-Mail an den Kassier mit den Entwurfs-PDFs im Anhang.
- * ACHTUNG: Der Mail-TEXT ist ein neutraler Platzhalter — Inhalt wird separat abgestimmt.
+ * Sendet eine formale Benachrichtigung an den Kassier: es steht eine Abrechnung zur
+ * Nummernvergabe bereit. Kein Anhang — die Nummer wird im Dashboard vergeben.
  * Rückgabe: kurzer Zusatzhinweis für die Flash-Meldung.
  */
 function rechnungKassierMailSenden(array $erstellt): string
@@ -130,51 +129,33 @@ function rechnungKassierMailSenden(array $erstellt): string
     $cfg = getConfig();
     $to  = $s['kassier_email'];
     $dashboardUrl = rtrim($cfg['app']['url'] ?? '', '/') . '/orga/rechnungen.php';
-
     $anzahl = count($erstellt);
-    $subject = 'Sponsoring-Rechnung: ' . $anzahl . ' Entwurf' . ($anzahl === 1 ? '' : 'e') . ' – Nummer vergeben';
 
-    // --- PLATZHALTER-TEXT (separat abzustimmen) ---
+    $subject = $anzahl === 1
+        ? 'Sponsoring-Abrechnung: Rechnungsnummer vergeben'
+        : 'Sponsoring-Abrechnungen: Rechnungsnummern vergeben';
+
     $zeilen = [];
     $zeilen[] = 'Hallo,';
     $zeilen[] = '';
-    $zeilen[] = 'es liegen ' . $anzahl . ' neue Sponsoring-Rechnungsentwürfe zur Nummernvergabe bereit:';
+    $zeilen[] = $anzahl === 1
+        ? 'es steht eine neue Sponsoring-Abrechnung zur Nummernvergabe bereit:'
+        : 'es stehen ' . $anzahl . ' neue Sponsoring-Abrechnungen zur Nummernvergabe bereit:';
     $zeilen[] = '';
     foreach ($erstellt as $e) {
-        $zeilen[] = '  • ' . $e['firma'] . ' — Brutto ' . number_format((float) $e['snapshot']['brutto'], 2, ',', '.') . ' EUR';
+        $zeilen[] = '  - ' . $e['firma'];
     }
     $zeilen[] = '';
-    $zeilen[] = 'Bitte im Dashboard die fortlaufende Rechnungsnummer vergeben:';
+    $zeilen[] = 'Bitte im Orga-Dashboard die jeweils aktuelle Rechnungsnummer vergeben:';
     $zeilen[] = $dashboardUrl;
     $zeilen[] = '';
-    $zeilen[] = 'Die angehängten PDFs sind Entwürfe (ohne Nummer) zur Ansicht.';
-    $zeilen[] = '';
-    $zeilen[] = '— ' . $s['verein'] . ', ' . $s['abteilung'];
+    $zeilen[] = 'Viele Grüße';
+    $zeilen[] = $s['verein'] . ' – ' . $s['abteilung'];
     $textBody = implode("\n", $zeilen);
 
-    // Entwurfs-PDFs als temporäre Anhänge
-    $attachments = [];
-    $tmpFiles = [];
-    foreach ($erstellt as $e) {
-        $bytes = rechnungPdfErzeugen($e['snapshot'], '');
-        $tmp = tempnam(sys_get_temp_dir(), 'rech') . '.pdf';
-        file_put_contents($tmp, $bytes);
-        $tmpFiles[] = $tmp;
-        $safe = preg_replace('/[^A-Za-z0-9_-]+/', '_', $e['firma']);
-        $attachments[] = [
-            'path' => $tmp,
-            'name' => 'Rechnungsentwurf_' . $safe . '.pdf',
-            'mime' => 'application/pdf',
-        ];
-    }
-
-    $ok = sendMail($to, $subject, $textBody, '', $attachments);
-
-    foreach ($tmpFiles as $f) {
-        @unlink($f);
-    }
+    $ok = sendMail($to, $subject, $textBody, '', []);
 
     return $ok
-        ? ' Anstoß-Mail an den Kassier gesendet.'
+        ? ' Der Kassier wurde per Mail informiert.'
         : ' Die Benachrichtigung an den Kassier konnte nicht gesendet werden (im Dashboard sichtbar).';
 }

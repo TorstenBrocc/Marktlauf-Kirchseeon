@@ -8,10 +8,15 @@ declare(strict_types=1);
 require_once __DIR__ . '/api/_auth.php';
 require_once __DIR__ . '/../src/db.php';
 require_once __DIR__ . '/../src/sponsor_status.php';
+require_once __DIR__ . '/../src/rechnung.php';
 
 $user = getCurrentUserFromGuard();
 $isAdmin = isAdminFromGuard();
 $csrfToken = generateCsrfToken();
+
+// Aktuell hinterlegte Pakete + globaler Netto/Brutto-Schalter (für die Rechnungs-Karte)
+$rechnungPakete = sponsoringPakete(getDbConnection());
+$bruttoGlobal   = rechnungGlobalBrutto(getDbConnection());
 
 $flashSuccess = $_SESSION['flash_success'] ?? '';
 $flashError = $_SESSION['flash_error'] ?? '';
@@ -679,18 +684,33 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
 
                     <div class="form-card">
                         <h2>Rechnung / Leistung</h2>
-                        <p style="font-size:0.8rem; color: var(--text-light); margin-top:-0.5rem; margin-bottom:1rem;">
-                            Für die Sponsoring-Rechnung. <strong>Standardmäßig kommen Leistung und Betrag
-                            aus dem gebuchten Paket</strong> (Gold 1.000 € / Silber 500 € / Bronze 250 €).
-                            Die Felder unten überschreiben das nur bei Bedarf. Ob Paketpreise netto oder brutto
-                            gelten, steht zentral in den <em>Sponsorenbriefe-Einstellungen</em> (Standard: netto).
+                        <p style="font-size:0.8rem; color: var(--text-light); margin-top:-0.5rem; margin-bottom:0.75rem;">
+                            Für die Sponsoring-Rechnung. <strong>Leistung und Betrag kommen aus dem
+                            gebuchten Paket</strong> (siehe Tabelle). Ob Paketpreise netto oder brutto gelten,
+                            steht zentral in den <em>Sponsorenbriefe-Einstellungen</em>
+                            (aktuell: <strong><?= $bruttoGlobal ? 'brutto' : 'netto' ?></strong>).
                         </p>
 
-                        <div class="form-group">
-                            <label for="rechnung_leistung">Leistungsbeschreibung (leer = Paket-Leistung)</label>
-                            <textarea id="rechnung_leistung" name="rechnung_leistung" rows="3"
-                                      placeholder="Leer lassen = Leistungstext des gebuchten Pakets"><?= htmlspecialchars($sponsor['rechnung_leistung'] ?? '') ?></textarea>
-                        </div>
+                        <table style="width:100%;border-collapse:collapse;font-size:0.78rem;margin-bottom:1.25rem;color:var(--text-light)">
+                            <thead>
+                                <tr style="text-align:left">
+                                    <th style="padding:0.25rem 0.4rem;border-bottom:1px solid var(--border)">Paket</th>
+                                    <th style="padding:0.25rem 0.4rem;border-bottom:1px solid var(--border);white-space:nowrap">Investition</th>
+                                    <th style="padding:0.25rem 0.4rem;border-bottom:1px solid var(--border)">Leistungen</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            <?php foreach (['hauptsponsor', 'gold', 'silber', 'bronze'] as $pk):
+                                if (empty($rechnungPakete[$pk])) { continue; }
+                                $pd = $rechnungPakete[$pk]; ?>
+                                <tr>
+                                    <td style="padding:0.25rem 0.4rem;font-weight:600;white-space:nowrap"><?= htmlspecialchars((string)($pd['name'] ?? $pk)) ?></td>
+                                    <td style="padding:0.25rem 0.4rem;white-space:nowrap"><?= htmlspecialchars((string)($pd['investition'] ?? '')) ?></td>
+                                    <td style="padding:0.25rem 0.4rem"><?= htmlspecialchars((string)($pd['highlights'] ?? '')) ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                            </tbody>
+                        </table>
 
                         <div class="form-group">
                             <label for="leistung_zeitraum">Leistungszeitraum</label>
@@ -699,21 +719,6 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                                    value="<?= htmlspecialchars($sponsor['leistung_zeitraum'] ?? '') ?>">
                         </div>
 
-                        <div class="form-group">
-                            <label for="rechnung_betrag">Abweichender Betrag (optional, leer = Paketpreis)</label>
-                            <input type="number" step="0.01" min="0" id="rechnung_betrag" name="rechnung_betrag"
-                                   placeholder="z. B. 1000.00"
-                                   value="<?= htmlspecialchars($sponsor['rechnung_betrag'] ?? '') ?>">
-                        </div>
-
-                        <div class="form-group">
-                            <label style="font-weight:normal; cursor:pointer;">
-                                <input type="checkbox" name="rechnung_betrag_brutto" value="1"
-                                       style="width:auto; padding:0; border:none; margin-right:0.5rem; vertical-align:middle;"
-                                       <?= !empty($sponsor['rechnung_betrag_brutto']) ? 'checked' : '' ?>>
-                                Betrag ist brutto (inkl. USt)
-                            </label>
-                        </div>
                     </div>
 
                     <div class="form-card">
