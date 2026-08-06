@@ -168,18 +168,12 @@ function paketLeistung(array $paketDef, string $zeitraum): string
  */
 function rechnungBetraegeFuerSponsor(array $sponsor, array $paketDef, ?float $ustSatz = null, bool $globalBrutto = false): array
 {
-    $satz     = $ustSatz ?? rechnungStammdaten()['ust_satz'];
-    $override = $sponsor['rechnung_betrag'] ?? null;
+    $satz = $ustSatz ?? rechnungStammdaten()['ust_satz'];
 
-    // Abweichender Betrag pro Sponsor: eigener brutto-Haken (übersteuert den globalen Default)
-    if ($override !== null && $override !== '' && (float) $override > 0) {
-        return rechnungBetraegeAusBetrag((float) $override, !empty($sponsor['rechnung_betrag_brutto']), $satz);
-    }
-
-    // Paket-Listenpreis: netto oder brutto je nach globalem Schalter
+    // Betrag kommt immer aus dem gebuchten Paket; netto/brutto regelt der globale Schalter.
     $preis = paketBetrag($paketDef['investition'] ?? null);
     if ($preis === null || $preis <= 0) {
-        throw new InvalidArgumentException('Betrag (Paket ohne Festpreis — bitte abweichenden Betrag setzen)');
+        throw new InvalidArgumentException('Betrag (Paket ohne Festpreis — bitte den Paketpreis in den Einstellungen setzen)');
     }
     return rechnungBetraegeAusBetrag($preis, $globalBrutto, $satz);
 }
