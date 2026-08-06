@@ -107,13 +107,19 @@ if ($detectedMime === 'image/png' || $detectedMime === 'image/jpeg') {
 
 $pdo = getDbConnection();
 
+// Ziel-Jahr (aus dem Upload-Formular; Default = aktives Jahr).
+$jahr = (int) ($_POST['jahr'] ?? 0);
+if ($jahr < 2000) {
+    $jahr = driveAktivesJahr($pdo);
+}
+
 // Wenn das Drive-Backend konfiguriert ist: Datei ins geteilte Laufwerk laden und lokal
 // wieder entfernen. Schlägt der Upload fehl, bleibt die Datei lokal (sicherer Fallback).
 $driveFileId = null;
 $provider    = 'local';
 if (driveConfigured()) {
     try {
-        $driveFileId = driveUpload($pdo, $bereich, $kategorie, $targetPath, $originalName, $detectedMime);
+        $driveFileId = driveUpload($pdo, $bereich, $jahr, $kategorie, $targetPath, $originalName, $detectedMime);
         $provider    = 'drive';
         @unlink($targetPath);
     } catch (RuntimeException $e) {
@@ -123,12 +129,13 @@ if (driveConfigured()) {
 
 try {
     $stmt = $pdo->prepare('
-        INSERT INTO dateien (bereich, kategorie, dateiname, drive_file_id, provider, originalname, mimetype, groesse, hochgeladen_von)
-        VALUES (:bereich, :kategorie, :dateiname, :drive_file_id, :provider, :originalname, :mimetype, :groesse, :hochgeladen_von)
+        INSERT INTO dateien (bereich, kategorie, jahr, dateiname, drive_file_id, provider, originalname, mimetype, groesse, hochgeladen_von)
+        VALUES (:bereich, :kategorie, :jahr, :dateiname, :drive_file_id, :provider, :originalname, :mimetype, :groesse, :hochgeladen_von)
     ');
     $stmt->execute([
         'bereich'         => $bereich,
         'kategorie'       => $kategorie,
+        'jahr'            => $jahr,
         'dateiname'       => $serverFilename,
         'drive_file_id'   => $driveFileId,
         'provider'        => $provider,

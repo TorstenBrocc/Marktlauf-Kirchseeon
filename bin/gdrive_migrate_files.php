@@ -32,7 +32,7 @@ if (!driveConfigured()) {
 
 $pdo  = getDbConnection();
 $rows = $pdo->query("
-    SELECT id, bereich, kategorie, dateiname, originalname, mimetype
+    SELECT id, bereich, kategorie, jahr, dateiname, originalname, mimetype
     FROM dateien
     WHERE provider = 'local' AND (drive_file_id IS NULL OR drive_file_id = '')
     ORDER BY id ASC
@@ -45,6 +45,7 @@ $failed = 0;
 foreach ($rows as $r) {
     $path = __DIR__ . '/../storage/files/' . $r['bereich'] . '/' . $r['dateiname'];
     $kat  = ((string) ($r['kategorie'] ?? '')) ?: 'allgemein';
+    $jahr = (int) ($r['jahr'] ?? 0) ?: driveAktivesJahr($pdo);
 
     if (!is_file($path)) {
         fwrite(STDOUT, "SKIP  #{$r['id']} {$r['originalname']} (lokale Datei fehlt)\n");
@@ -52,12 +53,12 @@ foreach ($rows as $r) {
         continue;
     }
     if ($dryRun) {
-        fwrite(STDOUT, "DRY   #{$r['id']} {$r['originalname']} -> {$r['bereich']}/{$kat}\n");
+        fwrite(STDOUT, "DRY   #{$r['id']} {$r['originalname']} -> {$r['bereich']}/{$jahr}/{$kat}\n");
         continue;
     }
 
     try {
-        $fileId = driveUpload($pdo, (string) $r['bereich'], $kat, $path, (string) $r['originalname'], (string) $r['mimetype']);
+        $fileId = driveUpload($pdo, (string) $r['bereich'], $jahr, $kat, $path, (string) $r['originalname'], (string) $r['mimetype']);
     } catch (RuntimeException $e) {
         fwrite(STDERR, "FAIL  #{$r['id']} {$r['originalname']}: " . $e->getMessage() . "\n");
         $failed++;

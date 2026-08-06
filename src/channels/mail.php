@@ -259,7 +259,9 @@ function sendSponsorAnschreiben(
  */
 function plakateAnhang(PDO $pdo): array {
     try {
-        $stmt = $pdo->query("SELECT dateiname, originalname, drive_file_id FROM dateien WHERE bereich = 'orga' AND kategorie = 'plakat' ORDER BY id ASC");
+        $jahr = driveAktivesJahr($pdo);
+        $stmt = $pdo->prepare("SELECT dateiname, originalname, drive_file_id FROM dateien WHERE bereich = 'orga' AND kategorie = 'plakat' AND (jahr = :jahr OR jahr IS NULL) ORDER BY id ASC");
+        $stmt->execute(['jahr' => $jahr]);
         $rows = $stmt->fetchAll();
     } catch (PDOException $e) {
         logError('plakateAnhang DB error: ' . $e->getMessage());

@@ -38,6 +38,7 @@ try {
 
 $renntagDatum = $settings['renntag_datum'] ?? '';
 $veranstaltungsname = $settings['veranstaltungsname'] ?? '';
+$dateienJahr = $settings['dateien_jahr'] ?? (string) date('Y');
 $kontaktEmail = $settings['kontakt_email'] ?? '';
 $raceresultUrl = $settings['raceresult_url'] ?? '';
 $trelloUrl = $settings['trello_board_url'] ?? '';
@@ -214,6 +215,13 @@ $makeWebhookSecret = (string) ($config['make_webhook_secret'] ?? '');
                         <div class="form-group">
                             <label for="kontakt_email">Kontakt-E-Mail</label>
                             <input type="email" id="kontakt_email" name="kontakt_email" value="<?= htmlspecialchars($kontaktEmail) ?>" placeholder="info@atsv-kirchseeon-marktlauf.de">
+                        </div>
+                    </div>
+                    <div class="form-row single">
+                        <div class="form-group">
+                            <label for="dateien_jahr">Dateien-Jahr (aktive Saison)</label>
+                            <input type="number" id="dateien_jahr" name="dateien_jahr" value="<?= htmlspecialchars($dateienJahr) ?>" min="2000" max="2100" step="1">
+                            <small style="color:var(--text-light)">Bestimmt, in welchem Jahres-Ordner Datei-Uploads und Sponsor-Mail-Plakate landen (Drive: Orga/&lt;Jahr&gt;/…).</small>
                         </div>
                     </div>
                 </div>
