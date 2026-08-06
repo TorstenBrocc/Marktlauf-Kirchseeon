@@ -1,7 +1,7 @@
 <?php
 /**
- * Datei aus dem geteilten Google-Laufwerk löschen (POST). Adressiert per Drive-file-id.
- * Sicherheit: nur Dateien im geteilten Laufwerk. Zurück zum Ordner-Browser.
+ * Datei oder Ordner im geteilten Google-Laufwerk umbenennen (POST).
+ * Adressiert per Drive-file-id. Sicherheit: nur innerhalb des Laufwerks.
  */
 
 declare(strict_types=1);
@@ -10,7 +10,6 @@ require_once __DIR__ . '/_auth.php';
 require_once __DIR__ . '/../../src/db.php';
 require_once __DIR__ . '/../../src/logger.php';
 require_once __DIR__ . '/../../src/google_drive.php';
-require_once __DIR__ . '/../../src/datei_audit.php';
 
 $tab    = ($_POST['tab'] ?? 'orga') === 'helfer' ? 'helfer' : 'orga';
 $folder = trim((string) ($_POST['folder'] ?? ''));
@@ -22,33 +21,29 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !verifyCsrfToken($_POST['csrf_token
     exit;
 }
 
-$fid = trim((string) ($_POST['fid'] ?? ''));
-$pdo = getDbConnection();
+$fid  = trim((string) ($_POST['fid'] ?? ''));
+$name = trim((string) ($_POST['name'] ?? ''));
+$name = str_replace(['/', '\\'], '', $name);
 
-if ($fid === '' || !driveConfigured()) {
-    $_SESSION['flash_error'] = 'Ungültige Datei.';
+if ($fid === '' || $name === '' || mb_strlen($name) > 200 || !driveConfigured()) {
+    $_SESSION['flash_error'] = 'Bitte einen gültigen Namen angeben.';
     header('Location: ' . $back);
     exit;
 }
 
 $meta = driveFileMeta($fid);
 if ($meta === null || (string) ($meta['driveId'] ?? '') !== driveSharedDriveId()) {
-    $_SESSION['flash_error'] = 'Datei nicht gefunden.';
+    $_SESSION['flash_error'] = 'Element nicht gefunden.';
     header('Location: ' . $back);
     exit;
 }
 
 try {
-    driveTrash($fid);
-    dateiAudit($pdo, 'delete', [
-        'drive_file_id' => $fid,
-        'originalname'  => (string) ($meta['name'] ?? ''),
-        'benutzer_id'   => getCurrentUserFromGuard()['id'] ?? null,
-    ]);
-    $_SESSION['flash_success'] = 'In den Papierkorb verschoben: ' . htmlspecialchars((string) ($meta['name'] ?? ''));
+    driveRename($fid, $name);
+    $_SESSION['flash_success'] = 'Umbenannt in: ' . htmlspecialchars($name);
 } catch (RuntimeException $e) {
-    logError('file_delete Drive: ' . $e->getMessage());
-    $_SESSION['flash_error'] = 'Löschen fehlgeschlagen.';
+    logError('file_rename Drive: ' . $e->getMessage());
+    $_SESSION['flash_error'] = 'Umbenennen fehlgeschlagen.';
 }
 
 header('Location: ' . $back);

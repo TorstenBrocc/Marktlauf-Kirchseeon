@@ -141,6 +141,10 @@ if (!driveConfigured()) {
         .empty-state { text-align:center; padding:3rem 1rem; color:var(--text-light); }
         .table-wrap { overflow-x:auto; border-radius:8px; box-shadow:var(--shadow-card); margin-top:0.5rem; }
         .fb-hint { font-size:0.75rem; color:var(--text-light); margin-top:0.75rem; }
+        .btn-action { padding:0.2rem 0.55rem; border:1px solid var(--border); border-radius:4px; background:var(--white); font-size:0.72rem; cursor:pointer; }
+        tr[draggable] { cursor:grab; }
+        .drag-over { outline:2px solid var(--primary); outline-offset:-2px; background:rgba(0,150,64,0.08) !important; }
+        a.drop-target.drag-over { background:rgba(0,150,64,0.18); border-radius:3px; outline:none; }
     </style>
 </head>
 <body>
@@ -174,7 +178,7 @@ if (!driveConfigured()) {
                         <?php if ($bc['id'] === $folder): ?>
                             <strong><?= htmlspecialchars($bc['name']) ?></strong>
                         <?php else: ?>
-                            <a href="?tab=<?= $tab ?>&folder=<?= urlencode($bc['id']) ?>"><?= htmlspecialchars($bc['name']) ?></a>
+                            <a class="drop-target" data-folderid="<?= htmlspecialchars($bc['id']) ?>" href="?tab=<?= $tab ?>&folder=<?= urlencode($bc['id']) ?>"><?= htmlspecialchars($bc['name']) ?></a>
                         <?php endif; ?>
                     <?php endforeach; ?>
                 </nav>
@@ -224,21 +228,31 @@ if (!driveConfigured()) {
                         <thead><tr><th>Name</th><th>Größe</th><th>Geändert</th><th>Aktionen</th></tr></thead>
                         <tbody>
                             <?php foreach ($ordner as $o): ?>
-                                <tr class="row-folder">
+                                <tr class="row-folder drop-target" draggable="true" data-fid="<?= htmlspecialchars($o['id']) ?>" data-name="<?= htmlspecialchars($o['name']) ?>" data-folderid="<?= htmlspecialchars($o['id']) ?>">
                                     <td><span class="row-icon">📁</span><a href="?tab=<?= $tab ?>&folder=<?= urlencode($o['id']) ?>"><?= htmlspecialchars($o['name']) ?></a></td>
                                     <td class="file-meta">—</td>
                                     <td class="file-meta"><?= $o['modifiedTime'] ? htmlspecialchars(date('d.m.Y', strtotime($o['modifiedTime']))) : '' ?></td>
-                                    <td></td>
+                                    <td>
+                                        <button type="button" class="btn-action" data-fid="<?= htmlspecialchars($o['id']) ?>" data-name="<?= htmlspecialchars($o['name']) ?>" onclick="renameItem(this)">Umbenennen</button>
+                                        <form method="post" action="api/file_delete.php" class="inline-form" onsubmit="return confirm('Ordner samt Inhalt in den Papierkorb verschieben?');">
+                                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                                            <input type="hidden" name="tab" value="<?= $tab ?>">
+                                            <input type="hidden" name="folder" value="<?= htmlspecialchars($folder) ?>">
+                                            <input type="hidden" name="fid" value="<?= htmlspecialchars($o['id']) ?>">
+                                            <button type="submit" class="btn-action btn-danger">Löschen</button>
+                                        </form>
+                                    </td>
                                 </tr>
                             <?php endforeach; ?>
                             <?php foreach ($dateien as $d): ?>
-                                <tr>
+                                <tr draggable="true" data-fid="<?= htmlspecialchars($d['id']) ?>" data-name="<?= htmlspecialchars($d['name']) ?>">
                                     <td><span class="row-icon"><?= getFileIcon($d['mimeType']) ?></span><?= htmlspecialchars($d['name']) ?></td>
                                     <td class="file-meta"><?= $d['size'] > 0 ? formatFileSize($d['size']) : '' ?></td>
                                     <td class="file-meta"><?= $d['modifiedTime'] ? htmlspecialchars(date('d.m.Y', strtotime($d['modifiedTime']))) : '' ?></td>
                                     <td>
                                         <a href="api/file_download.php?fid=<?= urlencode($d['id']) ?>" class="btn-download">Download</a>
-                                        <form method="post" action="api/file_delete.php" class="inline-form" onsubmit="return confirm('Datei wirklich löschen?');">
+                                        <button type="button" class="btn-action" data-fid="<?= htmlspecialchars($d['id']) ?>" data-name="<?= htmlspecialchars($d['name']) ?>" onclick="renameItem(this)">Umbenennen</button>
+                                        <form method="post" action="api/file_delete.php" class="inline-form" onsubmit="return confirm('Datei in den Papierkorb verschieben?');">
                                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                                             <input type="hidden" name="tab" value="<?= $tab ?>">
                                             <input type="hidden" name="folder" value="<?= htmlspecialchars($folder) ?>">
@@ -259,6 +273,51 @@ if (!driveConfigured()) {
         </main>
     </div>
     <script>
+    (function () {
+        const CSRF = <?= json_encode($csrfToken) ?>;
+        const TAB = <?= json_encode($tab ?? 'orga') ?>;
+        const CURFOLDER = <?= json_encode($folder ?? '') ?>;
+
+        window.renameItem = function (btn) {
+            const fid = btn.dataset.fid;
+            const cur = btn.dataset.name || '';
+            const name = prompt('Neuer Name:', cur);
+            if (name === null) return;
+            const t = name.trim();
+            if (t === '' || t === cur) return;
+            const f = document.createElement('form');
+            f.method = 'post';
+            f.action = 'api/file_rename.php';
+            [['csrf_token', CSRF], ['tab', TAB], ['folder', CURFOLDER], ['fid', fid], ['name', t]].forEach(function (kv) {
+                const i = document.createElement('input');
+                i.type = 'hidden'; i.name = kv[0]; i.value = kv[1];
+                f.appendChild(i);
+            });
+            document.body.appendChild(f);
+            f.submit();
+        };
+
+        let draggedFid = null;
+        document.querySelectorAll('tr[draggable]').forEach(function (tr) {
+            tr.addEventListener('dragstart', function (e) { draggedFid = tr.dataset.fid; e.dataTransfer.effectAllowed = 'move'; });
+        });
+        document.querySelectorAll('.drop-target').forEach(function (el) {
+            el.addEventListener('dragover', function (e) { e.preventDefault(); el.classList.add('drag-over'); });
+            el.addEventListener('dragleave', function () { el.classList.remove('drag-over'); });
+            el.addEventListener('drop', function (e) {
+                e.preventDefault();
+                el.classList.remove('drag-over');
+                const target = el.dataset.folderid;
+                if (!draggedFid || !target || draggedFid === target) return;
+                const body = new URLSearchParams({ csrf_token: CSRF, tab: TAB, fid: draggedFid, target: target, source: CURFOLDER });
+                fetch('api/file_move.php', { method: 'POST', body: body })
+                    .then(function (r) { return r.json(); })
+                    .then(function (d) { if (d.ok) { location.reload(); } else { alert(d.message || 'Verschieben fehlgeschlagen.'); } })
+                    .catch(function () { alert('Verschieben fehlgeschlagen.'); });
+            });
+        });
+    })();
+
     (function () {
         const burger = document.getElementById('burger-btn');
         const sidebar = document.getElementById('sidebar');
