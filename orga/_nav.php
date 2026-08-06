@@ -229,10 +229,11 @@ return [
         'section' => 'ABLAGE',
         'href'    => 'dateien.php',
         'kpi'   => static function (PDO $pdo): array {
-            $anzahl = (int) $pdo->query('SELECT COUNT(*) FROM dateien')->fetchColumn();
+            // Dateien liegen im geteilten Google-Laufwerk (kein DB-Zähler mehr; kein
+            // API-Call pro Seitenaufruf). Kachel verweist nur noch auf den Browser.
             return [
-                'value'  => (string) $anzahl,
-                'label'  => 'Dateien abgelegt',
+                'value'  => '↗',
+                'label'  => 'im Google-Laufwerk',
                 'signal' => 'neutral',
             ];
         },

@@ -1,6 +1,9 @@
 <?php
 /**
- * Dateien-Verwaltung (Admin + Orga)
+ * Dateien — Ordner-Browser über das geteilte Google-Laufwerk (Paket 7).
+ * Spiegelt die echte Drive-Ordnerstruktur (navigieren, Breadcrumb, Ordner anlegen,
+ * Upload in den offenen Ordner, Download/Löschen). Zwei Wurzeln über die Tabs
+ * (Orga/Helfer). Keine festen Kategorien, kein Jahr, kein DB-Index.
  */
 
 declare(strict_types=1);
@@ -8,91 +11,20 @@ declare(strict_types=1);
 require_once __DIR__ . '/api/_auth.php';
 require_once __DIR__ . '/../src/db.php';
 require_once __DIR__ . '/../src/google_drive.php';
-require_once __DIR__ . '/../src/datei_audit.php';
-require_once __DIR__ . '/_dateien_kategorien.php';
 
-$user = getCurrentUserFromGuard();
-$isAdmin = isAdminFromGuard();
+$user      = getCurrentUserFromGuard();
+$isAdmin   = isAdminFromGuard();
 $csrfToken = generateCsrfToken();
 
 $flashSuccess = $_SESSION['flash_success'] ?? '';
-$flashError = $_SESSION['flash_error'] ?? '';
+$flashError   = $_SESSION['flash_error'] ?? '';
 unset($_SESSION['flash_success'], $_SESSION['flash_error']);
 
-$activeTab = $_GET['tab'] ?? 'orga';
-if (!in_array($activeTab, ['orga', 'helfer'], true)) {
-    $activeTab = 'orga';
-}
-
+$tab = ($_GET['tab'] ?? 'orga') === 'helfer' ? 'helfer' : 'orga';
 $pdo = getDbConnection();
 
-$activeJahr = driveAktivesJahr($pdo);
-$selectedJahr = (int) ($_GET['jahr'] ?? 0);
-if ($selectedJahr < 2000) {
-    $selectedJahr = $activeJahr;
-}
-
-// Manueller Drive-Sync (PRG): Katalog des aktiven Tabs + gewählten Jahres abgleichen.
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'drive_sync') {
-    if (verifyCsrfToken($_POST['csrf_token'] ?? '')) {
-        try {
-            driveReconcile($pdo, $activeTab, $selectedJahr, true);
-            dateiAudit($pdo, 'sync', ['benutzer_id' => $user['id']]);
-            $_SESSION['flash_success'] = 'Aus Google Drive synchronisiert.';
-        } catch (Throwable $e) {
-            logError('dateien.php drive_sync: ' . $e->getMessage());
-            $_SESSION['flash_error'] = 'Synchronisierung fehlgeschlagen (siehe Log).';
-        }
-    }
-    header('Location: dateien.php?tab=' . $activeTab . '&jahr=' . $selectedJahr);
-    exit;
-}
-
-// Automatischer, gedrosselter Abgleich beim Laden (nur wenn Drive konfiguriert ist).
-if (driveConfigured()) {
-    try {
-        driveReconcile($pdo, $activeTab, $selectedJahr);
-    } catch (Throwable $e) {
-        logError('dateien.php reconcile: ' . $e->getMessage());
-    }
-}
-
-$orgaDateien = [];
-$helferDateien = [];
-
-// Verfügbare Jahre für den Umschalter (vorhandene + aktives + gewähltes Jahr).
-$jahre = [$activeJahr, $selectedJahr];
-try {
-    foreach ($pdo->query('SELECT DISTINCT jahr FROM dateien WHERE jahr IS NOT NULL')->fetchAll(PDO::FETCH_COLUMN) as $j) {
-        $jahre[] = (int) $j;
-    }
-} catch (PDOException $e) {
-    // Spalte/Tabelle evtl. noch nicht vorhanden
-}
-$jahre = array_values(array_unique(array_filter($jahre, static fn($j) => $j >= 2000)));
-rsort($jahre);
-
-try {
-    $stmt = $pdo->prepare('
-        SELECT d.*, u.name as uploader_name
-        FROM dateien d
-        LEFT JOIN users u ON d.hochgeladen_von = u.id
-        WHERE d.jahr = :jahr
-        ORDER BY d.created_at DESC
-    ');
-    $stmt->execute(['jahr' => $selectedJahr]);
-    while ($row = $stmt->fetch()) {
-        if ($row['bereich'] === 'orga') {
-            $orgaDateien[] = $row;
-        } else {
-            $helferDateien[] = $row;
-        }
-    }
-} catch (PDOException $e) {
-    // Table may not exist yet
-}
-
-function formatFileSize(int $bytes): string {
+function formatFileSize(int $bytes): string
+{
     if ($bytes >= 1048576) {
         return number_format($bytes / 1048576, 1, ',', '.') . ' MB';
     }
@@ -102,14 +34,75 @@ function formatFileSize(int $bytes): string {
     return $bytes . ' B';
 }
 
-function getFileIcon(string $mimetype): string {
+function getFileIcon(string $mime): string
+{
     return match (true) {
-        str_contains($mimetype, 'pdf') => '📄',
-        str_contains($mimetype, 'word') => '📝',
-        str_contains($mimetype, 'sheet') => '📊',
-        str_contains($mimetype, 'image') => '🖼️',
-        default => '📁',
+        str_contains($mime, 'pdf')   => '📄',
+        str_contains($mime, 'word')  => '📝',
+        str_contains($mime, 'sheet') => '📊',
+        str_contains($mime, 'image') => '🖼️',
+        default                      => '📄',
     };
+}
+
+// --- Drive nicht konfiguriert: schlichter Hinweis -----------------------------
+if (!driveConfigured()) {
+    $notice = true;
+} else {
+    $notice = false;
+    $rootId = driveRootFolderId($pdo, $tab);
+
+    // PRG: aktuellen Ordner als Plakate-/Bilder-Ordner festlegen.
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCsrfToken($_POST['csrf_token'] ?? '')) {
+        $target = trim((string) ($_POST['folder'] ?? ''));
+        $action = (string) ($_POST['action'] ?? '');
+        if ($target !== '' && in_array($action, ['set_plakat', 'set_bilder'], true)) {
+            $set = $pdo->prepare('INSERT INTO einstellungen (`key`, `value`) VALUES (:k, :v) ON DUPLICATE KEY UPDATE `value` = :v2');
+            if ($action === 'set_plakat') {
+                $jahr = driveRennJahr($pdo);
+                $set->execute(['k' => 'plakat_folder_' . $jahr, 'v' => $target, 'v2' => $target]);
+                $_SESSION['flash_success'] = 'Als Plakate-Ordner für ' . $jahr . ' festgelegt.';
+            } else {
+                $set->execute(['k' => 'bilder_folder_id', 'v' => $target, 'v2' => $target]);
+                $_SESSION['flash_success'] = 'Als Bilder-Ordner festgelegt.';
+            }
+        }
+        header('Location: dateien.php?tab=' . $tab . '&folder=' . urlencode($target));
+        exit;
+    }
+
+    // Aktuellen Ordner bestimmen + gegen das geteilte Laufwerk absichern.
+    $folder = trim((string) ($_GET['folder'] ?? ''));
+    if ($folder === '') {
+        $folder = $rootId;
+    }
+    $curMeta = driveFileMeta($folder);
+    if ($curMeta === null
+        || (string) ($curMeta['driveId'] ?? '') !== driveSharedDriveId()
+        || (string) ($curMeta['mimeType'] ?? '') !== DRIVE_FOLDER_MIME) {
+        $folder  = $rootId;
+        $curMeta = driveFileMeta($folder);
+    }
+
+    $breadcrumb = driveBreadcrumb($folder, $rootId);
+    $ordner     = [];
+    $dateien    = [];
+    try {
+        foreach (driveListChildren($folder) as $c) {
+            if ($c['isFolder']) {
+                $ordner[] = $c;
+            } else {
+                $dateien[] = $c;
+            }
+        }
+    } catch (Throwable $e) {
+        logError('dateien.php list: ' . $e->getMessage());
+        $flashError = $flashError ?: 'Ordnerinhalt konnte nicht geladen werden.';
+    }
+
+    $rennJahr     = driveRennJahr($pdo);
+    $plakatFolder = drivePlakatFolderId($pdo, $rennJahr);
+    $bilderFolder = driveBilderFolderId($pdo);
 }
 ?>
 <!DOCTYPE html>
@@ -122,424 +115,159 @@ function getFileIcon(string $mimetype): string {
     <link rel="stylesheet" href="css/orga.css?v=<?= @filemtime(__DIR__ . '/css/orga.css') ?>">
     <link rel="icon" type="image/svg+xml" href="../assets/images/logo-final.svg">
     <style>
-        .tabs {
-            display: flex;
-            gap: 0;
-            margin-bottom: 1.5rem;
-            border-bottom: 2px solid var(--border);
-        }
-        .tab {
-            padding: 0.75rem 1.5rem;
-            background: none;
-            border: none;
-            font-size: 1rem;
-            cursor: pointer;
-            color: var(--text-light);
-            border-bottom: 2px solid transparent;
-            margin-bottom: -2px;
-            text-decoration: none;
-        }
-        .tab:hover {
-            color: var(--text);
-        }
-        .tab.active {
-            color: var(--primary);
-            border-bottom-color: var(--primary);
-            font-weight: 500;
-        }
-        .tab-count {
-            background: var(--bg);
-            padding: 0.125rem 0.5rem;
-            border-radius: 10px;
-            font-size: 0.75rem;
-            margin-left: 0.5rem;
-        }
-        .tab.active .tab-count {
-            background: rgba(0, 150, 64, 0.1);
-        }
-        .tab-content {
-            display: none;
-        }
-        .tab-content.active {
-            display: block;
-        }
-        .upload-form {
-            background: var(--white);
-            padding: 1rem 1.5rem;
-            border-radius: 8px;
-            box-shadow: var(--shadow-card);
-            margin-bottom: 1.5rem;
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        .upload-form input[type="file"] {
-            flex: 1;
-            min-width: 200px;
-        }
-        .upload-hint {
-            width: 100%;
-            font-size: 0.75rem;
-            color: var(--text-light);
-            margin-top: 0.25rem;
-        }
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            background: var(--white);
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: var(--shadow-card);
-        }
-        .data-table th,
-        .data-table td {
-            padding: 0.75rem;
-            text-align: left;
-            border-bottom: 1px solid var(--border);
-        }
-        .data-table th {
-            background: var(--bg);
-            font-weight: 600;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--text-light);
-        }
-        .data-table tr:hover {
-            background: #fafafa;
-        }
-        .data-table td {
-            font-size: 0.875rem;
-            vertical-align: middle;
-        }
-        .file-icon {
-            font-size: 1.25rem;
-            margin-right: 0.5rem;
-        }
-        .file-name {
-            font-weight: 500;
-        }
-        .file-meta {
-            font-size: 0.75rem;
-            color: var(--text-light);
-        }
-        .btn-download {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            background: var(--primary);
-            color: white;
-            border-radius: 4px;
-            text-decoration: none;
-            font-size: 0.75rem;
-        }
-        .btn-download:hover {
-            background: var(--primary-dark);
-        }
-        .empty-state {
-            text-align: center;
-            padding: 3rem 1rem;
-            color: var(--text-light);
-        }
-        .empty-state-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-        }
-        .table-wrap {
-            overflow-x: auto;
-            border-radius: 8px;
-            box-shadow: var(--shadow-card);
-        }
-        .inline-form {
-            display: inline;
-        }
-        .upload-form select {
-            padding: 0.5rem;
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            font-size: 0.875rem;
-            background: var(--white);
-        }
-        .kategorie-filter {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-            font-size: 0.875rem;
-            color: var(--text-light);
-        }
-        .kategorie-filter select {
-            padding: 0.4rem 0.6rem;
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            font-size: 0.875rem;
-            background: var(--white);
-            color: var(--text);
-        }
-        .kat-badge {
-            display: inline-block;
-            padding: 0.15rem 0.55rem;
-            border-radius: 999px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            background: rgba(0, 150, 64, 0.1);
-            color: var(--primary-dark);
-            white-space: nowrap;
-        }
-        .kat-edit {
-            font-size: 0.75rem;
-            padding: 0.2rem 0.4rem;
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            background: var(--white);
-            max-width: 170px;
-        }
-        .kat-saved { color: #16a34a; font-size: 0.8rem; margin-left: 0.3rem; }
-        .kategorie-empty {
-            text-align: center;
-            padding: 2rem 1rem;
-            color: var(--text-light);
-            display: none;
-        }
+        .tabs { display:flex; gap:0; margin-bottom:1.5rem; border-bottom:2px solid var(--border); }
+        .tab { padding:0.75rem 1.5rem; color:var(--text-light); border-bottom:2px solid transparent; margin-bottom:-2px; text-decoration:none; }
+        .tab:hover { color:var(--text); }
+        .tab.active { color:var(--primary); border-bottom-color:var(--primary); font-weight:500; }
+        .fb-bar { display:flex; align-items:center; gap:1rem; flex-wrap:wrap; margin-bottom:1rem; }
+        .breadcrumb { font-size:0.95rem; }
+        .breadcrumb a { color:var(--primary); text-decoration:none; }
+        .breadcrumb a:hover { text-decoration:underline; }
+        .breadcrumb .sep { color:var(--text-light); margin:0 0.35rem; }
+        .fb-actions { display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap; margin-left:auto; }
+        .fb-actions form { display:flex; gap:0.35rem; align-items:center; }
+        .fb-actions input[type="text"], .fb-actions input[type="file"] { padding:0.35rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.85rem; }
+        .data-table { width:100%; border-collapse:collapse; background:var(--white); border-radius:8px; overflow:hidden; box-shadow:var(--shadow-card); }
+        .data-table th, .data-table td { padding:0.65rem 0.75rem; text-align:left; border-bottom:1px solid var(--border); font-size:0.9rem; }
+        .data-table th { background:var(--bg); font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-light); }
+        .data-table tr:hover { background:#fafafa; }
+        .row-icon { font-size:1.2rem; margin-right:0.5rem; }
+        .row-folder a { font-weight:600; color:var(--text); text-decoration:none; }
+        .row-folder a:hover { color:var(--primary); }
+        .btn-download { display:inline-block; padding:0.25rem 0.7rem; background:var(--primary); color:#fff; border-radius:4px; text-decoration:none; font-size:0.75rem; }
+        .btn-download:hover { background:var(--primary-dark); }
+        .inline-form { display:inline; }
+        .designated { display:inline-block; padding:0.1rem 0.5rem; border-radius:999px; font-size:0.7rem; font-weight:600; background:rgba(0,150,64,0.1); color:var(--primary-dark); }
+        .empty-state { text-align:center; padding:3rem 1rem; color:var(--text-light); }
+        .table-wrap { overflow-x:auto; border-radius:8px; box-shadow:var(--shadow-card); margin-top:0.5rem; }
+        .fb-hint { font-size:0.75rem; color:var(--text-light); margin-top:0.75rem; }
     </style>
 </head>
 <body>
 <?php $activeNav = 'dateien'; require __DIR__ . '/_sidebar.php'; ?>
 
         <main class="main-content">
-            <header class="content-header" style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+            <header class="content-header">
                 <h1>Dateien</h1>
-                <form method="get" action="dateien.php" class="inline-form" style="margin-left:auto;display:flex;align-items:center;gap:0.4rem;">
-                    <input type="hidden" name="tab" value="<?= htmlspecialchars($activeTab) ?>">
-                    <label for="jahr-select" style="font-size:0.875rem;color:var(--text-light);">Jahr:</label>
-                    <select id="jahr-select" name="jahr" onchange="this.form.submit()" style="padding:0.4rem 0.6rem;border:1px solid var(--border);border-radius:4px;background:var(--white);">
-                        <?php foreach ($jahre as $j): ?>
-                            <option value="<?= $j ?>"<?= $j === $selectedJahr ? ' selected' : '' ?>><?= $j ?><?= $j === $activeJahr ? ' (aktiv)' : '' ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </form>
-                <?php if (driveConfigured()): ?>
-                    <form method="post" action="dateien.php?tab=<?= htmlspecialchars($activeTab) ?>&amp;jahr=<?= $selectedJahr ?>" class="inline-form">
-                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                        <input type="hidden" name="action" value="drive_sync">
-                        <button type="submit" class="btn btn-secondary btn-small" title="Dateien, die direkt in Google Drive abgelegt wurden, in die Übersicht übernehmen">↻ Aus Drive synchronisieren</button>
-                    </form>
-                <?php endif; ?>
             </header>
 
-            <?php if ($flashSuccess): ?>
-                <div class="alert alert-success"><?= htmlspecialchars($flashSuccess) ?></div>
-            <?php endif; ?>
+            <?php if ($flashSuccess): ?><div class="alert alert-success"><?= htmlspecialchars($flashSuccess) ?></div><?php endif; ?>
+            <?php if ($flashError): ?><div class="alert alert-error"><?= htmlspecialchars($flashError) ?></div><?php endif; ?>
 
-            <?php if ($flashError): ?>
-                <div class="alert alert-error"><?= htmlspecialchars($flashError) ?></div>
-            <?php endif; ?>
+            <?php if ($notice): ?>
+                <div class="empty-state">
+                    <div style="font-size:3rem">📁</div>
+                    <p>Google Drive ist noch nicht konfiguriert. Sobald die Zugangsdaten in der
+                    Server-Konfiguration hinterlegt sind, erscheint hier der Ordner-Browser.</p>
+                </div>
+            <?php else: ?>
 
             <div class="tabs">
-                <a href="?tab=orga&jahr=<?= $selectedJahr ?>" class="tab <?= $activeTab === 'orga' ? 'active' : '' ?>">
-                    Orga-Dateien
-                    <span class="tab-count"><?= count($orgaDateien) ?></span>
-                </a>
-                <a href="?tab=helfer&jahr=<?= $selectedJahr ?>" class="tab <?= $activeTab === 'helfer' ? 'active' : '' ?>">
-                    Helfer-Dateien
-                    <span class="tab-count"><?= count($helferDateien) ?></span>
-                </a>
+                <a href="?tab=orga" class="tab <?= $tab === 'orga' ? 'active' : '' ?>">Orga</a>
+                <a href="?tab=helfer" class="tab <?= $tab === 'helfer' ? 'active' : '' ?>">Helfer</a>
             </div>
 
-            <div id="tab-orga" class="tab-content <?= $activeTab === 'orga' ? 'active' : '' ?>">
-                <form method="post" action="api/file_upload.php" enctype="multipart/form-data" class="upload-form">
+            <div class="fb-bar">
+                <nav class="breadcrumb" aria-label="Pfad">
+                    <?php foreach ($breadcrumb as $i => $bc): ?>
+                        <?php if ($i > 0): ?><span class="sep">/</span><?php endif; ?>
+                        <?php if ($bc['id'] === $folder): ?>
+                            <strong><?= htmlspecialchars($bc['name']) ?></strong>
+                        <?php else: ?>
+                            <a href="?tab=<?= $tab ?>&folder=<?= urlencode($bc['id']) ?>"><?= htmlspecialchars($bc['name']) ?></a>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
+                </nav>
+
+                <div class="fb-actions">
+                    <form method="post" action="api/folder_create.php" title="Neuen Unterordner anlegen">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                        <input type="hidden" name="tab" value="<?= $tab ?>">
+                        <input type="hidden" name="parent" value="<?= htmlspecialchars($folder) ?>">
+                        <input type="text" name="name" placeholder="Neuer Ordner" maxlength="120" required>
+                        <button type="submit" class="btn btn-secondary btn-small">＋ Ordner</button>
+                    </form>
+                    <form method="post" action="api/file_upload.php" enctype="multipart/form-data" title="In diesen Ordner hochladen">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                        <input type="hidden" name="tab" value="<?= $tab ?>">
+                        <input type="hidden" name="folder" value="<?= htmlspecialchars($folder) ?>">
+                        <input type="file" name="datei" required accept=".pdf,.docx,.xlsx,.png,.jpg,.jpeg">
+                        <button type="submit" class="btn btn-primary btn-small">Hochladen</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="fb-bar" style="margin-top:-0.25rem">
+                <form method="post" action="dateien.php" class="inline-form">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                    <input type="hidden" name="bereich" value="orga">
-                    <input type="hidden" name="jahr" value="<?= $selectedJahr ?>">
-                    <input type="file" name="datei" required accept=".pdf,.docx,.xlsx,.png,.jpg,.jpeg">
-                    <select name="kategorie" aria-label="Kategorie"><?= dateiKategorieOptions('allgemein') ?></select>
-                    <button type="submit" class="btn btn-primary btn-small">Hochladen</button>
-                    <span class="upload-hint">Erlaubt: PDF, DOCX, XLSX, PNG, JPG — max. 10 MB. Nur für Orga-Team sichtbar.</span>
+                    <input type="hidden" name="tab" value="<?= $tab ?>">
+                    <input type="hidden" name="folder" value="<?= htmlspecialchars($folder) ?>">
+                    <input type="hidden" name="action" value="set_plakat">
+                    <button type="submit" class="btn btn-secondary btn-small" title="Diesen Ordner als Plakate-Quelle der Sponsor-Mail für <?= $rennJahr ?> festlegen">📌 Als Plakate-Ordner (<?= $rennJahr ?>)</button>
                 </form>
-
-                <?php if (empty($orgaDateien)): ?>
-                    <div class="empty-state">
-                        <div class="empty-state-icon">📁</div>
-                        <p>Noch keine Orga-Dateien hochgeladen.</p>
-                    </div>
-                <?php else: ?>
-                    <div class="kategorie-filter">
-                        <label for="filter-orga">Kategorie filtern:</label>
-                        <select id="filter-orga" class="kategorie-filter-select" data-target="orga">
-                            <option value="">Alle Kategorien</option>
-                            <?= dateiKategorieOptions('') ?>
-                        </select>
-                    </div>
-                    <div class="table-wrap">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Datei</th>
-                                    <th>Kategorie</th>
-                                    <th>Größe</th>
-                                    <th>Hochgeladen von</th>
-                                    <th>Datum</th>
-                                    <th>Aktionen</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($orgaDateien as $d): ?>
-                                    <?php $kat = dateiKategorieNormalisieren($d['kategorie'] ?? 'allgemein'); ?>
-                                    <tr data-kategorie="<?= htmlspecialchars($kat) ?>">
-                                        <td>
-                                            <span class="file-icon"><?= getFileIcon($d['mimetype']) ?></span>
-                                            <span class="file-name"><?= htmlspecialchars($d['originalname']) ?></span>
-                                        </td>
-                                        <td><select class="kat-edit" data-id="<?= (int)$d['id'] ?>" aria-label="Kategorie ändern"><?= dateiKategorieOptions($kat) ?></select><span class="kat-saved" style="display:none">✓</span></td>
-                                        <td class="file-meta"><?= formatFileSize((int)$d['groesse']) ?></td>
-                                        <td class="file-meta"><?= htmlspecialchars($d['uploader_name'] ?? '– direkt in Drive') ?></td>
-                                        <td class="file-meta"><?= date('d.m.Y H:i', strtotime($d['created_at'])) ?></td>
-                                        <td>
-                                            <a href="api/file_download.php?id=<?= $d['id'] ?>" class="btn-download">Download</a>
-                                            <?php if ($isAdmin || $d['hochgeladen_von'] == $user['id']): ?>
-                                                <form method="post" action="api/file_delete.php" class="inline-form" onsubmit="return confirm('Datei wirklich löschen?');">
-                                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                                                    <input type="hidden" name="file_id" value="<?= $d['id'] ?>">
-                                                    <button type="submit" class="btn-action btn-danger">Löschen</button>
-                                                </form>
-                                            <?php endif; ?>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="kategorie-empty" data-target="orga">Keine Dateien in dieser Kategorie.</div>
-                <?php endif; ?>
-            </div>
-
-            <div id="tab-helfer" class="tab-content <?= $activeTab === 'helfer' ? 'active' : '' ?>">
-                <form method="post" action="api/file_upload.php" enctype="multipart/form-data" class="upload-form">
+                <?php if ($plakatFolder === $folder): ?><span class="designated">aktueller Plakate-Ordner <?= $rennJahr ?></span><?php endif; ?>
+                <form method="post" action="dateien.php" class="inline-form">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                    <input type="hidden" name="bereich" value="helfer">
-                    <input type="hidden" name="jahr" value="<?= $selectedJahr ?>">
-                    <input type="file" name="datei" required accept=".pdf,.docx,.xlsx,.png,.jpg,.jpeg">
-                    <select name="kategorie" aria-label="Kategorie"><?= dateiKategorieOptions('allgemein') ?></select>
-                    <button type="submit" class="btn btn-primary btn-small">Hochladen</button>
-                    <span class="upload-hint">Erlaubt: PDF, DOCX, XLSX, PNG, JPG — max. 10 MB. Für alle bestätigten Helfer sichtbar.</span>
+                    <input type="hidden" name="tab" value="<?= $tab ?>">
+                    <input type="hidden" name="folder" value="<?= htmlspecialchars($folder) ?>">
+                    <input type="hidden" name="action" value="set_bilder">
+                    <button type="submit" class="btn btn-secondary btn-small" title="Diesen Ordner als Bild-Quelle des Foto-Pickers festlegen">🖼️ Als Bilder-Ordner</button>
                 </form>
-
-                <?php if (empty($helferDateien)): ?>
-                    <div class="empty-state">
-                        <div class="empty-state-icon">📁</div>
-                        <p>Noch keine Helfer-Dateien hochgeladen.</p>
-                    </div>
-                <?php else: ?>
-                    <div class="kategorie-filter">
-                        <label for="filter-helfer">Kategorie filtern:</label>
-                        <select id="filter-helfer" class="kategorie-filter-select" data-target="helfer">
-                            <option value="">Alle Kategorien</option>
-                            <?= dateiKategorieOptions('') ?>
-                        </select>
-                    </div>
-                    <div class="table-wrap">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Datei</th>
-                                    <th>Kategorie</th>
-                                    <th>Größe</th>
-                                    <th>Hochgeladen von</th>
-                                    <th>Datum</th>
-                                    <th>Aktionen</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($helferDateien as $d): ?>
-                                    <?php $kat = dateiKategorieNormalisieren($d['kategorie'] ?? 'allgemein'); ?>
-                                    <tr data-kategorie="<?= htmlspecialchars($kat) ?>">
-                                        <td>
-                                            <span class="file-icon"><?= getFileIcon($d['mimetype']) ?></span>
-                                            <span class="file-name"><?= htmlspecialchars($d['originalname']) ?></span>
-                                        </td>
-                                        <td><select class="kat-edit" data-id="<?= (int)$d['id'] ?>" aria-label="Kategorie ändern"><?= dateiKategorieOptions($kat) ?></select><span class="kat-saved" style="display:none">✓</span></td>
-                                        <td class="file-meta"><?= formatFileSize((int)$d['groesse']) ?></td>
-                                        <td class="file-meta"><?= htmlspecialchars($d['uploader_name'] ?? '– direkt in Drive') ?></td>
-                                        <td class="file-meta"><?= date('d.m.Y H:i', strtotime($d['created_at'])) ?></td>
-                                        <td>
-                                            <a href="api/file_download.php?id=<?= $d['id'] ?>" class="btn-download">Download</a>
-                                            <?php if ($isAdmin || $d['hochgeladen_von'] == $user['id']): ?>
-                                                <form method="post" action="api/file_delete.php" class="inline-form" onsubmit="return confirm('Datei wirklich löschen?');">
-                                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                                                    <input type="hidden" name="file_id" value="<?= $d['id'] ?>">
-                                                    <button type="submit" class="btn-action btn-danger">Löschen</button>
-                                                </form>
-                                            <?php endif; ?>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="kategorie-empty" data-target="helfer">Keine Dateien in dieser Kategorie.</div>
-                <?php endif; ?>
+                <?php if ($bilderFolder === $folder): ?><span class="designated">aktueller Bilder-Ordner</span><?php endif; ?>
             </div>
+
+            <?php if (empty($ordner) && empty($dateien)): ?>
+                <div class="empty-state"><div style="font-size:2.5rem">📁</div><p>Dieser Ordner ist leer.</p></div>
+            <?php else: ?>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead><tr><th>Name</th><th>Größe</th><th>Geändert</th><th>Aktionen</th></tr></thead>
+                        <tbody>
+                            <?php foreach ($ordner as $o): ?>
+                                <tr class="row-folder">
+                                    <td><span class="row-icon">📁</span><a href="?tab=<?= $tab ?>&folder=<?= urlencode($o['id']) ?>"><?= htmlspecialchars($o['name']) ?></a></td>
+                                    <td class="file-meta">—</td>
+                                    <td class="file-meta"><?= $o['modifiedTime'] ? htmlspecialchars(date('d.m.Y', strtotime($o['modifiedTime']))) : '' ?></td>
+                                    <td></td>
+                                </tr>
+                            <?php endforeach; ?>
+                            <?php foreach ($dateien as $d): ?>
+                                <tr>
+                                    <td><span class="row-icon"><?= getFileIcon($d['mimeType']) ?></span><?= htmlspecialchars($d['name']) ?></td>
+                                    <td class="file-meta"><?= $d['size'] > 0 ? formatFileSize($d['size']) : '' ?></td>
+                                    <td class="file-meta"><?= $d['modifiedTime'] ? htmlspecialchars(date('d.m.Y', strtotime($d['modifiedTime']))) : '' ?></td>
+                                    <td>
+                                        <a href="api/file_download.php?fid=<?= urlencode($d['id']) ?>" class="btn-download">Download</a>
+                                        <form method="post" action="api/file_delete.php" class="inline-form" onsubmit="return confirm('Datei wirklich löschen?');">
+                                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                                            <input type="hidden" name="tab" value="<?= $tab ?>">
+                                            <input type="hidden" name="folder" value="<?= htmlspecialchars($folder) ?>">
+                                            <input type="hidden" name="fid" value="<?= htmlspecialchars($d['id']) ?>">
+                                            <button type="submit" class="btn-action btn-danger">Löschen</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
+
+            <p class="fb-hint">Die Struktur spiegelt 1:1 das geteilte Google-Laufwerk „Marktlauf Orga". Änderungen, die du direkt in Drive machst, erscheinen hier automatisch.</p>
+
+            <?php endif; ?>
         </main>
     </div>
     <script>
-    // Kategorie nachträglich ändern (Umflaggen)
-    (function() {
-        const CSRF = <?= json_encode($csrfToken) ?>;
-        document.querySelectorAll('.kat-edit').forEach(function(sel) {
-            sel.addEventListener('change', function() {
-                sel.disabled = true;
-                fetch('api/datei_kategorie_update.php', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                    body: new URLSearchParams({csrf_token: CSRF, id: sel.dataset.id, kategorie: sel.value}),
-                }).then(r => r.json()).then(d => {
-                    if (d.ok) {
-                        const tr = sel.closest('tr'); if (tr) tr.dataset.kategorie = d.kategorie;
-                        const s = sel.parentElement.querySelector('.kat-saved');
-                        if (s) { s.style.display = 'inline'; setTimeout(() => { s.style.display = 'none'; }, 1500); }
-                    }
-                }).finally(() => { sel.disabled = false; });
-            });
-        });
-    })();
-
-    (function() {
+    (function () {
         const burger = document.getElementById('burger-btn');
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('sidebar-overlay');
-
-        function closeSidebar() {
-            sidebar.classList.remove('open');
-            overlay.classList.remove('open');
-            document.body.style.overflow = '';
-        }
-
-        burger.addEventListener('click', function() {
-            sidebar.classList.add('open');
-            overlay.classList.add('open');
-            document.body.style.overflow = 'hidden';
-        });
-        overlay.addEventListener('click', closeSidebar);
-        sidebar.querySelectorAll('.nav-item a').forEach(function(link) {
-            link.addEventListener('click', closeSidebar);
-        });
-
-        // Kategorie-Filter (client-seitig, pro Tab)
-        document.querySelectorAll('.kategorie-filter-select').forEach(function(select) {
-            select.addEventListener('change', function() {
-                var target = select.dataset.target;
-                var value = select.value;
-                var rows = document.querySelectorAll('#tab-' + target + ' .data-table tbody tr');
-                var visible = 0;
-                rows.forEach(function(row) {
-                    var match = value === '' || row.dataset.kategorie === value;
-                    row.style.display = match ? '' : 'none';
-                    if (match) visible++;
-                });
-                var emptyMsg = document.querySelector('.kategorie-empty[data-target="' + target + '"]');
-                if (emptyMsg) emptyMsg.style.display = visible === 0 ? 'block' : 'none';
-            });
-        });
+        if (!burger) return;
+        function close() { sidebar.classList.remove('open'); overlay.classList.remove('open'); document.body.style.overflow = ''; }
+        burger.addEventListener('click', function () { sidebar.classList.add('open'); overlay.classList.add('open'); document.body.style.overflow = 'hidden'; });
+        overlay.addEventListener('click', close);
+        sidebar.querySelectorAll('.nav-item a').forEach(function (l) { l.addEventListener('click', close); });
     })();
     </script>
 </body>

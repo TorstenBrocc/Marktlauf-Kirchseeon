@@ -228,6 +228,12 @@ function driveList(PDO $pdo, string $bereich, int $jahr, string $kategorie): arr
 function driveUpload(PDO $pdo, string $bereich, int $jahr, string $kategorie, string $tmpPath, string $name, string $mimeType): string
 {
     $folderId = driveEnsureCategoryFolder($pdo, $bereich, $jahr, $kategorie);
+    return driveUploadToFolder($folderId, $tmpPath, $name, $mimeType);
+}
+
+/** Upload a local file into a specific Drive folder (multipart). Returns the new file id. */
+function driveUploadToFolder(string $folderId, string $tmpPath, string $name, string $mimeType): string
+{
     $content  = (string) file_get_contents($tmpPath);
 
     $boundary = 'mlboundary' . bin2hex(random_bytes(8));
@@ -340,6 +346,146 @@ function driveReconcile(PDO $pdo, string $bereich, int $jahr, bool $force = fals
                 ->execute(array_merge([$bereich, $jahr, $kat], $seen));
         }
     }
+}
+
+// --- Ordner-Browser (Paket 7) -----------------------------------------------
+
+/** Read a single einstellungen value ('' if unset/error). */
+function driveSetting(PDO $pdo, string $key): string
+{
+    try {
+        $stmt = $pdo->prepare("SELECT `value` FROM einstellungen WHERE `key` = ? LIMIT 1");
+        $stmt->execute([$key]);
+        return (string) $stmt->fetchColumn();
+    } catch (PDOException $e) {
+        return '';
+    }
+}
+
+/**
+ * Root folder id for a bereich's browser tab. Uses the configured id from einstellungen
+ * (drive_root_orga_id / drive_root_helfer_id); falls back to ensuring an "Orga"/"Helfer"
+ * folder at the shared drive root.
+ */
+function driveRootFolderId(PDO $pdo, string $bereich): string
+{
+    $key = $bereich === 'helfer' ? 'drive_root_helfer_id' : 'drive_root_orga_id';
+    $id  = driveSetting($pdo, $key);
+    if ($id !== '') {
+        return $id;
+    }
+    return driveEnsureFolder($pdo, $bereich, 0, '', driveBereichName($bereich), driveSharedDriveId());
+}
+
+/** Current race year (from einstellungen.renntag_datum; falls back to current year). */
+function driveRennJahr(PDO $pdo): int
+{
+    if (preg_match('/^(\d{4})-/', driveSetting($pdo, 'renntag_datum'), $m)) {
+        return (int) $m[1];
+    }
+    return (int) date('Y');
+}
+
+/** Designated plakat folder id for a race year (plakat_folder_<jahr>); null if unset. */
+function drivePlakatFolderId(PDO $pdo, int $jahr): ?string
+{
+    $id = driveSetting($pdo, 'plakat_folder_' . $jahr);
+    return $id !== '' ? $id : null;
+}
+
+/** Designated image folder id for the foto picker (bilder_folder_id); null if unset. */
+function driveBilderFolderId(PDO $pdo): ?string
+{
+    $id = driveSetting($pdo, 'bilder_folder_id');
+    return $id !== '' ? $id : null;
+}
+
+/**
+ * List direct children (folders + files) of a folder in the shared drive.
+ * @return array<int,array{id:string,name:string,mimeType:string,size:int,modifiedTime:string,isFolder:bool}>
+ */
+function driveListChildren(string $folderId): array
+{
+    $out       = [];
+    $pageToken = '';
+    do {
+        $params = [
+            'q'                         => sprintf("'%s' in parents and trashed = false", driveEscapeQ($folderId)),
+            'corpora'                   => 'drive',
+            'driveId'                   => driveSharedDriveId(),
+            'includeItemsFromAllDrives' => 'true',
+            'supportsAllDrives'         => 'true',
+            'fields'                    => 'nextPageToken,files(id,name,mimeType,size,modifiedTime)',
+            'orderBy'                   => 'folder,name',
+            'pageSize'                  => 200,
+        ];
+        if ($pageToken !== '') {
+            $params['pageToken'] = $pageToken;
+        }
+        $data = driveApiGet('https://www.googleapis.com/drive/v3/files?' . http_build_query($params));
+        foreach (($data['files'] ?? []) as $f) {
+            $mime = (string) ($f['mimeType'] ?? '');
+            $out[] = [
+                'id'           => (string) ($f['id'] ?? ''),
+                'name'         => (string) ($f['name'] ?? ''),
+                'mimeType'     => $mime,
+                'size'         => (int) ($f['size'] ?? 0),
+                'modifiedTime' => (string) ($f['modifiedTime'] ?? ''),
+                'isFolder'     => $mime === DRIVE_FOLDER_MIME,
+            ];
+        }
+        $pageToken = (string) ($data['nextPageToken'] ?? '');
+    } while ($pageToken !== '');
+
+    return $out;
+}
+
+/** Metadata for a file/folder incl. driveId + parents; null if not found. */
+function driveFileMeta(string $fileId): ?array
+{
+    try {
+        $data = driveApiGet('https://www.googleapis.com/drive/v3/files/' . rawurlencode($fileId) . '?' . http_build_query([
+            'supportsAllDrives' => 'true',
+            'fields'            => 'id,name,mimeType,size,driveId,parents',
+        ]));
+    } catch (RuntimeException $e) {
+        return null;
+    }
+    return $data !== [] ? $data : null;
+}
+
+/** Security gate: true only if the file/folder lives in OUR shared drive. */
+function driveInSharedDrive(string $fileId): bool
+{
+    $meta = driveFileMeta($fileId);
+    return $meta !== null && (string) ($meta['driveId'] ?? '') === driveSharedDriveId();
+}
+
+/**
+ * Breadcrumb from the root down to $folderId (inclusive), each entry [id,name].
+ * Walks parents upward; stops at $rootId or the shared drive boundary.
+ * @return array<int,array{id:string,name:string}>
+ */
+function driveBreadcrumb(string $folderId, string $rootId): array
+{
+    $chain = [];
+    $cur   = $folderId;
+    $guard = 0;
+    while ($cur !== '' && $guard++ < 25) {
+        $meta = driveFileMeta($cur);
+        if ($meta === null) {
+            break;
+        }
+        array_unshift($chain, ['id' => (string) $meta['id'], 'name' => (string) ($meta['name'] ?? '')]);
+        if ($cur === $rootId) {
+            break;
+        }
+        $cur = $meta['parents'][0] ?? '';
+        if ($cur === driveSharedDriveId()) {
+            break; // reached the drive root without hitting $rootId
+        }
+    }
+    return $chain;
 }
 
 // --- Internal helpers -------------------------------------------------------
