@@ -1,12 +1,123 @@
 /**
  * ATSV Marktlauf Kirchseeon 2026 - Map Logic
  * Handles: GPX Preview Maps, Modal with Elevation Profile
+ *
+ * Performance: Leaflet und die Plugins werden NICHT mehr statisch im HTML
+ * geladen, sondern erst dynamisch, wenn die Karten-Bereiche in den Viewport
+ * scrollen (Vorschau-/Standortkarte) bzw. das Höhenprofil-Modal geöffnet wird
+ * (leaflet-elevation). Das senkt die Total Blocking Time beim Seitenaufbau.
  */
 
+// ── Dynamischer Asset-Loader (lädt jede CSS/JS-Datei bei Bedarf, nur einmal) ──
+const _assetPromises = {};
+
+function loadStylesheet(href) {
+  if (_assetPromises[href]) return _assetPromises[href];
+  _assetPromises[href] = new Promise((resolve) => {
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = href;
+    link.onload = resolve;
+    // Auch bei Fehler auflösen: die Karte soll den Rest der Seite nie blockieren.
+    link.onerror = resolve;
+    document.head.appendChild(link);
+  });
+  return _assetPromises[href];
+}
+
+function loadScript(src, integrity) {
+  if (_assetPromises[src]) return _assetPromises[src];
+  _assetPromises[src] = new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = src;
+    if (integrity) {
+      script.integrity = integrity;
+      script.crossOrigin = "";
+    }
+    script.onload = resolve;
+    script.onerror = () => reject(new Error("Konnte Skript nicht laden: " + src));
+    document.head.appendChild(script);
+  });
+  return _assetPromises[src];
+}
+
+// Leaflet-Kern + GPX-Plugin (für Standort- und Vorschaukarten)
+let _leafletCorePromise = null;
+function loadLeafletCore() {
+  if (_leafletCorePromise) return _leafletCorePromise;
+  _leafletCorePromise = (async () => {
+    await loadStylesheet("https://unpkg.com/leaflet@1.9.4/dist/leaflet.css");
+    await loadScript(
+      "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js",
+      "sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    );
+    await loadScript("https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js");
+  })();
+  return _leafletCorePromise;
+}
+
+// Höhenprofil-Plugin (nur im Modal benötigt)
+let _elevationPromise = null;
+function loadElevationPlugin() {
+  if (_elevationPromise) return _elevationPromise;
+  _elevationPromise = (async () => {
+    await loadLeafletCore();
+    await loadStylesheet("https://unpkg.com/@raruto/leaflet-elevation@2.5.2/dist/leaflet-elevation.css");
+    await loadScript("https://unpkg.com/@raruto/leaflet-elevation@2.5.2/dist/leaflet-elevation.js");
+  })();
+  return _elevationPromise;
+}
+
+// ── Lazy-Init: Karten erst aufbauen, wenn ihre Bereiche in Sichtweite kommen ──
 document.addEventListener("DOMContentLoaded", () => {
-  initLocationMap();
-  initRouteMaps();
+  const targets = [
+    document.getElementById("strecke"),
+    document.getElementById("location-map"),
+  ].filter(Boolean);
+
+  if (targets.length === 0) return;
+
+  const startMaps = () => {
+    loadLeafletCore()
+      .then(() => {
+        initLocationMap();
+        initRouteMaps();
+      })
+      .catch((err) => console.error("Leaflet konnte nicht geladen werden:", err));
+  };
+
+  // Fallback für sehr alte Browser ohne IntersectionObserver: sofort laden.
+  if (!("IntersectionObserver" in window)) {
+    startMaps();
+    return;
+  }
+
+  let triggered = false;
+  const observer = new IntersectionObserver(
+    (entries) => {
+      if (triggered) return;
+      if (entries.some((e) => e.isIntersecting)) {
+        triggered = true;
+        observer.disconnect();
+        startMaps();
+      }
+    },
+    { rootMargin: "300px" } // etwas vor dem Sichtbarwerden vorladen
+  );
+  targets.forEach((t) => observer.observe(t));
 });
+
+// ── Icons (werden erst erzeugt, nachdem Leaflet geladen ist) ──
+let transparentIcon = null;
+function ensureIcons() {
+  if (!transparentIcon) {
+    transparentIcon = L.icon({
+      iconUrl: "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+      iconSize: [0, 0],
+      iconAnchor: [0, 0],
+    });
+  }
+}
 
 function initLocationMap() {
   const container = document.getElementById("location-map");
@@ -32,12 +143,6 @@ function initLocationMap() {
     .bindPopup("<strong>Start & Ziel</strong><br>Westring 6<br>85614 Kirchseeon")
     .openPopup();
 }
-
-const transparentIcon = L.icon({
-  iconUrl: "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
-  iconSize: [0, 0],
-  iconAnchor: [0, 0],
-});
 
 const routesConfig = {
   "bambini-500m": {
@@ -102,6 +207,8 @@ function initRouteMaps() {
 }
 
 function createPreviewMap(mapId, gpxFile) {
+  ensureIcons();
+
   const map = L.map(mapId, {
     scrollWheelZoom: false,
     dragging: false,
@@ -147,6 +254,16 @@ function openMapModal(routeId) {
     modalMap = null;
   }
 
+  // Höhenprofil-Plugin bei Bedarf nachladen, dann Karte aufbauen.
+  loadElevationPlugin()
+    .then(() => {
+      ensureIcons();
+      buildModalMap(config);
+    })
+    .catch((err) => console.error("Höhenprofil konnte nicht geladen werden:", err));
+}
+
+function buildModalMap(config) {
   // Delay initialization to allow for modal transition and layout calculation
   setTimeout(() => {
     modalMap = L.map("modal-map-container", {
@@ -175,7 +292,7 @@ function openMapModal(routeId) {
       className: "",
       // Finale Pixelgröße: 60x60
       iconSize: [60, 60],
-      // Die Spitze liegt im viewBox 0 0 24 24 bei y=22 (9 + 13 = 22). 
+      // Die Spitze liegt im viewBox 0 0 24 24 bei y=22 (9 + 13 = 22).
       // Skaliert auf 60x60 ergibt das: X = 60 * (12/24) = 30, Y = 60 * (22/24) = 55
       iconAnchor: [30, 55],
       html: `
@@ -185,7 +302,7 @@ function openMapModal(routeId) {
               <feDropShadow dx="0" dy="1" stdDeviation="1" flood-color="#000" flood-opacity="0.3"/>
             </filter>
           </defs>
-          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" 
+          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"
                 fill="white" stroke="#d1d5db" stroke-width="0.5" filter="url(#pin-shadow)" />
           <!-- Zentriertes Berg-Symbol im runden Kopf (Mittelpunkt bei 12,9 im 24er Raster) -->
           <!-- 18x18 Units nimmt ca. 128% des Kreisdurchmessers von 14 Units ein -->
@@ -227,7 +344,7 @@ function openMapModal(routeId) {
 
         if (avgEleSpan) {
           console.log("SUCCESS: .avgele gefunden", avgEleSpan);
-          
+
           const ascentInMeters = totalAscentMeters;
 
           if (ascentInMeters !== undefined && ascentInMeters !== null) {
@@ -263,11 +380,11 @@ function openMapModal(routeId) {
       if (eleData && eleData.length > 0) {
         let smoothedAscent = 0;
         let lastElevation = eleData[0][1]; // Elevation is usually at index 1 in [distance, elevation, ...]
-        
+
         for (let i = 1; i < eleData.length; i++) {
           let currentElevation = eleData[i][1];
           let diff = currentElevation - lastElevation;
-          
+
           // Noise Filter: ignoriere Schwankungen unter 1.5m
           if (Math.abs(diff) > 1.5) {
             if (diff > 0) {
@@ -281,7 +398,7 @@ function openMapModal(routeId) {
       } else {
         totalAscentMeters = rawAscent;
       }
-      
+
       modalMap.fitBounds(gpx.getBounds());
 
       // Third, load the elevation data. This will trigger the 'eledata_loaded' event.
