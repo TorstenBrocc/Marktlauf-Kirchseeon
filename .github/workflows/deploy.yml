@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:   # manueller Deploy im Actions-Tab (z. B. Re-Deploy des aktuellen Stands)
 
 jobs:
   web-deploy:
