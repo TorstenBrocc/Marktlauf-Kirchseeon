@@ -24,17 +24,22 @@ Schatten, Verläufen, Icon-Fonts).
 **Wichtig:** Wie bei Parsedown wird der Server per Deploy aus dem Repo gespiegelt — `snapdom.js`
 muss daher eingecheckt bleiben, sonst verschwindet die Datei beim `rsync --delete`.
 
-## Schriften (Grafik-Vorlagen-Tool)
+## Schriften (self-hosted, site-weit)
 
-`orga/vorlagen.php` rendert seine Grafiken mit zwei self-hosted Webfonts (kein Google-Fonts-CDN
-im Prod-Code — Strato-robust, und snapDOM muss die Fonts vor dem Rastern lokal laden können).
-Die woff2-Dateien liegen unter `assets/fonts/` und müssen — wie snapdom.js — **eingecheckt
-bleiben** (`rsync --delete`). Latin-Subset deckt Deutsch vollständig ab.
+Die gesamte Website hält ihre Schriften self-hosted — **kein Google-Fonts-CDN** mehr im Prod-Code
+(Strato-robust, DSGVO-freundlich, und snapDOM muss die Fonts vor dem Rastern lokal laden können).
+Zentrale Deklaration in [`css/fonts.css`](css/fonts.css) (Single Source of Truth, per `<link>` in
+`index.html`, `src/layout/head.php`, den Newsletter-Seiten und `orga/poster_generator.php` geladen);
+`orga/vorlagen.php` deklariert seine Fonts weiterhin inline (eigene snapDOM-Pipeline). Die
+woff2-Dateien liegen unter `assets/fonts/` und müssen — wie snapdom.js — **eingecheckt bleiben**
+(`rsync --delete`). Latin-Subset deckt Deutsch vollständig ab.
 
-- **Fredoka** (Headlines/Badges) — `assets/fonts/fredoka-latin.woff2` (variabel, Gewicht 500–700)
-- **Poppins** (Fließtext) — `assets/fonts/poppins-400-latin.woff2`, `assets/fonts/poppins-600-latin.woff2`
-- **Lizenz:** SIL Open Font License 1.1 (OFL)
-- **Quelle:** Google Fonts (`fonts.gstatic.com`), Fredoka v17 / Poppins v24
+- **Fredoka** (`--font-display`, Headlines/Badges) — `fredoka-latin.woff2` (variabel, Gewicht 400–700)
+- **Poppins** (`--font-main`, Fließtext) — `poppins-{400,500,600,700}-latin.woff2`
+- **Montserrat** (`--font-heading`, Überschriften + Poster-Generator) — `montserrat-{500,700,800,900}-latin.woff2`
+- **Inter** (Fallback in `--font-main`) — `inter-{400,600,700,800}-latin.woff2`
+- **Lizenz:** alle vier unter SIL Open Font License 1.1 (OFL)
+- **Quelle:** Google Fonts (`fonts.gstatic.com`), Latin-Subset
 
 ---
 
