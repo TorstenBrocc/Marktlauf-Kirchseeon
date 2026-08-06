@@ -22,6 +22,15 @@ require_once __DIR__ . '/../src/db.php';
 require_once __DIR__ . '/../src/logger.php';
 require_once __DIR__ . '/../src/google_drive.php';
 
+// Strato runs bin/ scripts under the CGI SAPI, where STDOUT/STDERR are undefined.
+// Map them to the output stream so fwrite() works there just like under real CLI.
+if (!defined('STDOUT')) {
+    define('STDOUT', fopen('php://output', 'w'));
+}
+if (!defined('STDERR')) {
+    define('STDERR', fopen('php://output', 'w'));
+}
+
 $keep   = in_array('--keep', $argv, true);
 $dryRun = in_array('--dry-run', $argv, true);
 
