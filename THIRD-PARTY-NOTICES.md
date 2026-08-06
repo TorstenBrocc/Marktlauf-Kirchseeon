@@ -111,20 +111,32 @@ Externes Anmelde-Widget des Zeitmess-/Anmeldedienstleisters, per `<script src>` 
 - **Eingebunden in:** `index.html:563` (Einzelanmeldung), `anmeldung-familie.php` (Sammelanmeldung)
 - **Art:** proprietäres SaaS-Widget des Anbieters (RACE RESULT AG). Datenschutz siehe `datenschutz.html`.
 
-## 6. Externe Dienste & Datenverarbeiter
+## 6. Externe Dienste (serverseitig angebunden)
 
 Serverseitig angebundene Dienste. Zugangsdaten liegen ausschließlich in der nicht
-eingecheckten `storage/config.php` (Vorlage: `storage/config.sample.php`). Diese Dienste sind
-zugleich datenschutzrechtlich relevant (Auftragsverarbeiter / Empfänger) — siehe `datenschutz.html`.
+eingecheckten `storage/config.php` (Vorlage: `storage/config.sample.php`).
+
+### 6a. Datenverarbeiter mit Personenbezug (datenschutzrelevant)
+
+Diese Dienste verarbeiten personenbezogene Daten und sind in `datenschutz.html` benannt
+(mit AV-Vertrag, Art. 28 DSGVO):
 
 | Dienst | Zweck | Beleg |
 |---|---|---|
-| **Brevo** (Sendinblue GmbH) | Newsletter-Double-Opt-in & Versand | `index.html` (Formular), `datenschutz.html` |
-| **RaceResult** (RACE RESULT AG) | Anmeldung & Ergebnis-Abruf (Simple API) | `src/raceresult_client.php`, `index.html` |
-| **Google Gemini** (Google) | LLM-Provider (Default), Modell `gemini-2.0-flash` | `src/llm_client.php` |
-| **Mistral AI** | LLM-Provider (Alternative), Modell `mistral-small-latest` | `src/llm_client.php` |
-| **Google Drive API v3** | Datei-Backend der Orga-Dateiablage (OAuth, Refresh-Token) | `src/google_drive.php`, `bin/gdrive_auth.php` |
-| **SMTP (Strato)** | Transaktions-Mailversand über nativen `SmtpMailer` | `src/mailer.php` |
+| **RaceResult** (RACE RESULT AG) | Anmeldung, Zeitmessung, Ergebnislisten (eingebettetes Widget + Simple API) | `index.html`, `src/raceresult_client.php` |
+| **Brevo** (Sendinblue GmbH) | Newsletter-Anmeldung (direkt an Brevo-Formular) & Double-Opt-in | `index.html` (Formular) |
+| **Strato** (STRATO AG) | Hosting/Server-Logs & Transaktions-Mailversand (`SmtpMailer`) | `src/mailer.php`, `.htaccess` |
+
+### 6b. Interne Werkzeuge ohne Personenbezug
+
+Diese Dienste sind reine Orga-/Backend-Werkzeuge. Nach Prüfung der Code-Pfade fließen hierüber
+**keine** personenbezogenen Teilnehmer-/Helfer-/Sponsordaten — daher kein Datenschutz-Bezug
+und keine Nennung in der öffentlichen Datenschutzerklärung:
+
+| Dienst | Zweck | Hinweis (belegt im Code) |
+|---|---|---|
+| **Google Gemini** / **Mistral AI** | LLM-Provider für Social-Media-/Newsletter-Textentwürfe | Prompts enthalten nur redaktionelle Vorgaben + vom Team getippte Stichworte; keine Personendaten aus der DB (`src/llm_client.php`, `orga/api/social_generate.php`, `orga/api/newsletter_generate.php`) |
+| **Google Drive API v3** | Datei-Backend der Orga-Dateiablage (Google-Workspace-Non-Profit) | speichert ausschließlich **manuell vom Orga-Team hochgeladene** Dateien; kein automatischer DB-Export (`src/google_drive.php`, `orga/api/file_upload.php`) |
 
 ## 7. Optional: Parsedown (voller Markdown-Umfang)
 
