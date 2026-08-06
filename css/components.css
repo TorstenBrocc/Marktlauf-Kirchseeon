@@ -471,6 +471,14 @@
     to   { opacity: 1; transform: translateY(0); }
 }
 
+/* Wie hero-enter-up, aber ohne Opacity-Fade: fuer das LCP-Element (H1),
+   damit es sofort "contentful" ist und den Largest Contentful Paint auf
+   Mobil nicht durch das Einblenden verzoegert. Gleiche Slide-Bewegung. */
+@keyframes hero-enter-up-solid {
+    from { transform: translateY(28px); }
+    to   { transform: translateY(0); }
+}
+
 @keyframes hero-enter-right {
     from { opacity: 0; transform: translateX(60px); }
     to   { opacity: 1; transform: translateX(0); }
@@ -483,7 +491,7 @@
 
 .hero-koop-badge  { animation: hero-enter-up 0.55s 0.00s ease-out both; }
 .hero-kicker      { animation: hero-enter-up 0.55s 0.10s ease-out both; }
-.hero h1          { animation: hero-enter-up 0.60s 0.22s ease-out both; }
+.hero h1          { animation: hero-enter-up-solid 0.60s 0.22s ease-out both; }
 .hero-year-motto  { animation: hero-enter-up 0.55s 0.35s ease-out both; }
 .hero-meta        { animation: hero-enter-up 0.55s 0.48s ease-out both; }
 .countdown        { animation: hero-enter-up 0.55s 0.58s ease-out both; }
