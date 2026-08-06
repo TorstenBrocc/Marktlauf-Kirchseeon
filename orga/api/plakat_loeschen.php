@@ -41,7 +41,7 @@ if ($meta === null || (string) ($meta['driveId'] ?? '') !== driveSharedDriveId()
 }
 
 try {
-    driveDelete($fid);
+    driveTrash($fid);
     dateiAudit($pdo, 'delete', [
         'drive_file_id' => $fid,
         'originalname'  => (string) ($meta['name'] ?? ''),

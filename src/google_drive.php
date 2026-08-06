@@ -488,6 +488,44 @@ function driveBreadcrumb(string $folderId, string $rootId): array
     return $chain;
 }
 
+/** Rename a file/folder (files.update name). @throws RuntimeException */
+function driveRename(string $fileId, string $newName): void
+{
+    driveApiSend(
+        'PATCH',
+        'https://www.googleapis.com/drive/v3/files/' . rawurlencode($fileId) . '?' . http_build_query(['supportsAllDrives' => 'true', 'fields' => 'id']),
+        json_encode(['name' => $newName], JSON_UNESCAPED_UNICODE),
+        ['Content-Type: application/json']
+    );
+}
+
+/** Move a file/folder from one parent to another (files.update add/removeParents). @throws */
+function driveMove(string $fileId, string $newParentId, string $oldParentId): void
+{
+    driveApiSend(
+        'PATCH',
+        'https://www.googleapis.com/drive/v3/files/' . rawurlencode($fileId) . '?' . http_build_query([
+            'addParents'        => $newParentId,
+            'removeParents'     => $oldParentId,
+            'supportsAllDrives' => 'true',
+            'fields'            => 'id',
+        ]),
+        '{}',
+        ['Content-Type: application/json']
+    );
+}
+
+/** Move a file/folder to the Drive trash (recoverable). @throws RuntimeException */
+function driveTrash(string $fileId): void
+{
+    driveApiSend(
+        'PATCH',
+        'https://www.googleapis.com/drive/v3/files/' . rawurlencode($fileId) . '?' . http_build_query(['supportsAllDrives' => 'true', 'fields' => 'id']),
+        json_encode(['trashed' => true], JSON_UNESCAPED_UNICODE),
+        ['Content-Type: application/json']
+    );
+}
+
 // --- Internal helpers -------------------------------------------------------
 
 /** GET a Drive JSON endpoint (Bearer added); returns decoded array. @throws */
