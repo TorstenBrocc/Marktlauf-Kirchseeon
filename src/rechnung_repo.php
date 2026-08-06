@@ -16,7 +16,7 @@ require_once __DIR__ . '/rechnung.php';
  * gebuchten Pakets (aus sponsoringPakete()). Leistung + Betrag kommen aus dem Paket, sofern
  * nicht pro Sponsor überschrieben. Wirft InvalidArgumentException, wenn Pflichtdaten fehlen.
  */
-function rechnungSnapshotVonSponsor(array $sponsor, array $paketDef = []): array
+function rechnungSnapshotVonSponsor(array $sponsor, array $paketDef = [], bool $globalBrutto = false): array
 {
     $firma = trim((string) ($sponsor['rechnung_firma'] ?? '')) !== ''
         ? trim((string) $sponsor['rechnung_firma'])
@@ -33,7 +33,7 @@ function rechnungSnapshotVonSponsor(array $sponsor, array $paketDef = []): array
     if ($plz === '' || $ort === '') { $fehlt[] = 'PLZ/Ort (Rechnungsanschrift)'; }
 
     try {
-        $b = rechnungBetraegeFuerSponsor($sponsor, $paketDef);
+        $b = rechnungBetraegeFuerSponsor($sponsor, $paketDef, null, $globalBrutto);
     } catch (InvalidArgumentException $e) {
         $fehlt[] = $e->getMessage();
         $b = null;
@@ -80,9 +80,10 @@ function rechnungEntwurfErstellen(PDO $pdo, int $sponsorId, ?int $userId): array
         throw new RuntimeException('Sponsor nicht gefunden.');
     }
 
-    $pakete   = sponsoringPakete($pdo);
-    $paketDef = $pakete[$sponsor['paket'] ?? ''] ?? [];
-    $snap     = rechnungSnapshotVonSponsor($sponsor, $paketDef);
+    $pakete       = sponsoringPakete($pdo);
+    $paketDef     = $pakete[$sponsor['paket'] ?? ''] ?? [];
+    $globalBrutto = rechnungGlobalBrutto($pdo);
+    $snap         = rechnungSnapshotVonSponsor($sponsor, $paketDef, $globalBrutto);
 
     $ins = $pdo->prepare('
         INSERT INTO sponsor_rechnungen
