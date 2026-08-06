@@ -34,12 +34,8 @@ $runner        = '../assets/images/laeufer.png';
     <title>Grafik-Vorlagen | ATSV Kirchseeon Marktlauf</title>
     <link rel="stylesheet" href="css/orga.css?v=<?= @filemtime(__DIR__ . '/css/orga.css') ?>">
     <link rel="icon" type="image/svg+xml" href="../assets/images/logo-final.svg">
+    <link rel="stylesheet" href="../css/fonts.css?v=<?= @filemtime(__DIR__ . '/../css/fonts.css') ?>">
     <style>
-        /* --- Self-hosted Fonts (Strato-robust, kein externes CDN) --- */
-        @font-face { font-family:'Fredoka'; font-style:normal; font-weight:500 700; font-display:swap; src:url(../assets/fonts/fredoka-latin.woff2) format('woff2'); }
-        @font-face { font-family:'Poppins'; font-style:normal; font-weight:400; font-display:swap; src:url(../assets/fonts/poppins-400-latin.woff2) format('woff2'); }
-        @font-face { font-family:'Poppins'; font-style:normal; font-weight:600; font-display:swap; src:url(../assets/fonts/poppins-600-latin.woff2) format('woff2'); }
-
         /* --- Werkzeug-Layout: Steuerung links, Vorschau rechts --- */
         .vt-split { display: grid; grid-template-columns: minmax(320px, 430px) 1fr; gap: 1.25rem; align-items: start; }
         @media (max-width: 1000px) { .vt-split { grid-template-columns: 1fr; } }
