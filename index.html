@@ -15,10 +15,10 @@
     <link rel="stylesheet" href="css/layout.css">
     <link rel="stylesheet" href="css/components.css">
 
-    <!-- Leaflet & Plugins for GPX Maps -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-    <link rel="stylesheet" href="https://unpkg.com/@raruto/leaflet-elevation@2.5.2/dist/leaflet-elevation.css" />
-    
+    <!-- Leaflet & Plugins for GPX Maps: werden per js/maps.js on-demand geladen
+         (erst beim Scrollen zu den Karten bzw. beim Öffnen des Höhenprofils),
+         um die Total Blocking Time beim Seitenaufbau zu reduzieren. -->
+
     <!-- Newsletter Form Styles -->
     <style>
       .newsletter-form {
@@ -236,6 +236,7 @@
                 <a href="#ablauf" class="nav-link" data-i18n="nav.zeitplan">Zeitplan</a>
                 <a href="#strecke" class="nav-link" data-i18n="nav.strecke">Strecke</a>
                 <a href="#sponsoren" class="nav-link" data-i18n="nav.sponsoren">Sponsoren</a>
+                <a href="#faq" class="nav-link" data-i18n="nav.faq">FAQ</a>
                 <a href="#connect" class="nav-link" data-i18n="nav.kontakt">Newsletter &amp;<br>Kontakt</a>
                 <div class="lang-switcher">
                     <button id="lang-toggle" class="lang-btn" title="Sprache wechseln">
@@ -454,7 +455,7 @@
                                 <span class="strecke-alter" data-i18n="alter.bambini">bis 6 Jahre</span>
                                 <span class="route-disclaimer" data-i18n="strecke.details_soon">Streckendetails folgen in Kürze</span>
                                 <a href="#" class="btn btn-secondary gpx-download" download style="visibility: hidden;">
-                                    <img src="https://cdn-icons-png.flaticon.com/512/2163/2163161.png" alt="GPX Icon" class="gpx-thumb">
+                                    <img src="assets/images/icon-gpx.svg" alt="GPX Icon" class="gpx-thumb">
                                     <span>GPX Download</span>
                                 </a>
                             </div>
@@ -470,7 +471,7 @@
                                 <span class="strecke-alter" data-i18n="alter.1km">ab 6 Jahre</span>
                                 <span class="route-disclaimer" data-i18n="strecke.disclaimer">* Streckenverlauf unter Vorbehalt - noch in Abstimmung mit Gemeinde</span>
                                 <a href="assets/courses/1km.gpx" class="btn btn-secondary gpx-download" download>
-                                    <img src="https://cdn-icons-png.flaticon.com/512/2163/2163161.png" alt="GPX Icon" class="gpx-thumb">
+                                    <img src="assets/images/icon-gpx.svg" alt="GPX Icon" class="gpx-thumb">
                                     <span>GPX Download</span>
                                 </a>
                             </div>
@@ -486,7 +487,7 @@
                                 <span class="strecke-alter" data-i18n="alter.2km">8–12 Jahre</span>
                                 <span class="route-disclaimer" data-i18n="strecke.disclaimer">* Streckenverlauf unter Vorbehalt - noch in Abstimmung mit Gemeinde</span>
                                 <a href="assets/courses/2km.gpx" class="btn btn-secondary gpx-download" download>
-                                    <img src="https://cdn-icons-png.flaticon.com/512/2163/2163161.png" alt="GPX Icon" class="gpx-thumb">
+                                    <img src="assets/images/icon-gpx.svg" alt="GPX Icon" class="gpx-thumb">
                                     <span>GPX Download</span>
                                 </a>
                             </div>
@@ -502,7 +503,7 @@
                                 <span class="strecke-alter" data-i18n="alter.5km">ab 13 Jahre</span>
                                 <span class="route-disclaimer" data-i18n="strecke.disclaimer">* Streckenverlauf unter Vorbehalt - noch in Abstimmung mit Gemeinde</span>
                                 <a href="assets/courses/5km.gpx" class="btn btn-secondary gpx-download" download>
-                                    <img src="https://cdn-icons-png.flaticon.com/512/2163/2163161.png" alt="GPX Icon" class="gpx-thumb">
+                                    <img src="assets/images/icon-gpx.svg" alt="GPX Icon" class="gpx-thumb">
                                     <span>GPX Download</span>
                                 </a>
                             </div>
@@ -518,7 +519,7 @@
                                 <span class="strecke-alter" data-i18n="alter.10km">ab 16 Jahre</span>
                                 <span class="route-disclaimer" data-i18n="strecke.disclaimer">* Streckenverlauf unter Vorbehalt - noch in Abstimmung mit Gemeinde</span>
                                 <a href="assets/courses/10km.gpx" class="btn btn-secondary gpx-download" download>
-                                    <img src="https://cdn-icons-png.flaticon.com/512/2163/2163161.png" alt="GPX Icon" class="gpx-thumb">
+                                    <img src="assets/images/icon-gpx.svg" alt="GPX Icon" class="gpx-thumb">
                                     <span>GPX Download</span>
                                 </a>
                             </div>
@@ -674,7 +675,7 @@
             </style>
             <div class="container">
                 <div class="faq-inner">
-                    <h2 data-i18n="faq.title">Häufige Fragen</h2>
+                    <h2 data-i18n="faq.title">FAQ</h2>
 
                     <details class="faq-item">
                         <summary data-i18n="faq.q1">Wie und bis wann kann ich mich anmelden?</summary>
@@ -937,10 +938,7 @@
         </div>
     </div>
 
-    <!-- Leaflet & Plugins -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
-    <script src="https://unpkg.com/@raruto/leaflet-elevation@2.5.2/dist/leaflet-elevation.js"></script>
+    <!-- Karten-Logik: lädt Leaflet + Plugins dynamisch bei Bedarf nach -->
     <script src="js/maps.js"></script>
 
     <!-- Newsletter Form Handler -->
