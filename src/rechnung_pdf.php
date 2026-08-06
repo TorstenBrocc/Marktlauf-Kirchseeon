@@ -1,10 +1,11 @@
 <?php
 /**
- * Rechnungs-PDF-Renderer (Sponsoring) im Marktlauf-CI.
+ * Rechnungs-PDF-Renderer (Sponsoring) — Layout exakt nach dem Design-Briefing
+ * (A4, Satzspiegel 174×265, Ränder oben 14 / seitlich 18 / unten 18).
  *
- * Nutzt FPDF (lib/fpdf, core font Helvetica). Der Kernfont ist Latin-1 —
- * alle Texte werden daher von UTF-8 nach Windows-1252 konvertiert (Umlaute, €).
- * Layout erfüllt die Pflichtangaben nach §14 UStG.
+ * Schriften: Montserrat (Versal/Überschriften), Poppins (Fließtext) — eingebettet
+ * in lib/fpdf/font. Grün erscheint nur an vier Textstellen (Absenderzeile,
+ * Rechnungsnummer, h1, Betrag). Texte UTF-8 -> Windows-1252 (Umlaute, €).
  */
 
 declare(strict_types=1);
@@ -14,18 +15,24 @@ require_once __DIR__ . '/rechnung.php';
 
 class RechnungPdf extends FPDF
 {
-    /** @var array Vereins-Stammdaten */
     private array $s;
-    /** @var array Rechnungs-Snapshot */
     private array $r;
-    /** @var string Fortlaufende Nummer oder '' (Entwurf) */
     private string $nummer;
 
-    // Marken-Farben (RGB)
-    private array $gruen = [0, 150, 64];    // #009640
-    private array $gold  = [244, 184, 30];  // #f4b81e
-    private array $ink   = [31, 42, 34];    // #1f2a22
-    private array $grau  = [110, 120, 114];
+    // Farben (Briefing §3/§4)
+    private array $green1 = [0, 150, 64];    // #009640 Absenderzeile
+    private array $green2 = [0, 114, 48];    // #007230 h1, Rechnungsnummer, Betrag
+    private array $ink    = [31, 42, 34];    // #1f2a22
+    private array $body   = [51, 65, 85];    // #334155 Fließtext
+    private array $label  = [100, 116, 139]; // #64748b Labels, Footer-Überschriften
+    private array $muted  = [148, 163, 184]; // #94a3b8 Rücksendezeile, Tabellenkopf, Zeitraum, Footertext
+    private array $desc   = [71, 85, 105];   // #475569 Positionsbeschreibung, Summen
+    private array $lnHead = [230, 232, 224]; // #e6e8e0 Kopftrenner/Footerlinie/Box
+    private array $lnPos  = [236, 238, 232]; // #eceee8 Positions-/Summentrenner
+    private array $lnMeta = [241, 243, 238]; // #f1f3ee Metadaten-Trenner
+
+    private float $L = 18.0;
+    private float $R = 192.0;
 
     public function __construct(array $snapshot, string $nummer)
     {
@@ -33,13 +40,17 @@ class RechnungPdf extends FPDF
         $this->s      = rechnungStammdaten();
         $this->r      = $snapshot;
         $this->nummer = $nummer;
-        $this->SetAutoPageBreak(true, 42); // Platz für den 3-spaltigen Footer
-        $this->SetMargins(20, 18, 20);
+        $this->SetAutoPageBreak(false);
+        $this->SetMargins(18, 14, 18);
+        $this->AddFont('pop', '', 'Poppins-Light.php');      // 300
+        $this->AddFont('popmed', '', 'Poppins-Medium.php');  // 500
+        $this->AddFont('popsb', '', 'Poppins-SemiBold.php'); // 600
+        $this->AddFont('mont', '', 'Montserrat-SemiBold.php');// 600
+        $this->AddFont('montbd', '', 'Montserrat-Bold.php'); // 700
         $this->SetTitle($this->t('Rechnung ' . ($nummer !== '' ? $nummer : 'Entwurf')));
         $this->SetCreator($this->t('ATSV Kirchseeon Marktlauf'));
     }
 
-    /** UTF-8 -> Windows-1252 für die FPDF-Kernfonts. */
     private function t(string $s): string
     {
         return iconv('UTF-8', 'windows-1252//TRANSLIT', $s) ?: $s;
@@ -47,271 +58,305 @@ class RechnungPdf extends FPDF
 
     private function eur(float $v): string
     {
-        return number_format($v, 2, ',', '.') . ' ' . "\xE2\x82\xAC"; // UTF-8 €, wird in t() konvertiert
+        return number_format($v, 2, ',', '.') . ' ' . "\xE2\x82\xAC";
     }
 
-    // --- Kopfzeile: ATSV-Wappen | Trennstrich | Marktlauf-Logo (gleiche Höhe) ---
-    public function Header(): void
+    /** Versal-Laufweite (character spacing) in Punkt setzen; mit 0 zurücksetzen. */
+    private function tc(float $pt): void
     {
-        $x = 20; $y = 12; $h = 17;
-        $wappen = __DIR__ . '/../assets/images/ATSV_Logo-750x968.png';
-        $markt  = __DIR__ . '/../assets/images/marktlauf-wordmark.png'; // eng beschnitten (kein transparenter Rand)
-
-        $cursor = $x;
-        if (is_file($wappen)) {
-            $this->Image($wappen, $cursor, $y, 0, $h); // Breite aus Höhe (750x968)
-            $cursor += $h * 750 / 968 + 5;
-        }
-        // senkrechter Trennstrich
-        $this->SetDrawColor(...$this->gruen);
-        $this->SetLineWidth(0.5);
-        $this->Line($cursor, $y + 1, $cursor, $y + $h - 1);
-        $cursor += 6;
-        if (is_file($markt)) {
-            // Marktlauf-Wortmarke 10 % kleiner als das Wappen, vertikal mittig dazu
-            $mh = $h * 0.9;
-            $this->Image($markt, $cursor, $y + ($h - $mh) / 2, 0, $mh);
-        }
-        // feine grüne Linie unter dem Briefkopf
-        $this->SetLineWidth(0.5);
-        $this->SetDrawColor(...$this->gruen);
-        $this->Line(20, $y + $h + 5, 190, $y + $h + 5);
-        $this->SetLineWidth(0.2);
-        $this->SetY($y + $h + 12); // Cursor unter den Briefkopf für den Body
+        $this->_out(sprintf('BT %.3F Tc ET', $pt));
     }
 
-    // --- Fußzeile: 3-spaltiger Vereinsbriefkopf-Footer ---
-    public function Footer(): void
+    private function trackedCell(float $w, float $h, string $txt, float $spacing, int $ln, string $align): void
     {
-        $s = $this->s;
-        $this->SetY(-38);
-        $this->SetDrawColor(...$this->gruen);
-        $this->SetLineWidth(0.4);
-        $this->Line(20, $this->GetY(), 190, $this->GetY());
-        $this->SetLineWidth(0.2);
-        $this->Ln(2.5);
-
-        $yTop = $this->GetY();
-        $colW = (190 - 20) / 3;
-        $this->SetFont('Helvetica', '', 9.0);
-        $this->SetTextColor(...$this->grau);
-
-        $col1 = [$s['verein'], $s['strasse'], $s['plz'] . ' ' . $s['ort'], $s['burozeiten']];
-        $col2 = ['Telefon: ' . $s['telefon'], 'Telefax: ' . $s['telefax'], $s['web'], $s['email']];
-        $col3 = [$s['bank1_name'], 'IBAN ' . $s['bank1_iban'], $s['bank2_name'], 'IBAN ' . $s['bank2_iban']];
-
-        foreach ([[20, $col1], [20 + $colW, $col2], [20 + 2 * $colW, $col3]] as [$cx, $lines]) {
-            $this->SetXY($cx, $yTop);
-            foreach ($lines as $ln) {
-                $this->SetX($cx);
-                $this->MultiCell($colW - 2, 4.8, $this->t($ln), 0, 'L');
-            }
-        }
+        $this->tc($spacing);
+        $this->Cell($w, $h, $this->t($txt), 0, $ln, $align);
+        $this->tc(0);
     }
+
+    private function hline(float $x1, float $x2, float $y, array $color, float $width = 0.2): void
+    {
+        $this->SetDrawColor(...$color);
+        $this->SetLineWidth($width);
+        $this->Line($x1, $y, $x2, $y);
+    }
+
+    private function RoundedRect(float $x, float $y, float $w, float $h, float $r, string $style = 'D'): void
+    {
+        $k = $this->k; $hp = $this->h;
+        $op = ($style === 'F') ? 'f' : (($style === 'FD' || $style === 'DF') ? 'B' : 'S');
+        $m = 4 / 3 * (sqrt(2) - 1);
+        $this->_out(sprintf('%.2F %.2F m', ($x + $r) * $k, ($hp - $y) * $k));
+        $xc = $x + $w - $r; $yc = $y + $r;
+        $this->_out(sprintf('%.2F %.2F l', $xc * $k, ($hp - $y) * $k));
+        $this->_arc($xc + $r * $m, $yc - $r, $xc + $r, $yc - $r * $m, $xc + $r, $yc);
+        $xc = $x + $w - $r; $yc = $y + $h - $r;
+        $this->_out(sprintf('%.2F %.2F l', ($x + $w) * $k, ($hp - $yc) * $k));
+        $this->_arc($xc + $r, $yc + $r * $m, $xc + $r * $m, $yc + $r, $xc, $yc + $r);
+        $xc = $x + $r; $yc = $y + $h - $r;
+        $this->_out(sprintf('%.2F %.2F l', $xc * $k, ($hp - ($y + $h)) * $k));
+        $this->_arc($xc - $r * $m, $yc + $r, $xc - $r, $yc + $r * $m, $xc - $r, $yc);
+        $xc = $x + $r; $yc = $y + $r;
+        $this->_out(sprintf('%.2F %.2F l', $x * $k, ($hp - $yc) * $k));
+        $this->_arc($xc - $r, $yc - $r * $m, $xc - $r * $m, $yc - $r, $xc, $yc - $r);
+        $this->_out($op);
+    }
+
+    private function _arc(float $x1, float $y1, float $x2, float $y2, float $x3, float $y3): void
+    {
+        $h = $this->h; $k = $this->k;
+        $this->_out(sprintf('%.2F %.2F %.2F %.2F %.2F %.2F c',
+            $x1 * $k, ($h - $y1) * $k, $x2 * $k, ($h - $y2) * $k, $x3 * $k, ($h - $y3) * $k));
+    }
+
+    public function Header(): void {}
+    public function Footer(): void {}
 
     public function render(): void
     {
         $this->AddPage();
+        $L = $this->L; $R = $this->R;
 
-        // --- Absender-Kleinzeile über dem Empfänger (DIN 5008) ---
-        $this->SetFont('Helvetica', '', 7.5);
-        $this->SetTextColor(...$this->grau);
-        $absender = $this->s['verein'] . ' · ' . $this->s['abteilung'] . ' · '
-                  . $this->s['strasse'] . ' · ' . $this->s['plz'] . ' ' . $this->s['ort'];
-        $this->Cell(0, 4, $this->t($absender), 0, 1, 'L');
-        $this->Ln(2);
+        // ===== 1 · Kopf =====
+        $this->SetXY($L, 14);
+        $this->SetFont('montbd', '', 8);
+        $this->SetTextColor(...$this->green1);
+        $this->trackedCell(0, 4, 'ATSV KIRCHSEEON 1906 E.V.', 0.8, 1, 'L');
 
-        // --- Empfänger-Adressblock ---
+        $this->SetXY($L, 18.5);
+        $this->SetFont('mont', '', 17);
         $this->SetTextColor(...$this->ink);
-        $this->SetFont('Helvetica', '', 11);
-        $empf = [];
-        $empf[] = (string) ($this->r['empfaenger_firma'] ?? '');
+        $this->Cell(0, 9, $this->t('Abteilung Marktlauf'), 0, 1, 'L');
+
+        $shield = __DIR__ . '/../assets/images/ATSV_Logo-750x968.png';
+        if (is_file($shield)) {
+            $this->Image($shield, $R - 18 * 750 / 968, 12, 0, 18);
+        }
+
+        // ===== 2 · Kopftrenner =====
+        $this->hline($L, $R, 34, $this->lnHead, 0.3);
+
+        // ===== 3 · Zweispalter: Anschrift links, Metadaten rechts =====
+        // Rücksendezeile
+        $this->SetXY($L, 39);
+        $this->SetFont('pop', '', 7);
+        $this->SetTextColor(...$this->muted);
+        $this->Cell(0, 3.5, $this->t($this->s['verein'] . ' · ' . $this->s['abteilung'] . ' · '
+            . $this->s['strasse'] . ' · ' . $this->s['plz'] . ' ' . $this->s['ort']), 0, 1, 'L');
+        // Empfänger
+        $this->SetXY($L, 45);
+        $this->SetFont('popsb', '', 11);
+        $this->SetTextColor(...$this->ink);
+        $this->Cell(0, 6, $this->t((string) $this->r['empfaenger_firma']), 0, 1, 'L');
+        $this->SetFont('pop', '', 11);
         if (!empty($this->r['empfaenger_strasse'])) {
-            $empf[] = (string) $this->r['empfaenger_strasse'];
+            $this->SetX($L);
+            $this->Cell(0, 5.6, $this->t((string) $this->r['empfaenger_strasse']), 0, 1, 'L');
         }
         $plzOrt = trim(($this->r['empfaenger_plz'] ?? '') . ' ' . ($this->r['empfaenger_ort'] ?? ''));
         if ($plzOrt !== '') {
-            $empf[] = $plzOrt;
-        }
-        foreach ($empf as $zeile) {
-            $this->Cell(0, 5.5, $this->t($zeile), 0, 1, 'L');
+            $this->SetX($L);
+            $this->Cell(0, 5.6, $this->t($plzOrt), 0, 1, 'L');
         }
 
-        // --- Meta-Block rechts (Datum, Nummer, Steuer-IDs) ---
+        // Metadaten rechts
         $datum = !empty($this->r['erstellt_am'])
             ? date('d.m.Y', strtotime((string) $this->r['erstellt_am']))
             : date('d.m.Y');
-        $nummerAnzeige = $this->nummer !== '' ? $this->nummer : '(wird vom Kassier vergeben)';
-
-        $metaY = 52;
-        $this->SetXY(120, $metaY);
-        $this->SetFont('Helvetica', '', 9.5);
-        $this->SetTextColor(...$this->ink);
+        $nummerAnzeige = $this->nummer !== '' ? $this->nummer : '(wird vergeben)';
+        $mx = 120.0; $lblW = 40.0; $valW = $R - $mx - $lblW;
+        $my = 39.0; $rowH = 9.0;
         $meta = [
-            ['Rechnungsdatum', $datum],
-            ['Rechnungs-Nr.',  $nummerAnzeige],
-            ['Steuernummer',   $this->s['steuernummer']],
-            ['USt-IdNr.',      $this->s['ust_id']],
+            ['Rechnungsdatum', $datum, false],
+            ['Rechnungs-Nr.',  $nummerAnzeige, $this->nummer !== ''],
+            ['Steuernummer',   $this->s['steuernummer'], false],
+            ['USt-IdNr.',      $this->s['ust_id'], false],
         ];
-        foreach ($meta as [$label, $wert]) {
-            $this->SetX(120);
-            $this->SetFont('Helvetica', '', 9.5);
-            $this->SetTextColor(...$this->grau);
-            $this->Cell(28, 5.5, $this->t($label), 0, 0, 'L');
-            $this->SetTextColor(...$this->ink);
-            $this->SetFont('Helvetica', 'B', 9.5);
-            $this->Cell(0, 5.5, $this->t($wert), 0, 1, 'L');
+        foreach ($meta as $i => [$lab, $val, $green]) {
+            $y = $my + $i * $rowH;
+            if ($i > 0) {
+                $this->hline($mx, $R, $y, $this->lnMeta, 0.2); // Trenner zwischen Zeilen
+            }
+            $this->SetXY($mx, $y + 2.6);
+            $this->SetFont('pop', '', 9);
+            $this->SetTextColor(...$this->label);
+            $this->Cell($lblW, 5, $this->t($lab), 0, 0, 'L');
+            if ($green) {
+                $this->SetFont('popsb', '', 9);
+                $this->SetTextColor(...$this->green2);
+            } else {
+                $this->SetFont('popmed', '', 9);
+                $this->SetTextColor(...$this->ink);
+            }
+            $this->Cell($valW, 5, $this->t($val), 0, 0, 'R');
         }
 
-        // --- Titel ---
-        $this->SetY(92);
-        $this->SetFont('Helvetica', 'B', 20);
-        $this->SetTextColor(...$this->gruen);
+        // ===== 4 · h1 =====
+        $this->SetXY($L, 82);
+        $this->SetFont('mont', '', 23);
+        $this->SetTextColor(...$this->green2);
         $this->Cell(0, 10, $this->t('Rechnung'), 0, 1, 'L');
-        $this->Ln(4);
 
-        // --- Einleitung ---
-        $this->SetFont('Helvetica', '', 10.5);
-        $this->SetTextColor(...$this->ink);
-        $this->MultiCell(0, 5.5, $this->t(
-            'Sehr geehrte Damen und Herren,'
-        ), 0, 'L');
-        $this->Ln(1);
-        $this->MultiCell(0, 5.5, $this->t(
+        // ===== 5 · Anschreiben =====
+        $this->SetXY($L, 95);
+        $this->SetFont('pop', '', 10.5);
+        $this->SetTextColor(...$this->body);
+        $this->Cell(0, 6, $this->t('Sehr geehrte Damen und Herren,'), 0, 1, 'L');
+        $this->SetX($L);
+        $this->MultiCell($R - $L, 6, $this->t(
             'für Ihr Sponsoring berechnen wir gemäß unserer Vereinbarung die folgende Leistung:'
         ), 0, 'L');
-        $this->Ln(4);
 
-        // --- Leistungstabelle ---
-        $this->positionsTabelle();
+        // ===== 6 · Positionstabelle =====
+        $ty = 118.0;
+        $this->SetXY($L, $ty);
+        $this->SetFont('mont', '', 7.5);
+        $this->SetTextColor(...$this->muted);
+        $this->trackedCell(120, 5, 'LEISTUNG', 0.9, 0, 'L');
+        $this->trackedCell($R - $L - 120, 5, 'NETTO', 0.9, 1, 'R');
+        $this->hline($L, $R, $ty + 6, $this->ink, 0.4); // kräftige Tabellenkopf-Unterkante
 
-        // --- Zahlungshinweis ---
-        $this->Ln(9);
-        $this->SetFont('Helvetica', '', 10.5);
-        $this->SetTextColor(...$this->ink);
-        $this->MultiCell(0, 5.5, $this->t(
-            'Bitte überweisen Sie den Rechnungsbetrag innerhalb von 14 Tagen auf folgendes Konto:'
-        ), 0, 'L');
-        $this->Ln(3);
-
-        $this->zahlungsBox();
-
-        // --- Dank ---
-        $this->Ln(9);
-        $this->SetFont('Helvetica', '', 10.5);
-        $this->MultiCell(0, 5.5, $this->t(
-            'Vielen Dank für Ihre Unterstützung des Marktlaufs.'
-        ), 0, 'L');
-        $this->Ln(4);
-        $this->MultiCell(0, 5.5, $this->t(
-            'Mit sportlichen Grüßen' . "\n" . $this->s['verein'] . ' – ' . $this->s['abteilung']
-        ), 0, 'L');
-    }
-
-    private function positionsTabelle(): void
-    {
-        $x0 = 20;
-        $wBeschr = 128;
-        $wNetto  = 42;
-
-        // Kopf
-        $this->SetX($x0);
-        $this->SetFillColor(...$this->gruen);
-        $this->SetTextColor(255, 255, 255);
-        $this->SetFont('Helvetica', 'B', 9.5);
-        $this->Cell($wBeschr, 8, $this->t('  Leistung'), 0, 0, 'L', true);
-        $this->Cell($wNetto, 8, $this->t('Netto  '), 0, 1, 'R', true);
-
-        // Zeile
-        $this->SetTextColor(...$this->ink);
-        $this->SetFont('Helvetica', '', 10);
-
-        $beschr = (string) ($this->r['leistung'] ?? '');
-        $zeitraum = (string) ($this->r['zeitraum'] ?? '');
-
-        $yStart = $this->GetY();
-        $this->SetX($x0);
-        // Beschreibung als MultiCell, Netto rechts daneben
-        $this->MultiCell($wBeschr, 5.5, $this->t('  ' . $beschr), 0, 'L');
-        $yEnd = $this->GetY();
-        // Netto-Wert auf Höhe des Zeilenstarts
-        $this->SetXY($x0 + $wBeschr, $yStart);
-        $this->SetFont('Helvetica', '', 10);
-        $this->Cell($wNetto, 5.5, $this->t($this->eur((float) $this->r['netto']) . '  '), 0, 1, 'R');
-
-        // Leistungszeitraum als Unterzeile
-        $this->SetXY($x0, max($yEnd, $yStart + 5.5));
-        $this->SetFont('Helvetica', '', 8.5);
-        $this->SetTextColor(...$this->grau);
-        $this->Cell($wBeschr, 5, $this->t('  Leistungszeitraum: ' . $zeitraum), 0, 1, 'L');
-
-        // Trennlinie
-        $this->Ln(1);
-        $this->SetDrawColor(210, 214, 211);
-        $this->Line($x0, $this->GetY(), $x0 + $wBeschr + $wNetto, $this->GetY());
-        $this->Ln(2);
-
-        // Summen
-        $this->summeZeile('Nettobetrag', $this->eur((float) $this->r['netto']), false);
-        $ustLabel = 'zzgl. ' . rtrim(rtrim(number_format((float) $this->r['ust_satz'], 2, ',', '.'), '0'), ',') . ' % USt';
-        $this->summeZeile($ustLabel, $this->eur((float) $this->r['ust_betrag']), false);
-        $this->summeZeile('Rechnungsbetrag', $this->eur((float) $this->r['brutto']), true);
-    }
-
-    private function summeZeile(string $label, string $wert, bool $betont): void
-    {
-        $x0 = 20;
-        $wBeschr = 128;
-        $wNetto  = 42;
-        $this->SetX($x0 + $wBeschr - 30);
-        if ($betont) {
-            $this->SetFillColor(244, 246, 244);
-            $this->SetFont('Helvetica', 'B', 11);
-            $this->SetTextColor(...$this->gruen);
-            $this->Cell(30 + 0, 8, $this->t($label), 0, 0, 'R', true);
-            $this->Cell($wNetto, 8, $this->t($wert . '  '), 0, 1, 'R', true);
+        // Leistung in Titel + Beschreibung zerlegen
+        $voll = (string) ($this->r['leistung'] ?? '');
+        $pos  = strpos($voll, ':');
+        if ($pos !== false) {
+            $titel  = trim(substr($voll, 0, $pos));
+            $beschr = trim(substr($voll, $pos + 1));
         } else {
-            $this->SetFont('Helvetica', '', 10);
-            $this->SetTextColor(...$this->ink);
-            $this->Cell(30 + 0, 6.5, $this->t($label), 0, 0, 'R');
-            $this->Cell($wNetto, 6.5, $this->t($wert . '  '), 0, 1, 'R');
+            $titel  = $voll;
+            $beschr = '';
         }
-    }
+        $beschr = str_replace(', ', ' · ', rtrim($beschr, '.'));
 
-    private function zahlungsBox(): void
-    {
-        $x0 = 20;
-        $w = 170;
-        $yStart = $this->GetY();
-        $this->SetFillColor(247, 249, 247);
-        $this->SetDrawColor(...$this->gruen);
-        // Rahmen mit Inhalt
-        $lines = [
+        $this->SetXY($L, $ty + 9);
+        $this->SetFont('popsb', '', 10.5);
+        $this->SetTextColor(...$this->ink);
+        $this->Cell(120, 6, $this->t($titel), 0, 0, 'L');
+        $this->SetFont('popmed', '', 10.5);
+        $this->Cell($R - $L - 120, 6, $this->t($this->eur((float) $this->r['netto'])), 0, 1, 'R');
+
+        if ($beschr !== '') {
+            $this->SetX($L);
+            $this->SetFont('pop', '', 9.5);
+            $this->SetTextColor(...$this->desc);
+            $this->MultiCell(120, 5, $this->t($beschr), 0, 'L');
+        }
+        $this->SetX($L);
+        $this->SetFont('pop', '', 8.5);
+        $this->SetTextColor(...$this->muted);
+        $this->Cell(0, 5, $this->t('Leistungszeitraum: ' . ($this->r['zeitraum'] ?? '')), 0, 1, 'L');
+        $posEnd = $this->GetY() + 2;
+        $this->hline($L, $R, $posEnd, $this->lnPos, 0.2);
+
+        // ===== 7 · Summenblock (rechtsbündig) =====
+        $sx = 118.0; $slw = 42.0; $svw = $R - $sx - $slw;
+        $sy = $posEnd + 6;
+        // Nettobetrag
+        $this->SetXY($sx, $sy);
+        $this->SetFont('pop', '', 10);
+        $this->SetTextColor(...$this->desc);
+        $this->Cell($slw, 6, $this->t('Nettobetrag'), 0, 0, 'L');
+        $this->Cell($svw, 6, $this->t($this->eur((float) $this->r['netto'])), 0, 1, 'R');
+        $this->hline($sx, $R, $sy + 7.5, $this->lnPos, 0.2);
+        // USt
+        $ustLabel = 'zzgl. ' . rtrim(rtrim(number_format((float) $this->r['ust_satz'], 2, ',', '.'), '0'), ',') . ' % USt';
+        $this->SetXY($sx, $sy + 10);
+        $this->Cell($slw, 6, $this->t($ustLabel), 0, 0, 'L');
+        $this->Cell($svw, 6, $this->t($this->eur((float) $this->r['ust_betrag'])), 0, 1, 'R');
+        $this->hline($sx, $R, $sy + 17.5, $this->lnPos, 0.2);
+        // Rechnungsbetrag
+        $this->SetXY($sx, $sy + 20.5);
+        $this->SetFont('montbd', '', 8);
+        $this->SetTextColor(...$this->ink);
+        $this->trackedCell($slw, 10, 'RECHNUNGSBETRAG', 0.8, 0, 'L');
+        $this->SetFont('mont', '', 15);
+        $this->SetTextColor(...$this->green2);
+        $this->Cell($svw, 10, $this->t($this->eur((float) $this->r['brutto'])), 0, 1, 'R');
+
+        // ===== 8 · Zahlungskasten =====
+        $by = $sy + 34; $bh = 40.0;
+        $this->SetDrawColor(...$this->lnHead);
+        $this->SetLineWidth(0.3);
+        $this->RoundedRect($L, $by, $R - $L, $bh, 3, 'D');
+
+        $this->SetXY($L + 5, $by + 5);
+        $this->SetFont('popsb', '', 10);
+        $this->SetTextColor(...$this->ink);
+        $this->Cell(0, 5, $this->t('Bitte überweisen Sie den Rechnungsbetrag innerhalb von 14 Tagen auf folgendes Konto:'), 0, 1, 'L');
+
+        $rows = [
             ['Kontoinhaber', $this->s['kontoinhaber']],
             ['IBAN',         $this->s['iban']],
             ['Bank',         $this->s['bank']],
             ['Verwendung',   'Rechnung ' . ($this->nummer !== '' ? $this->nummer : '<Nr.>')],
         ];
-        $h = 6.5 * count($lines) + 4;
-        $this->Rect($x0, $yStart, $w, $h, 'DF');
-        $this->SetXY($x0 + 3, $yStart + 2);
-        foreach ($lines as [$label, $wert]) {
-            $this->SetX($x0 + 3);
-            $this->SetFont('Helvetica', '', 9);
-            $this->SetTextColor(...$this->grau);
-            $this->Cell(28, 6.5, $this->t($label), 0, 0, 'L');
-            $this->SetFont('Helvetica', 'B', 9.5);
+        foreach ($rows as $j => [$lab, $val]) {
+            $yy = $by + 12.5 + $j * 6.2;
+            $this->SetXY($L + 5, $yy);
+            $this->SetFont('pop', '', 9.5);
+            $this->SetTextColor(...$this->label);
+            $this->Cell(30, 5, $this->t($lab), 0, 0, 'L');
+            $this->SetFont('popsb', '', 9.5);
             $this->SetTextColor(...$this->ink);
-            $this->Cell(0, 6.5, $this->t($wert), 0, 1, 'L');
+            $this->Cell(0, 5, $this->t($val), 0, 0, 'L');
         }
-        $this->SetY($yStart + $h);
+
+        // ===== 9 · Dank + 10 · Grußformel =====
+        $gy = $by + $bh + 5;
+        $this->SetXY($L, $gy);
+        $this->SetFont('pop', '', 10.5);
+        $this->SetTextColor(...$this->body);
+        $this->Cell(0, 6, $this->t('Vielen Dank für Ihre Unterstützung des Marktlaufs.'), 0, 1, 'L');
+        $this->SetXY($L, $gy + 8);
+        $this->Cell(0, 6, $this->t('Mit sportlichen Grüßen'), 0, 1, 'L');
+        $this->SetXY($L, $gy + 14);
+        $this->SetFont('popsb', '', 10.5);
+        $this->SetTextColor(...$this->ink);
+        $this->Cell(0, 6, $this->t($this->s['verein'] . ' — ' . $this->s['abteilung']), 0, 1, 'L');
+
+        // ===== 12 · Fußzeile (am unteren Satzspiegelrand) =====
+        $this->drawFooter();
+    }
+
+    private function drawFooter(): void
+    {
+        $L = $this->L; $R = $this->R;
+        $bottom = 279.0;            // 297 - 18
+        $lineY  = $bottom - 23.6;   // Linie oben im Footerblock
+        $this->hline($L, $R, $lineY, $this->lnHead, 0.3);
+
+        $colTop = $lineY + 4;
+        $cols = [
+            [$L,     'VEREIN', [
+                $this->s['verein'], $this->s['strasse'], $this->s['plz'] . ' ' . $this->s['ort'], $this->s['burozeiten'],
+            ]],
+            [77.0,   'KONTAKT', [
+                'Telefon ' . str_replace('/', ' ', $this->s['telefon']),
+                'Telefax ' . str_replace('/', ' ', $this->s['telefax']),
+                $this->s['email'], $this->s['web'],
+            ]],
+            [137.0,  'BANKVERBINDUNG', [
+                $this->s['bank1_name'], $this->s['bank1_iban'], $this->s['bank2_name'], $this->s['bank2_iban'],
+            ]],
+        ];
+        foreach ($cols as [$cx, $head, $lines]) {
+            $this->SetXY($cx, $colTop);
+            $this->SetFont('mont', '', 7);
+            $this->SetTextColor(...$this->label);
+            $this->trackedCell(54, 4.2, $head, 0.7, 2, 'L');
+            $this->SetFont('pop', '', 7.5);
+            $this->SetTextColor(...$this->muted);
+            foreach ($lines as $ln) {
+                $this->MultiCell(54, 3.8, $this->t($ln), 0, 'L');
+                $this->SetX($cx);
+            }
+        }
     }
 }
 
 /**
  * Erzeugt das Rechnungs-PDF aus einem Snapshot-Array.
- * $nummer='' => Entwurf (Nummer als Platzhalter). Rückgabe: PDF als String.
- * Wenn $zielDatei gesetzt ist, wird das PDF zusätzlich dorthin geschrieben.
+ * $nummer='' => Entwurf. Rückgabe: PDF als String; optional zusätzlich in $zielDatei.
  */
 function rechnungPdfErzeugen(array $snapshot, string $nummer = '', string $zielDatei = ''): string
 {
