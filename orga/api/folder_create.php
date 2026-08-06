@@ -13,7 +13,7 @@ require_once __DIR__ . '/../../src/google_drive.php';
 
 $tab    = ($_POST['tab'] ?? 'orga') === 'helfer' ? 'helfer' : 'orga';
 $parent = trim((string) ($_POST['parent'] ?? ''));
-$back   = 'dateien.php?tab=' . $tab . ($parent !== '' ? '&folder=' . urlencode($parent) : '');
+$back   = '../dateien.php?tab=' . $tab . ($parent !== '' ? '&folder=' . urlencode($parent) : '');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !verifyCsrfToken($_POST['csrf_token'] ?? '')) {
     $_SESSION['flash_error'] = 'Ungültige Anfrage.';

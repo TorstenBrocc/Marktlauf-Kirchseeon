@@ -14,7 +14,7 @@ require_once __DIR__ . '/../../src/datei_audit.php';
 
 $tab    = ($_POST['tab'] ?? 'orga') === 'helfer' ? 'helfer' : 'orga';
 $folder = trim((string) ($_POST['folder'] ?? ''));
-$back   = 'dateien.php?tab=' . $tab . ($folder !== '' ? '&folder=' . urlencode($folder) : '');
+$back   = '../dateien.php?tab=' . $tab . ($folder !== '' ? '&folder=' . urlencode($folder) : '');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !verifyCsrfToken($_POST['csrf_token'] ?? '')) {
     $_SESSION['flash_error'] = 'Ungültige Anfrage.';
