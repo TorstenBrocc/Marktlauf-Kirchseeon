@@ -258,52 +258,47 @@ function sendSponsorAnschreiben(
  * @return array<array{path:string,name:string,mime:string}>
  */
 function plakateAnhang(PDO $pdo): array {
-    try {
-        $jahr = driveAktivesJahr($pdo);
-        $stmt = $pdo->prepare("SELECT dateiname, originalname, drive_file_id FROM dateien WHERE bereich = 'orga' AND kategorie = 'plakat' AND (jahr = :jahr OR jahr IS NULL) ORDER BY id ASC");
-        $stmt->execute(['jahr' => $jahr]);
-        $rows = $stmt->fetchAll();
-    } catch (PDOException $e) {
-        logError('plakateAnhang DB error: ' . $e->getMessage());
+    if (!driveConfigured()) {
         return [];
     }
-    $base = __DIR__ . '/../../storage/files/orga/';
+    $jahr     = driveRennJahr($pdo);
+    $folderId = drivePlakatFolderId($pdo, $jahr);
+    if ($folderId === null) {
+        logError('plakateAnhang: kein Plakate-Ordner für Renn-Jahr ' . $jahr . ' festgelegt');
+        return [];
+    }
+    try {
+        $files = driveListChildren($folderId);
+    } catch (RuntimeException $e) {
+        logError('plakateAnhang list: ' . $e->getMessage());
+        return [];
+    }
+    // Jede Datei im designierten Plakate-Ordner wird angehängt (Bytes -> Temp-Datei,
+    // via Shutdown-Hook aufgeräumt, damit der pfadbasierte SMTP-Mailer unverändert bleibt).
     $result = [];
-    foreach ($rows as $row) {
-        // Drive-backed plakat: bytes live in the shared drive -> pull into a temp
-        // file (cleaned up at shutdown) so the SMTP mailer's path-based attachment
-        // logic keeps working unchanged.
-        if (!empty($row['drive_file_id'])) {
-            try {
-                $bytes = driveDownload((string) $row['drive_file_id']);
-            } catch (RuntimeException $e) {
-                logError('plakateAnhang Drive-Download: ' . $e->getMessage());
-                continue;
-            }
-            $tmp = tempnam(sys_get_temp_dir(), 'plakat_');
-            if ($tmp === false) {
-                continue;
-            }
-            file_put_contents($tmp, $bytes);
-            register_shutdown_function(static function () use ($tmp) {
-                @unlink($tmp);
-            });
-            $result[] = [
-                'path' => $tmp,
-                'name' => $row['originalname'],
-                'mime' => 'application/pdf',
-            ];
+    foreach ($files as $f) {
+        if ($f['isFolder'] || $f['id'] === '') {
             continue;
         }
-
-        $path = $base . $row['dateiname'];
-        if (is_file($path)) {
-            $result[] = [
-                'path' => $path,
-                'name' => $row['originalname'],
-                'mime' => 'application/pdf',
-            ];
+        try {
+            $bytes = driveDownload($f['id']);
+        } catch (RuntimeException $e) {
+            logError('plakateAnhang download: ' . $e->getMessage());
+            continue;
         }
+        $tmp = tempnam(sys_get_temp_dir(), 'plakat_');
+        if ($tmp === false) {
+            continue;
+        }
+        file_put_contents($tmp, $bytes);
+        register_shutdown_function(static function () use ($tmp) {
+            @unlink($tmp);
+        });
+        $result[] = [
+            'path' => $tmp,
+            'name' => $f['name'],
+            'mime' => $f['mimeType'] !== '' ? $f['mimeType'] : 'application/pdf',
+        ];
     }
     return $result;
 }

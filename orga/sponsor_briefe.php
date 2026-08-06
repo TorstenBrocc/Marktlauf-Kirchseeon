@@ -243,33 +243,33 @@ if (!empty($briefSettings['sponsoring_pakete'])) {
             </form>
 
             <?php if (in_array($slug, ['frei', 'bestaetigung'], true)):
-                try {
-                    $stmtP = $pdo->query("SELECT id, originalname, groesse FROM dateien WHERE bereich = 'orga' AND kategorie = 'plakat' ORDER BY id ASC");
-                    $plakat_rows = $stmtP->fetchAll();
-                } catch (PDOException $e) {
-                    $plakat_rows = [];
+                $plakatFolder = driveConfigured() ? drivePlakatFolderId($pdo, driveRennJahr($pdo)) : null;
+                $plakat_files = [];
+                if ($plakatFolder !== null) {
+                    try {
+                        foreach (driveListChildren($plakatFolder) as $pf) { if (!$pf['isFolder']) { $plakat_files[] = $pf; } }
+                    } catch (Throwable $e) { $plakat_files = []; }
                 }
-                $plakate = plakateAnhang($pdo);
             ?>
             <div class="brief-card" style="margin-top:1.25rem">
                 <div class="plakat-section">
                     <div class="plakat-section-header">
-                        <strong>📎 Plakate als PDF-Anhang</strong>
-                        <?php if (count($plakate) > 0): ?>
-                            <span class="plakat-badge"><?= count($plakate) ?> PDF<?= count($plakate) !== 1 ? 's' : '' ?> werden angehängt</span>
+                        <strong>📎 Plakate als Anhang</strong>
+                        <?php if (count($plakat_files) > 0): ?>
+                            <span class="plakat-badge"><?= count($plakat_files) ?> Datei<?= count($plakat_files) !== 1 ? 'en' : '' ?> werden angehängt</span>
                         <?php endif; ?>
                     </div>
-                    <?php if (count($plakat_rows) > 0): ?>
+                    <?php if ($plakatFolder === null): ?>
+                        <p class="brief-hint" style="margin:0.5rem 0;">Kein Plakate-Ordner festgelegt. Öffne unter „Dateien" den gewünschten Ordner und klicke „📌 Als Plakate-Ordner".</p>
+                    <?php elseif (count($plakat_files) > 0): ?>
                     <ul class="plakat-liste">
-                        <?php foreach ($plakat_rows as $pr):
-                            $kb = round((int)$pr['groesse'] / 1024);
-                        ?>
+                        <?php foreach ($plakat_files as $pf): $kb = round((int)$pf['size'] / 1024); ?>
                             <li class="plakat-item">
-                                <span title="<?= htmlspecialchars($pr['originalname']) ?>">📄 <?= htmlspecialchars($pr['originalname']) ?></span>
+                                <span title="<?= htmlspecialchars($pf['name']) ?>">📄 <?= htmlspecialchars($pf['name']) ?></span>
                                 <small class="brief-hint"><?= $kb ?> KB</small>
                                 <form method="post" action="api/plakat_loeschen.php" style="margin:0;" onsubmit="return confirm('Plakat löschen?');">
                                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                                    <input type="hidden" name="datei_id" value="<?= (int)$pr['id'] ?>">
+                                    <input type="hidden" name="fid" value="<?= htmlspecialchars($pf['id']) ?>">
                                     <input type="hidden" name="redirect" value="sponsor_briefe.php?slug=<?= urlencode($slug) ?>">
                                     <button type="submit" class="btn btn-secondary btn-del">Löschen</button>
                                 </form>
@@ -277,17 +277,19 @@ if (!empty($briefSettings['sponsoring_pakete'])) {
                         <?php endforeach; ?>
                     </ul>
                     <?php else: ?>
-                    <p class="brief-hint" style="margin:0.5rem 0;">Noch keine Plakate hochgeladen — Anschreiben werden ohne Anhang gesendet.</p>
+                    <p class="brief-hint" style="margin:0.5rem 0;">Der festgelegte Plakate-Ordner ist leer — Anschreiben werden ohne Anhang gesendet.</p>
                     <?php endif; ?>
-                    <p class="plakat-hinweis">⚠️ Bitte immer auf Aktualität achten – es gibt keinen Automatismus, der die letzte Version hochlädt und anhängt. Im Sponsoring-Zirkel immer abstimmen.</p>
+                    <p class="plakat-hinweis">⚠️ Der Anhang kommt live aus dem festgelegten Plakate-Ordner (Renn-Jahr aus den Einstellungen). Was dort liegt, wird angehängt.</p>
+                    <?php if ($plakatFolder !== null): ?>
                     <form method="post" action="api/file_upload.php" enctype="multipart/form-data" class="plakat-upload-form">
                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                        <input type="hidden" name="bereich" value="orga">
-                        <input type="hidden" name="kategorie" value="plakat">
+                        <input type="hidden" name="tab" value="orga">
+                        <input type="hidden" name="folder" value="<?= htmlspecialchars($plakatFolder) ?>">
                         <input type="hidden" name="redirect_after" value="sponsor_briefe.php?slug=<?= urlencode($slug) ?>">
                         <input type="file" name="datei" accept="application/pdf" required style="font-size:0.9rem;">
                         <button type="submit" class="btn btn-primary">PDF hochladen</button>
                     </form>
+                    <?php endif; ?>
                 </div>
             </div>
             <?php endif; ?>

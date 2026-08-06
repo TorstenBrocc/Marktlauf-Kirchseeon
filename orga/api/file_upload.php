@@ -1,6 +1,8 @@
 <?php
 /**
- * Datei-Upload Handler (POST)
+ * Datei-Upload in einen Ordner des geteilten Google-Laufwerks (POST).
+ * Adressiert per Ziel-Ordner-id (folder=). Sicherheit: der Zielordner muss im
+ * geteilten Laufwerk liegen. Behält MIME-Whitelist, 10-MB-Limit und Bild-Downscale.
  */
 
 declare(strict_types=1);
@@ -9,58 +11,52 @@ require_once __DIR__ . '/_auth.php';
 require_once __DIR__ . '/../../src/db.php';
 require_once __DIR__ . '/../../src/logger.php';
 require_once __DIR__ . '/../../src/helpers.php';
-require_once __DIR__ . '/../_dateien_kategorien.php';
 require_once __DIR__ . '/../../src/google_drive.php';
 require_once __DIR__ . '/../../src/datei_audit.php';
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: ../dateien.php');
-    exit;
-}
+$tab    = ($_POST['tab'] ?? 'orga') === 'helfer' ? 'helfer' : 'orga';
+$folder = trim((string) ($_POST['folder'] ?? ''));
+$back   = 'dateien.php?tab=' . $tab . ($folder !== '' ? '&folder=' . urlencode($folder) : '');
 
-$csrfToken = $_POST['csrf_token'] ?? '';
-if (!verifyCsrfToken($csrfToken)) {
+if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !verifyCsrfToken($_POST['csrf_token'] ?? '')) {
     $_SESSION['flash_error'] = 'Ungültige Anfrage.';
-    header('Location: ../dateien.php');
+    header('Location: ' . $back);
     exit;
 }
 
 $user = getCurrentUserFromGuard();
-$bereich = $_POST['bereich'] ?? '';
+$pdo  = getDbConnection();
 
-if (!in_array($bereich, ['orga', 'helfer'], true)) {
-    $_SESSION['flash_error'] = 'Ungültiger Bereich.';
-    header('Location: ../dateien.php');
+if (!driveConfigured() || $folder === '') {
+    $_SESSION['flash_error'] = 'Google Drive nicht konfiguriert oder kein Zielordner.';
+    header('Location: ' . $back);
     exit;
 }
 
-$kategorie = dateiKategorieNormalisieren($_POST['kategorie'] ?? null);
+// Security: target must be a folder inside our shared drive.
+$fmeta = driveFileMeta($folder);
+if ($fmeta === null
+    || (string) ($fmeta['driveId'] ?? '') !== driveSharedDriveId()
+    || (string) ($fmeta['mimeType'] ?? '') !== DRIVE_FOLDER_MIME) {
+    $_SESSION['flash_error'] = 'Zielordner ungültig.';
+    header('Location: ' . $back);
+    exit;
+}
 
 if (!isset($_FILES['datei']) || $_FILES['datei']['error'] !== UPLOAD_ERR_OK) {
-    $errorMessages = [
-        UPLOAD_ERR_INI_SIZE   => 'Die Datei überschreitet die maximale Upload-Größe.',
-        UPLOAD_ERR_FORM_SIZE  => 'Die Datei überschreitet die maximale Formulargröße.',
-        UPLOAD_ERR_PARTIAL    => 'Die Datei wurde nur teilweise hochgeladen.',
-        UPLOAD_ERR_NO_FILE    => 'Es wurde keine Datei ausgewählt.',
-        UPLOAD_ERR_NO_TMP_DIR => 'Temporärer Ordner fehlt.',
-        UPLOAD_ERR_CANT_WRITE => 'Datei konnte nicht gespeichert werden.',
-        UPLOAD_ERR_EXTENSION  => 'Upload durch PHP-Erweiterung gestoppt.',
-    ];
-    $code = $_FILES['datei']['error'] ?? UPLOAD_ERR_NO_FILE;
-    $_SESSION['flash_error'] = $errorMessages[$code] ?? 'Upload-Fehler.';
-    header('Location: ../dateien.php?tab=' . $bereich);
+    $_SESSION['flash_error'] = 'Es wurde keine gültige Datei ausgewählt.';
+    header('Location: ' . $back);
     exit;
 }
 
-$file = $_FILES['datei'];
+$file         = $_FILES['datei'];
 $originalName = basename($file['name']);
-$tmpPath = $file['tmp_name'];
-$size = $file['size'];
+$tmpUpload    = $file['tmp_name'];
+$size         = (int) $file['size'];
 
-$maxSize = 10 * 1024 * 1024;
-if ($size > $maxSize) {
+if ($size > 10 * 1024 * 1024) {
     $_SESSION['flash_error'] = 'Die Datei ist zu groß (max. 10 MB).';
-    header('Location: ../dateien.php?tab=' . $bereich);
+    header('Location: ' . $back);
     exit;
 }
 
@@ -71,107 +67,45 @@ $allowedMimes = [
     'image/png'                                                               => 'png',
     'image/jpeg'                                                              => 'jpg',
 ];
-
-$finfo = new finfo(FILEINFO_MIME_TYPE);
-$detectedMime = $finfo->file($tmpPath);
-
+$detectedMime = (new finfo(FILEINFO_MIME_TYPE))->file($tmpUpload);
 if (!isset($allowedMimes[$detectedMime])) {
     $_SESSION['flash_error'] = 'Dateityp nicht erlaubt. Erlaubt: PDF, DOCX, XLSX, PNG, JPG.';
-    header('Location: ../dateien.php?tab=' . $bereich);
+    header('Location: ' . $back);
     exit;
 }
 
-$extension = $allowedMimes[$detectedMime];
-
-$uuid = uuid();
-
-$serverFilename = $uuid . '.' . $extension;
-$targetDir = __DIR__ . '/../../storage/files/' . $bereich . '/';
-$targetPath = $targetDir . $serverFilename;
-
-if (!is_dir($targetDir)) {
-    mkdir($targetDir, 0755, true);
-}
-
-if (!move_uploaded_file($tmpPath, $targetPath)) {
-    $_SESSION['flash_error'] = 'Datei konnte nicht gespeichert werden.';
-    header('Location: ../dateien.php?tab=' . $bereich);
+// Auf eine temporäre Arbeitsdatei bringen (für Downscale + Upload), dann wieder entfernen.
+$work = tempnam(sys_get_temp_dir(), 'upl_');
+if ($work === false || !move_uploaded_file($tmpUpload, $work)) {
+    $_SESSION['flash_error'] = 'Datei konnte nicht verarbeitet werden.';
+    header('Location: ' . $back);
     exit;
 }
 
-// Bilder auf sinnvolle Maximalkante verkleinern (spart Speicher, keine Vollgröße-Dauerablage)
 if ($detectedMime === 'image/png' || $detectedMime === 'image/jpeg') {
-    downscaleImage($targetPath, $detectedMime, 2000);
-    $size = @filesize($targetPath) ?: $size;
-}
-
-$pdo = getDbConnection();
-
-// Ziel-Jahr (aus dem Upload-Formular; Default = aktives Jahr).
-$jahr = (int) ($_POST['jahr'] ?? 0);
-if ($jahr < 2000) {
-    $jahr = driveAktivesJahr($pdo);
-}
-
-// Wenn das Drive-Backend konfiguriert ist: Datei ins geteilte Laufwerk laden und lokal
-// wieder entfernen. Schlägt der Upload fehl, bleibt die Datei lokal (sicherer Fallback).
-$driveFileId = null;
-$provider    = 'local';
-if (driveConfigured()) {
-    try {
-        $driveFileId = driveUpload($pdo, $bereich, $jahr, $kategorie, $targetPath, $originalName, $detectedMime);
-        $provider    = 'drive';
-        @unlink($targetPath);
-    } catch (RuntimeException $e) {
-        logError('File upload -> Drive fehlgeschlagen, bleibt lokal: ' . $e->getMessage());
-    }
+    downscaleImage($work, $detectedMime, 2000);
 }
 
 try {
-    $stmt = $pdo->prepare('
-        INSERT INTO dateien (bereich, kategorie, jahr, dateiname, drive_file_id, provider, originalname, mimetype, groesse, hochgeladen_von)
-        VALUES (:bereich, :kategorie, :jahr, :dateiname, :drive_file_id, :provider, :originalname, :mimetype, :groesse, :hochgeladen_von)
-    ');
-    $stmt->execute([
-        'bereich'         => $bereich,
-        'kategorie'       => $kategorie,
-        'jahr'            => $jahr,
-        'dateiname'       => $serverFilename,
-        'drive_file_id'   => $driveFileId,
-        'provider'        => $provider,
-        'originalname'    => $originalName,
-        'mimetype'        => $detectedMime,
-        'groesse'         => $size,
-        'hochgeladen_von' => $user['id'],
-    ]);
+    $fid = driveUploadToFolder($folder, $work, $originalName, $detectedMime);
     dateiAudit($pdo, 'upload', [
-        'datei_id'      => (int) $pdo->lastInsertId(),
-        'drive_file_id' => $driveFileId,
+        'drive_file_id' => $fid,
         'originalname'  => $originalName,
-        'kategorie'     => $kategorie,
         'benutzer_id'   => $user['id'],
     ]);
-
-    $_SESSION['flash_success'] = 'Datei hochgeladen: ' . htmlspecialchars($originalName);
-} catch (PDOException $e) {
-    @unlink($targetPath);
-    if ($driveFileId !== null) {
-        // DB-Insert fehlgeschlagen -> verwaiste Drive-Datei wieder entfernen.
-        try {
-            driveDelete($driveFileId);
-        } catch (RuntimeException $e2) {
-            logError('Upload-Rollback Drive-Delete: ' . $e2->getMessage());
-        }
-    }
-    logError('File upload DB error: ' . $e->getMessage());
-    $_SESSION['flash_error'] = 'Datenbankfehler beim Speichern.';
+    $_SESSION['flash_success'] = 'Hochgeladen: ' . htmlspecialchars($originalName);
+} catch (RuntimeException $e) {
+    logError('file_upload Drive: ' . $e->getMessage());
+    $_SESSION['flash_error'] = 'Upload fehlgeschlagen.';
 }
 
-$redirectTarget = '../dateien.php?tab=' . $bereich;
-if (!empty($_POST['redirect_after']) && preg_match('/^[\w\-]+\.php(\?[\w=&%]+)?$/', $_POST['redirect_after'])) {
-    $redirectTarget = '../' . $_POST['redirect_after'];
+@unlink($work);
+
+// Optionaler Redirect zurück zu einer aufrufenden Seite (z. B. Plakate-Karte).
+if (!empty($_POST['redirect_after']) && preg_match('/^[\w\-]+\.php(\?[\w=&%\-]+)?$/', (string) $_POST['redirect_after'])) {
+    $back = (string) $_POST['redirect_after'];
 }
-header('Location: ' . $redirectTarget);
+header('Location: ' . $back);
 exit;
 
 /**
@@ -181,7 +115,7 @@ exit;
 function downscaleImage(string $path, string $mime, int $maxEdge): void
 {
     if (!function_exists('imagecreatetruecolor')) {
-        return; // GD nicht verfügbar -> Original behalten
+        return;
     }
     $info = @getimagesize($path);
     if ($info === false) {
@@ -189,7 +123,7 @@ function downscaleImage(string $path, string $mime, int $maxEdge): void
     }
     [$w, $h] = $info;
     if ($w <= $maxEdge && $h <= $maxEdge) {
-        return; // schon klein genug
+        return;
     }
     $ratio = min($maxEdge / $w, $maxEdge / $h);
     $nw = max(1, (int) round($w * $ratio));
@@ -210,5 +144,4 @@ function downscaleImage(string $path, string $mime, int $maxEdge): void
     } else {
         imagejpeg($dst, $path, 85);
     }
-    // imagedestroy() entfällt: seit PHP 8.0 wirkungslos, ab 8.5 deprecated (GC übernimmt)
 }

@@ -38,7 +38,8 @@ try {
 
 $renntagDatum = $settings['renntag_datum'] ?? '';
 $veranstaltungsname = $settings['veranstaltungsname'] ?? '';
-$dateienJahr = $settings['dateien_jahr'] ?? (string) date('Y');
+$driveRootOrga   = $settings['drive_root_orga_id'] ?? '';
+$driveRootHelfer = $settings['drive_root_helfer_id'] ?? '';
 $kontaktEmail = $settings['kontakt_email'] ?? '';
 $raceresultUrl = $settings['raceresult_url'] ?? '';
 $trelloUrl = $settings['trello_board_url'] ?? '';
@@ -217,11 +218,16 @@ $makeWebhookSecret = (string) ($config['make_webhook_secret'] ?? '');
                             <input type="email" id="kontakt_email" name="kontakt_email" value="<?= htmlspecialchars($kontaktEmail) ?>" placeholder="info@atsv-kirchseeon-marktlauf.de">
                         </div>
                     </div>
-                    <div class="form-row single">
+                    <div class="form-row">
                         <div class="form-group">
-                            <label for="dateien_jahr">Dateien-Jahr (aktive Saison)</label>
-                            <input type="number" id="dateien_jahr" name="dateien_jahr" value="<?= htmlspecialchars($dateienJahr) ?>" min="2000" max="2100" step="1">
-                            <small style="color:var(--text-light)">Bestimmt, in welchem Jahres-Ordner Datei-Uploads und Sponsor-Mail-Plakate landen (Drive: Orga/&lt;Jahr&gt;/…).</small>
+                            <label for="drive_root_orga_id">Drive-Wurzel „Orga" (Ordner-ID)</label>
+                            <input type="text" id="drive_root_orga_id" name="drive_root_orga_id" value="<?= htmlspecialchars($driveRootOrga) ?>" placeholder="leer = Ordner „Orga" im Laufwerk">
+                            <small style="color:var(--text-light)">Einstieg des „Orga"-Tabs im Dateien-Browser. Ordner-ID = der Teil hinter <code>/folders/</code> in der Drive-URL. Leer = automatisch „Orga".</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="drive_root_helfer_id">Drive-Wurzel „Helfer" (Ordner-ID)</label>
+                            <input type="text" id="drive_root_helfer_id" name="drive_root_helfer_id" value="<?= htmlspecialchars($driveRootHelfer) ?>" placeholder="leer = Ordner „Helfer" im Laufwerk">
+                            <small style="color:var(--text-light)">Einstieg des „Helfer"-Tabs. Leer = automatisch „Helfer".</small>
                         </div>
                     </div>
                 </div>

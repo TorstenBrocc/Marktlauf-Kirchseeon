@@ -43,7 +43,8 @@ $allowedKeys = [
     'sponsor_brief_antwort_bis',
     'sponsoring_pakete',
     'llm_provider',
-    'dateien_jahr',
+    'drive_root_orga_id',
+    'drive_root_helfer_id',
 ];
 
 $renntag = trim($_POST['renntag_datum'] ?? '');
@@ -53,7 +54,8 @@ $raceresultUrl = trim($_POST['raceresult_url'] ?? '');
 $trelloUrl = trim($_POST['trello_board_url'] ?? '');
 $onedriveUrl = trim($_POST['onedrive_url'] ?? '');
 $stravaUrl = trim($_POST['strava_url'] ?? '');
-$dateienJahr = (int) ($_POST['dateien_jahr'] ?? 0);
+$driveRootOrga   = trim((string) ($_POST['drive_root_orga_id'] ?? ''));
+$driveRootHelfer = trim((string) ($_POST['drive_root_helfer_id'] ?? ''));
 
 // Zugangsdaten-Notizen (Freitext, nur Admin sichtbar) — auf 2000 Zeichen gekappt.
 $raceresultHinweis = mb_substr(trim($_POST['raceresult_hinweis'] ?? ''), 0, 2000);
@@ -148,7 +150,8 @@ try {
         'sponsor_brief_event_datum' => $briefEventDatum ?: null,
         'sponsor_brief_antwort_bis' => $briefAntwortBis ?: null,
         'sponsoring_pakete'         => $sponsoringPaketeJson,
-        'dateien_jahr'              => $dateienJahr >= 2000 ? (string) $dateienJahr : null,
+        'drive_root_orga_id'        => $driveRootOrga ?: null,
+        'drive_root_helfer_id'      => $driveRootHelfer ?: null,
     ];
 
     $stmt = $pdo->prepare('INSERT INTO einstellungen (`key`, `value`) VALUES (:key, :value) ON DUPLICATE KEY UPDATE `value` = :value2');
