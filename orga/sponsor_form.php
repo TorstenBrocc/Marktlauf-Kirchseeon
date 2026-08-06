@@ -719,21 +719,6 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                                    value="<?= htmlspecialchars($sponsor['leistung_zeitraum'] ?? '') ?>">
                         </div>
 
-                        <div class="form-group">
-                            <label for="rechnung_betrag">Abweichender Betrag (optional, leer = Paketpreis)</label>
-                            <input type="number" step="0.01" min="0" id="rechnung_betrag" name="rechnung_betrag"
-                                   placeholder="z. B. 1000.00"
-                                   value="<?= htmlspecialchars($sponsor['rechnung_betrag'] ?? '') ?>">
-                        </div>
-
-                        <div class="form-group">
-                            <label style="font-weight:normal; cursor:pointer;">
-                                <input type="checkbox" name="rechnung_betrag_brutto" value="1"
-                                       style="width:auto; padding:0; border:none; margin-right:0.5rem; vertical-align:middle;"
-                                       <?= !empty($sponsor['rechnung_betrag_brutto']) ? 'checked' : '' ?>>
-                                Betrag ist brutto (inkl. USt)
-                            </label>
-                        </div>
                     </div>
 
                     <div class="form-card">
