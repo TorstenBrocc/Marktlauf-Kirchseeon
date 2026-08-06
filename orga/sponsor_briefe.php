@@ -350,12 +350,12 @@ if (!empty($briefSettings['sponsoring_pakete'])) {
 
                     <div class="form-group" style="margin-bottom:1rem">
                         <label style="font-weight:600;display:block;margin-bottom:0.4rem">Sponsoringbeträge sind</label>
-                        <label style="display:inline-flex;align-items:center;gap:0.4rem;margin-right:1.5rem">
-                            <input type="radio" name="rechnung_betraege_brutto" value="0" <?= $betraegeBrutto ? '' : 'checked' ?>>
+                        <label style="display:inline-flex;align-items:center;gap:0.4rem;margin-right:1.5rem;font-weight:normal">
+                            <input type="radio" name="rechnung_betraege_brutto" value="0" style="width:auto;padding:0;border:none;margin:0" <?= $betraegeBrutto ? '' : 'checked' ?>>
                             netto (19&nbsp;% USt kommen dazu)
                         </label>
-                        <label style="display:inline-flex;align-items:center;gap:0.4rem">
-                            <input type="radio" name="rechnung_betraege_brutto" value="1" <?= $betraegeBrutto ? 'checked' : '' ?>>
+                        <label style="display:inline-flex;align-items:center;gap:0.4rem;font-weight:normal">
+                            <input type="radio" name="rechnung_betraege_brutto" value="1" style="width:auto;padding:0;border:none;margin:0" <?= $betraegeBrutto ? 'checked' : '' ?>>
                             brutto (19&nbsp;% USt bereits enthalten)
                         </label>
                         <p style="font-size:0.8rem;color:var(--text-light);margin-top:0.5rem;line-height:1.5">

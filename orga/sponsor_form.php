@@ -707,10 +707,11 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                         </div>
 
                         <div class="form-group">
-                            <label style="display:flex; align-items:flex-start; gap:0.5rem; cursor:pointer;">
-                                <input type="checkbox" name="rechnung_betrag_brutto" value="1" style="margin-top:0.2rem; flex-shrink:0;"
+                            <label style="font-weight:normal; cursor:pointer;">
+                                <input type="checkbox" name="rechnung_betrag_brutto" value="1"
+                                       style="width:auto; padding:0; border:none; margin-right:0.5rem; vertical-align:middle;"
                                        <?= !empty($sponsor['rechnung_betrag_brutto']) ? 'checked' : '' ?>>
-                                <span>Abweichender Betrag ist <strong>brutto</strong> (USt bereits enthalten) — nur relevant, wenn oben ein abweichender Betrag steht</span>
+                                Betrag ist brutto (inkl. USt)
                             </label>
                         </div>
                     </div>
