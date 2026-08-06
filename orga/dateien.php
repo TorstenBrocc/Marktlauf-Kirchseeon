@@ -395,7 +395,7 @@ if (!driveConfigured()) {
         let draggedFid = null;
         document.addEventListener('dragstart', function (e) {
             const row = e.target.closest('tr[draggable]');
-            if (row) { draggedFid = row.dataset.fid; e.dataTransfer.effectAllowed = 'move'; }
+            if (row) { draggedFid = row.dataset.fid; e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', row.dataset.fid); } catch (_) {} }
         });
         let lastOver = null;
         document.addEventListener('dragover', function (e) {
