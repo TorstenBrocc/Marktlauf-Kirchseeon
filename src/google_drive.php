@@ -1,15 +1,17 @@
 <?php
 /**
- * Google Drive storage backend (intern/gdrive-storage-spec.md, Paket 2).
+ * Google Drive storage backend (intern/gdrive-storage-spec.md, Paket 2 + 6).
  *
  * Auth = OAuth as info@ (refresh token in storage/config.php, keyless — no service
  * account key). All files live in ONE shared drive ("Marktlauf Orga"); the folder
- * layout mirrors the dashboard: <shared drive>/Orga/<Kategorie>, <shared drive>/Helfer/<Kategorie>.
- * The (bereich, kategorie) -> folder-id map is cached in table drive_kategorie_ordner.
+ * layout mirrors the dashboard AND the season: <shared drive>/Orga/<Jahr>/<Kategorie>
+ * and <shared drive>/Helfer/<Jahr>/<Kategorie>. The (bereich, jahr, kategorie) ->
+ * folder-id map is cached in table drive_kategorie_ordner (jahr=0 & kategorie='' =
+ * bereich root; kategorie='' = year folder).
  *
  * No Composer / SDK: raw cURL only. Hard failures throw RuntimeException so callers
- * (api/file_*.php, plakateAnhang) can try/catch, logError() and fall back / flash.
- * Shared-drive query params verified against Drive API v3 docs (files.list / uploads).
+ * (api/file_*.php, plakateAnhang, dateien.php) can try/catch, logError() and fall
+ * back / flash. Shared-drive query params verified against Drive API v3 docs.
  */
 
 declare(strict_types=1);
@@ -35,6 +37,17 @@ function driveConfigured(): bool
 function driveSharedDriveId(): string
 {
     return (string) (getConfig()['google_shared_drive_id'] ?? '');
+}
+
+/** Active season year for file storage (einstellungen 'dateien_jahr'; default = current year). */
+function driveAktivesJahr(PDO $pdo): int
+{
+    try {
+        $v = (int) $pdo->query("SELECT `value` FROM einstellungen WHERE `key` = 'dateien_jahr' LIMIT 1")->fetchColumn();
+    } catch (PDOException $e) {
+        $v = 0;
+    }
+    return $v >= 2000 ? $v : (int) date('Y');
 }
 
 /**
@@ -91,31 +104,32 @@ function driveBereichName(string $bereich): string
     return $bereich === 'helfer' ? 'Helfer' : 'Orga';
 }
 
-/**
- * Ensure the bereich root folder (Orga/Helfer) exists directly under the shared
- * drive and return its id. Cached as (bereich, '') in drive_kategorie_ordner.
- */
+/** Ensure the bereich root folder (Orga/Helfer) under the shared drive; cache (bereich,0,''). */
 function driveEnsureBereichFolder(PDO $pdo, string $bereich): string
 {
-    return driveEnsureFolder($pdo, $bereich, '', driveBereichName($bereich), driveSharedDriveId());
+    return driveEnsureFolder($pdo, $bereich, 0, '', driveBereichName($bereich), driveSharedDriveId());
 }
 
-/**
- * Ensure the category folder exists under its bereich folder and return its id.
- * Folder name = the human category label from dateiKategorien().
- */
-function driveEnsureCategoryFolder(PDO $pdo, string $bereich, string $kategorie): string
+/** Ensure the year folder (Orga/<Jahr>) under the bereich root; cache (bereich,jahr,''). */
+function driveEnsureJahrFolder(PDO $pdo, string $bereich, int $jahr): string
+{
+    $parentId = driveEnsureBereichFolder($pdo, $bereich);
+    return driveEnsureFolder($pdo, $bereich, $jahr, '', (string) $jahr, $parentId);
+}
+
+/** Ensure the category folder (Orga/<Jahr>/<Kategorie>) and return its id. */
+function driveEnsureCategoryFolder(PDO $pdo, string $bereich, int $jahr, string $kategorie): string
 {
     require_once __DIR__ . '/../orga/_dateien_kategorien.php';
-    $parentId = driveEnsureBereichFolder($pdo, $bereich);
-    return driveEnsureFolder($pdo, $bereich, $kategorie, dateiKategorieLabel($kategorie), $parentId);
+    $parentId = driveEnsureJahrFolder($pdo, $bereich, $jahr);
+    return driveEnsureFolder($pdo, $bereich, $jahr, $kategorie, dateiKategorieLabel($kategorie), $parentId);
 }
 
 /** Cache-backed find-or-create for a single folder; returns its Drive id. */
-function driveEnsureFolder(PDO $pdo, string $bereich, string $kategorie, string $name, string $parentId): string
+function driveEnsureFolder(PDO $pdo, string $bereich, int $jahr, string $kategorie, string $name, string $parentId): string
 {
-    $stmt = $pdo->prepare('SELECT drive_folder_id FROM drive_kategorie_ordner WHERE bereich = ? AND kategorie = ?');
-    $stmt->execute([$bereich, $kategorie]);
+    $stmt = $pdo->prepare('SELECT drive_folder_id FROM drive_kategorie_ordner WHERE bereich = ? AND jahr = ? AND kategorie = ?');
+    $stmt->execute([$bereich, $jahr, $kategorie]);
     $cached = $stmt->fetchColumn();
     if ($cached !== false && $cached !== null && $cached !== '') {
         return (string) $cached;
@@ -124,10 +138,10 @@ function driveEnsureFolder(PDO $pdo, string $bereich, string $kategorie, string 
     $folderId = driveFindFolder($name, $parentId) ?? driveCreateFolder($name, $parentId);
 
     $pdo->prepare('
-        INSERT INTO drive_kategorie_ordner (bereich, kategorie, drive_folder_id)
-        VALUES (?, ?, ?)
+        INSERT INTO drive_kategorie_ordner (bereich, jahr, kategorie, drive_folder_id)
+        VALUES (?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE drive_folder_id = VALUES(drive_folder_id)
-    ')->execute([$bereich, $kategorie, $folderId]);
+    ')->execute([$bereich, $jahr, $kategorie, $folderId]);
 
     return $folderId;
 }
@@ -141,7 +155,7 @@ function driveFindFolder(string $name, string $parentId): ?string
         DRIVE_FOLDER_MIME,
         driveEscapeQ($parentId)
     );
-    $data  = driveApiGet('https://www.googleapis.com/drive/v3/files?' . http_build_query([
+    $data = driveApiGet('https://www.googleapis.com/drive/v3/files?' . http_build_query([
         'q'                         => $q,
         'corpora'                   => 'drive',
         'driveId'                   => driveSharedDriveId(),
@@ -170,13 +184,13 @@ function driveCreateFolder(string $name, string $parentId): string
 }
 
 /**
- * List non-trashed files in a (bereich, kategorie) folder.
+ * List non-trashed files in a (bereich, jahr, kategorie) folder.
  * @return array<int,array{id:string,name:string,mimeType:string,size:int,modifiedTime:string}>
  */
-function driveList(PDO $pdo, string $bereich, string $kategorie): array
+function driveList(PDO $pdo, string $bereich, int $jahr, string $kategorie): array
 {
-    $folderId = driveEnsureCategoryFolder($pdo, $bereich, $kategorie);
-    $out      = [];
+    $folderId  = driveEnsureCategoryFolder($pdo, $bereich, $jahr, $kategorie);
+    $out       = [];
     $pageToken = '';
     do {
         $params = [
@@ -208,12 +222,12 @@ function driveList(PDO $pdo, string $bereich, string $kategorie): array
 }
 
 /**
- * Upload a local file into the (bereich, kategorie) folder via multipart upload.
+ * Upload a local file into the (bereich, jahr, kategorie) folder via multipart upload.
  * Returns the new Drive file id.
  */
-function driveUpload(PDO $pdo, string $bereich, string $kategorie, string $tmpPath, string $name, string $mimeType): string
+function driveUpload(PDO $pdo, string $bereich, int $jahr, string $kategorie, string $tmpPath, string $name, string $mimeType): string
 {
-    $folderId = driveEnsureCategoryFolder($pdo, $bereich, $kategorie);
+    $folderId = driveEnsureCategoryFolder($pdo, $bereich, $jahr, $kategorie);
     $content  = (string) file_get_contents($tmpPath);
 
     $boundary = 'mlboundary' . bin2hex(random_bytes(8));
@@ -266,19 +280,19 @@ function driveDelete(string $fileId): void
 }
 
 /**
- * Reconcile the dashboard index (table dateien) for one bereich with the shared
+ * Reconcile the dashboard index (table dateien) for one bereich + jahr with the shared
  * drive (Modell A): files added or renamed directly in Drive appear in the index,
  * index rows whose Drive file vanished are removed. Only provider='drive' rows are
- * touched — local files are never affected. Throttled to once per 120s per bereich
+ * touched — local files are never affected. Throttled to once per 120s per bereich+jahr
  * unless $force. A failed folder listing skips that category (never deletes on error).
  */
-function driveReconcile(PDO $pdo, string $bereich, bool $force = false): void
+function driveReconcile(PDO $pdo, string $bereich, int $jahr, bool $force = false): void
 {
     if (!driveConfigured()) {
         return;
     }
     $cacheDir = __DIR__ . '/../storage/cache';
-    $marker   = $cacheDir . '/gdrive_reconcile_' . preg_replace('/[^a-z]/', '', $bereich) . '.ts';
+    $marker   = $cacheDir . '/gdrive_reconcile_' . preg_replace('/[^a-z]/', '', $bereich) . '_' . $jahr . '.ts';
     if (!$force && is_file($marker) && (time() - (int) @filemtime($marker)) < 120) {
         return;
     }
@@ -290,9 +304,9 @@ function driveReconcile(PDO $pdo, string $bereich, bool $force = false): void
     require_once __DIR__ . '/../orga/_dateien_kategorien.php';
     foreach (array_keys(dateiKategorien()) as $kat) {
         try {
-            $driveFiles = driveList($pdo, $bereich, $kat);
+            $driveFiles = driveList($pdo, $bereich, $jahr, $kat);
         } catch (RuntimeException $e) {
-            logError('driveReconcile list (' . $bereich . '/' . $kat . '): ' . $e->getMessage());
+            logError('driveReconcile list (' . $bereich . '/' . $jahr . '/' . $kat . '): ' . $e->getMessage());
             continue; // never delete on a failed listing
         }
         $seen = [];
@@ -308,22 +322,22 @@ function driveReconcile(PDO $pdo, string $bereich, bool $force = false): void
             if ($existingId === false) {
                 // Directly-in-Drive file: index it (no dashboard uploader -> NULL).
                 $pdo->prepare('
-                    INSERT INTO dateien (bereich, kategorie, dateiname, drive_file_id, provider, originalname, mimetype, groesse, hochgeladen_von, created_at)
-                    VALUES (?, ?, ?, ?, "drive", ?, ?, ?, NULL, NOW())
-                ')->execute([$bereich, $kat, $f['name'], $f['id'], $f['name'], $mime, $f['size']]);
+                    INSERT INTO dateien (bereich, kategorie, jahr, dateiname, drive_file_id, provider, originalname, mimetype, groesse, hochgeladen_von, created_at)
+                    VALUES (?, ?, ?, ?, ?, "drive", ?, ?, ?, NULL, NOW())
+                ')->execute([$bereich, $kat, $jahr, $f['name'], $f['id'], $f['name'], $mime, $f['size']]);
             } else {
-                $pdo->prepare('UPDATE dateien SET kategorie = ?, originalname = ?, mimetype = ?, groesse = ? WHERE id = ?')
-                    ->execute([$kat, $f['name'], $mime, $f['size'], (int) $existingId]);
+                $pdo->prepare('UPDATE dateien SET kategorie = ?, jahr = ?, originalname = ?, mimetype = ?, groesse = ? WHERE id = ?')
+                    ->execute([$kat, $jahr, $f['name'], $mime, $f['size'], (int) $existingId]);
             }
         }
-        // Drop drive-index rows for this category whose Drive file is gone.
+        // Drop drive-index rows for this bereich+jahr+category whose Drive file is gone.
         if ($seen === []) {
-            $pdo->prepare("DELETE FROM dateien WHERE bereich = ? AND kategorie = ? AND provider = 'drive'")
-                ->execute([$bereich, $kat]);
+            $pdo->prepare("DELETE FROM dateien WHERE bereich = ? AND jahr = ? AND kategorie = ? AND provider = 'drive'")
+                ->execute([$bereich, $jahr, $kat]);
         } else {
             $ph = implode(',', array_fill(0, count($seen), '?'));
-            $pdo->prepare("DELETE FROM dateien WHERE bereich = ? AND kategorie = ? AND provider = 'drive' AND drive_file_id NOT IN ($ph)")
-                ->execute(array_merge([$bereich, $kat], $seen));
+            $pdo->prepare("DELETE FROM dateien WHERE bereich = ? AND jahr = ? AND kategorie = ? AND provider = 'drive' AND drive_file_id NOT IN ($ph)")
+                ->execute(array_merge([$bereich, $jahr, $kat], $seen));
         }
     }
 }
@@ -345,7 +359,7 @@ function driveApiSend(string $method, string $url, string $body, array $headers)
     return driveDecodeOrThrow($resp, $url);
 }
 
-/** @return array{status:int,body:string} */
+/** @param array{status:int,body:string} $resp */
 function driveDecodeOrThrow(array $resp, string $url): array
 {
     if ($resp['status'] < 200 || $resp['status'] >= 300) {

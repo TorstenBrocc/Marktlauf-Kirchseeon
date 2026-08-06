@@ -26,11 +26,17 @@ if (!in_array($activeTab, ['orga', 'helfer'], true)) {
 
 $pdo = getDbConnection();
 
-// Manueller Drive-Sync (PRG): Katalog des aktiven Tabs mit dem geteilten Laufwerk abgleichen.
+$activeJahr = driveAktivesJahr($pdo);
+$selectedJahr = (int) ($_GET['jahr'] ?? 0);
+if ($selectedJahr < 2000) {
+    $selectedJahr = $activeJahr;
+}
+
+// Manueller Drive-Sync (PRG): Katalog des aktiven Tabs + gewählten Jahres abgleichen.
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'drive_sync') {
     if (verifyCsrfToken($_POST['csrf_token'] ?? '')) {
         try {
-            driveReconcile($pdo, $activeTab, true);
+            driveReconcile($pdo, $activeTab, $selectedJahr, true);
             dateiAudit($pdo, 'sync', ['benutzer_id' => $user['id']]);
             $_SESSION['flash_success'] = 'Aus Google Drive synchronisiert.';
         } catch (Throwable $e) {
@@ -38,14 +44,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'drive
             $_SESSION['flash_error'] = 'Synchronisierung fehlgeschlagen (siehe Log).';
         }
     }
-    header('Location: dateien.php?tab=' . $activeTab);
+    header('Location: dateien.php?tab=' . $activeTab . '&jahr=' . $selectedJahr);
     exit;
 }
 
 // Automatischer, gedrosselter Abgleich beim Laden (nur wenn Drive konfiguriert ist).
 if (driveConfigured()) {
     try {
-        driveReconcile($pdo, $activeTab);
+        driveReconcile($pdo, $activeTab, $selectedJahr);
     } catch (Throwable $e) {
         logError('dateien.php reconcile: ' . $e->getMessage());
     }
@@ -54,13 +60,27 @@ if (driveConfigured()) {
 $orgaDateien = [];
 $helferDateien = [];
 
+// Verfügbare Jahre für den Umschalter (vorhandene + aktives + gewähltes Jahr).
+$jahre = [$activeJahr, $selectedJahr];
 try {
-    $stmt = $pdo->query('
+    foreach ($pdo->query('SELECT DISTINCT jahr FROM dateien WHERE jahr IS NOT NULL')->fetchAll(PDO::FETCH_COLUMN) as $j) {
+        $jahre[] = (int) $j;
+    }
+} catch (PDOException $e) {
+    // Spalte/Tabelle evtl. noch nicht vorhanden
+}
+$jahre = array_values(array_unique(array_filter($jahre, static fn($j) => $j >= 2000)));
+rsort($jahre);
+
+try {
+    $stmt = $pdo->prepare('
         SELECT d.*, u.name as uploader_name
         FROM dateien d
         LEFT JOIN users u ON d.hochgeladen_von = u.id
+        WHERE d.jahr = :jahr
         ORDER BY d.created_at DESC
     ');
+    $stmt->execute(['jahr' => $selectedJahr]);
     while ($row = $stmt->fetch()) {
         if ($row['bereich'] === 'orga') {
             $orgaDateien[] = $row;
@@ -289,8 +309,17 @@ function getFileIcon(string $mimetype): string {
         <main class="main-content">
             <header class="content-header" style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
                 <h1>Dateien</h1>
+                <form method="get" action="dateien.php" class="inline-form" style="margin-left:auto;display:flex;align-items:center;gap:0.4rem;">
+                    <input type="hidden" name="tab" value="<?= htmlspecialchars($activeTab) ?>">
+                    <label for="jahr-select" style="font-size:0.875rem;color:var(--text-light);">Jahr:</label>
+                    <select id="jahr-select" name="jahr" onchange="this.form.submit()" style="padding:0.4rem 0.6rem;border:1px solid var(--border);border-radius:4px;background:var(--white);">
+                        <?php foreach ($jahre as $j): ?>
+                            <option value="<?= $j ?>"<?= $j === $selectedJahr ? ' selected' : '' ?>><?= $j ?><?= $j === $activeJahr ? ' (aktiv)' : '' ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </form>
                 <?php if (driveConfigured()): ?>
-                    <form method="post" action="dateien.php?tab=<?= htmlspecialchars($activeTab) ?>" class="inline-form" style="margin-left:auto;">
+                    <form method="post" action="dateien.php?tab=<?= htmlspecialchars($activeTab) ?>&amp;jahr=<?= $selectedJahr ?>" class="inline-form">
                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                         <input type="hidden" name="action" value="drive_sync">
                         <button type="submit" class="btn btn-secondary btn-small" title="Dateien, die direkt in Google Drive abgelegt wurden, in die Übersicht übernehmen">↻ Aus Drive synchronisieren</button>
@@ -307,11 +336,11 @@ function getFileIcon(string $mimetype): string {
             <?php endif; ?>
 
             <div class="tabs">
-                <a href="?tab=orga" class="tab <?= $activeTab === 'orga' ? 'active' : '' ?>">
+                <a href="?tab=orga&jahr=<?= $selectedJahr ?>" class="tab <?= $activeTab === 'orga' ? 'active' : '' ?>">
                     Orga-Dateien
                     <span class="tab-count"><?= count($orgaDateien) ?></span>
                 </a>
-                <a href="?tab=helfer" class="tab <?= $activeTab === 'helfer' ? 'active' : '' ?>">
+                <a href="?tab=helfer&jahr=<?= $selectedJahr ?>" class="tab <?= $activeTab === 'helfer' ? 'active' : '' ?>">
                     Helfer-Dateien
                     <span class="tab-count"><?= count($helferDateien) ?></span>
                 </a>
@@ -321,6 +350,7 @@ function getFileIcon(string $mimetype): string {
                 <form method="post" action="api/file_upload.php" enctype="multipart/form-data" class="upload-form">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                     <input type="hidden" name="bereich" value="orga">
+                    <input type="hidden" name="jahr" value="<?= $selectedJahr ?>">
                     <input type="file" name="datei" required accept=".pdf,.docx,.xlsx,.png,.jpg,.jpeg">
                     <select name="kategorie" aria-label="Kategorie"><?= dateiKategorieOptions('allgemein') ?></select>
                     <button type="submit" class="btn btn-primary btn-small">Hochladen</button>
@@ -387,6 +417,7 @@ function getFileIcon(string $mimetype): string {
                 <form method="post" action="api/file_upload.php" enctype="multipart/form-data" class="upload-form">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                     <input type="hidden" name="bereich" value="helfer">
+                    <input type="hidden" name="jahr" value="<?= $selectedJahr ?>">
                     <input type="file" name="datei" required accept=".pdf,.docx,.xlsx,.png,.jpg,.jpeg">
                     <select name="kategorie" aria-label="Kategorie"><?= dateiKategorieOptions('allgemein') ?></select>
                     <button type="submit" class="btn btn-primary btn-small">Hochladen</button>
