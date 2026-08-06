@@ -89,4 +89,19 @@ return [
     'brevo_sender_name'  => 'ATSV Kirchseeon Marktlauf',
     'brevo_sender_email' => 'info@atsv-kirchseeon-marktlauf.de',
     'brevo_list_id'      => 0,    // ID der Newsletter-Empfängerliste in Brevo (für den Kampagnen-Entwurf)
+
+    // Google Drive (geteiltes Laufwerk "Marktlauf Orga") als Dateiablage-Backend.
+    // Auth = OAuth als info@ (keyless, KEIN Service-Account-Schlüssel; siehe
+    // intern/gdrive-storage-spec.md §2.1). Einrichtung einmalig:
+    //   1) Google Cloud → APIs & Dienste → Anmeldedaten → OAuth-Client "Desktop-App"
+    //      anlegen, JSON herunterladen.
+    //   2) Lokal `php bin/gdrive_auth.php <oauth-client.json>` ausführen, als info@
+    //      anmelden, Drive-Zugriff erlauben → das Skript druckt Refresh-Token +
+    //      Laufwerk-ID und den fertigen Config-Block.
+    // Leer lassen = Drive-Backend aus; die Dateiablage nutzt weiter lokalen Storage
+    // (storage/files/), plakateAnhang() liest lokal.
+    'google_oauth_client_id'     => '',
+    'google_oauth_client_secret' => '',
+    'google_oauth_refresh_token' => '',  // aus bin/gdrive_auth.php
+    'google_shared_drive_id'     => '',  // ID des geteilten Laufwerks (druckt bin/gdrive_auth.php mit aus)
 ];

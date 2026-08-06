@@ -7,6 +7,8 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/api/_auth.php';
 require_once __DIR__ . '/../src/db.php';
+require_once __DIR__ . '/../src/google_drive.php';
+require_once __DIR__ . '/../src/datei_audit.php';
 require_once __DIR__ . '/_dateien_kategorien.php';
 
 $user = getCurrentUserFromGuard();
@@ -24,6 +26,31 @@ if (!in_array($activeTab, ['orga', 'helfer'], true)) {
 
 $pdo = getDbConnection();
 
+// Manueller Drive-Sync (PRG): Katalog des aktiven Tabs mit dem geteilten Laufwerk abgleichen.
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'drive_sync') {
+    if (verifyCsrfToken($_POST['csrf_token'] ?? '')) {
+        try {
+            driveReconcile($pdo, $activeTab, true);
+            dateiAudit($pdo, 'sync', ['benutzer_id' => $user['id']]);
+            $_SESSION['flash_success'] = 'Aus Google Drive synchronisiert.';
+        } catch (Throwable $e) {
+            logError('dateien.php drive_sync: ' . $e->getMessage());
+            $_SESSION['flash_error'] = 'Synchronisierung fehlgeschlagen (siehe Log).';
+        }
+    }
+    header('Location: dateien.php?tab=' . $activeTab);
+    exit;
+}
+
+// Automatischer, gedrosselter Abgleich beim Laden (nur wenn Drive konfiguriert ist).
+if (driveConfigured()) {
+    try {
+        driveReconcile($pdo, $activeTab);
+    } catch (Throwable $e) {
+        logError('dateien.php reconcile: ' . $e->getMessage());
+    }
+}
+
 $orgaDateien = [];
 $helferDateien = [];
 
@@ -31,7 +58,7 @@ try {
     $stmt = $pdo->query('
         SELECT d.*, u.name as uploader_name
         FROM dateien d
-        JOIN users u ON d.hochgeladen_von = u.id
+        LEFT JOIN users u ON d.hochgeladen_von = u.id
         ORDER BY d.created_at DESC
     ');
     while ($row = $stmt->fetch()) {
@@ -260,8 +287,15 @@ function getFileIcon(string $mimetype): string {
 <?php $activeNav = 'dateien'; require __DIR__ . '/_sidebar.php'; ?>
 
         <main class="main-content">
-            <header class="content-header">
+            <header class="content-header" style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
                 <h1>Dateien</h1>
+                <?php if (driveConfigured()): ?>
+                    <form method="post" action="dateien.php?tab=<?= htmlspecialchars($activeTab) ?>" class="inline-form" style="margin-left:auto;">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                        <input type="hidden" name="action" value="drive_sync">
+                        <button type="submit" class="btn btn-secondary btn-small" title="Dateien, die direkt in Google Drive abgelegt wurden, in die Übersicht übernehmen">↻ Aus Drive synchronisieren</button>
+                    </form>
+                <?php endif; ?>
             </header>
 
             <?php if ($flashSuccess): ?>
@@ -328,7 +362,7 @@ function getFileIcon(string $mimetype): string {
                                         </td>
                                         <td><select class="kat-edit" data-id="<?= (int)$d['id'] ?>" aria-label="Kategorie ändern"><?= dateiKategorieOptions($kat) ?></select><span class="kat-saved" style="display:none">✓</span></td>
                                         <td class="file-meta"><?= formatFileSize((int)$d['groesse']) ?></td>
-                                        <td class="file-meta"><?= htmlspecialchars($d['uploader_name']) ?></td>
+                                        <td class="file-meta"><?= htmlspecialchars($d['uploader_name'] ?? '– direkt in Drive') ?></td>
                                         <td class="file-meta"><?= date('d.m.Y H:i', strtotime($d['created_at'])) ?></td>
                                         <td>
                                             <a href="api/file_download.php?id=<?= $d['id'] ?>" class="btn-download">Download</a>
@@ -394,7 +428,7 @@ function getFileIcon(string $mimetype): string {
                                         </td>
                                         <td><select class="kat-edit" data-id="<?= (int)$d['id'] ?>" aria-label="Kategorie ändern"><?= dateiKategorieOptions($kat) ?></select><span class="kat-saved" style="display:none">✓</span></td>
                                         <td class="file-meta"><?= formatFileSize((int)$d['groesse']) ?></td>
-                                        <td class="file-meta"><?= htmlspecialchars($d['uploader_name']) ?></td>
+                                        <td class="file-meta"><?= htmlspecialchars($d['uploader_name'] ?? '– direkt in Drive') ?></td>
                                         <td class="file-meta"><?= date('d.m.Y H:i', strtotime($d['created_at'])) ?></td>
                                         <td>
                                             <a href="api/file_download.php?id=<?= $d['id'] ?>" class="btn-download">Download</a>
