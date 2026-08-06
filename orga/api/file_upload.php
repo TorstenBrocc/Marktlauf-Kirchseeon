@@ -10,6 +10,8 @@ require_once __DIR__ . '/../../src/db.php';
 require_once __DIR__ . '/../../src/logger.php';
 require_once __DIR__ . '/../../src/helpers.php';
 require_once __DIR__ . '/../_dateien_kategorien.php';
+require_once __DIR__ . '/../../src/google_drive.php';
+require_once __DIR__ . '/../../src/datei_audit.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: ../dateien.php');
@@ -103,25 +105,57 @@ if ($detectedMime === 'image/png' || $detectedMime === 'image/jpeg') {
     $size = @filesize($targetPath) ?: $size;
 }
 
+$pdo = getDbConnection();
+
+// Wenn das Drive-Backend konfiguriert ist: Datei ins geteilte Laufwerk laden und lokal
+// wieder entfernen. Schlägt der Upload fehl, bleibt die Datei lokal (sicherer Fallback).
+$driveFileId = null;
+$provider    = 'local';
+if (driveConfigured()) {
+    try {
+        $driveFileId = driveUpload($pdo, $bereich, $kategorie, $targetPath, $originalName, $detectedMime);
+        $provider    = 'drive';
+        @unlink($targetPath);
+    } catch (RuntimeException $e) {
+        logError('File upload -> Drive fehlgeschlagen, bleibt lokal: ' . $e->getMessage());
+    }
+}
+
 try {
-    $pdo = getDbConnection();
     $stmt = $pdo->prepare('
-        INSERT INTO dateien (bereich, kategorie, dateiname, originalname, mimetype, groesse, hochgeladen_von)
-        VALUES (:bereich, :kategorie, :dateiname, :originalname, :mimetype, :groesse, :hochgeladen_von)
+        INSERT INTO dateien (bereich, kategorie, dateiname, drive_file_id, provider, originalname, mimetype, groesse, hochgeladen_von)
+        VALUES (:bereich, :kategorie, :dateiname, :drive_file_id, :provider, :originalname, :mimetype, :groesse, :hochgeladen_von)
     ');
     $stmt->execute([
         'bereich'         => $bereich,
         'kategorie'       => $kategorie,
         'dateiname'       => $serverFilename,
+        'drive_file_id'   => $driveFileId,
+        'provider'        => $provider,
         'originalname'    => $originalName,
         'mimetype'        => $detectedMime,
         'groesse'         => $size,
         'hochgeladen_von' => $user['id'],
     ]);
+    dateiAudit($pdo, 'upload', [
+        'datei_id'      => (int) $pdo->lastInsertId(),
+        'drive_file_id' => $driveFileId,
+        'originalname'  => $originalName,
+        'kategorie'     => $kategorie,
+        'benutzer_id'   => $user['id'],
+    ]);
 
     $_SESSION['flash_success'] = 'Datei hochgeladen: ' . htmlspecialchars($originalName);
 } catch (PDOException $e) {
     @unlink($targetPath);
+    if ($driveFileId !== null) {
+        // DB-Insert fehlgeschlagen -> verwaiste Drive-Datei wieder entfernen.
+        try {
+            driveDelete($driveFileId);
+        } catch (RuntimeException $e2) {
+            logError('Upload-Rollback Drive-Delete: ' . $e2->getMessage());
+        }
+    }
     logError('File upload DB error: ' . $e->getMessage());
     $_SESSION['flash_error'] = 'Datenbankfehler beim Speichern.';
 }

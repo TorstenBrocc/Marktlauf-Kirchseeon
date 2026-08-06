@@ -10,6 +10,7 @@ require_once __DIR__ . '/../mailer.php';
 require_once __DIR__ . '/../logger.php';
 require_once __DIR__ . '/../sponsor_brief.php';
 require_once __DIR__ . '/../verein_brief.php';
+require_once __DIR__ . '/../google_drive.php';
 
 /**
  * BCC-Adresse für ausgehende Mails: bei JEDEM Versand bekommt info@ eine
@@ -258,7 +259,7 @@ function sendSponsorAnschreiben(
  */
 function plakateAnhang(PDO $pdo): array {
     try {
-        $stmt = $pdo->query("SELECT dateiname, originalname FROM dateien WHERE bereich = 'orga' AND kategorie = 'plakat' ORDER BY id ASC");
+        $stmt = $pdo->query("SELECT dateiname, originalname, drive_file_id FROM dateien WHERE bereich = 'orga' AND kategorie = 'plakat' ORDER BY id ASC");
         $rows = $stmt->fetchAll();
     } catch (PDOException $e) {
         logError('plakateAnhang DB error: ' . $e->getMessage());
@@ -267,6 +268,32 @@ function plakateAnhang(PDO $pdo): array {
     $base = __DIR__ . '/../../storage/files/orga/';
     $result = [];
     foreach ($rows as $row) {
+        // Drive-backed plakat: bytes live in the shared drive -> pull into a temp
+        // file (cleaned up at shutdown) so the SMTP mailer's path-based attachment
+        // logic keeps working unchanged.
+        if (!empty($row['drive_file_id'])) {
+            try {
+                $bytes = driveDownload((string) $row['drive_file_id']);
+            } catch (RuntimeException $e) {
+                logError('plakateAnhang Drive-Download: ' . $e->getMessage());
+                continue;
+            }
+            $tmp = tempnam(sys_get_temp_dir(), 'plakat_');
+            if ($tmp === false) {
+                continue;
+            }
+            file_put_contents($tmp, $bytes);
+            register_shutdown_function(static function () use ($tmp) {
+                @unlink($tmp);
+            });
+            $result[] = [
+                'path' => $tmp,
+                'name' => $row['originalname'],
+                'mime' => 'application/pdf',
+            ];
+            continue;
+        }
+
         $path = $base . $row['dateiname'];
         if (is_file($path)) {
             $result[] = [
