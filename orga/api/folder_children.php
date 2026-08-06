@@ -1,7 +1,7 @@
 <?php
 /**
- * Liefert die Unterordner eines Ordners im geteilten Laufwerk (JSON) — für das
- * lazy-Aufklappen des Ordnerbaums im Dateien-Browser. Nur eingeloggte Orga/Admin.
+ * Liefert die Kinder (Unterordner UND Dateien) eines Ordners im geteilten Laufwerk
+ * (JSON) — für das inline-Aufklappen des Datei-Baums. Nur eingeloggte Orga/Admin.
  * Sicherheit: nur Ordner innerhalb des geteilten Laufwerks.
  */
 
@@ -17,7 +17,7 @@ header('Content-Type: application/json; charset=utf-8');
 $parent = trim((string) ($_GET['parent'] ?? ''));
 
 if ($parent === '' || !driveConfigured()) {
-    echo json_encode(['ok' => false, 'folders' => []]);
+    echo json_encode(['ok' => false, 'items' => []]);
     exit;
 }
 
@@ -25,20 +25,24 @@ $meta = driveFileMeta($parent);
 if ($meta === null
     || (string) ($meta['driveId'] ?? '') !== driveSharedDriveId()
     || (string) ($meta['mimeType'] ?? '') !== DRIVE_FOLDER_MIME) {
-    echo json_encode(['ok' => false, 'folders' => []]);
+    echo json_encode(['ok' => false, 'items' => []]);
     exit;
 }
 
 try {
-    $folders = [];
+    $items = [];
     foreach (driveListChildren($parent) as $c) {
-        if ($c['isFolder']) {
-            $folders[] = ['id' => $c['id'], 'name' => $c['name']];
-        }
+        $items[] = [
+            'id'       => $c['id'],
+            'name'     => $c['name'],
+            'isFolder' => $c['isFolder'],
+            'size'     => $c['size'],
+            'mimeType' => $c['mimeType'],
+        ];
     }
-    echo json_encode(['ok' => true, 'folders' => $folders], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['ok' => true, 'items' => $items], JSON_UNESCAPED_UNICODE);
 } catch (Throwable $e) {
     logError('folder_children: ' . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['ok' => false, 'folders' => []]);
+    echo json_encode(['ok' => false, 'items' => []]);
 }

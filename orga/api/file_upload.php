@@ -16,7 +16,7 @@ require_once __DIR__ . '/../../src/datei_audit.php';
 
 $tab    = ($_POST['tab'] ?? 'orga') === 'helfer' ? 'helfer' : 'orga';
 $folder = trim((string) ($_POST['folder'] ?? ''));
-$back   = 'dateien.php?tab=' . $tab . ($folder !== '' ? '&folder=' . urlencode($folder) : '');
+$back   = '../dateien.php?tab=' . $tab . ($folder !== '' ? '&folder=' . urlencode($folder) : '');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !verifyCsrfToken($_POST['csrf_token'] ?? '')) {
     $_SESSION['flash_error'] = 'Ungültige Anfrage.';
@@ -103,7 +103,7 @@ try {
 
 // Optionaler Redirect zurück zu einer aufrufenden Seite (z. B. Plakate-Karte).
 if (!empty($_POST['redirect_after']) && preg_match('/^[\w\-]+\.php(\?[\w=&%\-]+)?$/', (string) $_POST['redirect_after'])) {
-    $back = (string) $_POST['redirect_after'];
+    $back = '../' . (string) $_POST['redirect_after'];
 }
 header('Location: ' . $back);
 exit;

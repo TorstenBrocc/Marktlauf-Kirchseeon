@@ -1,9 +1,9 @@
 <?php
 /**
- * Dateien — Ordner-Browser über das geteilte Google-Laufwerk (Paket 7).
- * Spiegelt die echte Drive-Ordnerstruktur (navigieren, Breadcrumb, Ordner anlegen,
- * Upload in den offenen Ordner, Download/Löschen). Zwei Wurzeln über die Tabs
- * (Orga/Helfer). Keine festen Kategorien, kein Jahr, kein DB-Index.
+ * Dateien — EIN Datei-Baum über das geteilte Google-Laufwerk (Paket 7).
+ * Ordner klappen inline auf (mit Dateien darin), ganze Zeile klickbar, Aktionen an
+ * jeder Zeile, oben eine Leiste für den gewählten Ordner. Alles per JS/fetch, ohne
+ * Neuladen (der Baum bleibt offen). Zwei Wurzeln über die Tabs (Orga/Helfer).
  */
 
 declare(strict_types=1);
@@ -13,109 +13,39 @@ require_once __DIR__ . '/../src/db.php';
 require_once __DIR__ . '/../src/google_drive.php';
 
 $user      = getCurrentUserFromGuard();
-$isAdmin   = isAdminFromGuard();
 $csrfToken = generateCsrfToken();
+$tab       = ($_GET['tab'] ?? 'orga') === 'helfer' ? 'helfer' : 'orga';
+$pdo       = getDbConnection();
 
-$flashSuccess = $_SESSION['flash_success'] ?? '';
-$flashError   = $_SESSION['flash_error'] ?? '';
-unset($_SESSION['flash_success'], $_SESSION['flash_error']);
-
-$tab = ($_GET['tab'] ?? 'orga') === 'helfer' ? 'helfer' : 'orga';
-$pdo = getDbConnection();
-
-function formatFileSize(int $bytes): string
-{
-    if ($bytes >= 1048576) {
-        return number_format($bytes / 1048576, 1, ',', '.') . ' MB';
+// Ordner als Plakate-/Bilder-Ordner festlegen (POST, per fetch aufgerufen).
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCsrfToken($_POST['csrf_token'] ?? '') && driveConfigured()) {
+    $target = trim((string) ($_POST['folder'] ?? ''));
+    $action = (string) ($_POST['action'] ?? '');
+    if ($target !== '' && in_array($action, ['set_plakat', 'set_bilder'], true)) {
+        $set = $pdo->prepare('INSERT INTO einstellungen (`key`, `value`) VALUES (:k, :v) ON DUPLICATE KEY UPDATE `value` = :v2');
+        if ($action === 'set_plakat') {
+            $jahr = driveRennJahr($pdo);
+            $set->execute(['k' => 'plakat_folder_' . $jahr, 'v' => $target, 'v2' => $target]);
+        } else {
+            $set->execute(['k' => 'bilder_folder_id', 'v' => $target, 'v2' => $target]);
+        }
     }
-    if ($bytes >= 1024) {
-        return number_format($bytes / 1024, 0, ',', '.') . ' KB';
-    }
-    return $bytes . ' B';
+    header('Content-Type: application/json');
+    echo json_encode(['ok' => true]);
+    exit;
 }
 
-function getFileIcon(string $mime): string
-{
-    return match (true) {
-        str_contains($mime, 'pdf')   => '📄',
-        str_contains($mime, 'word')  => '📝',
-        str_contains($mime, 'sheet') => '📊',
-        str_contains($mime, 'image') => '🖼️',
-        default                      => '📄',
-    };
-}
-
-// --- Drive nicht konfiguriert: schlichter Hinweis -----------------------------
-if (!driveConfigured()) {
-    $notice = true;
-} else {
-    $notice = false;
-    $rootId = driveRootFolderId($pdo, $tab);
-
-    // PRG: aktuellen Ordner als Plakate-/Bilder-Ordner festlegen.
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCsrfToken($_POST['csrf_token'] ?? '')) {
-        $target = trim((string) ($_POST['folder'] ?? ''));
-        $action = (string) ($_POST['action'] ?? '');
-        if ($target !== '' && in_array($action, ['set_plakat', 'set_bilder'], true)) {
-            $set = $pdo->prepare('INSERT INTO einstellungen (`key`, `value`) VALUES (:k, :v) ON DUPLICATE KEY UPDATE `value` = :v2');
-            if ($action === 'set_plakat') {
-                $jahr = driveRennJahr($pdo);
-                $set->execute(['k' => 'plakat_folder_' . $jahr, 'v' => $target, 'v2' => $target]);
-                $_SESSION['flash_success'] = 'Als Plakate-Ordner für ' . $jahr . ' festgelegt.';
-            } else {
-                $set->execute(['k' => 'bilder_folder_id', 'v' => $target, 'v2' => $target]);
-                $_SESSION['flash_success'] = 'Als Bilder-Ordner festgelegt.';
-            }
-        }
-        header('Location: dateien.php?tab=' . $tab . '&folder=' . urlencode($target));
-        exit;
-    }
-
-    // Aktuellen Ordner bestimmen + gegen das geteilte Laufwerk absichern.
-    $folder = trim((string) ($_GET['folder'] ?? ''));
-    if ($folder === '') {
-        $folder = $rootId;
-    }
-    $curMeta = driveFileMeta($folder);
-    if ($curMeta === null
-        || (string) ($curMeta['driveId'] ?? '') !== driveSharedDriveId()
-        || (string) ($curMeta['mimeType'] ?? '') !== DRIVE_FOLDER_MIME) {
-        $folder  = $rootId;
-        $curMeta = driveFileMeta($folder);
-    }
-
-    $breadcrumb = driveBreadcrumb($folder, $rootId);
-    $ordner     = [];
-    $dateien    = [];
-    try {
-        foreach (driveListChildren($folder) as $c) {
-            if ($c['isFolder']) {
-                $ordner[] = $c;
-            } else {
-                $dateien[] = $c;
-            }
-        }
-    } catch (Throwable $e) {
-        logError('dateien.php list: ' . $e->getMessage());
-        $flashError = $flashError ?: 'Ordnerinhalt konnte nicht geladen werden.';
-    }
-
-    $rennJahr     = driveRennJahr($pdo);
-    $plakatFolder = drivePlakatFolderId($pdo, $rennJahr);
-    $bilderFolder = driveBilderFolderId($pdo);
-
-    // Ordnerbaum-Wurzel + erstes Level (tiefere Ebenen lädt der Baum bei Bedarf nach).
-    $treeRootName = $breadcrumb[0]['name'] ?? driveBereichName($tab);
-    $treeTop = [];
-    try {
-        foreach (driveListChildren($rootId) as $c) {
-            if ($c['isFolder']) {
-                $treeTop[] = $c;
-            }
-        }
-    } catch (Throwable $e) {
-        $treeTop = [];
-    }
+$configured = driveConfigured();
+$rootId = $rootName = '';
+$rennJahr = (int) date('Y');
+$plakatFolder = $bilderFolder = '';
+if ($configured) {
+    $rootId   = driveRootFolderId($pdo, $tab);
+    $rootMeta = driveFileMeta($rootId);
+    $rootName = (string) ($rootMeta['name'] ?? driveBereichName($tab));
+    $rennJahr = driveRennJahr($pdo);
+    $plakatFolder = (string) (drivePlakatFolderId($pdo, $rennJahr) ?? '');
+    $bilderFolder = (string) (driveBilderFolderId($pdo) ?? '');
 }
 ?>
 <!DOCTYPE html>
@@ -128,66 +58,45 @@ if (!driveConfigured()) {
     <link rel="stylesheet" href="css/orga.css?v=<?= @filemtime(__DIR__ . '/css/orga.css') ?>">
     <link rel="icon" type="image/svg+xml" href="../assets/images/logo-final.svg">
     <style>
-        .tabs { display:flex; gap:0; margin-bottom:1.5rem; border-bottom:2px solid var(--border); }
+        .tabs { display:flex; gap:0; margin-bottom:1.25rem; border-bottom:2px solid var(--border); }
         .tab { padding:0.75rem 1.5rem; color:var(--text-light); border-bottom:2px solid transparent; margin-bottom:-2px; text-decoration:none; }
         .tab:hover { color:var(--text); }
         .tab.active { color:var(--primary); border-bottom-color:var(--primary); font-weight:500; }
-        .fb-bar { display:flex; align-items:center; gap:1rem; flex-wrap:wrap; margin-bottom:1rem; }
-        .breadcrumb { font-size:0.95rem; }
-        .breadcrumb a { color:var(--primary); text-decoration:none; }
-        .breadcrumb a:hover { text-decoration:underline; }
-        .breadcrumb .sep { color:var(--text-light); margin:0 0.35rem; }
-        .fb-actions { display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap; margin-left:auto; }
-        .fb-actions form { display:flex; gap:0.35rem; align-items:center; }
-        .fb-actions input[type="text"], .fb-actions input[type="file"] { padding:0.35rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.85rem; }
-        .data-table { width:100%; border-collapse:collapse; background:var(--white); border-radius:8px; overflow:hidden; box-shadow:var(--shadow-card); }
-        .data-table th, .data-table td { padding:0.65rem 0.75rem; text-align:left; border-bottom:1px solid var(--border); font-size:0.9rem; }
-        .data-table th { background:var(--bg); font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-light); }
-        .data-table tr:hover { background:#fafafa; }
-        .row-icon { font-size:1.2rem; margin-right:0.5rem; }
-        .row-folder a { font-weight:600; color:var(--text); text-decoration:none; }
-        .row-folder a:hover { color:var(--primary); }
-        .btn-download { display:inline-block; padding:0.25rem 0.7rem; background:var(--primary); color:#fff; border-radius:4px; text-decoration:none; font-size:0.75rem; }
-        .btn-download:hover { background:var(--primary-dark); }
-        .inline-form { display:inline; }
-        .designated { display:inline-block; padding:0.1rem 0.5rem; border-radius:999px; font-size:0.7rem; font-weight:600; background:rgba(0,150,64,0.1); color:var(--primary-dark); }
-        .empty-state { text-align:center; padding:3rem 1rem; color:var(--text-light); }
-        .table-wrap { overflow-x:auto; border-radius:8px; box-shadow:var(--shadow-card); margin-top:0.5rem; }
+        .fb-toolbar { background:var(--white); border:1px solid var(--border); border-radius:8px; padding:0.75rem 1rem; box-shadow:var(--shadow-card); margin-bottom:1rem; display:flex; flex-wrap:wrap; gap:0.6rem; align-items:center; }
+        .fb-toolbar .sel { font-size:0.9rem; margin-right:auto; }
+        .fb-toolbar .sel b { color:var(--primary-dark); }
+        .fb-toolbar input[type=text], .fb-toolbar input[type=file] { padding:0.35rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.85rem; }
+        .fb-toolbar .designated { font-size:0.72rem; color:var(--primary-dark); }
+        .ftree { background:var(--white); border:1px solid var(--border); border-radius:8px; padding:0.5rem 0.75rem; box-shadow:var(--shadow-card); list-style:none; margin:0; }
+        .ftree ul { list-style:none; margin:0; padding-left:1.25rem; }
+        .tnode { display:flex; align-items:center; gap:0.45rem; padding:0.32rem 0.45rem; border-radius:6px; cursor:pointer; }
+        .tnode:hover { background:#f2f8f4; }
+        .tnode.selected { background:rgba(0,150,64,0.12); }
+        .tnode-file { cursor:default; }
+        .ttoggle { width:1.15rem; text-align:center; color:var(--text-light); flex:0 0 auto; user-select:none; }
+        .tname { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .tmeta { color:var(--text-light); font-size:0.78rem; flex:0 0 auto; }
+        .tactions { display:flex; gap:0.3rem; flex:0 0 auto; opacity:0; transition:opacity .1s; }
+        .tnode:hover .tactions { opacity:1; }
+        .tbtn { font-size:0.72rem; padding:0.15rem 0.55rem; border:1px solid var(--border); border-radius:4px; background:var(--white); cursor:pointer; text-decoration:none; color:var(--text); white-space:nowrap; }
+        .tbtn:hover { border-color:var(--primary); color:var(--primary); }
+        .tbtn.danger:hover { border-color:#dc2626; color:#dc2626; }
+        .tnode.drag-over { outline:2px solid var(--primary); outline-offset:-2px; }
         .fb-hint { font-size:0.75rem; color:var(--text-light); margin-top:0.75rem; }
-        .btn-action { padding:0.2rem 0.55rem; border:1px solid var(--border); border-radius:4px; background:var(--white); font-size:0.72rem; cursor:pointer; }
-        tr[draggable] { cursor:grab; }
-        .drag-over { outline:2px solid var(--primary); outline-offset:-2px; background:rgba(0,150,64,0.08) !important; }
-        a.drop-target.drag-over { background:rgba(0,150,64,0.18); border-radius:3px; outline:none; }
-        .fb-layout { display:flex; gap:1.25rem; align-items:flex-start; }
-        .fb-tree { flex:0 0 250px; background:var(--white); border:1px solid var(--border); border-radius:8px; padding:0.6rem; max-height:72vh; overflow:auto; font-size:0.85rem; box-shadow:var(--shadow-card); }
-        .fb-tree ul { list-style:none; margin:0; padding-left:0.9rem; }
-        .fb-tree > ul { padding-left:0; }
-        .fb-main { flex:1; min-width:0; }
-        .tree-node { display:flex; align-items:center; gap:0.25rem; padding:0.15rem 0.3rem; border-radius:4px; white-space:nowrap; }
-        .tree-node a { color:var(--text); text-decoration:none; overflow:hidden; text-overflow:ellipsis; }
-        .tree-node a:hover { color:var(--primary); }
-        .tree-node.current { background:rgba(0,150,64,0.1); font-weight:600; }
-        .tree-toggle { cursor:pointer; width:1rem; text-align:center; color:var(--text-light); user-select:none; }
-        .tree-toggle.empty { visibility:hidden; }
-        @media (max-width:820px) { .fb-layout { flex-wrap:wrap; } .fb-tree { flex-basis:100%; max-height:none; } }
+        .empty-state { text-align:center; padding:3rem 1rem; color:var(--text-light); }
+        #fb-toast { position:fixed; bottom:1.25rem; left:50%; transform:translateX(-50%); background:#333; color:#fff; padding:0.6rem 1.1rem; border-radius:6px; font-size:0.85rem; opacity:0; transition:opacity .2s; pointer-events:none; z-index:50; }
+        #fb-toast.show { opacity:1; }
     </style>
 </head>
 <body>
 <?php $activeNav = 'dateien'; require __DIR__ . '/_sidebar.php'; ?>
 
         <main class="main-content">
-            <header class="content-header">
-                <h1>Dateien</h1>
-            </header>
+            <header class="content-header"><h1>Dateien</h1></header>
 
-            <?php if ($flashSuccess): ?><div class="alert alert-success"><?= htmlspecialchars($flashSuccess) ?></div><?php endif; ?>
-            <?php if ($flashError): ?><div class="alert alert-error"><?= htmlspecialchars($flashError) ?></div><?php endif; ?>
-
-            <?php if ($notice): ?>
-                <div class="empty-state">
-                    <div style="font-size:3rem">📁</div>
-                    <p>Google Drive ist noch nicht konfiguriert. Sobald die Zugangsdaten in der
-                    Server-Konfiguration hinterlegt sind, erscheint hier der Ordner-Browser.</p>
+            <?php if (!$configured): ?>
+                <div class="empty-state"><div style="font-size:3rem">📁</div>
+                    <p>Google Drive ist noch nicht konfiguriert. Sobald die Zugangsdaten in der Server-Konfiguration hinterlegt sind, erscheint hier der Datei-Baum.</p>
                 </div>
             <?php else: ?>
 
@@ -196,235 +105,245 @@ if (!driveConfigured()) {
                 <a href="?tab=helfer" class="tab <?= $tab === 'helfer' ? 'active' : '' ?>">Helfer</a>
             </div>
 
-            <div class="fb-layout">
-                <aside class="fb-tree" id="fb-tree" aria-label="Ordnerbaum">
-                    <ul>
-                        <li>
-                            <div class="tree-node drop-target<?= $folder === $rootId ? ' current' : '' ?>" data-folderid="<?= htmlspecialchars($rootId) ?>">
-                                <span class="tree-toggle" data-loaded="1">▾</span>
-                                <a href="?tab=<?= $tab ?>&folder=<?= urlencode($rootId) ?>"><?= htmlspecialchars($treeRootName) ?></a>
-                            </div>
-                            <ul class="tree-children">
-                                <?php foreach ($treeTop as $t): ?>
-                                <li>
-                                    <div class="tree-node drop-target<?= $folder === $t['id'] ? ' current' : '' ?>" data-folderid="<?= htmlspecialchars($t['id']) ?>">
-                                        <span class="tree-toggle" data-loaded="0" data-fid="<?= htmlspecialchars($t['id']) ?>">▸</span>
-                                        <a href="?tab=<?= $tab ?>&folder=<?= urlencode($t['id']) ?>"><?= htmlspecialchars($t['name']) ?></a>
-                                    </div>
-                                    <ul class="tree-children" hidden></ul>
-                                </li>
-                                <?php endforeach; ?>
-                            </ul>
-                        </li>
-                    </ul>
-                </aside>
-                <div class="fb-main">
-
-            <div class="fb-bar">
-                <nav class="breadcrumb" aria-label="Pfad">
-                    <?php foreach ($breadcrumb as $i => $bc): ?>
-                        <?php if ($i > 0): ?><span class="sep">/</span><?php endif; ?>
-                        <?php if ($bc['id'] === $folder): ?>
-                            <strong><?= htmlspecialchars($bc['name']) ?></strong>
-                        <?php else: ?>
-                            <a class="drop-target" data-folderid="<?= htmlspecialchars($bc['id']) ?>" href="?tab=<?= $tab ?>&folder=<?= urlencode($bc['id']) ?>"><?= htmlspecialchars($bc['name']) ?></a>
-                        <?php endif; ?>
-                    <?php endforeach; ?>
-                </nav>
-
-                <div class="fb-actions">
-                    <form method="post" action="api/folder_create.php" title="Neuen Unterordner anlegen">
-                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                        <input type="hidden" name="tab" value="<?= $tab ?>">
-                        <input type="hidden" name="parent" value="<?= htmlspecialchars($folder) ?>">
-                        <input type="text" name="name" placeholder="Neuer Ordner" maxlength="120" required>
-                        <button type="submit" class="btn btn-secondary btn-small">＋ Ordner</button>
-                    </form>
-                    <form method="post" action="api/file_upload.php" enctype="multipart/form-data" title="In diesen Ordner hochladen">
-                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                        <input type="hidden" name="tab" value="<?= $tab ?>">
-                        <input type="hidden" name="folder" value="<?= htmlspecialchars($folder) ?>">
-                        <input type="file" name="datei" required accept=".pdf,.docx,.xlsx,.png,.jpg,.jpeg">
-                        <button type="submit" class="btn btn-primary btn-small">Hochladen</button>
-                    </form>
-                </div>
+            <div class="fb-toolbar">
+                <span class="sel">Aktueller Ordner: <b id="sel-name"><?= htmlspecialchars($rootName) ?></b></span>
+                <input type="text" id="nf-name" placeholder="Neuer Ordner" maxlength="120">
+                <button type="button" class="btn btn-secondary btn-small" id="nf-btn">＋ Ordner</button>
+                <input type="file" id="up-file" accept=".pdf,.docx,.xlsx,.png,.jpg,.jpeg">
+                <button type="button" class="btn btn-primary btn-small" id="up-btn">Hochladen</button>
+                <button type="button" class="btn btn-secondary btn-small" id="set-plakat" title="Diesen Ordner als Plakate-Quelle der Sponsor-Mail für <?= $rennJahr ?> festlegen">📌 Plakate-Ordner (<?= $rennJahr ?>)</button>
+                <button type="button" class="btn btn-secondary btn-small" id="set-bilder" title="Diesen Ordner als Bild-Quelle des Foto-Pickers festlegen">🖼️ Bilder-Ordner</button>
             </div>
 
-            <div class="fb-bar" style="margin-top:-0.25rem">
-                <form method="post" action="dateien.php" class="inline-form">
-                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                    <input type="hidden" name="tab" value="<?= $tab ?>">
-                    <input type="hidden" name="folder" value="<?= htmlspecialchars($folder) ?>">
-                    <input type="hidden" name="action" value="set_plakat">
-                    <button type="submit" class="btn btn-secondary btn-small" title="Diesen Ordner als Plakate-Quelle der Sponsor-Mail für <?= $rennJahr ?> festlegen">📌 Als Plakate-Ordner (<?= $rennJahr ?>)</button>
-                </form>
-                <?php if ($plakatFolder === $folder): ?><span class="designated">aktueller Plakate-Ordner <?= $rennJahr ?></span><?php endif; ?>
-                <form method="post" action="dateien.php" class="inline-form">
-                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                    <input type="hidden" name="tab" value="<?= $tab ?>">
-                    <input type="hidden" name="folder" value="<?= htmlspecialchars($folder) ?>">
-                    <input type="hidden" name="action" value="set_bilder">
-                    <button type="submit" class="btn btn-secondary btn-small" title="Diesen Ordner als Bild-Quelle des Foto-Pickers festlegen">🖼️ Als Bilder-Ordner</button>
-                </form>
-                <?php if ($bilderFolder === $folder): ?><span class="designated">aktueller Bilder-Ordner</span><?php endif; ?>
-            </div>
+            <ul class="ftree" id="fb-tree">
+                <li>
+                    <div class="tnode tnode-folder selected" data-fid="<?= htmlspecialchars($rootId) ?>" data-name="<?= htmlspecialchars($rootName) ?>" data-folderid="<?= htmlspecialchars($rootId) ?>" data-loaded="0" draggable="false">
+                        <span class="ttoggle">▾</span>
+                        <span class="tname">📁 <?= htmlspecialchars($rootName) ?></span>
+                    </div>
+                    <ul class="tchildren"></ul>
+                </li>
+            </ul>
 
-            <?php if (empty($ordner) && empty($dateien)): ?>
-                <div class="empty-state"><div style="font-size:2.5rem">📁</div><p>Dieser Ordner ist leer.</p></div>
-            <?php else: ?>
-                <div class="table-wrap">
-                    <table class="data-table">
-                        <thead><tr><th>Name</th><th>Größe</th><th>Geändert</th><th>Aktionen</th></tr></thead>
-                        <tbody>
-                            <?php foreach ($ordner as $o): ?>
-                                <tr class="row-folder drop-target" draggable="true" data-fid="<?= htmlspecialchars($o['id']) ?>" data-name="<?= htmlspecialchars($o['name']) ?>" data-folderid="<?= htmlspecialchars($o['id']) ?>">
-                                    <td><span class="row-icon">📁</span><a href="?tab=<?= $tab ?>&folder=<?= urlencode($o['id']) ?>"><?= htmlspecialchars($o['name']) ?></a></td>
-                                    <td class="file-meta">—</td>
-                                    <td class="file-meta"><?= $o['modifiedTime'] ? htmlspecialchars(date('d.m.Y', strtotime($o['modifiedTime']))) : '' ?></td>
-                                    <td>
-                                        <button type="button" class="btn-action" data-fid="<?= htmlspecialchars($o['id']) ?>" data-name="<?= htmlspecialchars($o['name']) ?>" onclick="renameItem(this)">Umbenennen</button>
-                                        <form method="post" action="api/file_delete.php" class="inline-form" onsubmit="return confirm('Ordner samt Inhalt in den Papierkorb verschieben?');">
-                                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                                            <input type="hidden" name="tab" value="<?= $tab ?>">
-                                            <input type="hidden" name="folder" value="<?= htmlspecialchars($folder) ?>">
-                                            <input type="hidden" name="fid" value="<?= htmlspecialchars($o['id']) ?>">
-                                            <button type="submit" class="btn-action btn-danger">Löschen</button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                            <?php foreach ($dateien as $d): ?>
-                                <tr draggable="true" data-fid="<?= htmlspecialchars($d['id']) ?>" data-name="<?= htmlspecialchars($d['name']) ?>">
-                                    <td><span class="row-icon"><?= getFileIcon($d['mimeType']) ?></span><?= htmlspecialchars($d['name']) ?></td>
-                                    <td class="file-meta"><?= $d['size'] > 0 ? formatFileSize($d['size']) : '' ?></td>
-                                    <td class="file-meta"><?= $d['modifiedTime'] ? htmlspecialchars(date('d.m.Y', strtotime($d['modifiedTime']))) : '' ?></td>
-                                    <td>
-                                        <a href="api/file_download.php?fid=<?= urlencode($d['id']) ?>" class="btn-download">Download</a>
-                                        <button type="button" class="btn-action" data-fid="<?= htmlspecialchars($d['id']) ?>" data-name="<?= htmlspecialchars($d['name']) ?>" onclick="renameItem(this)">Umbenennen</button>
-                                        <form method="post" action="api/file_delete.php" class="inline-form" onsubmit="return confirm('Datei in den Papierkorb verschieben?');">
-                                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                                            <input type="hidden" name="tab" value="<?= $tab ?>">
-                                            <input type="hidden" name="folder" value="<?= htmlspecialchars($folder) ?>">
-                                            <input type="hidden" name="fid" value="<?= htmlspecialchars($d['id']) ?>">
-                                            <button type="submit" class="btn-action btn-danger">Löschen</button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-            <?php endif; ?>
-
-            <p class="fb-hint">Die Struktur spiegelt 1:1 das geteilte Google-Laufwerk „Marktlauf Orga". Änderungen, die du direkt in Drive machst, erscheinen hier automatisch. Ziehen: Zeile rechts auf einen Ordner im Baum links.</p>
-                </div><!-- .fb-main -->
-            </div><!-- .fb-layout -->
+            <p class="fb-hint">Ein Baum, live aus dem geteilten Laufwerk „Marktlauf Orga". Ordnerzeile anklicken = auswählen + auf-/zuklappen. Ziehen: eine Zeile auf einen Ordner. Aktionen erscheinen beim Überfahren der Zeile.</p>
 
             <?php endif; ?>
         </main>
     </div>
+    <div id="fb-toast"></div>
+
+    <?php if ($configured): ?>
     <script>
     (function () {
         const CSRF = <?= json_encode($csrfToken) ?>;
-        const TAB = <?= json_encode($tab ?? 'orga') ?>;
-        const CURFOLDER = <?= json_encode($folder ?? '') ?>;
+        const TAB = <?= json_encode($tab) ?>;
+        const ROOT = <?= json_encode($rootId) ?>;
+        const RENNJAHR = <?= json_encode($rennJahr) ?>;
+        let plakatFolder = <?= json_encode($plakatFolder) ?>;
+        let bilderFolder = <?= json_encode($bilderFolder) ?>;
 
-        window.renameItem = function (btn) {
-            const fid = btn.dataset.fid;
-            const cur = btn.dataset.name || '';
+        const tree = document.getElementById('fb-tree');
+        const selName = document.getElementById('sel-name');
+        const toast = document.getElementById('fb-toast');
+        let selectedFolder = ROOT;
+        let selectedName = <?= json_encode($rootName) ?>;
+        let draggedFid = null;
+
+        function showToast(msg) { toast.textContent = msg; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2200); }
+        function fileIcon(mime) {
+            if (mime.indexOf('pdf') > -1) return '📄';
+            if (mime.indexOf('word') > -1) return '📝';
+            if (mime.indexOf('sheet') > -1) return '📊';
+            if (mime.indexOf('image') > -1) return '🖼️';
+            return '📄';
+        }
+        function fmtSize(b) {
+            if (b >= 1048576) return (b / 1048576).toFixed(1).replace('.', ',') + ' MB';
+            if (b >= 1024) return Math.round(b / 1024) + ' KB';
+            return b ? b + ' B' : '';
+        }
+
+        function makeBtn(label, cls) { const b = document.createElement('button'); b.type = 'button'; b.className = 'tbtn' + (cls ? ' ' + cls : ''); b.textContent = label; return b; }
+
+        function buildRow(item) {
+            const li = document.createElement('li');
+            const node = document.createElement('div');
+            node.dataset.fid = item.id;
+            node.dataset.name = item.name;
+            node.draggable = true;
+            const actions = document.createElement('span');
+            actions.className = 'tactions';
+
+            if (item.isFolder) {
+                node.className = 'tnode tnode-folder drop-target';
+                node.dataset.folderid = item.id;
+                node.dataset.loaded = '0';
+                const tog = document.createElement('span'); tog.className = 'ttoggle'; tog.textContent = '▸';
+                const name = document.createElement('span'); name.className = 'tname'; name.textContent = '📁 ' + item.name;
+                node.appendChild(tog); node.appendChild(name);
+                const bRen = makeBtn('Umbenennen'); bRen.dataset.act = 'rename';
+                const bDel = makeBtn('Löschen', 'danger'); bDel.dataset.act = 'delete';
+                actions.appendChild(bRen); actions.appendChild(bDel);
+                node.appendChild(actions);
+                li.appendChild(node);
+                const sub = document.createElement('ul'); sub.className = 'tchildren'; sub.hidden = true; li.appendChild(sub);
+            } else {
+                node.className = 'tnode tnode-file';
+                const sp = document.createElement('span'); sp.className = 'ttoggle'; sp.textContent = '';
+                const name = document.createElement('span'); name.className = 'tname'; name.textContent = fileIcon(item.mimeType || '') + ' ' + item.name;
+                const meta = document.createElement('span'); meta.className = 'tmeta'; meta.textContent = fmtSize(item.size || 0);
+                node.appendChild(sp); node.appendChild(name); node.appendChild(meta);
+                const dl = document.createElement('a'); dl.className = 'tbtn'; dl.textContent = 'Download'; dl.href = 'api/file_download.php?fid=' + encodeURIComponent(item.id);
+                const bRen = makeBtn('Umbenennen'); bRen.dataset.act = 'rename';
+                const bDel = makeBtn('Löschen', 'danger'); bDel.dataset.act = 'delete';
+                actions.appendChild(dl); actions.appendChild(bRen); actions.appendChild(bDel);
+                node.appendChild(actions);
+                li.appendChild(node);
+            }
+            return li;
+        }
+
+        function childUlOf(node) { return node.closest('li').querySelector(':scope > ul.tchildren'); }
+
+        function loadChildren(node) {
+            const ul = childUlOf(node);
+            return fetch('api/folder_children.php?parent=' + encodeURIComponent(node.dataset.fid))
+                .then(r => r.json())
+                .then(d => {
+                    ul.innerHTML = '';
+                    (d.items || []).forEach(it => ul.appendChild(buildRow(it)));
+                    node.dataset.loaded = '1';
+                    ul.hidden = false;
+                    const tog = node.querySelector('.ttoggle'); if (tog) tog.textContent = '▾';
+                });
+        }
+        function refreshFolder(fid) {
+            const node = tree.querySelector('.tnode-folder[data-fid="' + (window.CSS && CSS.escape ? CSS.escape(fid) : fid) + '"]');
+            if (node && node.dataset.loaded === '1') { loadChildren(node); }
+        }
+        function toggleFolder(node) {
+            const ul = childUlOf(node);
+            const tog = node.querySelector('.ttoggle');
+            if (node.dataset.loaded === '0') { loadChildren(node); return; }
+            ul.hidden = !ul.hidden;
+            if (tog) tog.textContent = ul.hidden ? '▸' : '▾';
+        }
+        function selectFolder(node) {
+            tree.querySelectorAll('.tnode.selected').forEach(n => n.classList.remove('selected'));
+            node.classList.add('selected');
+            selectedFolder = node.dataset.fid;
+            selectedName = node.dataset.name;
+            selName.textContent = selectedName;
+        }
+
+        // Klicks im Baum (delegiert)
+        tree.addEventListener('click', function (e) {
+            const btn = e.target.closest('button[data-act]');
+            if (btn) {
+                const node = btn.closest('.tnode');
+                if (btn.dataset.act === 'rename') { doRename(node); }
+                else if (btn.dataset.act === 'delete') { doDelete(node); }
+                return;
+            }
+            if (e.target.closest('a.tbtn')) return; // Download-Link
+            const folderNode = e.target.closest('.tnode-folder');
+            if (folderNode) { selectFolder(folderNode); toggleFolder(folderNode); }
+        });
+
+        function doRename(node) {
+            const cur = node.dataset.name;
             const name = prompt('Neuer Name:', cur);
             if (name === null) return;
             const t = name.trim();
             if (t === '' || t === cur) return;
-            const f = document.createElement('form');
-            f.method = 'post';
-            f.action = 'api/file_rename.php';
-            [['csrf_token', CSRF], ['tab', TAB], ['folder', CURFOLDER], ['fid', fid], ['name', t]].forEach(function (kv) {
-                const i = document.createElement('input');
-                i.type = 'hidden'; i.name = kv[0]; i.value = kv[1];
-                f.appendChild(i);
-            });
-            document.body.appendChild(f);
-            f.submit();
-        };
-
-        // Ordnerbaum: Ebenen bei Bedarf nachladen
-        const tree = document.getElementById('fb-tree');
-        if (tree) {
-            tree.addEventListener('click', function (e) {
-                const tog = e.target.closest('.tree-toggle');
-                if (!tog || !tog.dataset.fid) return;
-                const li = tog.closest('li');
-                const childUl = li.querySelector(':scope > ul.tree-children');
-                if (!childUl) return;
-                if (tog.dataset.loaded === '0') {
-                    tog.dataset.loaded = '1';
-                    tog.textContent = '▾';
-                    fetch('api/folder_children.php?parent=' + encodeURIComponent(tog.dataset.fid))
-                        .then(function (r) { return r.json(); })
-                        .then(function (d) {
-                            childUl.innerHTML = '';
-                            (d.folders || []).forEach(function (f) {
-                                const item = document.createElement('li');
-                                const node = document.createElement('div');
-                                node.className = 'tree-node drop-target';
-                                node.dataset.folderid = f.id;
-                                const t = document.createElement('span');
-                                t.className = 'tree-toggle'; t.dataset.loaded = '0'; t.dataset.fid = f.id; t.textContent = '▸';
-                                const a = document.createElement('a');
-                                a.href = '?tab=' + encodeURIComponent(TAB) + '&folder=' + encodeURIComponent(f.id);
-                                a.textContent = f.name;
-                                node.appendChild(t); node.appendChild(a);
-                                const sub = document.createElement('ul');
-                                sub.className = 'tree-children'; sub.hidden = true;
-                                item.appendChild(node); item.appendChild(sub);
-                                childUl.appendChild(item);
-                            });
-                            if (!(d.folders || []).length) { tog.classList.add('empty'); }
-                            childUl.hidden = false;
-                        })
-                        .catch(function () { tog.dataset.loaded = '0'; tog.textContent = '▸'; });
-                } else {
-                    childUl.hidden = !childUl.hidden;
-                    tog.textContent = childUl.hidden ? '▸' : '▾';
-                }
-            });
+            const body = new URLSearchParams({ csrf_token: CSRF, tab: TAB, fid: node.dataset.fid, name: t });
+            fetch('api/file_rename.php', { method: 'POST', body: body, redirect: 'manual' })
+                .then(() => {
+                    node.dataset.name = t;
+                    const nm = node.querySelector('.tname');
+                    nm.textContent = nm.textContent.slice(0, 2) + t; // Icon + neuer Name
+                    if (node.dataset.fid === selectedFolder) { selectedName = t; selName.textContent = t; }
+                    showToast('Umbenannt.');
+                });
+        }
+        function doDelete(node) {
+            const isFolder = node.classList.contains('tnode-folder');
+            if (!confirm((isFolder ? 'Ordner samt Inhalt' : 'Datei') + ' „' + node.dataset.name + '“ in den Papierkorb?')) return;
+            const body = new URLSearchParams({ csrf_token: CSRF, tab: TAB, fid: node.dataset.fid });
+            fetch('api/file_delete.php', { method: 'POST', body: body, redirect: 'manual' })
+                .then(() => { node.closest('li').remove(); showToast('In den Papierkorb verschoben.'); });
         }
 
-        // Drag & Drop (delegiert – erfasst auch nachgeladene Baum-Knoten)
-        let draggedFid = null;
-        document.addEventListener('dragstart', function (e) {
-            const row = e.target.closest('tr[draggable]');
-            if (row) { draggedFid = row.dataset.fid; e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', row.dataset.fid); } catch (_) {} }
+        // Toolbar
+        document.getElementById('nf-btn').addEventListener('click', function () {
+            const inp = document.getElementById('nf-name');
+            const name = inp.value.trim();
+            if (name === '') { inp.focus(); return; }
+            const body = new URLSearchParams({ csrf_token: CSRF, tab: TAB, parent: selectedFolder, name: name });
+            fetch('api/folder_create.php', { method: 'POST', body: body, redirect: 'manual' })
+                .then(() => { inp.value = ''; refreshFolder(selectedFolder); showToast('Ordner angelegt in „' + selectedName + '“.'); });
+        });
+        document.getElementById('up-btn').addEventListener('click', function () {
+            const inp = document.getElementById('up-file');
+            if (!inp.files || !inp.files[0]) { inp.click(); return; }
+            const fd = new FormData();
+            fd.append('csrf_token', CSRF); fd.append('tab', TAB); fd.append('folder', selectedFolder); fd.append('datei', inp.files[0]);
+            fetch('api/file_upload.php', { method: 'POST', body: fd, redirect: 'manual' })
+                .then(() => { inp.value = ''; refreshFolder(selectedFolder); showToast('Hochgeladen in „' + selectedName + '“.'); });
+        });
+        function designate(action, msg) {
+            const body = new URLSearchParams({ csrf_token: CSRF, tab: TAB, action: action, folder: selectedFolder });
+            fetch('dateien.php', { method: 'POST', body: body })
+                .then(() => { if (action === 'set_plakat') plakatFolder = selectedFolder; else bilderFolder = selectedFolder; showToast(msg + ' „' + selectedName + '“.'); });
+        }
+        document.getElementById('set-plakat').addEventListener('click', () => designate('set_plakat', 'Plakate-Ordner (' + RENNJAHR + ') gesetzt:'));
+        document.getElementById('set-bilder').addEventListener('click', () => designate('set_bilder', 'Bilder-Ordner gesetzt:'));
+
+        // Drag & Drop (delegiert)
+        tree.addEventListener('dragstart', function (e) {
+            const node = e.target.closest('.tnode[data-fid]');
+            if (node) { draggedFid = node.dataset.fid; e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', node.dataset.fid); } catch (_) {} }
         });
         let lastOver = null;
-        document.addEventListener('dragover', function (e) {
-            const dt = e.target.closest('.drop-target');
+        tree.addEventListener('dragover', function (e) {
+            const dt = e.target.closest('.tnode-folder');
             if (!dt) return;
             e.preventDefault();
             if (lastOver && lastOver !== dt) lastOver.classList.remove('drag-over');
             dt.classList.add('drag-over'); lastOver = dt;
         });
-        document.addEventListener('dragleave', function (e) {
-            const dt = e.target.closest('.drop-target');
-            if (dt) dt.classList.remove('drag-over');
-        });
-        document.addEventListener('drop', function (e) {
-            const dt = e.target.closest('.drop-target');
+        tree.addEventListener('dragleave', function (e) { const dt = e.target.closest('.tnode-folder'); if (dt) dt.classList.remove('drag-over'); });
+        tree.addEventListener('drop', function (e) {
+            const dt = e.target.closest('.tnode-folder');
             if (!dt) return;
-            e.preventDefault();
-            dt.classList.remove('drag-over');
+            e.preventDefault(); dt.classList.remove('drag-over');
             const target = dt.dataset.folderid;
-            if (!draggedFid || !target || draggedFid === target || target === CURFOLDER) { draggedFid = null; return; }
-            const body = new URLSearchParams({ csrf_token: CSRF, tab: TAB, fid: draggedFid, target: target, source: CURFOLDER });
-            draggedFid = null;
+            const sourceLi = tree.querySelector('.tnode[data-fid="' + (window.CSS && CSS.escape ? CSS.escape(draggedFid) : draggedFid) + '"]');
+            const sourceNode = sourceLi;
+            const source = sourceNode ? (sourceNode.closest('ul.tchildren') ? sourceNode.closest('ul.tchildren').closest('li').querySelector(':scope > .tnode').dataset.fid : ROOT) : ROOT;
+            if (!draggedFid || !target || draggedFid === target) { draggedFid = null; return; }
+            const body = new URLSearchParams({ csrf_token: CSRF, tab: TAB, fid: draggedFid, target: target, source: source });
+            const moved = draggedFid; draggedFid = null;
             fetch('api/file_move.php', { method: 'POST', body: body })
-                .then(function (r) { return r.json(); })
-                .then(function (d) { if (d.ok) { location.reload(); } else { alert(d.message || 'Verschieben fehlgeschlagen.'); } })
-                .catch(function () { alert('Verschieben fehlgeschlagen.'); });
+                .then(r => r.json())
+                .then(d => {
+                    if (!d.ok) { alert(d.message || 'Verschieben fehlgeschlagen.'); return; }
+                    const li = tree.querySelector('.tnode[data-fid="' + (window.CSS && CSS.escape ? CSS.escape(moved) : moved) + '"]');
+                    if (li) li.closest('li').remove();
+                    refreshFolder(target);
+                    showToast('Verschoben.');
+                })
+                .catch(() => alert('Verschieben fehlgeschlagen.'));
         });
-    })();
 
+        // Start: Wurzel aufklappen
+        const rootNode = tree.querySelector('.tnode-folder');
+        if (rootNode) { loadChildren(rootNode); }
+    })();
+    </script>
+    <?php endif; ?>
+
+    <script>
     (function () {
         const burger = document.getElementById('burger-btn');
         const sidebar = document.getElementById('sidebar');
