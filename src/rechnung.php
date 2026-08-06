@@ -102,16 +102,48 @@ function sponsoringPakete(?PDO $pdo = null): array
 }
 
 /**
- * Parst einen investition-String ("1.000 €") zu einem Netto-Float; "auf Anfrage" -> null.
- * Nur ganze Euro-Beträge erwartet (Paket-Listenpreise).
+ * Parst einen investition-String ("1.000 €") zu einem Float; "auf Anfrage" -> null.
+ * Nur ganze Euro-Beträge erwartet (Paket-Listenpreise). Ob der Wert netto oder brutto
+ * ist, entscheidet der globale Schalter (rechnungGlobalBrutto), nicht diese Funktion.
  */
-function paketPreisNetto(?string $investition): ?float
+function paketBetrag(?string $investition): ?float
 {
     $digits = preg_replace('/[^0-9]/', '', (string) $investition);
     if ($digits === '' || $digits === null) {
         return null;
     }
     return (float) $digits;
+}
+
+/**
+ * Globaler Schalter „Sponsoringbeträge sind brutto" (Einstellung `rechnung_betraege_brutto`).
+ * Default false = netto (+USt). Nächstes Jahr im Admin-Bereich ohne Code umstellbar.
+ */
+function rechnungGlobalBrutto(?PDO $pdo = null): bool
+{
+    if ($pdo === null) {
+        return false;
+    }
+    try {
+        $v = $pdo->query("SELECT `value` FROM einstellungen WHERE `key` = 'rechnung_betraege_brutto'")->fetchColumn();
+        return $v === '1';
+    } catch (PDOException $e) {
+        return false;
+    }
+}
+
+/**
+ * Rechnet aus einem Betrag Netto/USt/Brutto — je nachdem, ob der Betrag brutto oder netto ist.
+ */
+function rechnungBetraegeAusBetrag(float $betrag, bool $istBrutto, ?float $ustSatz = null): array
+{
+    $satz = $ustSatz ?? rechnungStammdaten()['ust_satz'];
+    if ($istBrutto) {
+        $brutto = round($betrag, 2);
+        $netto  = round($brutto / (1 + $satz / 100), 2);
+        return ['netto' => $netto, 'ust_satz' => $satz, 'ust_betrag' => round($brutto - $netto, 2), 'brutto' => $brutto];
+    }
+    return rechnungBetraege($betrag, $satz);
 }
 
 /**
@@ -134,27 +166,22 @@ function paketLeistung(array $paketDef, string $zeitraum): string
  *   2) Paket-Listenpreis (netto)
  * Wirft InvalidArgumentException, wenn kein Betrag ermittelbar ist.
  */
-function rechnungBetraegeFuerSponsor(array $sponsor, array $paketDef, ?float $ustSatz = null): array
+function rechnungBetraegeFuerSponsor(array $sponsor, array $paketDef, ?float $ustSatz = null, bool $globalBrutto = false): array
 {
     $satz     = $ustSatz ?? rechnungStammdaten()['ust_satz'];
     $override = $sponsor['rechnung_betrag'] ?? null;
 
+    // Abweichender Betrag pro Sponsor: eigener brutto-Haken (übersteuert den globalen Default)
     if ($override !== null && $override !== '' && (float) $override > 0) {
-        $betrag = (float) $override;
-        if (!empty($sponsor['rechnung_betrag_brutto'])) {
-            $brutto = round($betrag, 2);
-            $netto  = round($brutto / (1 + $satz / 100), 2);
-            $ust    = round($brutto - $netto, 2);
-            return ['netto' => $netto, 'ust_satz' => $satz, 'ust_betrag' => $ust, 'brutto' => $brutto];
-        }
-        return rechnungBetraege($betrag, $satz);
+        return rechnungBetraegeAusBetrag((float) $override, !empty($sponsor['rechnung_betrag_brutto']), $satz);
     }
 
-    $preis = paketPreisNetto($paketDef['investition'] ?? null);
+    // Paket-Listenpreis: netto oder brutto je nach globalem Schalter
+    $preis = paketBetrag($paketDef['investition'] ?? null);
     if ($preis === null || $preis <= 0) {
         throw new InvalidArgumentException('Betrag (Paket ohne Festpreis — bitte abweichenden Betrag setzen)');
     }
-    return rechnungBetraege($preis, $satz);
+    return rechnungBetraegeAusBetrag($preis, $globalBrutto, $satz);
 }
 
 /**

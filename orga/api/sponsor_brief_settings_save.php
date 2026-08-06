@@ -1,7 +1,8 @@
 <?php
 /**
  * Briefvorlage-Einstellungen speichern (POST) — nur Admin.
- * Behandelt ausschließlich: sponsor_brief_event_datum, sponsor_brief_antwort_bis, sponsoring_pakete.
+ * Behandelt ausschließlich: sponsor_brief_event_datum, sponsor_brief_antwort_bis, sponsoring_pakete,
+ * rechnung_betraege_brutto (globaler Netto/Brutto-Schalter für den Paket-Listenpreis).
  */
 
 declare(strict_types=1);
@@ -54,10 +55,12 @@ try {
         'INSERT INTO einstellungen (`key`, `value`) VALUES (:key, :value)
          ON DUPLICATE KEY UPDATE `value` = :value2'
     );
+    $betraegeBrutto = (($_POST['rechnung_betraege_brutto'] ?? '0') === '1') ? '1' : '0';
     foreach ([
         'sponsor_brief_event_datum' => $briefEventDatum ?: null,
         'sponsor_brief_antwort_bis' => $briefAntwortBis ?: null,
         'sponsoring_pakete'         => json_encode($pakete, JSON_UNESCAPED_UNICODE),
+        'rechnung_betraege_brutto'  => $betraegeBrutto,
     ] as $key => $value) {
         $stmt->execute(['key' => $key, 'value' => $value, 'value2' => $value]);
     }

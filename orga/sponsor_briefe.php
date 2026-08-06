@@ -45,12 +45,13 @@ if ($isUserScoped && $vorlage['draft'] && $vorlage['draft_ts'] !== '') {
 // Einstellungen für den Admin-Bereich laden
 $briefSettings = [];
 try {
-    $stmt = $pdo->query("SELECT `key`, `value` FROM einstellungen WHERE `key` IN ('sponsor_brief_event_datum','sponsor_brief_antwort_bis','sponsoring_pakete')");
+    $stmt = $pdo->query("SELECT `key`, `value` FROM einstellungen WHERE `key` IN ('sponsor_brief_event_datum','sponsor_brief_antwort_bis','sponsoring_pakete','rechnung_betraege_brutto')");
     while ($row = $stmt->fetch()) { $briefSettings[$row['key']] = $row['value']; }
 } catch (PDOException $e) {}
 
 $briefEventDatum = $briefSettings['sponsor_brief_event_datum'] ?? '';
 $briefAntwortBis = $briefSettings['sponsor_brief_antwort_bis'] ?? '';
+$betraegeBrutto  = ($briefSettings['rechnung_betraege_brutto'] ?? '0') === '1';
 $paketeDefaults = [
     ['key'=>'hauptsponsor','name'=>'Hauptsponsor','investition'=>'auf Anfrage',
      'highlights'=>'Zentraler Partner des Events, maximale Sichtbarkeit auf allen Kanälen'],
@@ -346,6 +347,28 @@ if (!empty($briefSettings['sponsoring_pakete'])) {
                         <?php endforeach; ?>
                         </tbody>
                     </table>
+
+                    <div class="form-group" style="margin-bottom:1rem">
+                        <label style="font-weight:600;display:block;margin-bottom:0.4rem">Sponsoringbeträge sind</label>
+                        <label style="display:inline-flex;align-items:center;gap:0.4rem;margin-right:1.5rem">
+                            <input type="radio" name="rechnung_betraege_brutto" value="0" <?= $betraegeBrutto ? '' : 'checked' ?>>
+                            netto (19&nbsp;% USt kommen dazu)
+                        </label>
+                        <label style="display:inline-flex;align-items:center;gap:0.4rem">
+                            <input type="radio" name="rechnung_betraege_brutto" value="1" <?= $betraegeBrutto ? 'checked' : '' ?>>
+                            brutto (19&nbsp;% USt bereits enthalten)
+                        </label>
+                        <p style="font-size:0.8rem;color:var(--text-light);margin-top:0.5rem;line-height:1.5">
+                            <strong>ℹ&#xFE0E; Was bewirkt die Auswahl?</strong><br>
+                            <strong>netto</strong>: Der Paketpreis ist der Nettobetrag; auf der Rechnung kommen 19&nbsp;% USt
+                            oben drauf (z.&nbsp;B. Gold 1.000&nbsp;€ → 1.190&nbsp;€ brutto).<br>
+                            <strong>brutto</strong>: Der Paketpreis enthält die USt schon; die Rechnung rechnet sie heraus
+                            (z.&nbsp;B. 1.000&nbsp;€ → 840,34&nbsp;€ netto + 159,66&nbsp;€ USt).<br>
+                            Gilt für den <strong>Paket-Listenpreis</strong>. Ein <em>abweichender Betrag</em> pro Sponsor
+                            hat einen eigenen brutto-Haken in der Sponsor-Maske.
+                        </p>
+                    </div>
+
                     <div class="brief-actions">
                         <button type="submit" class="btn btn-secondary">Einstellungen speichern</button>
                     </div>

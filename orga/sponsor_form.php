@@ -681,9 +681,9 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                         <h2>Rechnung / Leistung</h2>
                         <p style="font-size:0.8rem; color: var(--text-light); margin-top:-0.5rem; margin-bottom:1rem;">
                             Für die Sponsoring-Rechnung. <strong>Standardmäßig kommen Leistung und Betrag
-                            aus dem gebuchten Paket</strong> (Gold 1.000 € / Silber 500 € / Bronze 250 €, netto).
-                            Die Felder unten überschreiben das nur bei Bedarf. Alle Beträge sind
-                            <strong>netto</strong>; 19&nbsp;% USt kommen auf der Rechnung dazu.
+                            aus dem gebuchten Paket</strong> (Gold 1.000 € / Silber 500 € / Bronze 250 €).
+                            Die Felder unten überschreiben das nur bei Bedarf. Ob Paketpreise netto oder brutto
+                            gelten, steht zentral in den <em>Sponsorenbriefe-Einstellungen</em> (Standard: netto).
                         </p>
 
                         <div class="form-group">
@@ -699,20 +699,19 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                                    value="<?= htmlspecialchars($sponsor['leistung_zeitraum'] ?? '') ?>">
                         </div>
 
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="rechnung_betrag">Abweichender Betrag (optional, leer = Paketpreis)</label>
-                                <input type="number" step="0.01" min="0" id="rechnung_betrag" name="rechnung_betrag"
-                                       placeholder="z. B. 1000.00"
-                                       value="<?= htmlspecialchars($sponsor['rechnung_betrag'] ?? '') ?>">
-                            </div>
-                            <div class="form-group">
-                                <label style="display:flex; align-items:center; gap:0.5rem; margin-top:1.6rem;">
-                                    <input type="checkbox" name="rechnung_betrag_brutto" value="1"
-                                           <?= !empty($sponsor['rechnung_betrag_brutto']) ? 'checked' : '' ?>>
-                                    Betrag ist brutto (USt bereits enthalten)
-                                </label>
-                            </div>
+                        <div class="form-group">
+                            <label for="rechnung_betrag">Abweichender Betrag (optional, leer = Paketpreis)</label>
+                            <input type="number" step="0.01" min="0" id="rechnung_betrag" name="rechnung_betrag"
+                                   placeholder="z. B. 1000.00"
+                                   value="<?= htmlspecialchars($sponsor['rechnung_betrag'] ?? '') ?>">
+                        </div>
+
+                        <div class="form-group">
+                            <label style="display:flex; align-items:flex-start; gap:0.5rem; cursor:pointer;">
+                                <input type="checkbox" name="rechnung_betrag_brutto" value="1" style="margin-top:0.2rem; flex-shrink:0;"
+                                       <?= !empty($sponsor['rechnung_betrag_brutto']) ? 'checked' : '' ?>>
+                                <span>Abweichender Betrag ist <strong>brutto</strong> (USt bereits enthalten) — nur relevant, wenn oben ein abweichender Betrag steht</span>
+                            </label>
                         </div>
                     </div>
 
