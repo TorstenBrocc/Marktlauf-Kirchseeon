@@ -23,6 +23,37 @@ RewriteRule ^index\.html$ / [L,R=301]
   Header always set Referrer-Policy "strict-origin-when-cross-origin"
 </IfModule>
 
+# Browser-Caching fuer statische Assets (PageSpeed: "efficient cache policy")
+<IfModule mod_expires.c>
+  ExpiresActive On
+  # Bilder & Fonts: lange cachen (aendern sich selten; Deploy stempelt CSS/JS per ?v=)
+  ExpiresByType image/png                "access plus 1 year"
+  ExpiresByType image/jpeg               "access plus 1 year"
+  ExpiresByType image/gif                "access plus 1 year"
+  ExpiresByType image/webp               "access plus 1 year"
+  ExpiresByType image/svg+xml            "access plus 1 year"
+  ExpiresByType image/x-icon             "access plus 1 year"
+  ExpiresByType font/woff2               "access plus 1 year"
+  ExpiresByType font/woff                "access plus 1 year"
+  ExpiresByType application/font-woff    "access plus 1 year"
+  # CSS & JS: 1 Monat (Deploy haengt ?v=<sha> an -> Cache-Busting bei Aenderung)
+  ExpiresByType text/css                 "access plus 1 month"
+  ExpiresByType application/javascript   "access plus 1 month"
+  ExpiresByType text/javascript          "access plus 1 month"
+  # HTML: nicht dauerhaft cachen (Inhalte sollen aktuell bleiben)
+  ExpiresByType text/html                "access plus 0 seconds"
+</IfModule>
+
+<IfModule mod_headers.c>
+  # Passende Cache-Control-Header ergaenzend zu mod_expires
+  <FilesMatch "\.(png|jpe?g|gif|webp|svg|ico|woff2?|ttf|eot)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  <FilesMatch "\.(css|js)$">
+    Header set Cache-Control "public, max-age=2592000"
+  </FilesMatch>
+</IfModule>
+
 <FilesMatch "\.(md|sql|sqlite|log|sample|sh|ini|bak)$">
   Require all denied
 </FilesMatch>
