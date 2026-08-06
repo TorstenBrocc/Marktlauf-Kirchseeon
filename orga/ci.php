@@ -2,9 +2,11 @@
 /**
  * CI & Design-Tokens — lebende Referenz.
  *
- * Liest die Design-Tokens zur Laufzeit aus der Single Source of Truth
- * (`css/base.css`, :root) und rendert sie. Keine Werte hier hartcodieren —
- * neue Tokens in base.css erscheinen automatisch.
+ * Liest die Dashboard-Tokens zur Laufzeit aus der Single Source of Truth
+ * (`orga/css/orga.css`, :root) und rendert sie. Keine Werte hier hartcodieren —
+ * neue Tokens in orga.css erscheinen automatisch. Die oeffentliche Marken-Palette
+ * (base.css: Gold, Marken-Schriften, Hero-Verlauf) ist bewusst NICHT hier, sondern
+ * im Design-System-Paket unter intern/design-system/ — das Dashboard bleibt getrennt.
  */
 
 declare(strict_types=1);
@@ -14,8 +16,8 @@ require_once __DIR__ . '/api/_auth.php';
 $user    = getCurrentUserFromGuard();
 $isAdmin = isAdminFromGuard();
 
-$cssPath    = __DIR__ . '/../css/base.css';
-$cssRelPath = 'css/base.css';
+$cssPath    = __DIR__ . '/css/orga.css';
+$cssRelPath = 'orga/css/orga.css';
 
 /** @var array<string,string> $tokens name => value, in Deklarationsreihenfolge */
 $tokens  = [];
@@ -331,9 +333,10 @@ function ci_card(array $t, array $tokens): string
             </header>
 
             <p class="ci-intro">
-                Lebende Referenz der Website-Palette. Die Werte werden bei jedem Aufruf direkt aus
-                <code><?= htmlspecialchars($cssRelPath) ?></code> (<code>:root</code>) gelesen — Single Source of Truth.
+                Lebende Referenz der <strong>Dashboard</strong>-Palette. Die Werte werden bei jedem Aufruf direkt aus
+                <code><?= htmlspecialchars($cssRelPath) ?></code> (<code>:root</code>) gelesen — Single Source of Truth des Orga-Dashboards.
                 Klick auf eine Kachel kopiert den Wert, Klick auf den Variablennamen kopiert <code>var(--token)</code>.
+                Die öffentliche Marken-Palette (Gold, Marken-Schriften, Hero-Verlauf) liegt bewusst getrennt im Design-System-Paket.
             </p>
 
             <?php if (!$cssRead): ?>
