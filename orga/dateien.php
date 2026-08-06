@@ -103,6 +103,19 @@ if (!driveConfigured()) {
     $rennJahr     = driveRennJahr($pdo);
     $plakatFolder = drivePlakatFolderId($pdo, $rennJahr);
     $bilderFolder = driveBilderFolderId($pdo);
+
+    // Ordnerbaum-Wurzel + erstes Level (tiefere Ebenen lädt der Baum bei Bedarf nach).
+    $treeRootName = $breadcrumb[0]['name'] ?? driveBereichName($tab);
+    $treeTop = [];
+    try {
+        foreach (driveListChildren($rootId) as $c) {
+            if ($c['isFolder']) {
+                $treeTop[] = $c;
+            }
+        }
+    } catch (Throwable $e) {
+        $treeTop = [];
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -145,6 +158,18 @@ if (!driveConfigured()) {
         tr[draggable] { cursor:grab; }
         .drag-over { outline:2px solid var(--primary); outline-offset:-2px; background:rgba(0,150,64,0.08) !important; }
         a.drop-target.drag-over { background:rgba(0,150,64,0.18); border-radius:3px; outline:none; }
+        .fb-layout { display:flex; gap:1.25rem; align-items:flex-start; }
+        .fb-tree { flex:0 0 250px; background:var(--white); border:1px solid var(--border); border-radius:8px; padding:0.6rem; max-height:72vh; overflow:auto; font-size:0.85rem; box-shadow:var(--shadow-card); }
+        .fb-tree ul { list-style:none; margin:0; padding-left:0.9rem; }
+        .fb-tree > ul { padding-left:0; }
+        .fb-main { flex:1; min-width:0; }
+        .tree-node { display:flex; align-items:center; gap:0.25rem; padding:0.15rem 0.3rem; border-radius:4px; white-space:nowrap; }
+        .tree-node a { color:var(--text); text-decoration:none; overflow:hidden; text-overflow:ellipsis; }
+        .tree-node a:hover { color:var(--primary); }
+        .tree-node.current { background:rgba(0,150,64,0.1); font-weight:600; }
+        .tree-toggle { cursor:pointer; width:1rem; text-align:center; color:var(--text-light); user-select:none; }
+        .tree-toggle.empty { visibility:hidden; }
+        @media (max-width:820px) { .fb-layout { flex-wrap:wrap; } .fb-tree { flex-basis:100%; max-height:none; } }
     </style>
 </head>
 <body>
@@ -170,6 +195,30 @@ if (!driveConfigured()) {
                 <a href="?tab=orga" class="tab <?= $tab === 'orga' ? 'active' : '' ?>">Orga</a>
                 <a href="?tab=helfer" class="tab <?= $tab === 'helfer' ? 'active' : '' ?>">Helfer</a>
             </div>
+
+            <div class="fb-layout">
+                <aside class="fb-tree" id="fb-tree" aria-label="Ordnerbaum">
+                    <ul>
+                        <li>
+                            <div class="tree-node drop-target<?= $folder === $rootId ? ' current' : '' ?>" data-folderid="<?= htmlspecialchars($rootId) ?>">
+                                <span class="tree-toggle" data-loaded="1">▾</span>
+                                <a href="?tab=<?= $tab ?>&folder=<?= urlencode($rootId) ?>"><?= htmlspecialchars($treeRootName) ?></a>
+                            </div>
+                            <ul class="tree-children">
+                                <?php foreach ($treeTop as $t): ?>
+                                <li>
+                                    <div class="tree-node drop-target<?= $folder === $t['id'] ? ' current' : '' ?>" data-folderid="<?= htmlspecialchars($t['id']) ?>">
+                                        <span class="tree-toggle" data-loaded="0" data-fid="<?= htmlspecialchars($t['id']) ?>">▸</span>
+                                        <a href="?tab=<?= $tab ?>&folder=<?= urlencode($t['id']) ?>"><?= htmlspecialchars($t['name']) ?></a>
+                                    </div>
+                                    <ul class="tree-children" hidden></ul>
+                                </li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </li>
+                    </ul>
+                </aside>
+                <div class="fb-main">
 
             <div class="fb-bar">
                 <nav class="breadcrumb" aria-label="Pfad">
@@ -267,7 +316,9 @@ if (!driveConfigured()) {
                 </div>
             <?php endif; ?>
 
-            <p class="fb-hint">Die Struktur spiegelt 1:1 das geteilte Google-Laufwerk „Marktlauf Orga". Änderungen, die du direkt in Drive machst, erscheinen hier automatisch.</p>
+            <p class="fb-hint">Die Struktur spiegelt 1:1 das geteilte Google-Laufwerk „Marktlauf Orga". Änderungen, die du direkt in Drive machst, erscheinen hier automatisch. Ziehen: Zeile rechts auf einen Ordner im Baum links.</p>
+                </div><!-- .fb-main -->
+            </div><!-- .fb-layout -->
 
             <?php endif; ?>
         </main>
@@ -297,24 +348,80 @@ if (!driveConfigured()) {
             f.submit();
         };
 
-        let draggedFid = null;
-        document.querySelectorAll('tr[draggable]').forEach(function (tr) {
-            tr.addEventListener('dragstart', function (e) { draggedFid = tr.dataset.fid; e.dataTransfer.effectAllowed = 'move'; });
-        });
-        document.querySelectorAll('.drop-target').forEach(function (el) {
-            el.addEventListener('dragover', function (e) { e.preventDefault(); el.classList.add('drag-over'); });
-            el.addEventListener('dragleave', function () { el.classList.remove('drag-over'); });
-            el.addEventListener('drop', function (e) {
-                e.preventDefault();
-                el.classList.remove('drag-over');
-                const target = el.dataset.folderid;
-                if (!draggedFid || !target || draggedFid === target) return;
-                const body = new URLSearchParams({ csrf_token: CSRF, tab: TAB, fid: draggedFid, target: target, source: CURFOLDER });
-                fetch('api/file_move.php', { method: 'POST', body: body })
-                    .then(function (r) { return r.json(); })
-                    .then(function (d) { if (d.ok) { location.reload(); } else { alert(d.message || 'Verschieben fehlgeschlagen.'); } })
-                    .catch(function () { alert('Verschieben fehlgeschlagen.'); });
+        // Ordnerbaum: Ebenen bei Bedarf nachladen
+        const tree = document.getElementById('fb-tree');
+        if (tree) {
+            tree.addEventListener('click', function (e) {
+                const tog = e.target.closest('.tree-toggle');
+                if (!tog || !tog.dataset.fid) return;
+                const li = tog.closest('li');
+                const childUl = li.querySelector(':scope > ul.tree-children');
+                if (!childUl) return;
+                if (tog.dataset.loaded === '0') {
+                    tog.dataset.loaded = '1';
+                    tog.textContent = '▾';
+                    fetch('api/folder_children.php?parent=' + encodeURIComponent(tog.dataset.fid))
+                        .then(function (r) { return r.json(); })
+                        .then(function (d) {
+                            childUl.innerHTML = '';
+                            (d.folders || []).forEach(function (f) {
+                                const item = document.createElement('li');
+                                const node = document.createElement('div');
+                                node.className = 'tree-node drop-target';
+                                node.dataset.folderid = f.id;
+                                const t = document.createElement('span');
+                                t.className = 'tree-toggle'; t.dataset.loaded = '0'; t.dataset.fid = f.id; t.textContent = '▸';
+                                const a = document.createElement('a');
+                                a.href = '?tab=' + encodeURIComponent(TAB) + '&folder=' + encodeURIComponent(f.id);
+                                a.textContent = f.name;
+                                node.appendChild(t); node.appendChild(a);
+                                const sub = document.createElement('ul');
+                                sub.className = 'tree-children'; sub.hidden = true;
+                                item.appendChild(node); item.appendChild(sub);
+                                childUl.appendChild(item);
+                            });
+                            if (!(d.folders || []).length) { tog.classList.add('empty'); }
+                            childUl.hidden = false;
+                        })
+                        .catch(function () { tog.dataset.loaded = '0'; tog.textContent = '▸'; });
+                } else {
+                    childUl.hidden = !childUl.hidden;
+                    tog.textContent = childUl.hidden ? '▸' : '▾';
+                }
             });
+        }
+
+        // Drag & Drop (delegiert – erfasst auch nachgeladene Baum-Knoten)
+        let draggedFid = null;
+        document.addEventListener('dragstart', function (e) {
+            const row = e.target.closest('tr[draggable]');
+            if (row) { draggedFid = row.dataset.fid; e.dataTransfer.effectAllowed = 'move'; }
+        });
+        let lastOver = null;
+        document.addEventListener('dragover', function (e) {
+            const dt = e.target.closest('.drop-target');
+            if (!dt) return;
+            e.preventDefault();
+            if (lastOver && lastOver !== dt) lastOver.classList.remove('drag-over');
+            dt.classList.add('drag-over'); lastOver = dt;
+        });
+        document.addEventListener('dragleave', function (e) {
+            const dt = e.target.closest('.drop-target');
+            if (dt) dt.classList.remove('drag-over');
+        });
+        document.addEventListener('drop', function (e) {
+            const dt = e.target.closest('.drop-target');
+            if (!dt) return;
+            e.preventDefault();
+            dt.classList.remove('drag-over');
+            const target = dt.dataset.folderid;
+            if (!draggedFid || !target || draggedFid === target || target === CURFOLDER) { draggedFid = null; return; }
+            const body = new URLSearchParams({ csrf_token: CSRF, tab: TAB, fid: draggedFid, target: target, source: CURFOLDER });
+            draggedFid = null;
+            fetch('api/file_move.php', { method: 'POST', body: body })
+                .then(function (r) { return r.json(); })
+                .then(function (d) { if (d.ok) { location.reload(); } else { alert(d.message || 'Verschieben fehlgeschlagen.'); } })
+                .catch(function () { alert('Verschieben fehlgeschlagen.'); });
         });
     })();
 
