@@ -76,6 +76,7 @@ für maximale Performance und Kontrolle.
 ├── orga/                   # Login-geschütztes Orga-Dashboard (Seiten + api/)
 ├── helfer/                 # Helfer-Zugang (Login-Link, Datei-Download)
 ├── src/                    # Backend-Bausteine (auth, db, mailer, logger, channels/ …)
+├── lib/                    # Vendored PHP-Libs (fpdf/ — PDF-Erzeugung)
 ├── bin/                    # CLI-Werkzeuge (Migrationen, Cron-Jobs, Lint)
 ├── migrations/             # Versionierte SQL-Migrationen (via bin/migrate.php)
 ├── storage/                # Konfig + Datei-/Log-Ablage (nur *.sample im Repo)
@@ -120,6 +121,69 @@ manuell per MySQL-Client ausführen.
 Layout-Prinzipien: klares, modulares CSS, semantisches HTML5, saubere visuelle
 Hierarchie.
 
+## 🔒 Sicherheit („Hacker-Dichtigkeit")
+
+Das Orga-Dashboard verarbeitet personenbezogene Daten (Helfer, Sponsoren) und ist
+entsprechend gehärtet. Umgesetzte Maßnahmen (Belege im Code):
+
+- **Passwort-Hashing:** `Argon2id` (`password_hash(..., PASSWORD_ARGON2ID)`,
+  `bin/hash_password.php`), Verifikation via `password_verify()` (`src/auth.php`).
+- **Gehärtete Sessions:** Cookies `HttpOnly` + `SameSite=Strict` + `Secure` (dynamisch
+  bei HTTPS), `session_regenerate_id(true)` nach Login (Session-Fixation-Schutz),
+  sauberer Logout (`src/auth.php`).
+- **CSRF-Schutz:** Token aus `random_bytes(32)`, **timing-safe** verifiziert mit
+  `hash_equals()`; alle schreibenden API-Endpunkte unter `orga/api/` prüfen das Token.
+- **SQL-Injection-Schutz:** durchgängig PDO **Prepared Statements** mit
+  `ATTR_EMULATE_PREPARES => false` und benannten Platzhaltern (`src/db.php`) — keine
+  String-Konkatenation von Nutzereingaben in SQL.
+- **XSS-Schutz:** Output-Escaping via `htmlspecialchars(..., ENT_QUOTES, 'UTF-8')`;
+  Header-Injection-Schutz beim Datei-Download (`src/helpers.php`).
+- **Brute-Force-/Rate-Limiting:** mehrschichtig — pro E-Mail (5) **und** pro IP (20) je
+  15-Minuten-Fenster beim Login, zusätzlich Rate-Limit bei der Registrierung; IPv6 auf
+  /64 normalisiert, `X-Forwarded-For` nur bei konfiguriertem `trusted_proxy` (Anti-Spoofing).
+- **Input-Validierung:** `FILTER_VALIDATE_EMAIL`, Längenlimits, Whitelist-Prüfungen,
+  **Honeypot**-Feld gegen Bots bei der Helfer-Anmeldung.
+- **Datei-Upload-Härtung:** MIME-Prüfung per **Inhalt** (`finfo`, nicht per Endung),
+  10-MB-Limit, Ablage unter zufälliger UUID (kein Original-Dateiname), Bilder werden
+  re-encodiert (entfernt eingebettete Payloads), Speicher in `storage/` außerhalb der
+  Web-Auslieferung.
+- **Token-Gating:** öffentliche Helfer-Anmeldung nur mit gültigem `access_token`;
+  Benutzer-Einladungen als Einmal-Token mit Ablaufdatum.
+- **HTTP-Security-Header** (`.htaccess`): `X-Content-Type-Options: nosniff`,
+  `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: strict-origin-when-cross-origin`;
+  erzwungenes HTTPS (301) und kanonische Domain.
+- **Datei-/Secret-Abschottung:** `Require all denied` für `storage/`, `src/`, `bin/`,
+  `migrations/`; Root-`.htaccess` sperrt `.md/.sql/.sqlite/.log/.sample/.sh/.ini/.bak`.
+  Secrets liegen **nur** in `storage/config.php` (nicht im Repo); `.gitignore` sperrt
+  `config.php`, `.env*`, `*.key`, `*.pem`, `credentials.json`, Logs und Admin-Seeds.
+
+**Bekannte Härtungs-To-dos** (bewusst dokumentiert, nicht kritisch):
+
+- Öffentliches Kontaktformular (`contact.php`) ohne CSRF-Token/Rate-Limit/Honeypot —
+  anfällig für Formular-Spam (E-Mail wird immerhin validiert).
+- Keine `Content-Security-Policy` und kein `Strict-Transport-Security` (HSTS)-Header.
+- Helfer-Datei-Download autorisiert allein über Kenntnis der Helfer-UUID (bewusst
+  session-los, aber ohne zusätzliches Ablauf-Token).
+
+## ⚖️ Rechtliches & Datenschutz
+
+- **Impressum & Datenschutz:** `impressum.html`, `datenschutz.html` (öffentlich verlinkt).
+- **DSGVO-Grundhaltung:** Schriften self-hosted (kein Google-Fonts-CDN), keine
+  Tracking-Cookies für Marketing; Session-Cookies sind technisch notwendig.
+- **Auftragsverarbeiter / Datenempfänger:** Brevo (Newsletter/Mail), RaceResult
+  (Anmeldung/Ergebnisse), Google (Gemini-LLM, Google Drive als Datei-Backend),
+  Mistral AI (alternativer LLM-Provider), Strato (Hosting/SMTP) — vollständig in
+  `datenschutz.html` benannt.
+- **Einwilligungen:** Newsletter per **Double-Opt-in** (Brevo); bei der Helfer-Anmeldung
+  wird die Foto-Einwilligung (`consent_photo`) explizit erfasst.
+- **Kartendaten:** OpenStreetMap-Attribution (ODbL) auf den Streckenkarten sichtbar.
+- **Drittanbieter-Lizenzen:** vollständige, gegen den Code geprüfte Inventur in
+  [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md) — inkl. Hinweis zur GPL-3.0-Lizenz
+  von `leaflet-elevation` (nur zur Laufzeit vom CDN geladen, nicht mit-verteilt).
+
 ---
 
-Drittanbieter-Lizenzen: siehe [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md).
+**Weiterführend:**
+
+- Drittanbieter-Komponenten & Lizenzen: [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md)
+- Konfigurationsvorlage: `storage/config.sample.php`
