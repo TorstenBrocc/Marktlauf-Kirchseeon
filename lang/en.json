@@ -180,5 +180,22 @@
   "legal.imprint.meta_title": "Imprint – ATSV Marktlauf Kirchseeon",
   "legal.imprint.meta_description": "Legal notice and imprint for the ATSV Marktlauf Kirchseeon, organised by ATSV Kirchseeon.",
   "legal.privacy.meta_title": "Privacy Policy – ATSV Marktlauf Kirchseeon",
-  "legal.privacy.meta_description": "Privacy policy for the ATSV Marktlauf Kirchseeon in accordance with GDPR."
+  "legal.privacy.meta_description": "Privacy policy for the ATSV Marktlauf Kirchseeon in accordance with GDPR.",
+  "faq.title": "Frequently Asked Questions",
+  "faq.q1": "How and until when can I register?",
+  "faq.a1": "Registration is online via the <a href=\"#anmeldung\">Registration</a> section on this page. The registration deadline is 13 September 2026. After that, late entries are still possible on race day – up to 30 minutes before the start of the respective run, as long as places are available.",
+  "faq.q2": "How much does it cost to take part?",
+  "faq.a2": "You can view the entry fees directly on RaceResult: <a href=\"https://my.raceresult.com/412617/registration\" target=\"_blank\" rel=\"noopener noreferrer\">my.raceresult.com/412617/registration</a>. Alternatively, they are shown to you as soon as you fill in the first registration form in the <a href=\"#anmeldung\">Registration</a> section on our Marktlauf website.",
+  "faq.q3": "When does race number collection start?",
+  "faq.a3": "Race numbers are handed out on race day from approximately 9:00 a.m. in the start/finish area (JEK, Westring 6, 85614 Kirchseeon).",
+  "faq.q4": "Where can I find my time and the results?",
+  "faq.a4": "You can find all times and results after the race on RaceResult here: <a href=\"https://my.raceresult.com/412617/results\" target=\"_blank\" rel=\"noopener noreferrer\">my.raceresult.com/412617/results</a>.",
+  "faq.q5": "My registration details are wrong – how can I correct them?",
+  "faq.a5": "You can have incorrect registration details corrected directly via RaceResult: <a href=\"https://my.raceresult.com/412617/contact\" target=\"_blank\" rel=\"noopener noreferrer\">my.raceresult.com/412617/contact</a>.",
+  "faq.q6": "Do I get a certificate?",
+  "faq.a6": "Certificates are expected to be available for download after the race, or will be sent by email.",
+  "faq.q7": "What happens in bad weather?",
+  "faq.a7": "The Marktlauf takes place in almost any weather. We announce any short-notice changes on this website, via our social media channels and – for everyone who registered with an email address – by notification through RaceResult.",
+  "faq.q8": "Can I transfer or change my registration?",
+  "faq.a8": "Would you like to transfer your place or change your registration? Please get in touch via our <a href=\"#connect\">contact form</a> on our website."
 }
