@@ -40,8 +40,15 @@ try {
 }
 
 if ($action === 'assign_number') {
-    $id     = (int) ($_POST['id'] ?? 0);
-    $nummer = trim($_POST['rechnungsnummer'] ?? '');
+    $id = (int) ($_POST['id'] ?? 0);
+    // Der Kassier trägt nur die laufende Nummer (NN) ein; das Jahr ergänzt das System.
+    $nn = trim($_POST['nn'] ?? '');
+    if (!preg_match('/^\d{1,4}$/', $nn)) {
+        $_SESSION['flash_error'] = 'Bitte eine laufende Nummer eingeben (1–4 Ziffern, z. B. 05).';
+        header('Location: ../rechnungen.php');
+        exit;
+    }
+    $nummer = $nn . '-' . date('Y');
     try {
         rechnungNummerVergeben($pdo, $id, $nummer, $userId);
         $_SESSION['flash_success'] = 'Rechnungsnummer ' . $nummer . ' vergeben.';

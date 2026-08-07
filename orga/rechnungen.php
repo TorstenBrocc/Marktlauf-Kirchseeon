@@ -41,7 +41,8 @@ foreach ($nummeriert as $r) {
 // Abzurechnen: zugesagte Sponsoren (noch nicht abgerechnet). Von hier wird die Rechnung erzeugt.
 $abzurechnen = [];
 try {
-    $stmt = $pdo->query("SELECT id, firma, paket, summe FROM sponsors WHERE status = 'zugesagt' ORDER BY firma");
+    // Nur Sponsoren mit Paket sind abrechnungsrelevant (Paket = Abrechnungsgrundlage).
+    $stmt = $pdo->query("SELECT id, firma, paket, summe FROM sponsors WHERE status = 'zugesagt' AND paket IS NOT NULL AND paket <> '' ORDER BY firma");
     $abzurechnen = $stmt->fetchAll();
 } catch (PDOException $e) {
     // ignore
@@ -64,35 +65,31 @@ $paketLabel = static function (?string $p): string {
     <link rel="icon" type="image/svg+xml" href="../assets/images/logo-final.svg">
     <style>
         .rech-intro { font-size: 0.9rem; color: var(--text-light); margin-bottom: 1.25rem; line-height: 1.5; }
-        .rech-section-title { font-size: 1.05rem; margin: 1.5rem 0 0.75rem; }
-        .rech-card {
-            background: var(--white); border-radius: 8px; box-shadow: var(--shadow-card);
-            border: 1px solid var(--border); padding: 1rem 1.25rem; margin-bottom: 0.85rem;
-        }
-        .rech-card.wartet { border-left: 4px solid var(--primary); }
-        .rech-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem 1rem; }
-        .rech-firma { font-weight: 600; font-size: 1rem; }
-        .rech-meta { font-size: 0.82rem; color: var(--text-light); }
-        .rech-betrag { margin-left: auto; font-weight: 600; color: var(--primary); white-space: nowrap; }
-        .rech-leistung { font-size: 0.85rem; color: var(--text); margin: 0.5rem 0 0; line-height: 1.45; }
-        .rech-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin-top: 0.85rem; }
-        .rech-nr-form { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
-        .rech-nr-form input[type=text] {
-            width: 120px; padding: 0.4rem 0.6rem; border: 1px solid var(--border);
-            border-radius: 4px; font-size: 0.9rem;
-        }
-        .rech-nr-badge {
-            font-weight: 600; background: var(--bg); border: 1px solid var(--border);
-            border-radius: 4px; padding: 0.2rem 0.6rem; font-size: 0.9rem;
-        }
-        .rech-empty { color: var(--text-light); font-size: 0.9rem; padding: 0.5rem 0; }
+        .rech-section-title { font-size: 1.05rem; margin: 1.75rem 0 0.6rem; }
+        .rech-empty { color: var(--text-light); font-size: 0.9rem; padding: 0.25rem 0 0.75rem; }
         .rech-hint { font-size: 0.78rem; color: var(--text-light); }
-        .rech-nr-form select {
-            padding: 0.35rem 0.5rem; border: 1px solid var(--border);
-            border-radius: 4px; font-size: 0.85rem; max-width: 260px;
-        }
-        .rech-hist { margin-top: 0.6rem; padding-top: 0.5rem; border-top: 1px dashed var(--border); }
-        .rech-hist-row { font-size: 0.78rem; color: var(--text-light); line-height: 1.5; }
+        /* Tabellen — scoped Kopie des data-table-Systems aus sponsoren.php.
+           Bewusste Übergangs-Duplizierung (Design-System-Branch läuft parallel);
+           beim Merge nach orga.css zusammenführen. */
+        .table-wrap { overflow-x: auto; border-radius: 8px; box-shadow: var(--shadow-card); margin-bottom: 0.5rem; }
+        .data-table { width: 100%; border-collapse: collapse; background: var(--white); border-radius: 8px; overflow: hidden; }
+        .data-table th, .data-table td { padding: 0.75rem; text-align: left; border-bottom: 1px solid var(--border); }
+        .data-table th { background: var(--bg); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-light); }
+        .data-table tr:hover { background: #fafafa; }
+        .data-table td { font-size: 0.875rem; vertical-align: middle; }
+        .rech-firma { font-weight: 600; }
+        .rech-betrag { font-weight: 600; color: var(--primary); white-space: nowrap; }
+        .rech-nr-badge { font-weight: 600; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 0.2rem 0.5rem; font-size: 0.85rem; white-space: nowrap; }
+        .rech-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+        .rech-nr-form { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+        .rech-nr-input { width: 68px; padding: 0.4rem 0.5rem; border: 1px solid var(--border); border-radius: 4px; font-size: 0.9rem; text-align: right; }
+        .rech-nr-suffix { font-size: 0.9rem; color: var(--text-light); }
+        .rech-nr-form select { padding: 0.35rem 0.5rem; border: 1px solid var(--border); border-radius: 4px; font-size: 0.85rem; max-width: 220px; }
+        .rech-versand-ok { color: var(--primary); white-space: nowrap; }
+        .rech-versand-none { color: var(--text-light); }
+        .rech-hist { margin-top: 0.4rem; }
+        .rech-hist summary { cursor: pointer; font-size: 0.78rem; color: var(--text-light); }
+        .rech-hist-row { font-size: 0.78rem; color: var(--text-light); line-height: 1.5; margin-top: 0.2rem; }
     </style>
 </head>
 <body>
@@ -111,130 +108,192 @@ $paketLabel = static function (?string $p): string {
             <?php endif; ?>
 
             <p class="rech-intro">
-                Ablauf: zugesagte Sponsoren unten <strong>abrechnen</strong> → die Rechnung wartet als
-                Entwurf auf die fortlaufende Nummer (Format <strong>NN-JJJJ</strong>) → nach der
-                Nummernvergabe an den Sponsor senden. Beim Abrechnen wird der Sponsor automatisch auf
-                Status „Abgerechnet" gesetzt.
+                Ablauf: unten <strong>Abzurechnen</strong> stehen alle zugesagten Sponsoren mit Paket
+                — hier <strong>Rechnung erzeugen</strong>. Die Rechnung wandert dann als Entwurf nach
+                <strong>Wartet auf Nummer</strong>: Dort trägt der Kassier die fortlaufende
+                Rechnungs-<strong>Nummer</strong> ein (nur die laufende Zahl, das Jahr <?= date('Y') ?>
+                ergänzt das System automatisch). Nach der Nummernvergabe kann die Rechnung unter
+                <strong>Nummeriert</strong> an den Sponsor gesendet werden. Beim Erzeugen wird der
+                Sponsor automatisch auf Status „Abgerechnet" gesetzt.
             </p>
 
             <h2 class="rech-section-title">Abzurechnen<?= $abzurechnen ? ' (' . count($abzurechnen) . ')' : '' ?></h2>
             <?php if (!$abzurechnen): ?>
-                <p class="rech-empty">Keine zugesagten Sponsoren offen.</p>
+                <p class="rech-empty">Keine zugesagten Sponsoren mit Paket offen.</p>
             <?php else: ?>
-                <?php foreach ($abzurechnen as $s): ?>
-                    <div class="rech-card wartet">
-                        <div class="rech-head">
-                            <span class="rech-firma"><?= htmlspecialchars($s['firma']) ?></span>
-                            <span class="rech-meta"><?= htmlspecialchars($paketLabel($s['paket'])) ?></span>
-                            <span class="rech-betrag"><?= ((float) $s['summe'] > 0) ? $eur($s['summe']) . ' (Paket)' : '' ?></span>
-                        </div>
-                        <div class="rech-actions">
-                            <a href="sponsor_form.php?id=<?= (int) $s['id'] ?>" class="btn btn-small btn-secondary">Sponsor öffnen</a>
-                            <form method="post" action="api/rechnung_crud.php"
-                                  onsubmit="return confirm('Rechnung für <?= htmlspecialchars(addslashes($s['firma']), ENT_QUOTES) ?> erzeugen?');">
-                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                                <input type="hidden" name="action" value="generate">
-                                <input type="hidden" name="sponsor_ids[]" value="<?= (int) $s['id'] ?>">
-                                <button type="submit" class="btn btn-small btn-primary">Rechnung erzeugen</button>
-                            </form>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Firma</th>
+                                <th>Paket</th>
+                                <th>Betrag</th>
+                                <th>Aktion</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($abzurechnen as $s): ?>
+                                <tr>
+                                    <td class="rech-firma"><?= htmlspecialchars($s['firma']) ?></td>
+                                    <td><?= htmlspecialchars($paketLabel($s['paket'])) ?></td>
+                                    <td class="rech-betrag"><?= ((float) $s['summe'] > 0) ? $eur($s['summe']) : '–' ?></td>
+                                    <td>
+                                        <div class="rech-actions">
+                                            <a href="sponsor_form.php?id=<?= (int) $s['id'] ?>" class="btn btn-small btn-secondary">Sponsor öffnen</a>
+                                            <form method="post" action="api/rechnung_crud.php"
+                                                  onsubmit="return confirm('Rechnung für <?= htmlspecialchars(addslashes($s['firma']), ENT_QUOTES) ?> erzeugen?');">
+                                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                                                <input type="hidden" name="action" value="generate">
+                                                <input type="hidden" name="sponsor_ids[]" value="<?= (int) $s['id'] ?>">
+                                                <button type="submit" class="btn btn-small btn-primary">Rechnung erzeugen</button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
             <?php endif; ?>
 
             <h2 class="rech-section-title">Wartet auf Nummer<?= $entwuerfe ? ' (' . count($entwuerfe) . ')' : '' ?></h2>
             <?php if (!$entwuerfe): ?>
                 <p class="rech-empty">Keine offenen Entwürfe.</p>
             <?php else: ?>
-                <?php foreach ($entwuerfe as $r): ?>
-                    <div class="rech-card wartet">
-                        <div class="rech-head">
-                            <span class="rech-firma"><?= htmlspecialchars($r['empfaenger_firma']) ?></span>
-                            <span class="rech-meta">
-                                erstellt <?= htmlspecialchars(date('d.m.Y', strtotime((string) $r['erstellt_am']))) ?>
-                                <?= !empty($r['erstellt_name']) ? '· ' . htmlspecialchars($r['erstellt_name']) : '' ?>
-                            </span>
-                            <span class="rech-betrag"><?= $eur($r['brutto']) ?> brutto</span>
-                        </div>
-                        <p class="rech-leistung"><?= htmlspecialchars($r['leistung']) ?><br>
-                            <span class="rech-hint">Leistungszeitraum: <?= htmlspecialchars($r['zeitraum']) ?> ·
-                            Netto <?= $eur($r['netto']) ?> + <?= $eur($r['ust_betrag']) ?> USt</span>
-                        </p>
-                        <div class="rech-actions">
-                            <a href="api/rechnung_download.php?id=<?= (int) $r['id'] ?>" target="_blank" rel="noopener"
-                               class="btn btn-small btn-secondary">Entwurf ansehen (PDF)</a>
-                            <form method="post" action="api/rechnung_crud.php" class="rech-nr-form">
-                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                                <input type="hidden" name="action" value="assign_number">
-                                <input type="hidden" name="id" value="<?= (int) $r['id'] ?>">
-                                <label for="nr-<?= (int) $r['id'] ?>" class="rech-hint">Rechnungs-Nr.:</label>
-                                <input type="text" id="nr-<?= (int) $r['id'] ?>" name="rechnungsnummer"
-                                       placeholder="05-2026" pattern="\d{1,4}-\d{4}" required
-                                       title="Format NN-JJJJ, z. B. 05-2026">
-                                <button type="submit" class="btn btn-small btn-primary">Nummer vergeben</button>
-                            </form>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Firma</th>
+                                <th>Erstellt</th>
+                                <th>Betrag</th>
+                                <th>Aktion</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($entwuerfe as $r): ?>
+                                <tr>
+                                    <td class="rech-firma"><?= htmlspecialchars($r['empfaenger_firma']) ?></td>
+                                    <td>
+                                        <?= htmlspecialchars(date('d.m.Y', strtotime((string) $r['erstellt_am']))) ?>
+                                        <?php if (!empty($r['erstellt_name'])): ?>
+                                            <div class="rech-hint"><?= htmlspecialchars($r['erstellt_name']) ?></div>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="rech-betrag"><?= $eur($r['brutto']) ?> <span class="rech-hint">brutto</span></td>
+                                    <td>
+                                        <div class="rech-actions">
+                                            <a href="api/rechnung_download.php?id=<?= (int) $r['id'] ?>" target="_blank" rel="noopener"
+                                               class="btn btn-small btn-secondary">Entwurf ansehen (PDF)</a>
+                                            <form method="post" action="api/rechnung_crud.php" class="rech-nr-form">
+                                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                                                <input type="hidden" name="action" value="assign_number">
+                                                <input type="hidden" name="id" value="<?= (int) $r['id'] ?>">
+                                                <label for="nr-<?= (int) $r['id'] ?>" class="rech-hint">Nr.:</label>
+                                                <input type="text" id="nr-<?= (int) $r['id'] ?>" name="nn" class="rech-nr-input"
+                                                       placeholder="05" pattern="\d{1,4}" inputmode="numeric" required
+                                                       title="Laufende Nummer, z. B. 05">
+                                                <span class="rech-nr-suffix">-<?= date('Y') ?></span>
+                                                <button type="submit" class="btn btn-small btn-primary">Nummer vergeben</button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
             <?php endif; ?>
 
             <h2 class="rech-section-title">Nummeriert<?= $nummeriert ? ' (' . count($nummeriert) . ')' : '' ?></h2>
             <?php if (!$nummeriert): ?>
                 <p class="rech-empty">Noch keine nummerierten Rechnungen.</p>
             <?php else: ?>
-                <?php foreach ($nummeriert as $r): ?>
-                    <div class="rech-card">
-                        <div class="rech-head">
-                            <span class="rech-nr-badge"><?= htmlspecialchars((string) $r['rechnungsnummer']) ?></span>
-                            <span class="rech-firma"><?= htmlspecialchars($r['empfaenger_firma']) ?></span>
-                            <span class="rech-meta">
-                                Nr. vergeben <?= !empty($r['nummer_am']) ? htmlspecialchars(date('d.m.Y', strtotime((string) $r['nummer_am']))) : '' ?>
-                                <?= !empty($r['nummer_name']) ? '· ' . htmlspecialchars($r['nummer_name']) : '' ?>
-                            </span>
-                            <span class="rech-betrag"><?= $eur($r['brutto']) ?> brutto</span>
-                        </div>
-                        <?php
-                            $rid = (int) $r['id'];
-                            $emails = $versandDaten[$rid]['emails'] ?? [];
-                            $hist   = $versandDaten[$rid]['historie'] ?? [];
-                            $schonGesendet = false;
-                            foreach ($hist as $h) { if ($h['ergebnis'] === 'ok') { $schonGesendet = true; break; } }
-                        ?>
-                        <div class="rech-actions">
-                            <a href="api/rechnung_download.php?id=<?= $rid ?>" target="_blank" rel="noopener"
-                               class="btn btn-small btn-secondary">Rechnung öffnen (PDF)</a>
-                            <?php if ($emails): ?>
-                                <form method="post" action="api/rechnung_versand.php" class="rech-nr-form"
-                                      onsubmit="return confirmVersand(this, <?= $schonGesendet ? 'true' : 'false' ?>);">
-                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                                    <input type="hidden" name="id" value="<?= $rid ?>">
-                                    <label class="rech-hint" for="empf-<?= $rid ?>">An:</label>
-                                    <select id="empf-<?= $rid ?>" name="empfaenger">
-                                        <?php foreach ($emails as $em): ?>
-                                            <option value="<?= htmlspecialchars($em) ?>"><?= htmlspecialchars($em) ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                    <button type="submit" class="btn btn-small btn-primary"><?= $schonGesendet ? 'Erneut senden' : 'An Sponsor senden' ?></button>
-                                </form>
-                            <?php else: ?>
-                                <span class="rech-hint">Keine E-Mail-Adresse hinterlegt — bitte beim Sponsor ergänzen.</span>
-                            <?php endif; ?>
-                        </div>
-                        <?php if ($hist): ?>
-                            <div class="rech-hist">
-                                <?php foreach ($hist as $h): ?>
-                                    <div class="rech-hist-row">
-                                        <?= $h['ergebnis'] === 'ok' ? '✓ gesendet' : '✗ Fehler' ?>
-                                        · <?= htmlspecialchars(date('d.m.Y H:i', strtotime((string) $h['versendet_am']))) ?>
-                                        · <?= htmlspecialchars($h['empfaenger']) ?>
-                                        <?= !empty($h['von_name']) ? ' · ' . htmlspecialchars($h['von_name']) : '' ?>
-                                        <?= $h['ergebnis'] !== 'ok' && !empty($h['hinweis']) ? ' · ' . htmlspecialchars($h['hinweis']) : '' ?>
-                                    </div>
-                                <?php endforeach; ?>
-                            </div>
-                        <?php endif; ?>
-                    </div>
-                <?php endforeach; ?>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Nr.</th>
+                                <th>Firma</th>
+                                <th>Betrag</th>
+                                <th>Versand</th>
+                                <th>Aktion</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($nummeriert as $r): ?>
+                                <?php
+                                    $rid = (int) $r['id'];
+                                    $emails = $versandDaten[$rid]['emails'] ?? [];
+                                    $hist   = $versandDaten[$rid]['historie'] ?? [];
+                                    $schonGesendet = false;
+                                    $letzterVersand = '';
+                                    foreach ($hist as $h) {
+                                        if ($h['ergebnis'] === 'ok') {
+                                            $schonGesendet = true;
+                                            $letzterVersand = date('d.m.Y', strtotime((string) $h['versendet_am']));
+                                            break; // Historie ist absteigend sortiert → erster ok = letzter Versand
+                                        }
+                                    }
+                                ?>
+                                <tr>
+                                    <td><span class="rech-nr-badge"><?= htmlspecialchars((string) $r['rechnungsnummer']) ?></span></td>
+                                    <td class="rech-firma">
+                                        <?= htmlspecialchars($r['empfaenger_firma']) ?>
+                                        <div class="rech-hint">
+                                            Nr. vergeben <?= !empty($r['nummer_am']) ? htmlspecialchars(date('d.m.Y', strtotime((string) $r['nummer_am']))) : '' ?>
+                                            <?= !empty($r['nummer_name']) ? '· ' . htmlspecialchars($r['nummer_name']) : '' ?>
+                                        </div>
+                                    </td>
+                                    <td class="rech-betrag"><?= $eur($r['brutto']) ?> <span class="rech-hint">brutto</span></td>
+                                    <td>
+                                        <?php if ($schonGesendet): ?>
+                                            <span class="rech-versand-ok">✓ <?= htmlspecialchars($letzterVersand) ?></span>
+                                        <?php else: ?>
+                                            <span class="rech-versand-none">—</span>
+                                        <?php endif; ?>
+                                        <?php if ($hist): ?>
+                                            <details class="rech-hist">
+                                                <summary>Verlauf</summary>
+                                                <?php foreach ($hist as $h): ?>
+                                                    <div class="rech-hist-row">
+                                                        <?= $h['ergebnis'] === 'ok' ? '✓ gesendet' : '✗ Fehler' ?>
+                                                        · <?= htmlspecialchars(date('d.m.Y H:i', strtotime((string) $h['versendet_am']))) ?>
+                                                        · <?= htmlspecialchars($h['empfaenger']) ?>
+                                                        <?= !empty($h['von_name']) ? ' · ' . htmlspecialchars($h['von_name']) : '' ?>
+                                                        <?= $h['ergebnis'] !== 'ok' && !empty($h['hinweis']) ? ' · ' . htmlspecialchars($h['hinweis']) : '' ?>
+                                                    </div>
+                                                <?php endforeach; ?>
+                                            </details>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <div class="rech-actions">
+                                            <a href="api/rechnung_download.php?id=<?= $rid ?>" target="_blank" rel="noopener"
+                                               class="btn btn-small btn-secondary">PDF öffnen</a>
+                                            <?php if ($emails): ?>
+                                                <form method="post" action="api/rechnung_versand.php" class="rech-nr-form"
+                                                      onsubmit="return confirmVersand(this, <?= $schonGesendet ? 'true' : 'false' ?>);">
+                                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                                                    <input type="hidden" name="id" value="<?= $rid ?>">
+                                                    <label class="rech-hint" for="empf-<?= $rid ?>">An:</label>
+                                                    <select id="empf-<?= $rid ?>" name="empfaenger">
+                                                        <?php foreach ($emails as $em): ?>
+                                                            <option value="<?= htmlspecialchars($em) ?>"><?= htmlspecialchars($em) ?></option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                    <button type="submit" class="btn btn-small btn-primary"><?= $schonGesendet ? 'Erneut senden' : 'An Sponsor senden' ?></button>
+                                                </form>
+                                            <?php else: ?>
+                                                <span class="rech-hint">Keine E-Mail-Adresse hinterlegt — bitte beim Sponsor ergänzen.</span>
+                                            <?php endif; ?>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
             <?php endif; ?>
 
         </main>
