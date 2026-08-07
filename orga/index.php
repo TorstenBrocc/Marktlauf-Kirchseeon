@@ -372,9 +372,10 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                         <?php if ($trelloBoardUrl): ?>
                         <li><a href="<?= htmlspecialchars($trelloBoardUrl) ?>" target="_blank" rel="noopener" class="btn-brand btn-brand-trello">Trello-Board</a><?= $renderHinweis('trello_hinweis') ?></li>
                         <?php endif; ?>
-                        <?php if ($onedriveUrl): ?>
-                        <li><a href="<?= htmlspecialchars($onedriveUrl) ?>" target="_blank" rel="noopener" class="btn-brand btn-brand-onedrive">OneDrive</a><?= $renderHinweis('onedrive_hinweis') ?></li>
-                        <?php endif; ?>
+                        <li>
+                            <span class="btn-brand btn-brand-onedrive is-disabled" aria-disabled="true" title="Abgelöst – Dateiablage jetzt unter „Dateien“">OneDrive (abgelöst)</span>
+                            <span class="quick-hint">Dateiablage jetzt direkt im Dashboard unter <a href="dateien.php">Dateien</a> (Google Drive).</span>
+                        </li>
                         <?php if ($stravaUrl): ?>
                         <li><a href="<?= htmlspecialchars($stravaUrl) ?>" target="_blank" rel="noopener" class="btn-brand btn-brand-strava">Strava</a><?= $renderHinweis('strava_hinweis') ?></li>
                         <?php endif; ?>
