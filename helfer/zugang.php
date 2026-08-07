@@ -65,6 +65,7 @@ if (!$error && driveConfigured()) {
                 'mimetype'     => $f['mimeType'],
                 'groesse'      => $f['size'],
                 'created_at'   => $f['modifiedTime'],
+                '_anc'         => $f['ancestors'] ?? [],
             ];
         }
     } catch (Throwable $e) {
@@ -108,10 +109,14 @@ if (!$error && $helfer && $helferDateien !== []) {
                 if ($d['source'] !== 'drive') {
                     return true; // lokaler Alt-Bestand: global
                 }
-                if (!isset($visMap[$d['ref']])) {
-                    return true; // ohne Zuordnung: global
+                // Vererbung: nächste Zuordnung gewinnt — Datei selbst, sonst Elternordner aufsteigend.
+                $chain = array_merge([$d['ref']], array_reverse($d['_anc'] ?? []));
+                foreach ($chain as $node) {
+                    if (isset($visMap[$node])) {
+                        return array_intersect($visMap[$node], $meineSchichten) !== [];
+                    }
                 }
-                return array_intersect($visMap[$d['ref']], $meineSchichten) !== [];
+                return true; // nirgends eine Zuordnung: global
             }));
         }
     } catch (PDOException $e) {

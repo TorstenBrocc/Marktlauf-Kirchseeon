@@ -1,0 +1,18 @@
+{
+  "core": {
+    "name": "Core — Button, Badge, Chip, Card, Alert",
+    "sub": "Aktionen, Statuslabels, Pillen, Karten, Meldungen"
+  },
+  "forms": {
+    "name": "Formulare — Feld, Checkbox, Tabs",
+    "sub": "Kontakt-, Newsletter- und Anmeldeformulare"
+  },
+  "orga": {
+    "name": "Orga-Dashboard — Kacheln, Tabelle, Navigation",
+    "sub": "Dichte Verwaltungsoberfläche hinter dem Login"
+  },
+  "site": {
+    "name": "Website — Läufe, Zeitplan, Strecke, Hero-Teile",
+    "sub": "Bausteine der öffentlichen Event-Website"
+  }
+}

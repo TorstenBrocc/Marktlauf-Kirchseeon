@@ -77,6 +77,24 @@ foreach (glob($guidelineDir . '/*.html') ?: [] as $path) {
 ksort($guidelineGroups);
 $guidelineCount = array_sum(array_map('count', $guidelineGroups));
 
+// Komponenten — die React-Demos des Pakets, vorab (lokal) zu plain JS kompiliert und
+// auf self-hosted React umgebogen (kein CDN, kein Babel-Runtime). Laufen interaktiv im
+// iframe. Titel/Untertitel aus dem Build-Meta (_meta.json).
+$componentDir  = __DIR__ . '/../design-system/components';
+$componentMeta = [];
+if (is_file($componentDir . '/_meta.json')) {
+    $componentMeta = json_decode((string) @file_get_contents($componentDir . '/_meta.json'), true) ?: [];
+}
+$componentItems = [];
+foreach (glob($componentDir . '/*.html') ?: [] as $path) {
+    $key = basename($path, '.html');
+    $componentItems[] = [
+        'file' => basename($path),
+        'name' => $componentMeta[$key]['name'] ?? $key,
+        'sub'  => $componentMeta[$key]['sub'] ?? '',
+    ];
+}
+
 // Hero-Verlauf aus Einzeltokens zusammensetzen (falls vorhanden).
 $gradient = null;
 if (isset($map['--hero-gradient-start'], $map['--hero-gradient-mid'], $map['--hero-gradient-end'])) {
@@ -275,6 +293,7 @@ function ds_render_grid(array $items, array $map): string
         .ds-guide-cap { padding: 0.55rem 0.75rem 0.65rem; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 0.15rem; }
         .ds-guide-cap strong { font-size: 0.85rem; }
         .ds-guide-cap span { font-size: 0.74rem; color: var(--text-light); line-height: 1.4; }
+        .ds-comp-frame { display: block; width: 100%; height: 300px; border: 0; background: var(--white); }
 
         @media (max-width: 720px) {
             .ds-shell { flex-direction: column; }
@@ -319,6 +338,7 @@ function ds_render_grid(array $items, array $map): string
                         $count = match ($key) {
                             'snippets'   => count($snippetItems),
                             'guidelines' => $guidelineCount,
+                            'components' => count($componentItems),
                             default      => isset($sections[$key]) ? count($sections[$key]) : 0,
                         };
                         $countBadge = $count > 0
@@ -436,16 +456,26 @@ function ds_render_grid(array $items, array $map): string
                         <?php endif; ?>
                     </section>
 
-                    <!-- Komponenten (folgt) -->
+                    <!-- Komponenten -->
                     <section class="ds-section" id="ds-components" data-section="components">
                         <h2>Komponenten</h2>
-                        <div class="ds-todo">
-                            <strong>Folgt als nächster Schnitt (Inc 2).</strong><br>
-                            Die Komponenten-Bibliothek des Pakets wird hier als Vorschau + Code-Snippet gezeigt;
-                            interaktive Demos laufen dann isoliert in einer iframe-Sandbox mit <em>self-hosted</em>
-                            React — kein CDN, kein Framework im Dashboard-Kern. Siehe
-                            <code>intern/design-system-integration-spec.md</code>.
+                        <p class="ds-lead">Die Bausteine des Pakets, live gerendert — React ist self-hosted, das JSX vorab kompiliert (kein CDN, kein Babel im Browser). Jede Demo läuft isoliert im iframe.</p>
+                        <?php if ($componentItems === []): ?>
+                            <p class="ds-empty">Keine Komponenten gefunden (Deployment von <code>design-system/components/</code> prüfen).</p>
+                        <?php else: ?>
+                        <div class="ds-guide-grid">
+                            <?php foreach ($componentItems as $c): ?>
+                                <figure class="ds-guide">
+                                    <iframe class="ds-comp-frame" src="../design-system/components/<?= htmlspecialchars($c['file']) ?>"
+                                            sandbox="allow-scripts" loading="lazy" title="<?= htmlspecialchars($c['name']) ?>"></iframe>
+                                    <figcaption class="ds-guide-cap">
+                                        <strong><?= htmlspecialchars($c['name']) ?></strong>
+                                        <?php if ($c['sub'] !== ''): ?><span><?= htmlspecialchars($c['sub']) ?></span><?php endif; ?>
+                                    </figcaption>
+                                </figure>
+                            <?php endforeach; ?>
                         </div>
+                        <?php endif; ?>
                     </section>
 
                     <!-- Templates (folgt) -->

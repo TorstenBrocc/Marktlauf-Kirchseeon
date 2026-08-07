@@ -1,0 +1,77 @@
+<!DOCTYPE html><html lang="de"><head><meta charset="utf-8">
+<link rel="stylesheet" href="../tokens.php">
+<link rel="stylesheet" href="../../css/fonts.css">
+<style>body{margin:0;padding:20px;font-family:var(--font-main);background:var(--white);color:var(--text-strong)}a{color:var(--link)}a:hover{color:var(--link-hover)}.row{display:flex;flex-wrap:wrap;gap:14px;align-items:center}.lbl{font-family:var(--font-heading);font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-400);margin-bottom:8px}</style>
+<script src="../../assets/vendor/react/react.production.min.js"></script>
+<script src="../../assets/vendor/react/react-dom.production.min.js"></script>
+<script src="../_ds_bundle.js"></script></head><body><div id="root"></div>
+<script>const {
+  FormField,
+  Checkbox,
+  Tabs
+} = window.MarktlaufKirchseeonDesignSystem_48e1b5;
+function Demo() {
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr',
+      gap: '24px',
+      alignItems: 'start'
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "lbl"
+  }, "Felder"), /*#__PURE__*/React.createElement(FormField, {
+    label: "Vorname",
+    name: "vorname",
+    placeholder: "Vorname",
+    required: true
+  }), /*#__PURE__*/React.createElement(FormField, {
+    label: "Betreff",
+    type: "select",
+    name: "betreff",
+    placeholder: "Bitte w\xE4hlen Sie ein Thema aus",
+    options: ['Anmeldung', 'Strecke & Zeitnahme', 'Sponsoring', 'Helfer']
+  }), /*#__PURE__*/React.createElement(FormField, {
+    label: "Status",
+    name: "status",
+    dense: true,
+    hint: "Dichte Dashboard-Variante"
+  }), /*#__PURE__*/React.createElement(Checkbox, {
+    name: "privacy",
+    required: true
+  }, "Ich habe die ", /*#__PURE__*/React.createElement("a", {
+    href: "#"
+  }, "Datenschutzerkl\xE4rung"), " gelesen.")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "lbl"
+  }, "Tabs"), /*#__PURE__*/React.createElement(Tabs, {
+    tabs: [{
+      id: 'newsletter',
+      label: 'Newsletter'
+    }, {
+      id: 'kontakt',
+      label: 'Kontakt'
+    }]
+  }, id => id === 'newsletter' ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: 'center'
+    }
+  }, /*#__PURE__*/React.createElement("h3", {
+    style: {
+      margin: '0 0 6px',
+      fontFamily: 'var(--font-heading)'
+    }
+  }, "Bleib auf dem Laufenden"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      color: 'var(--gray-600)',
+      fontSize: '14px',
+      margin: 0
+    }
+  }, "Infos zum Anmeldestart und Strecken-Updates.")) : /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: 'center',
+      color: 'var(--gray-600)',
+      fontSize: '14px'
+    }
+  }, "Kontaktformular"))));
+}
+ReactDOM.createRoot(document.getElementById('root')).render(/*#__PURE__*/React.createElement(Demo, null));</script></body></html>
