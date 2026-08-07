@@ -95,6 +95,18 @@ foreach (glob($componentDir . '/*.html') ?: [] as $path) {
     ];
 }
 
+// Templates — Vorschau (captured WebP-Thumbnails) je Vorlage. Die interaktive Erzeugung
+// lebt in den jeweiligen Generatoren (Social/Plakat/Newsletter), nicht hier — deshalb
+// reicht das Vorschaubild. sponsoren-rechnung bewusst NICHT enthalten (echte Bankdaten, privat).
+$templateDir  = __DIR__ . '/../design-system/templates';
+$templateItems = array_values(array_filter([
+    ['thumb' => 'event-website.webp',    'name' => 'Event-Website-Seite',  'sub' => 'Öffentliche Seite im Marktlauf-Look: Verlaufs-Hero, Abschnitte, Karten, Footer.'],
+    ['thumb' => 'orga-seite.webp',       'name' => 'Orga-Dashboard-Seite', 'sub' => 'Interne Verwaltungsseite: Seitenleiste, Kacheln, Filterleiste, Datentabelle.'],
+    ['thumb' => 'plakat.webp',           'name' => 'Plakat',               'sub' => 'Druckfertiges A3-Plakat, Variante Hauptplakat oder Schulplakat.'],
+    ['thumb' => 'raceresult-cover.webp', 'name' => 'RaceResult-Cover',     'sub' => 'Cover-Grafiken für die RaceResult-Anmeldeseite (mobil + Desktop).'],
+    ['thumb' => 'social-post.webp',      'name' => 'Social-Media-Post',    'sub' => 'Instagram-Formate 1:1, 4:5 und 9:16 in zwei Marken-Varianten.'],
+], static fn (array $t): bool => is_file($templateDir . '/' . $t['thumb'])));
+
 // Hero-Verlauf aus Einzeltokens zusammensetzen (falls vorhanden).
 $gradient = null;
 if (isset($map['--hero-gradient-start'], $map['--hero-gradient-mid'], $map['--hero-gradient-end'])) {
@@ -294,6 +306,9 @@ function ds_render_grid(array $items, array $map): string
         .ds-guide-cap strong { font-size: 0.85rem; }
         .ds-guide-cap span { font-size: 0.74rem; color: var(--text-light); line-height: 1.4; }
         .ds-comp-frame { display: block; width: 100%; height: 300px; border: 0; background: var(--white); }
+        .ds-tpl-grid { display: grid; gap: 0.85rem; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+        .ds-tpl { margin: 0; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--white); box-shadow: var(--shadow-card); }
+        .ds-tpl img { display: block; width: 100%; height: auto; border-bottom: 1px solid var(--border); background: var(--bg); }
 
         @media (max-width: 720px) {
             .ds-shell { flex-direction: column; }
@@ -339,6 +354,7 @@ function ds_render_grid(array $items, array $map): string
                             'snippets'   => count($snippetItems),
                             'guidelines' => $guidelineCount,
                             'components' => count($componentItems),
+                            'templates'  => count($templateItems),
                             default      => isset($sections[$key]) ? count($sections[$key]) : 0,
                         };
                         $countBadge = $count > 0
@@ -478,14 +494,26 @@ function ds_render_grid(array $items, array $map): string
                         <?php endif; ?>
                     </section>
 
-                    <!-- Templates (folgt) -->
+                    <!-- Templates -->
                     <section class="ds-section" id="ds-templates" data-section="templates">
                         <h2>Templates</h2>
-                        <div class="ds-todo">
-                            <strong>Folgt als nächster Schnitt (Inc 2).</strong><br>
-                            Newsletter-, Plakat-, Social- und Rechnungs-Templates aus dem Paket. Anbindung der
-                            Generatoren an die gemeinsame Token-Quelle ist Inc 3.
+                        <p class="ds-lead">Vorschau der Vorlagen aus dem Paket. Die tatsächliche Erzeugung läuft in den jeweiligen Werkzeugen (Social-Orchestrator, Plakat-Generator, Newsletter) — Anbindung an die gemeinsame Token-Quelle folgt als Inc 3. Die Sponsoren-Rechnung ist bewusst nicht enthalten (echte Bankdaten bleiben privat).</p>
+                        <?php if ($templateItems === []): ?>
+                            <p class="ds-empty">Keine Templates gefunden (Deployment von <code>design-system/templates/</code> prüfen).</p>
+                        <?php else: ?>
+                        <div class="ds-tpl-grid">
+                            <?php foreach ($templateItems as $t): ?>
+                                <figure class="ds-tpl">
+                                    <img src="../design-system/templates/<?= htmlspecialchars($t['thumb']) ?>"
+                                         alt="Vorschau: <?= htmlspecialchars($t['name']) ?>" loading="lazy">
+                                    <figcaption class="ds-guide-cap">
+                                        <strong><?= htmlspecialchars($t['name']) ?></strong>
+                                        <span><?= htmlspecialchars($t['sub']) ?></span>
+                                    </figcaption>
+                                </figure>
+                            <?php endforeach; ?>
                         </div>
+                        <?php endif; ?>
                     </section>
                 </div>
             </div>
