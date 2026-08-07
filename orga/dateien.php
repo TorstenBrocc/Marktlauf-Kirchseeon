@@ -86,6 +86,12 @@ if ($configured) {
         .empty-state { text-align:center; padding:3rem 1rem; color:var(--text-light); }
         #fb-toast { position:fixed; bottom:1.25rem; left:50%; transform:translateX(-50%); background:#333; color:#fff; padding:0.6rem 1.1rem; border-radius:6px; font-size:0.85rem; opacity:0; transition:opacity .2s; pointer-events:none; z-index:50; }
         #fb-toast.show { opacity:1; }
+        #fb-ctx { position:fixed; z-index:60; background:var(--white); border:1px solid var(--border); border-radius:8px; box-shadow:var(--shadow-card); padding:0.3rem; min-width:200px; display:flex; flex-direction:column; }
+        #fb-ctx[hidden] { display:none; }
+        .fb-ctx-item { text-align:left; background:none; border:none; padding:0.42rem 0.7rem; border-radius:5px; font-size:0.85rem; color:var(--text); cursor:pointer; white-space:nowrap; }
+        .fb-ctx-item:hover { background:#f2f8f4; color:var(--primary); }
+        .fb-ctx-item.danger:hover { background:#fef2f2; color:#dc2626; }
+        .fb-ctx-sep { height:1px; background:var(--border); margin:0.25rem 0.3rem; }
     </style>
 </head>
 <body>
@@ -274,22 +280,41 @@ if ($configured) {
                 .then(() => { node.closest('li').remove(); showToast('In den Papierkorb verschoben.'); });
         }
 
+        // Ordner anlegen / Upload — von Toolbar UND Kontextmenü genutzt.
+        function doCreateFolder(parentFid, parentName, name) {
+            const body = new URLSearchParams({ csrf_token: CSRF, tab: TAB, parent: parentFid, name: name });
+            return fetch('api/folder_create.php', { method: 'POST', body: body, redirect: 'manual' })
+                .then(() => { refreshFolder(parentFid); showToast('Ordner angelegt in „' + parentName + '“.'); });
+        }
+        function doUpload(file, folderFid, folderName) {
+            const fd = new FormData();
+            fd.append('csrf_token', CSRF); fd.append('tab', TAB); fd.append('folder', folderFid); fd.append('datei', file);
+            return fetch('api/file_upload.php', { method: 'POST', body: fd, redirect: 'manual' })
+                .then(() => { refreshFolder(folderFid); showToast('Hochgeladen in „' + folderName + '“.'); });
+        }
+        // Öffnet den Datei-Dialog und lädt die Wahl direkt in den Zielordner (Einmal-Listener).
+        function pickAndUpload(folderFid, folderName) {
+            const picker = document.getElementById('up-file');
+            picker.value = '';
+            const once = function () {
+                picker.removeEventListener('change', once);
+                if (picker.files && picker.files[0]) { doUpload(picker.files[0], folderFid, folderName).then(() => { picker.value = ''; }); }
+            };
+            picker.addEventListener('change', once);
+            picker.click();
+        }
+
         // Toolbar
         document.getElementById('nf-btn').addEventListener('click', function () {
             const inp = document.getElementById('nf-name');
             const name = inp.value.trim();
             if (name === '') { inp.focus(); return; }
-            const body = new URLSearchParams({ csrf_token: CSRF, tab: TAB, parent: selectedFolder, name: name });
-            fetch('api/folder_create.php', { method: 'POST', body: body, redirect: 'manual' })
-                .then(() => { inp.value = ''; refreshFolder(selectedFolder); showToast('Ordner angelegt in „' + selectedName + '“.'); });
+            doCreateFolder(selectedFolder, selectedName, name).then(() => { inp.value = ''; });
         });
         document.getElementById('up-btn').addEventListener('click', function () {
             const inp = document.getElementById('up-file');
             if (!inp.files || !inp.files[0]) { inp.click(); return; }
-            const fd = new FormData();
-            fd.append('csrf_token', CSRF); fd.append('tab', TAB); fd.append('folder', selectedFolder); fd.append('datei', inp.files[0]);
-            fetch('api/file_upload.php', { method: 'POST', body: fd, redirect: 'manual' })
-                .then(() => { inp.value = ''; refreshFolder(selectedFolder); showToast('Hochgeladen in „' + selectedName + '“.'); });
+            doUpload(inp.files[0], selectedFolder, selectedName).then(() => { inp.value = ''; });
         });
         function designate(action, msg) {
             const body = new URLSearchParams({ csrf_token: CSRF, tab: TAB, action: action, folder: selectedFolder });
@@ -335,6 +360,64 @@ if ($configured) {
                 })
                 .catch(() => alert('Verschieben fehlgeschlagen.'));
         });
+
+        // Rechtsklick-Kontextmenü (delegiert). Greift dieselben Funktionen wie die Hover-Buttons/Toolbar ab.
+        const ctx = document.createElement('div');
+        ctx.id = 'fb-ctx'; ctx.hidden = true;
+        document.body.appendChild(ctx);
+
+        function hideCtx() { ctx.hidden = true; ctx.innerHTML = ''; }
+        function ctxItem(label, cls, fn) {
+            const b = document.createElement('button');
+            b.type = 'button'; b.className = 'fb-ctx-item' + (cls ? ' ' + cls : '');
+            b.textContent = label;
+            b.addEventListener('click', function () { hideCtx(); fn(); });
+            return b;
+        }
+        function ctxSep() { const s = document.createElement('div'); s.className = 'fb-ctx-sep'; return s; }
+
+        tree.addEventListener('contextmenu', function (e) {
+            const node = e.target.closest('.tnode');
+            if (!node) return;
+            e.preventDefault();
+            ctx.innerHTML = '';
+            const isFolder = node.classList.contains('tnode-folder');
+            const isRoot = node.dataset.fid === ROOT;
+            if (isFolder) {
+                if (!isRoot) {
+                    ctx.appendChild(ctxItem('Umbenennen', '', () => doRename(node)));
+                    ctx.appendChild(ctxItem('Löschen', 'danger', () => doDelete(node)));
+                    ctx.appendChild(ctxSep());
+                }
+                ctx.appendChild(ctxItem('＋ Neuer Unterordner', '', () => {
+                    selectFolder(node);
+                    const name = prompt('Name des neuen Ordners in „' + node.dataset.name + '“:', '');
+                    if (name === null) return;
+                    const t = name.trim(); if (t === '') return;
+                    doCreateFolder(node.dataset.fid, node.dataset.name, t);
+                }));
+                ctx.appendChild(ctxItem('⬆ Datei hochladen', '', () => { selectFolder(node); pickAndUpload(node.dataset.fid, node.dataset.name); }));
+                ctx.appendChild(ctxSep());
+                ctx.appendChild(ctxItem('📌 Als Plakate-Ordner (' + RENNJAHR + ')', '', () => { selectFolder(node); designate('set_plakat', 'Plakate-Ordner (' + RENNJAHR + ') gesetzt:'); }));
+                ctx.appendChild(ctxItem('🖼️ Als Bilder-Ordner', '', () => { selectFolder(node); designate('set_bilder', 'Bilder-Ordner gesetzt:'); }));
+            } else {
+                const dlHref = 'api/file_download.php?fid=' + encodeURIComponent(node.dataset.fid);
+                ctx.appendChild(ctxItem('⬇ Download', '', () => { window.location.href = dlHref; }));
+                ctx.appendChild(ctxItem('Umbenennen', '', () => doRename(node)));
+                ctx.appendChild(ctxItem('Löschen', 'danger', () => doDelete(node)));
+            }
+            // Sichtbar machen und in den Viewport klemmen (position:fixed → clientX/Y direkt).
+            ctx.hidden = false;
+            let x = e.clientX, y = e.clientY;
+            if (x + ctx.offsetWidth > window.innerWidth) x = window.innerWidth - ctx.offsetWidth - 4;
+            if (y + ctx.offsetHeight > window.innerHeight) y = window.innerHeight - ctx.offsetHeight - 4;
+            ctx.style.left = Math.max(4, x) + 'px';
+            ctx.style.top = Math.max(4, y) + 'px';
+        });
+        document.addEventListener('click', function (e) { if (!ctx.hidden && !ctx.contains(e.target)) hideCtx(); });
+        document.addEventListener('contextmenu', function (e) { if (!ctx.hidden && !tree.contains(e.target)) hideCtx(); });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') hideCtx(); });
+        window.addEventListener('scroll', hideCtx, true);
 
         // Start: Wurzel aufklappen
         const rootNode = tree.querySelector('.tnode-folder');
