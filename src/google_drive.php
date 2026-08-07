@@ -571,6 +571,14 @@ function driveListFilesRecursiveCached(string $rootId, int $ttl = 180): array
     return $files;
 }
 
+/** Baum-Cache(s) verwerfen — wird nach jeder Drive-Schreiboperation aufgerufen (siehe driveApiSend). */
+function driveInvalidateTreeCache(): void
+{
+    foreach (glob(__DIR__ . '/../storage/cache/gdrive_tree_*.json') ?: [] as $f) {
+        @unlink($f);
+    }
+}
+
 /** Security gate: true only if $fileId lives somewhere under $ancestorId (walks parents up). */
 function driveIsDescendantOf(string $fileId, string $ancestorId): bool
 {
@@ -695,7 +703,9 @@ function driveApiSend(string $method, string $url, string $body, array $headers)
 {
     $headers[] = 'Authorization: Bearer ' . driveAccessToken();
     $resp      = driveHttp($method, $url, ['headers' => $headers, 'body' => $body]);
-    return driveDecodeOrThrow($resp, $url);
+    $data      = driveDecodeOrThrow($resp, $url);
+    driveInvalidateTreeCache(); // erfolgreiche Schreiboperation → Helfer-Baum-Cache neu aufbauen lassen
+    return $data;
 }
 
 /** @param array{status:int,body:string} $resp */
