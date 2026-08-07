@@ -19,6 +19,9 @@ require_once __DIR__ . '/../../src/sponsor_rotation.php';
 function sponsorApplyRotation(PDO $pdo, int $sponsorId, string $firma): void {
     $inRotation = isset($_POST['in_rotation']) ? 1 : 0;
     $logoAsset = null;
+    $driveFileId = null;
+
+    // Vorrang: frisch hochgeladenes Logo.
     try {
         if (isset($_FILES['logo'])) {
             $logoAsset = materializeSponsorLogo($sponsorId, $firma, $_FILES['logo']);
@@ -26,14 +29,46 @@ function sponsorApplyRotation(PDO $pdo, int $sponsorId, string $firma): void {
     } catch (RuntimeException $e) {
         $_SESSION['flash_error'] = $e->getMessage();
     }
-    $sql = 'UPDATE sponsors SET in_rotation = :r'
-         . ($logoAsset !== null ? ', logo_web_asset = :l' : '')
-         . ' WHERE id = :id';
+    // Sonst: aus dem Drive-Ordner gewähltes Logo materialisieren.
+    if ($logoAsset === null) {
+        $pick = trim((string) ($_POST['logo_drive_pick'] ?? ''));
+        if ($pick !== '') {
+            try {
+                $logoAsset = materializeSponsorLogoFromDrive($sponsorId, $firma, $pick);
+                $driveFileId = $pick;
+            } catch (Throwable $e) {
+                $_SESSION['flash_error'] = $e->getMessage();
+            }
+        }
+    }
+
+    // Drive-Ordner sicherstellen: automatisch bei Zusage, oder auf Knopfdruck (do_ensure_folder).
+    try {
+        $wantFolder = isset($_POST['do_ensure_folder'])
+            || sponsorStatusFromPost($_POST['status'] ?? '') === 'zugesagt';
+        if ($wantFolder && driveConfigured()) {
+            $chk = $pdo->prepare('SELECT drive_folder_id FROM sponsors WHERE id = :id');
+            $chk->execute(['id' => $sponsorId]);
+            if ((string) ($chk->fetchColumn() ?: '') === '') {
+                sponsorEnsureDriveFolder($pdo, $sponsorId, $firma);
+            }
+        }
+    } catch (Throwable $e) {
+        logError('Sponsor Drive-Ordner-Anlage: ' . $e->getMessage());
+    }
+
+    $sets = ['in_rotation = :r'];
     $params = ['r' => $inRotation, 'id' => $sponsorId];
     if ($logoAsset !== null) {
+        $sets[] = 'logo_web_asset = :l';
         $params['l'] = $logoAsset;
     }
-    $pdo->prepare($sql)->execute($params);
+    if ($driveFileId !== null) {
+        $sets[] = 'logo_drive_file_id = :d';
+        $params['d'] = $driveFileId;
+    }
+    $pdo->prepare('UPDATE sponsors SET ' . implode(', ', $sets) . ' WHERE id = :id')->execute($params);
+
     try {
         writeSponsorenFeed($pdo);
     } catch (Throwable $e) {
