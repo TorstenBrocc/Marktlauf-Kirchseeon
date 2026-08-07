@@ -313,68 +313,6 @@ function driveDelete(string $fileId): void
     }
 }
 
-/**
- * Reconcile the dashboard index (table dateien) for one bereich + jahr with the shared
- * drive (Modell A): files added or renamed directly in Drive appear in the index,
- * index rows whose Drive file vanished are removed. Only provider='drive' rows are
- * touched — local files are never affected. Throttled to once per 120s per bereich+jahr
- * unless $force. A failed folder listing skips that category (never deletes on error).
- */
-function driveReconcile(PDO $pdo, string $bereich, int $jahr, bool $force = false): void
-{
-    if (!driveConfigured()) {
-        return;
-    }
-    $cacheDir = __DIR__ . '/../storage/cache';
-    $marker   = $cacheDir . '/gdrive_reconcile_' . preg_replace('/[^a-z]/', '', $bereich) . '_' . $jahr . '.ts';
-    if (!$force && is_file($marker) && (time() - (int) @filemtime($marker)) < 120) {
-        return;
-    }
-    if (!is_dir($cacheDir)) {
-        @mkdir($cacheDir, 0700, true);
-    }
-    @touch($marker);
-
-    require_once __DIR__ . '/../orga/_dateien_kategorien.php';
-    foreach (array_keys(dateiKategorien()) as $kat) {
-        try {
-            $driveFiles = driveList($pdo, $bereich, $jahr, $kat);
-        } catch (RuntimeException $e) {
-            logError('driveReconcile list (' . $bereich . '/' . $jahr . '/' . $kat . '): ' . $e->getMessage());
-            continue; // never delete on a failed listing
-        }
-        $seen = [];
-        foreach ($driveFiles as $f) {
-            if ($f['id'] === '') {
-                continue;
-            }
-            $seen[] = $f['id'];
-            $mime = $f['mimeType'] !== '' ? $f['mimeType'] : 'application/octet-stream';
-            $sel  = $pdo->prepare('SELECT id FROM dateien WHERE drive_file_id = ?');
-            $sel->execute([$f['id']]);
-            $existingId = $sel->fetchColumn();
-            if ($existingId === false) {
-                // Directly-in-Drive file: index it (no dashboard uploader -> NULL).
-                $pdo->prepare('
-                    INSERT INTO dateien (bereich, kategorie, jahr, dateiname, drive_file_id, provider, originalname, mimetype, groesse, hochgeladen_von, created_at)
-                    VALUES (?, ?, ?, ?, ?, "drive", ?, ?, ?, NULL, NOW())
-                ')->execute([$bereich, $kat, $jahr, $f['name'], $f['id'], $f['name'], $mime, $f['size']]);
-            } else {
-                $pdo->prepare('UPDATE dateien SET kategorie = ?, jahr = ?, originalname = ?, mimetype = ?, groesse = ? WHERE id = ?')
-                    ->execute([$kat, $jahr, $f['name'], $mime, $f['size'], (int) $existingId]);
-            }
-        }
-        // Drop drive-index rows for this bereich+jahr+category whose Drive file is gone.
-        if ($seen === []) {
-            $pdo->prepare("DELETE FROM dateien WHERE bereich = ? AND jahr = ? AND kategorie = ? AND provider = 'drive'")
-                ->execute([$bereich, $jahr, $kat]);
-        } else {
-            $ph = implode(',', array_fill(0, count($seen), '?'));
-            $pdo->prepare("DELETE FROM dateien WHERE bereich = ? AND jahr = ? AND kategorie = ? AND provider = 'drive' AND drive_file_id NOT IN ($ph)")
-                ->execute(array_merge([$bereich, $jahr, $kat], $seen));
-        }
-    }
-}
 
 // --- Ordner-Browser (Paket 7) -----------------------------------------------
 
