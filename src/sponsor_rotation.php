@@ -300,3 +300,74 @@ function materializeSponsorLogoFromDrive(int $sponsorId, string $firma, string $
         @unlink($tmp);
     }
 }
+
+/* ---------------------------------------------------------------------------
+ * WP-4: versendete „Bestätigung Sponsoring"-Mail als PDF im Sponsor-Ordner ablegen
+ * ------------------------------------------------------------------------- */
+
+/**
+ * Betreff + Text der versendeten Mail 1:1 als schlichtes PDF rendern.
+ * Gibt einen Temp-Pfad zurück (Aufrufer räumt auf). Nutzt FPDF-Core-Font (Arial),
+ * Text UTF-8 → Windows-1252 (Umlaute/€) wie im Rechnungs-Renderer.
+ */
+function renderSponsorMailPdf(string $firma, string $subject, string $textBody): string
+{
+    require_once __DIR__ . '/../lib/fpdf/fpdf.php';
+    $conv = static fn (string $s): string => iconv('UTF-8', 'windows-1252//TRANSLIT', $s) ?: $s;
+
+    $pdf = new FPDF('P', 'mm', 'A4');
+    $pdf->SetAutoPageBreak(true, 18);
+    $pdf->SetMargins(18, 18, 18);
+    $pdf->AddPage();
+
+    $pdf->SetFont('Arial', 'B', 9);
+    $pdf->SetTextColor(120, 120, 120);
+    $pdf->Cell(0, 5, $conv('Bestätigung Sponsoring — ' . $firma), 0, 1);
+    $pdf->SetFont('Arial', '', 9);
+    $pdf->Cell(0, 5, $conv('Versendet am ' . date('d.m.Y H:i')), 0, 1);
+    $pdf->Ln(4);
+
+    $pdf->SetTextColor(20, 20, 20);
+    $pdf->SetFont('Arial', 'B', 13);
+    $pdf->MultiCell(0, 6, $conv($subject), 0, 'L');
+    $pdf->Ln(3);
+
+    $pdf->SetTextColor(40, 40, 40);
+    $pdf->SetFont('Arial', '', 11);
+    foreach (preg_split('/\R/', $textBody) ?: [$textBody] as $line) {
+        // Leerzeile = kleiner Abstand; MultiCell mit leerem String rendert nichts.
+        if (trim($line) === '') {
+            $pdf->Ln(3);
+            continue;
+        }
+        $pdf->MultiCell(0, 5.5, $conv($line), 0, 'L');
+    }
+
+    $tmp = tempnam(sys_get_temp_dir(), 'spmail_');
+    if ($tmp === false) {
+        throw new RuntimeException('Temp-Datei für Mail-PDF fehlgeschlagen.');
+    }
+    $pdf->Output('F', $tmp);
+    return $tmp;
+}
+
+/**
+ * Versendete Bestätigungs-Mail als PDF in den Sponsor-Drive-Ordner ablegen.
+ * Nicht-blockierend gedacht: Aufrufer fängt und loggt, der Versand darf nie scheitern.
+ * Dateiname jahrespräfixiert: „<Jahr>_Bestaetigung_<slug>.pdf".
+ */
+function fileSponsorBestaetigungPdf(PDO $pdo, int $sponsorId, string $firma, string $subject, string $textBody): void
+{
+    if ($sponsorId <= 0 || !driveConfigured()) {
+        return;
+    }
+    $folderId = sponsorEnsureDriveFolder($pdo, $sponsorId, $firma);
+    $jahr     = driveRennJahr($pdo);
+    $pdfPath  = renderSponsorMailPdf($firma, $subject, $textBody);
+    try {
+        $name = $jahr . '_Bestaetigung_' . sponsorSlug($firma) . '.pdf';
+        driveUploadToFolder($folderId, $pdfPath, $name, 'application/pdf');
+    } finally {
+        @unlink($pdfPath);
+    }
+}
