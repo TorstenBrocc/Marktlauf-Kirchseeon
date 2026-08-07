@@ -269,6 +269,14 @@ return [
         // der Sidebar aber optisch im ADMIN-Abschnitt. Kein KPI → Absprung-Link.
     ],
     [
+        'key'     => 'design_system',
+        'label'   => 'Design-System',
+        'section' => 'ADMIN',
+        'href'    => 'design_system.php',
+        // Navigierbarer DS-Browser (Marke/Farben/Typo/…). Wie ci.php für alle Orga
+        // sichtbar, ohne KPI. Spec: intern/design-system-integration-spec.md
+    ],
+    [
         'key'     => 'einstellungen',
         'label'   => 'Einstellungen',
         'section' => 'ADMIN',
