@@ -32,9 +32,17 @@ function mailBccAddress(): string {
 /**
  * @param array<array{path:string,name:string,mime:string}> $attachments Dateianhänge.
  */
-function sendMail(string $to, string $subject, string $textBody, string $htmlBody = '', array $attachments = []): bool {
+function sendMail(string $to, string $subject, string $textBody, string $htmlBody = '', array $attachments = [], array $extraBcc = []): bool {
     $bccAddr = mailBccAddress();
     $bcc = ($bccAddr !== '' && strcasecmp($bccAddr, $to) !== 0) ? [$bccAddr] : [];
+    // Zusätzliche BCC-Empfänger (z. B. kassier@ bei Rechnungen) — dedupliziert, nie an $to.
+    foreach ($extraBcc as $addr) {
+        $addr = trim((string) $addr);
+        if ($addr !== '' && strcasecmp($addr, $to) !== 0
+            && !in_array(strtolower($addr), array_map('strtolower', $bcc), true)) {
+            $bcc[] = $addr;
+        }
+    }
 
     $mailer = getSmtpMailer();
 

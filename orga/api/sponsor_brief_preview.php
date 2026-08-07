@@ -27,6 +27,9 @@ if (!verifyCsrfToken($_POST['csrf_token'] ?? '')) {
 $md = (string) ($_POST['koerper_md'] ?? '');
 $pdo = getDbConnection();
 $previewUser = getCurrentUserFromGuard();
-$ctx = sponsorBriefBeispielContext($pdo, (int) ($previewUser['id'] ?? 0));
+$slug = (string) ($_POST['slug'] ?? '');
+$ctx = $slug === 'rechnung'
+    ? rechnungMailBeispielContext()
+    : sponsorBriefBeispielContext($pdo, (int) ($previewUser['id'] ?? 0));
 
 echo sponsorBriefRenderHtml($md, $ctx);

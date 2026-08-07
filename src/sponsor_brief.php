@@ -38,7 +38,7 @@ function sponsorFormatDatum(string $ymd, string $fallback): string {
 
 /** Gültige Vorlagen-Slugs (= Anschreiben-Typen). */
 function sponsorBriefSlugs(): array {
-    return ['erstanschreiben', 'folgejahr', 'frei', 'bestaetigung'];
+    return ['erstanschreiben', 'folgejahr', 'frei', 'bestaetigung', 'rechnung'];
 }
 
 function sponsorBriefSlugValid(string $slug): bool {
@@ -110,6 +110,17 @@ Herzliche Grüße
 {{signatur}}
 MD;
 
+    $rechnung = <<<MD
+{{anrede}}
+
+vielen Dank für Ihre Unterstützung des Marktlaufs Kirchseeon. Anbei erhalten Sie die Rechnung Nr. **{{rechnungsnummer}}** über **{{betrag}}** zu Ihrem Sponsoring ({{leistung}}).
+
+Über einen Ausgleich auf die auf der Rechnung genannte Bankverbindung innerhalb von 14 Tagen freuen wir uns.
+
+Mit sportlichen Grüßen
+ATSV Kirchseeon e.V. – Abteilung Marktlauf
+MD;
+
     return [
         'erstanschreiben' => [
             'name'       => 'Erstanschreiben',
@@ -125,6 +136,11 @@ MD;
             'name'       => 'Freier Brief',
             'betreff'    => 'Marktlauf Kirchseeon – {{firma}}',
             'koerper_md' => $frei,
+        ],
+        'rechnung' => [
+            'name'       => 'Rechnungs-Begleitmail',
+            'betreff'    => 'Ihre Sponsoring-Rechnung – Marktlauf Kirchseeon',
+            'koerper_md' => $rechnung,
         ],
         'bestaetigung' => [
             'name'       => 'Bestätigung Sponsoring',
@@ -270,7 +286,18 @@ function sponsorBestaetigungSektionen(): array {
 }
 
 /** Liste der verfügbaren Platzhalter für die Editor-Referenz. */
-function sponsorBriefPlatzhalterHilfe(): array {
+function sponsorBriefPlatzhalterHilfe(string $slug = ''): array {
+    if ($slug === 'rechnung') {
+        return [
+            '{{anrede}}'          => 'Anrede (bei Rechnungen fest: „Sehr geehrte Damen und Herren,")',
+            '{{firma}}'           => 'Firmenname des Sponsors (Rechnungsempfänger)',
+            '{{rechnungsnummer}}' => 'Fortlaufende Rechnungsnummer (Format NN-JJJJ)',
+            '{{betrag}}'          => 'Rechnungsbetrag brutto, z. B. 1.190,00 €',
+            '{{netto}}'           => 'Nettobetrag',
+            '{{leistung}}'        => 'Leistung/Paket, z. B. Gold-Sponsoring Marktlauf 2026',
+            '{{zeitraum}}'        => 'Leistungszeitraum',
+        ];
+    }
     return [
         '{{anrede}}'        => "Persönliche Anrede – wird automatisch generiert:\n"
                                . "• Frau + Nachname → \"Sehr geehrte Frau Jost,\"\n"
@@ -611,6 +638,48 @@ function sponsorBriefContext(PDO $pdo, int $userId, string $anrede, string $vorn
 /** Beispiel-Kontext für die Editor-Vorschau (keine echten Empfängerdaten nötig). */
 function sponsorBriefBeispielContext(PDO $pdo, int $userId = 0): array {
     return sponsorBriefContext($pdo, $userId, 'Frau', 'Erika', 'Musterfrau', 'Muster GmbH', 'gold');
+}
+
+/* ---- Rechnungs-Begleitmail: eigener (schlanker) Kontext ------------------ */
+
+/** Inline-Platzhalter aus einer Rechnungs-Zeile (sponsor_rechnungen-Snapshot). */
+function rechnungMailInlineFromRow(array $r): array {
+    $eur = static fn ($v): string => number_format((float) $v, 2, ',', '.') . ' €';
+    $leistung = trim((string) ($r['leistung'] ?? ''));
+    $pos = strpos($leistung, ':');
+    if ($pos !== false) {
+        $leistung = trim(substr($leistung, 0, $pos)); // nur die Bezeichnung, ohne Detailtext
+    }
+    return [
+        '{{anrede}}'          => 'Sehr geehrte Damen und Herren,',
+        '{{firma}}'           => (string) ($r['empfaenger_firma'] ?? ''),
+        '{{rechnungsnummer}}' => (string) ($r['rechnungsnummer'] ?? ''),
+        '{{betrag}}'          => $eur($r['brutto'] ?? 0),
+        '{{netto}}'           => $eur($r['netto'] ?? 0),
+        '{{leistung}}'        => $leistung,
+        '{{zeitraum}}'        => (string) ($r['zeitraum'] ?? ''),
+    ];
+}
+
+/** Kontext für die Rechnungs-Begleitmail (Blöcke leer — Template hat feste Grußformel). */
+function rechnungMailContext(array $r): array {
+    return [
+        'inline'     => rechnungMailInlineFromRow($r),
+        'blocksHtml' => [],
+        'blocksText' => [],
+    ];
+}
+
+/** Beispiel-Kontext für die Editor-Vorschau der Rechnungs-Begleitmail. */
+function rechnungMailBeispielContext(): array {
+    return rechnungMailContext([
+        'empfaenger_firma' => 'Muster GmbH',
+        'rechnungsnummer'  => '05-2026',
+        'brutto'           => 1190.00,
+        'netto'            => 1000.00,
+        'leistung'         => 'Gold-Sponsoring Marktlauf 2026',
+        'zeitraum'         => 'Marktlauf 2026',
+    ]);
 }
 
 /* ---- Rendering ----------------------------------------------------------- */

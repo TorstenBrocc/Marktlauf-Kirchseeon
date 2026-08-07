@@ -191,6 +191,86 @@ function rechnungNummerVergeben(PDO $pdo, int $id, string $nummer, ?int $userId)
     }
 }
 
+/**
+ * Mögliche Empfänger-Adressen für den Rechnungsversand eines Sponsors:
+ * Rechnungs-E-Mail (falls gesetzt) + alle Ansprechpartner-E-Mails. Dedupliziert.
+ * @return array<int,string>
+ */
+function rechnungSponsorEmails(PDO $pdo, int $sponsorId): array
+{
+    $mails = [];
+    try {
+        $s = $pdo->prepare('SELECT rechnung_email, email FROM sponsors WHERE id = :id');
+        $s->execute(['id' => $sponsorId]);
+        $row = $s->fetch();
+        if ($row) {
+            foreach (['rechnung_email', 'email'] as $c) {
+                $m = trim((string) ($row[$c] ?? ''));
+                if ($m !== '') { $mails[] = $m; }
+            }
+        }
+        $ap = $pdo->prepare("SELECT email FROM sponsor_ansprechpartner WHERE sponsor_id = :id AND email <> ''");
+        $ap->execute(['id' => $sponsorId]);
+        foreach ($ap->fetchAll(PDO::FETCH_COLUMN) as $m) {
+            $m = trim((string) $m);
+            if ($m !== '') { $mails[] = $m; }
+        }
+    } catch (PDOException $e) {
+        // Tabelle evtl. nicht vorhanden -> was da ist zurückgeben
+    }
+    // Dedup case-insensitiv, Reihenfolge erhalten
+    $seen = [];
+    $out = [];
+    foreach ($mails as $m) {
+        $k = strtolower($m);
+        if (!isset($seen[$k])) { $seen[$k] = true; $out[] = $m; }
+    }
+    return $out;
+}
+
+/** Eine Zeile ins fortlaufende Versand-Protokoll schreiben. */
+function rechnungVersandLog(PDO $pdo, int $rechnungId, string $empfaenger, ?int $userId, ?string $driveFileId, string $ergebnis, ?string $hinweis = null): void
+{
+    $pdo->prepare('
+        INSERT INTO rechnung_versand_log (rechnung_id, empfaenger, versendet_von, drive_datei_id, ergebnis, hinweis)
+        VALUES (:rid, :empf, :uid, :drive, :erg, :hinweis)
+    ')->execute([
+        'rid'     => $rechnungId,
+        'empf'    => mb_substr($empfaenger, 0, 255),
+        'uid'     => $userId,
+        'drive'   => $driveFileId,
+        'erg'     => $ergebnis === 'fehler' ? 'fehler' : 'ok',
+        'hinweis' => $hinweis !== null ? mb_substr($hinweis, 0, 500) : null,
+    ]);
+}
+
+/** Versand-Historie einer Rechnung (neueste zuerst). @return array<int,array<string,mixed>> */
+function rechnungVersandHistorie(PDO $pdo, int $rechnungId): array
+{
+    try {
+        $stmt = $pdo->prepare('
+            SELECT l.*, u.name AS von_name
+            FROM rechnung_versand_log l
+            LEFT JOIN users u ON u.id = l.versendet_von
+            WHERE l.rechnung_id = :rid
+            ORDER BY l.versendet_am DESC, l.id DESC
+        ');
+        $stmt->execute(['rid' => $rechnungId]);
+        return $stmt->fetchAll();
+    } catch (PDOException $e) {
+        return [];
+    }
+}
+
+/** Jahr aus einer Rechnungsnummer NN-JJJJ; Fallback aktuelles Jahr. */
+function rechnungJahrAusNummer(string $nummer): int
+{
+    if (preg_match('/-(\d{4})$/', trim($nummer), $m)) {
+        return (int) $m[1];
+    }
+    return (int) date('Y');
+}
+
 /** Extrahiert aus einer geladenen Rechnungs-Zeile das Snapshot-Array für den Renderer. */
 function rechnungSnapshotAusRow(array $row): array
 {
