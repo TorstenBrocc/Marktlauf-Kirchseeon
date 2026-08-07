@@ -9,6 +9,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     initHeaderScroll();
     initCountdown();
     initScrollAnimations();
+    await hydrateSponsorMarquee();
     initSponsorMarquee();
     await initLanguage();
 });
@@ -294,6 +295,57 @@ function initScrollAnimations() {
  * Der Sprung bei der halben Track-Breite ist unsichtbar, weil das Markup
  * den Logo-Satz doppelt enthaelt (zweiter Satz aria-hidden).
  */
+/**
+ * Fuellt das Sponsoren-Laufband datengetrieben aus data/sponsoren.json (aus dem
+ * Dashboard gepflegt). Ist der Feed leer, fehlt oder faellt der Abruf aus, bleibt
+ * der hartcodierte Fallback im Markup stehen — die Rotation ist also nie leer.
+ * Baut den Original-Satz + einen aria-hidden-Duplikat-Satz auf, wie es
+ * initSponsorMarquee erwartet (dieser misst perSet an den nicht-aria-Items).
+ */
+async function hydrateSponsorMarquee() {
+    const track = document.querySelector(".sponsor-marquee-track");
+    if (!track) return;
+
+    let sponsors;
+    try {
+        const res = await fetch("data/sponsoren.json", { cache: "no-cache" });
+        if (!res.ok) return;                 // kein Feed -> Fallback bleibt
+        sponsors = await res.json();
+    } catch (e) {
+        return;                              // Netzwerk-/Parsefehler -> Fallback bleibt
+    }
+    if (!Array.isArray(sponsors) || sponsors.length === 0) return;
+
+    const makeItem = (s, hidden) => {
+        const item = document.createElement("div");
+        item.className = "sponsor-item";
+        if (hidden) item.setAttribute("aria-hidden", "true");
+
+        const img = document.createElement("img");
+        img.src = s.logo;
+        img.loading = "lazy";
+        img.alt = hidden ? "" : (s.name || "");
+
+        let node = img;
+        if (s.url) {
+            const a = document.createElement("a");
+            a.href = s.url;
+            a.target = "_blank";
+            a.rel = "noopener noreferrer";
+            if (hidden) a.setAttribute("tabindex", "-1");
+            else a.title = s.name || "";
+            a.appendChild(img);
+            node = a;
+        }
+        item.appendChild(node);
+        return item;
+    };
+
+    track.innerHTML = "";
+    sponsors.forEach((s) => track.appendChild(makeItem(s, false)));
+    sponsors.forEach((s) => track.appendChild(makeItem(s, true)));
+}
+
 function initSponsorMarquee() {
     const wrap = document.querySelector('.sponsor-marquee-wrap');
     const track = wrap && wrap.querySelector('.sponsor-marquee-track');
