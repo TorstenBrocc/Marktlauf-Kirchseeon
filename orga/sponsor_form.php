@@ -725,14 +725,6 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                             <?php endforeach; ?>
                             </tbody>
                         </table>
-
-                        <div class="form-group">
-                            <label for="leistung_zeitraum">Leistungszeitraum</label>
-                            <input type="text" id="leistung_zeitraum" name="leistung_zeitraum" maxlength="120"
-                                   placeholder="z. B. Marktlauf 2026"
-                                   value="<?= htmlspecialchars($sponsor['leistung_zeitraum'] ?? '') ?>">
-                        </div>
-
                     </div>
 
                     <div class="form-card">
