@@ -31,6 +31,7 @@ require_once __DIR__ . '/../src/db.php';
 require_once __DIR__ . '/../src/channels/mail.php';
 require_once __DIR__ . '/../src/logger.php';
 require_once __DIR__ . '/../src/sponsor_status.php';
+require_once __DIR__ . '/../src/sponsor_beleg.php';
 
 $config = getConfig();
 $delay = (int) ($config['sponsor_versand_delay'] ?? 15);
@@ -87,13 +88,21 @@ try {
                 $job['firma'],
                 $job['anschreiben_typ'],
                 (string) ($job['paket'] ?? ''),
-                (int) ($job['angefordert_von'] ?? 0),
-                (int) ($job['sponsor_id'] ?? 0)
+                (int) ($job['angefordert_von'] ?? 0)
             );
 
             if ($ok) {
                 $markGesendet->execute(['id' => $job['id']]);
                 sponsorMarkGesendet($pdo, (int) $job['sponsor_id'], $job['anschreiben_typ']);
+                if ($job['anschreiben_typ'] === 'bestaetigung') {
+                    try {
+                        archiveSponsorBestaetigung($pdo, (int) $job['sponsor_id'], (int) ($job['angefordert_von'] ?? 0));
+                    } catch (Throwable $e) {
+                        // Mail ist raus; Beleg-Ablage nachholbar per Retry in der Maske.
+                        logError('Beleg-Ablage (queue) Sponsor ' . (int) $job['sponsor_id'] . ': ' . $e->getMessage());
+                        echo "  ⚠ Beleg-Ablage fehlgeschlagen (Sponsor {$job['sponsor_id']}): {$e->getMessage()}\n";
+                    }
+                }
                 $sent++;
                 echo "✓ [{$i}/{$total}] {$job['firma']} → {$job['email']}\n";
             } else {

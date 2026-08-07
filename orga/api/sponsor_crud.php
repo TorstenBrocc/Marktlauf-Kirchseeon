@@ -11,6 +11,7 @@ require_once __DIR__ . '/../../src/db.php';
 require_once __DIR__ . '/../../src/logger.php';
 require_once __DIR__ . '/../../src/sponsor_status.php';
 require_once __DIR__ . '/../../src/sponsor_rotation.php';
+require_once __DIR__ . '/../../src/sponsor_beleg.php';
 
 /**
  * Rotations-Felder (Aktiv-Haken + optionaler Logo-Upload) persistieren und den
@@ -212,7 +213,7 @@ $action = $_POST['action'] ?? '';
 $sponsorId = (int) ($_POST['sponsor_id'] ?? 0);
 $isAdmin = isAdminFromGuard();
 
-$validActions = ['create', 'update', 'delete', 'kein_kontakt_set', 'kein_kontakt_remove'];
+$validActions = ['create', 'update', 'delete', 'kein_kontakt_set', 'kein_kontakt_remove', 'archive_bestaetigung'];
 if (!in_array($action, $validActions, true)) {
     $_SESSION['flash_error'] = 'Ungültige Aktion.';
     header('Location: ../sponsoren.php');
@@ -503,6 +504,22 @@ try {
             $stmt->execute(['id' => $sponsorId]);
             $_SESSION['flash_success'] = 'Kein-Kontakt aufgehoben.';
             header('Location: ../sponsoren.php');
+            exit;
+
+        case 'archive_bestaetigung':
+            if ($sponsorId <= 0) {
+                $_SESSION['flash_error'] = 'Ungültige Sponsor-ID.';
+                header('Location: ../sponsoren.php');
+                exit;
+            }
+            try {
+                archiveSponsorBestaetigung($pdo, $sponsorId, (int) ($_SESSION['user_id'] ?? 0));
+                $_SESSION['flash_success'] = 'Bestätigungs-Beleg im Sponsor-Ordner abgelegt.';
+            } catch (Throwable $e) {
+                logError('archive_bestaetigung Sponsor ' . $sponsorId . ': ' . $e->getMessage());
+                $_SESSION['flash_error'] = 'Beleg-Ablage fehlgeschlagen: ' . $e->getMessage();
+            }
+            header('Location: ../sponsor_form.php?id=' . $sponsorId);
             exit;
     }
 

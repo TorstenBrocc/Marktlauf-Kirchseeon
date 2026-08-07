@@ -887,6 +887,23 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                     </div>
                 </form>
 
+                <?php if ($isEdit && driveConfigured()): ?>
+                <div class="form-card">
+                    <h2>Bestätigungs-Beleg</h2>
+                    <p style="font-size:0.85rem; color: var(--text-light); margin-top:-0.5rem; margin-bottom:1rem;">
+                        Legt die „Bestätigung Sponsoring" als PDF im Sponsor-Drive-Ordner ab (aus der Vorlage erzeugt).
+                        Läuft automatisch beim Versand — hier manuell wiederholbar, falls die Ablage fehlschlug.
+                        <strong>Es wird keine Mail versendet.</strong>
+                    </p>
+                    <form method="post" action="api/sponsor_crud.php">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                        <input type="hidden" name="action" value="archive_bestaetigung">
+                        <input type="hidden" name="sponsor_id" value="<?= $sponsorId ?>">
+                        <button type="submit" class="btn btn-secondary">Bestätigungs-Beleg im Drive ablegen</button>
+                    </form>
+                </div>
+                <?php endif; ?>
+
                 <?php if ($isEdit): ?>
                 <div class="form-card">
                     <h2>Aufgaben</h2>
