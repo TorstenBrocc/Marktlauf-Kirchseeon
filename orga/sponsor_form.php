@@ -9,6 +9,7 @@ require_once __DIR__ . '/api/_auth.php';
 require_once __DIR__ . '/../src/db.php';
 require_once __DIR__ . '/../src/sponsor_status.php';
 require_once __DIR__ . '/../src/rechnung.php';
+require_once __DIR__ . '/../src/sponsor_rotation.php';
 
 $user = getCurrentUserFromGuard();
 $isAdmin = isAdminFromGuard();
@@ -27,6 +28,9 @@ $isEdit = $sponsorId > 0;
 $sponsor = null;
 $aufgaben = [];
 $ansprechpartner = [];
+$driveFolderId = '';
+$driveImages = [];
+$driveError = '';
 
 if ($isEdit) {
     $pdo = getDbConnection();
@@ -51,6 +55,16 @@ if ($isEdit) {
         $ansprechpartner = $apStmt->fetchAll();
     } catch (PDOException $e) {
         // Table may not exist yet
+    }
+
+    // Drive-Ordner-Logos für die Auswahl-UI (WP-3). Fehler dürfen die Maske nie brechen.
+    $driveFolderId = (string) ($sponsor['drive_folder_id'] ?? '');
+    if ($driveFolderId !== '' && driveConfigured()) {
+        try {
+            $driveImages = sponsorDriveFolderImages($driveFolderId);
+        } catch (Throwable $e) {
+            $driveError = 'Drive-Ordner konnte nicht gelesen werden.';
+        }
     }
 }
 
@@ -770,8 +784,40 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                             </div>
                         </div>
 
+                        <?php if ($isEdit && driveConfigured()): ?>
+                            <div class="form-group">
+                                <label>Logo aus dem Drive-Ordner wählen</label>
+                                <?php if ($driveFolderId === ''): ?>
+                                    <p style="font-size:0.85rem; color: var(--text-light); margin:0.2rem 0 0.5rem;">
+                                        Noch kein Sponsor-Ordner verknüpft. Bei Status „zugesagt" wird er automatisch angelegt — oder jetzt anlegen:
+                                    </p>
+                                    <button type="submit" name="do_ensure_folder" value="1" class="btn" style="margin-top:0.2rem;">Drive-Ordner anlegen &amp; verknüpfen</button>
+                                <?php elseif ($driveError !== ''): ?>
+                                    <p style="font-size:0.85rem; color:#c0392b;"><?= htmlspecialchars($driveError) ?></p>
+                                <?php elseif (empty($driveImages)): ?>
+                                    <p style="font-size:0.85rem; color: var(--text-light);">
+                                        Der Sponsor-Ordner enthält noch keine Bilddateien. Lege Logos im Drive-Ordner ab oder lade unten direkt hoch.
+                                    </p>
+                                <?php else: ?>
+                                    <p style="font-size:0.8rem; color: var(--text-light); margin:0.2rem 0 0.5rem;">
+                                        Datei aus dem Sponsor-Ordner wählen — wird beim Speichern web-optimiert übernommen.
+                                    </p>
+                                    <label style="display:block; margin-bottom:0.3rem;">
+                                        <input type="radio" name="logo_drive_pick" value="" <?= empty($sponsor['logo_drive_file_id']) ? 'checked' : '' ?>> — keine Änderung —
+                                    </label>
+                                    <?php foreach ($driveImages as $img): ?>
+                                        <label style="display:block; margin-bottom:0.3rem;">
+                                            <input type="radio" name="logo_drive_pick" value="<?= htmlspecialchars($img['id']) ?>"
+                                                <?= ($sponsor['logo_drive_file_id'] ?? '') === $img['id'] ? 'checked' : '' ?>>
+                                            <?= htmlspecialchars($img['name']) ?>
+                                        </label>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </div>
+                        <?php endif; ?>
+
                         <div class="form-group">
-                            <label for="logo">Logo fürs Laufband</label>
+                            <label for="logo"><?= $isEdit && driveConfigured() && $driveFolderId !== '' ? 'Logo direkt hochladen (Alternative zur Drive-Auswahl)' : 'Logo fürs Laufband' ?></label>
                             <?php if (!empty($sponsor['logo_web_asset'])): ?>
                                 <div style="margin-bottom:0.5rem;">
                                     <img src="../assets/sponsoren-live/<?= htmlspecialchars($sponsor['logo_web_asset']) ?>"

@@ -11,6 +11,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/google_drive.php';
+
 const SPONSOR_LOGO_DIR  = __DIR__ . '/../assets/sponsoren-live';
 const SPONSOR_FEED_PATH = __DIR__ . '/../data/sponsoren.json';
 const SPONSOR_LOGO_MAX_EDGE = 800; // Rotation zeigt ~231px; 800 gibt Retina-Reserve bei kleiner Datei
@@ -207,5 +209,94 @@ function sponsorLogoDownscale(string $path, string $mime, int $maxEdge): void
         imagepng($dst, $path, 6);
     } else {
         imagejpeg($dst, $path, 85);
+    }
+}
+
+/* ---------------------------------------------------------------------------
+ * WP-3: Drive-Ordner je Sponsor (Ablagebecken) + Logo-Auswahl aus dem Ordner
+ * ------------------------------------------------------------------------- */
+
+const SPONSOR_DRIVE_PARENT = 'Sponsoren'; // Ordner unter der Orga-Wurzel
+
+/**
+ * Eltern-Ordner „Sponsoren" unter der Orga-Wurzel finden/anlegen. Gibt Drive-ID zurück.
+ */
+function sponsorDriveRootId(PDO $pdo): string
+{
+    $orgaRoot = driveRootFolderId($pdo, 'orga');
+    return driveFindFolder(SPONSOR_DRIVE_PARENT, $orgaRoot)
+        ?? driveCreateFolder(SPONSOR_DRIVE_PARENT, $orgaRoot);
+}
+
+/**
+ * Sponsor-Ordner sicherstellen (find-or-create) und drive_folder_id persistieren.
+ * Gibt die Drive-Ordner-ID zurück. Wirft bei Drive-Fehlern (Aufrufer fängt).
+ */
+function sponsorEnsureDriveFolder(PDO $pdo, int $sponsorId, string $firma): string
+{
+    if (!driveConfigured()) {
+        throw new RuntimeException('Google Drive ist nicht konfiguriert.');
+    }
+    // Bereits verknüpft und noch gültig? Dann wiederverwenden.
+    $cur = $pdo->prepare('SELECT drive_folder_id FROM sponsors WHERE id = :id');
+    $cur->execute(['id' => $sponsorId]);
+    $existing = (string) ($cur->fetchColumn() ?: '');
+    if ($existing !== '' && driveInSharedDrive($existing)) {
+        return $existing;
+    }
+
+    $name = trim($firma) !== '' ? trim($firma) : ('Sponsor ' . $sponsorId);
+    $root = sponsorDriveRootId($pdo);
+    $folderId = driveFindFolder($name, $root) ?? driveCreateFolder($name, $root);
+
+    $pdo->prepare('UPDATE sponsors SET drive_folder_id = :f WHERE id = :id')
+        ->execute(['f' => $folderId, 'id' => $sponsorId]);
+
+    return $folderId;
+}
+
+/**
+ * Bild-Dateien (PNG/JPG/SVG) im Sponsor-Drive-Ordner auflisten — für die Auswahl-UI.
+ * @return array<int,array{id:string,name:string,mimeType:string}>
+ */
+function sponsorDriveFolderImages(string $folderId): array
+{
+    $allowed = ['image/png', 'image/jpeg', 'image/svg+xml'];
+    $out = [];
+    foreach (driveListChildren($folderId) as $f) {
+        if ($f['isFolder']) {
+            continue;
+        }
+        $mime = $f['mimeType'];
+        $isImg = in_array($mime, $allowed, true) || preg_match('/\.(png|jpe?g|svg)$/i', $f['name']);
+        if ($isImg) {
+            $out[] = ['id' => $f['id'], 'name' => $f['name'], 'mimeType' => $mime];
+        }
+    }
+    return $out;
+}
+
+/**
+ * Eine im Drive-Ordner gewählte Datei als web-optimiertes Logo materialisieren.
+ * Gibt den Asset-Dateinamen zurück. Wirft bei Fehlern (Aufrufer fängt).
+ */
+function materializeSponsorLogoFromDrive(int $sponsorId, string $firma, string $driveFileId): ?string
+{
+    if ($driveFileId === '') {
+        return null;
+    }
+    $meta = driveFileMeta($driveFileId);
+    if ($meta === null || (string) ($meta['driveId'] ?? '') !== driveSharedDriveId()) {
+        throw new RuntimeException('Gewählte Drive-Datei ist ungültig.');
+    }
+    $bytes = driveDownload($driveFileId);
+    $tmp = tempnam(sys_get_temp_dir(), 'splogo_');
+    if ($tmp === false || file_put_contents($tmp, $bytes) === false) {
+        throw new RuntimeException('Drive-Logo konnte nicht zwischengespeichert werden.');
+    }
+    try {
+        return storeSponsorLogo($sponsorId, $firma, $tmp, false, (string) ($meta['name'] ?? ''));
+    } finally {
+        @unlink($tmp);
     }
 }
