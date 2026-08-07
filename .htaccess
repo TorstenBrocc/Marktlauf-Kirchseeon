@@ -17,6 +17,12 @@ RewriteRule ^index\.html$ / [L,R=301]
   AddOutputFilterByType DEFLATE text/html text/css text/javascript application/javascript application/json image/svg+xml text/xml application/xml
 </IfModule>
 
+# UTF-8 fuer Text-Dateien erzwingen (sonst rendern Umlaute in humans.txt/robots.txt
+# als Mojibake, weil text/plain ohne charset + nosniff auf Latin-1 zurueckfaellt)
+<IfModule mod_mime.c>
+  AddCharset utf-8 .txt
+</IfModule>
+
 <IfModule mod_headers.c>
   Header always set X-Content-Type-Options "nosniff"
   Header always set X-Frame-Options "SAMEORIGIN"

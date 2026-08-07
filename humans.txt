@@ -9,7 +9,7 @@ Dank an: ATSV Kirchseeon e.V. für das Vertrauen und die Zusammenarbeit beim Mar
 /* SITE */
 Letzte Aktualisierung: 2026-08-07
 Standort: Kirchseeon, Deutschland
-Sprachen: Deutsch, English
+Sprachen: Deutsch, Englisch
 Standards: HTML5, CSS3, ES6+
 Frontend: Vanilla JavaScript, Leaflet.js, i18n (JSON de/en)
 Backend: PHP 8.4, MySQL (PDO)
