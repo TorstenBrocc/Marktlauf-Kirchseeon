@@ -488,6 +488,57 @@ function driveBreadcrumb(string $folderId, string $rootId): array
     return $chain;
 }
 
+/**
+ * All (non-folder) files anywhere under $rootId, flattened. BFS over subfolders,
+ * capped at $maxFolders to keep API usage bounded on deeply nested trees.
+ * @return array<int,array{id:string,name:string,mimeType:string,size:int,modifiedTime:string}>
+ */
+function driveListFilesRecursive(string $rootId, int $maxFolders = 400): array
+{
+    $files = [];
+    $queue = [$rootId];
+    $seen  = 0;
+    while ($queue !== [] && $seen < $maxFolders) {
+        $folderId = array_shift($queue);
+        $seen++;
+        foreach (driveListChildren($folderId) as $child) {
+            if ($child['isFolder']) {
+                $queue[] = $child['id'];
+            } else {
+                $files[] = [
+                    'id'           => $child['id'],
+                    'name'         => $child['name'],
+                    'mimeType'     => $child['mimeType'],
+                    'size'         => $child['size'],
+                    'modifiedTime' => $child['modifiedTime'],
+                ];
+            }
+        }
+    }
+    return $files;
+}
+
+/** Security gate: true only if $fileId lives somewhere under $ancestorId (walks parents up). */
+function driveIsDescendantOf(string $fileId, string $ancestorId): bool
+{
+    $cur   = $fileId;
+    $guard = 0;
+    while ($cur !== '' && $guard++ < 25) {
+        if ($cur === $ancestorId) {
+            return true;
+        }
+        $meta = driveFileMeta($cur);
+        if ($meta === null) {
+            return false;
+        }
+        $cur = (string) ($meta['parents'][0] ?? '');
+        if ($cur === driveSharedDriveId()) {
+            return $cur === $ancestorId; // reached drive root without hitting the ancestor
+        }
+    }
+    return false;
+}
+
 /** Rename a file/folder (files.update name). @throws RuntimeException */
 function driveRename(string $fileId, string $newName): void
 {

@@ -7,6 +7,8 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../src/db.php';
+require_once __DIR__ . '/../src/logger.php';
+require_once __DIR__ . '/../src/google_drive.php';
 
 $uuid = trim($_GET['uuid'] ?? '');
 $helfer = null;
@@ -48,15 +50,44 @@ if ($uuid === '' || strlen($uuid) > 64) {
     }
 }
 
+// Helfer-Dateien: live aus dem Drive-Helfer-Ordner (aktueller Weg seit Paket 7) PLUS
+// noch nicht abgelöster lokaler Alt-Bestand aus der dateien-Tabelle (Übergang).
 $helferDateien = [];
+if (!$error && driveConfigured()) {
+    try {
+        $pdo = getDbConnection();
+        $helferRoot = driveRootFolderId($pdo, 'helfer');
+        foreach (driveListFilesRecursive($helferRoot) as $f) {
+            $helferDateien[] = [
+                'source'       => 'drive',
+                'ref'          => $f['id'],
+                'originalname' => $f['name'],
+                'mimetype'     => $f['mimeType'],
+                'groesse'      => $f['size'],
+                'created_at'   => $f['modifiedTime'],
+            ];
+        }
+    } catch (Throwable $e) {
+        logError('Helfer-Zugang Drive-Liste: ' . $e->getMessage());
+    }
+}
 if (!$error) {
     try {
         $pdo = getDbConnection();
-        $dateiStmt = $pdo->prepare('SELECT id, originalname, mimetype, groesse, created_at FROM dateien WHERE bereich = :bereich ORDER BY created_at DESC');
-        $dateiStmt->execute(['bereich' => 'helfer']);
-        $helferDateien = $dateiStmt->fetchAll();
+        $dateiStmt = $pdo->prepare("SELECT id, originalname, mimetype, groesse, created_at FROM dateien WHERE bereich = 'helfer' AND (provider = 'local' OR provider IS NULL) ORDER BY created_at DESC");
+        $dateiStmt->execute();
+        foreach ($dateiStmt->fetchAll() as $d) {
+            $helferDateien[] = [
+                'source'       => 'local',
+                'ref'          => (string) $d['id'],
+                'originalname' => $d['originalname'],
+                'mimetype'     => $d['mimetype'],
+                'groesse'      => $d['groesse'],
+                'created_at'   => $d['created_at'],
+            ];
+        }
     } catch (PDOException $e) {
-        // Table may not exist yet
+        // Tabelle/Spalte evtl. nicht (mehr) vorhanden
     }
 }
 
@@ -535,7 +566,7 @@ $basePath = '../';
                                     <div class="file-name"><?= htmlspecialchars($d['originalname']) ?></div>
                                     <div class="file-meta"><?= formatFileSizeHelfer((int)$d['groesse']) ?> · <?= date('d.m.Y', strtotime($d['created_at'])) ?></div>
                                 </div>
-                                <a href="file_download.php?id=<?= $d['id'] ?>&uuid=<?= urlencode($uuid) ?>" class="file-download">Download</a>
+                                <a href="file_download.php?<?= $d['source'] === 'drive' ? 'fid=' . urlencode($d['ref']) : 'id=' . (int) $d['ref'] ?>&uuid=<?= urlencode($uuid) ?>" class="file-download">Download</a>
                             </li>
                         <?php endforeach; ?>
                     </ul>
