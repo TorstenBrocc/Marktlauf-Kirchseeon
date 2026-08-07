@@ -37,6 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCsrfToken($_POST['csrf_token'
 $configured   = driveConfigured();
 $rennJahr     = (int) date('Y');
 $plakatFolder = $bilderFolder = '';
+$helferRootId = '';
 $roots        = []; // beide Bereichswurzeln als Geschwister: [['id'=>, 'name'=>], ...]
 if ($configured) {
     $rennJahr     = driveRennJahr($pdo);
@@ -51,6 +52,9 @@ if ($configured) {
         $anchor->execute(['k' => $settingKey, 'v' => $rid]);
         $meta = driveFileMeta($rid);
         $roots[] = ['id' => $rid, 'name' => (string) ($meta['name'] ?? driveBereichName($bereich))];
+        if ($bereich === 'helfer') {
+            $helferRootId = $rid;
+        }
     }
 }
 ?>
@@ -87,6 +91,16 @@ if ($configured) {
         .fb-ctx-item:hover { background:#f2f8f4; color:var(--primary); }
         .fb-ctx-item.danger:hover { background:#fef2f2; color:#dc2626; }
         .fb-ctx-sep { height:1px; background:var(--border); margin:0.25rem 0.3rem; }
+        #vis-modal { position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:70; display:flex; align-items:center; justify-content:center; padding:1rem; }
+        #vis-modal[hidden] { display:none; }
+        .vis-box { background:var(--white); border-radius:10px; box-shadow:var(--shadow-card); padding:1.25rem 1.4rem; width:100%; max-width:460px; max-height:80vh; display:flex; flex-direction:column; }
+        .vis-box h3 { margin:0 0 0.35rem; }
+        .vis-file { font-weight:600; color:var(--primary-dark); margin:0 0 0.5rem; word-break:break-word; }
+        .vis-hint { font-size:0.78rem; color:var(--text-light); margin:0 0 0.75rem; }
+        .vis-list { overflow-y:auto; border:1px solid var(--border); border-radius:6px; padding:0.4rem 0.5rem; margin-bottom:1rem; }
+        .vis-row { display:flex; align-items:center; gap:0.55rem; padding:0.32rem 0.2rem; font-size:0.9rem; cursor:pointer; }
+        .vis-row input { flex:0 0 auto; width:1.05rem; height:1.05rem; }
+        .vis-actions { display:flex; justify-content:flex-end; gap:0.6rem; }
     </style>
 </head>
 <body>
@@ -117,6 +131,19 @@ if ($configured) {
 
             <p class="fb-hint">Live aus dem geteilten Laufwerk „Marktlauf Orga". Ordnerzeile anklicken = auf-/zuklappen. <b>Rechtsklick</b> auf eine Zeile öffnet das Menü (Umbenennen, Löschen, Neuer Unterordner, Hochladen, Ordner festlegen). Dateien vom Rechner auf einen Ordner <b>ziehen</b> lädt sie hoch; Baum-Zeilen untereinander ziehen verschiebt. <b>Mehrere auswählen:</b> Strg/Cmd + Klick, dann Rechtsklick zum Sammel-Löschen oder die Auswahl auf einen Ordner ziehen.</p>
 
+            <div id="vis-modal" hidden>
+                <div class="vis-box">
+                    <h3>Sichtbarkeit für Helfer</h3>
+                    <p class="vis-file"></p>
+                    <p class="vis-hint">Keine Auswahl = für <b>alle</b> Helfer sichtbar. Auswahl = nur Helfer der markierten Schichten sehen diese Datei in ihrem Zugang.</p>
+                    <div class="vis-list"></div>
+                    <div class="vis-actions">
+                        <button type="button" class="btn btn-secondary btn-small" id="vis-cancel">Abbrechen</button>
+                        <button type="button" class="btn btn-primary btn-small" id="vis-save">Speichern</button>
+                    </div>
+                </div>
+            </div>
+
             <?php endif; ?>
         </main>
     </div>
@@ -125,9 +152,10 @@ if ($configured) {
     <?php if ($configured): ?>
     <script>
     (function () {
-        const CSRF     = <?= json_encode($csrfToken) ?>;
-        const ROOTS    = <?= json_encode(array_column($roots, 'id')) ?>;
-        const RENNJAHR = <?= json_encode($rennJahr) ?>;
+        const CSRF        = <?= json_encode($csrfToken) ?>;
+        const ROOTS       = <?= json_encode(array_column($roots, 'id')) ?>;
+        const HELFER_ROOT = <?= json_encode($helferRootId) ?>;
+        const RENNJAHR    = <?= json_encode($rennJahr) ?>;
         let plakatFolder = <?= json_encode($plakatFolder) ?>;
         let bilderFolder = <?= json_encode($bilderFolder) ?>;
 
@@ -194,6 +222,13 @@ if ($configured) {
             if (!parentUl) return '';
             const parentNode = parentUl.closest('li').querySelector(':scope > .tnode');
             return parentNode ? parentNode.dataset.fid : '';
+        }
+        // fid der obersten Wurzel (Orga/Helfer), unter der ein Knoten hängt.
+        function rootOf(node) {
+            const topLi = node.closest('#fb-tree > li');
+            if (!topLi) return '';
+            const rn = topLi.querySelector(':scope > .tnode');
+            return rn ? rn.dataset.fid : '';
         }
 
         function loadChildren(node) {
@@ -419,6 +454,10 @@ if ($configured) {
                 ctx.appendChild(ctxItem('⬇ Download', '', () => { window.location.href = dlHref; }));
                 ctx.appendChild(ctxItem('Umbenennen', '', () => doRename(node)));
                 ctx.appendChild(ctxItem('Löschen', 'danger', () => doDelete(node)));
+                if (HELFER_ROOT && rootOf(node) === HELFER_ROOT) {
+                    ctx.appendChild(ctxSep());
+                    ctx.appendChild(ctxItem('👁 Sichtbarkeit für Helfer…', '', () => openVisibility(node)));
+                }
             }
             // Sichtbar machen und in den Viewport klemmen (position:fixed → clientX/Y direkt).
             ctx.hidden = false;
@@ -432,6 +471,51 @@ if ($configured) {
         document.addEventListener('contextmenu', function (e) { if (!ctx.hidden && !tree.contains(e.target)) hideCtx(); });
         document.addEventListener('keydown', function (e) { if (e.key === 'Escape') hideCtx(); });
         window.addEventListener('scroll', hideCtx, true);
+
+        // Sichtbarkeit für Helfer (Strang 3): einer Datei Schichten zuordnen.
+        const visModal = document.getElementById('vis-modal');
+        let visFid = null;
+        function openVisibility(node) {
+            visFid = node.dataset.fid;
+            visModal.querySelector('.vis-file').textContent = node.dataset.name;
+            const list = visModal.querySelector('.vis-list');
+            list.textContent = 'Lädt…';
+            visModal.hidden = false;
+            fetch('api/datei_sichtbarkeit_get.php?fid=' + encodeURIComponent(visFid))
+                .then(r => r.json())
+                .then(d => {
+                    if (!d.ok) { list.textContent = 'Fehler beim Laden.'; return; }
+                    const assigned = new Set((d.assigned || []).map(Number));
+                    if (!d.schichten || !d.schichten.length) { list.innerHTML = '<p style="margin:0;color:var(--text-light)">Noch keine Schichten angelegt. Datei ist für alle Helfer sichtbar.</p>'; return; }
+                    list.innerHTML = '';
+                    d.schichten.forEach(s => {
+                        const row = document.createElement('label'); row.className = 'vis-row';
+                        const cb = document.createElement('input'); cb.type = 'checkbox'; cb.value = s.id; cb.checked = assigned.has(Number(s.id));
+                        const txt = document.createElement('span');
+                        const meta = [];
+                        if (s.tag) meta.push(s.tag);
+                        if (s.von) meta.push(String(s.von).slice(0, 5));
+                        txt.textContent = s.titel + (meta.length ? ' (' + meta.join(' ') + ')' : '');
+                        row.appendChild(cb); row.appendChild(txt); list.appendChild(row);
+                    });
+                })
+                .catch(() => { list.textContent = 'Fehler beim Laden.'; });
+        }
+        document.getElementById('vis-cancel').addEventListener('click', () => { visModal.hidden = true; });
+        visModal.addEventListener('click', e => { if (e.target === visModal) visModal.hidden = true; });
+        document.getElementById('vis-save').addEventListener('click', () => {
+            const ids = [].map.call(visModal.querySelectorAll('.vis-list input:checked'), c => c.value);
+            const body = new URLSearchParams(); body.append('csrf_token', CSRF); body.append('fid', visFid);
+            ids.forEach(i => body.append('schicht_ids[]', i));
+            fetch('api/datei_sichtbarkeit_save.php', { method: 'POST', body: body })
+                .then(r => r.json())
+                .then(d => {
+                    if (!d.ok) { alert(d.message || 'Speichern fehlgeschlagen.'); return; }
+                    visModal.hidden = true;
+                    showToast(d.count ? ('Sichtbar für ' + d.count + ' Schicht(en).') : 'Für alle Helfer sichtbar.');
+                })
+                .catch(() => alert('Speichern fehlgeschlagen.'));
+        });
 
         // Start: beide Wurzeln aufklappen.
         tree.querySelectorAll(':scope > li > .tnode-root').forEach(n => loadChildren(n));
