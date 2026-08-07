@@ -562,6 +562,23 @@ a.card-tile:hover {
 .btn-brand-trello { background: #0079BF; }
 .btn-brand-onedrive { background: #6264A7; }
 .btn-brand-github { background: #24292e; }
+
+.quick-links .btn-brand.is-disabled {
+    display: inline-block;
+    padding: 0.35rem 0.7rem;
+    border-radius: var(--radius);
+    color: #fff;
+    font-size: 0.85rem;
+    font-weight: 500;
+    background: #9ca3af;
+    opacity: 0.75;
+    cursor: not-allowed;
+    text-decoration: line-through;
+}
+.quick-links .quick-hint {
+    font-size: 0.8rem;
+    color: var(--text-light);
+}
 .btn-brand-strava { background: #FC4C02; }
 
 /* Zugangsdaten-Hinweis je Schnellzugriff-Button (nur Admin sichtbar) */
