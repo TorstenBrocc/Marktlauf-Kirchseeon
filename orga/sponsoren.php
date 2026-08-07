@@ -660,6 +660,11 @@ try {
                     <button type="submit" class="btn btn-small btn-primary">Ausgewählte anschreiben</button>
                     <span class="versand-count" id="versand-count">0 ausgewählt</span>
                     <p class="versand-hint">Versand erfolgt über <strong>info@atsv-kirchseeon-marktlauf.de</strong></p>
+                    <div id="bestaetigung-assets" hidden
+                         style="width:100%;flex-basis:100%;margin-top:.5rem;padding:.6rem .8rem;border:1px solid #d9d9d9;border-radius:8px;background:rgba(0,150,64,.04);font-size:.9rem;">
+                        <div style="font-weight:600;margin-bottom:.35rem;">📎 Anhänge der Bestätigung <span id="ba-status" style="font-weight:400;color:#666;"></span></div>
+                        <div id="ba-list" style="display:flex;flex-direction:column;gap:.25rem;"></div>
+                    </div>
                 </form>
             </div>
 
@@ -963,6 +968,51 @@ try {
         });
         updateCount();
 
+        // Opt-out-Liste der Bestätigungs-Anhänge: lazy laden, sobald „Bestätigung" gewählt ist.
+        const typSel   = document.getElementById('anschreiben_typ');
+        const baBox     = document.getElementById('bestaetigung-assets');
+        const baList    = document.getElementById('ba-list');
+        const baStatus  = document.getElementById('ba-status');
+        const versandForm = document.getElementById('versand-form');
+        let baLoaded = false;
+
+        function loadBestaetigungAssets() {
+            if (baLoaded || !baList) return;
+            baLoaded = true;
+            baStatus.textContent = '… lädt';
+            fetch('api/bestaetigung_assets.php', { headers: { 'X-Requested-With': 'fetch' } })
+                .then(function(r) { return r.json(); })
+                .then(function(d) {
+                    baList.innerHTML = '';
+                    if (!d || !d.ok) { baStatus.textContent = '⚠️ Ordner nicht lesbar'; return; }
+                    if (d.configured === false) {
+                        baStatus.textContent = '— kein Ordner festgelegt (in „Dateien" per Rechtsklick setzen)';
+                        return;
+                    }
+                    if (!d.items || d.items.length === 0) { baStatus.textContent = '— Ordner ist leer'; return; }
+                    baStatus.textContent = '(alle vorausgewählt — zum Weglassen abwählen)';
+                    d.items.forEach(function(f) {
+                        const lbl = document.createElement('label');
+                        lbl.style.cssText = 'display:flex;align-items:center;gap:.4rem;cursor:pointer;';
+                        const cb = document.createElement('input');
+                        cb.type = 'checkbox'; cb.className = 'ba-check'; cb.checked = true; cb.value = f.id;
+                        const span = document.createElement('span');
+                        span.textContent = f.name;
+                        lbl.appendChild(cb); lbl.appendChild(span);
+                        baList.appendChild(lbl);
+                    });
+                })
+                .catch(function() { baStatus.textContent = '⚠️ Ordner nicht lesbar'; baLoaded = false; });
+        }
+
+        function syncBaVisibility() {
+            if (!baBox) return;
+            const on = typSel && typSel.value === 'bestaetigung';
+            baBox.hidden = !on;
+            if (on) loadBestaetigungAssets();
+        }
+        if (typSel) { typSel.addEventListener('change', syncBaVisibility); syncBaVisibility(); }
+
         window.confirmVersand = function() {
             const n = selectedCount();
             if (n === 0) {
@@ -972,12 +1022,29 @@ try {
             const typ = document.getElementById('anschreiben_typ');
             const typLabels = { folgejahr: 'Folgejahr-Anschreiben', frei: 'Freier Brief', erstanschreiben: 'Erstanschreiben', bestaetigung: 'Bestätigung Sponsoring' };
             const typLabel = (typ && typLabels[typ.value]) || 'Erstanschreiben';
+            let ok;
             if (n === 1) {
-                return confirm('1 Sponsor ausgewählt.\n\n' + typLabel + ' jetzt senden?\n'
+                ok = confirm('1 Sponsor ausgewählt.\n\n' + typLabel + ' jetzt senden?\n'
                     + '(Hat der Sponsor mehrere Kontakte im Anschreiben markiert, gehen alle einzeln personalisiert raus.)');
+            } else {
+                ok = confirm(n + ' Sponsoren ausgewählt.\n\n' + typLabel + ' in die Sende-Queue stellen? '
+                    + 'Der Versand läuft anschließend über das CLI-Script (15 Sek. Abstand pro Mail).');
             }
-            return confirm(n + ' Sponsoren ausgewählt.\n\n' + typLabel + ' in die Sende-Queue stellen? '
-                + 'Der Versand läuft anschließend über das CLI-Script (15 Sek. Abstand pro Mail).');
+            if (!ok) return false;
+            // Abgewählte Bestätigungs-Anhänge als exclude_asset_fids[] anhängen (stateless, nur dieser Versand).
+            if (versandForm) {
+                versandForm.querySelectorAll('input[name="exclude_asset_fids[]"]').forEach(function(el) { el.remove(); });
+                if (typ && typ.value === 'bestaetigung') {
+                    document.querySelectorAll('.ba-check').forEach(function(cb) {
+                        if (!cb.checked) {
+                            const hid = document.createElement('input');
+                            hid.type = 'hidden'; hid.name = 'exclude_asset_fids[]'; hid.value = cb.value;
+                            versandForm.appendChild(hid);
+                        }
+                    });
+                }
+            }
+            return true;
         };
     })();
 

@@ -243,7 +243,8 @@ function sendSponsorAnschreiben(
     string $firma,
     string $typ = 'erstanschreiben',
     string $paket = '',
-    int $userId = 0
+    int $userId = 0,
+    array $excludeAssetFids = []
 ): bool {
     if (!sponsorBriefSlugValid($typ)) {
         $typ = 'erstanschreiben';
@@ -257,12 +258,21 @@ function sendSponsorAnschreiben(
     $subject     = sponsorBriefBetreff($vorlage['betreff'], $ctx);
     $htmlBody    = sponsorBriefRenderHtml($vorlage['koerper_md'], $ctx);
     $textBody    = sponsorBriefRenderText($vorlage['koerper_md'], $ctx);
-    $attachments = in_array($typ, ['frei', 'bestaetigung'], true) ? plakateAnhang($pdo) : [];
+    // Freier Brief + Bestätigung: aktuelle Plakate anhängen (Abschnitt „Plakate anbei").
+    // Zusätzlich hängt die Bestätigung den designierten Bestätigungs-Anhang-Ordner an
+    // (Absperrgitter-Bemaßungen etc.) — mit stateless Opt-out über $excludeAssetFids.
+    $attachments = [];
+    if (in_array($typ, ['frei', 'bestaetigung'], true)) {
+        $attachments = plakateAnhang($pdo);
+    }
+    if ($typ === 'bestaetigung') {
+        $attachments = array_merge($attachments, bestaetigungAssetsAnhang($pdo, $excludeAssetFids));
+    }
     return sendMail($to, $subject, $textBody, $htmlBody, $attachments);
 }
 
 /**
- * Aktuelle Plakat-PDFs aus der dateien-Tabelle als Anhang-Array laden.
+ * Aktuelle Plakat-PDFs aus dem designierten Plakate-Ordner als Anhang-Array laden.
  * @return array<array{path:string,name:string,mime:string}>
  */
 function plakateAnhang(PDO $pdo): array {
@@ -275,26 +285,54 @@ function plakateAnhang(PDO $pdo): array {
         logError('plakateAnhang: kein Plakate-Ordner für Renn-Jahr ' . $jahr . ' festgelegt');
         return [];
     }
+    return driveFolderAnhang($folderId, 'plakat', [], 'application/pdf');
+}
+
+/**
+ * Dateien aus dem designierten Bestätigungs-Anhang-Ordner als Anhang-Array laden.
+ * Opt-out: $excludeFids listet vom Versender abgewählte Drive-Datei-IDs (stateless, pro Versand).
+ * @param array<int,string> $excludeFids
+ * @return array<array{path:string,name:string,mime:string}>
+ */
+function bestaetigungAssetsAnhang(PDO $pdo, array $excludeFids = []): array {
+    if (!driveConfigured()) {
+        return [];
+    }
+    $folderId = driveBestaetigungAssetsFolderId($pdo);
+    if ($folderId === null) {
+        logError('bestaetigungAssetsAnhang: kein Bestätigungs-Anhang-Ordner festgelegt');
+        return [];
+    }
+    return driveFolderAnhang($folderId, 'bestaetigung', $excludeFids, 'application/octet-stream');
+}
+
+/**
+ * Alle Dateien eines Drive-Ordners in pfadbasierte Anhänge verwandeln (Bytes -> Temp-Datei,
+ * via Shutdown-Hook aufgeräumt, damit der pfadbasierte SMTP-Mailer unverändert bleibt).
+ * Ordner-Einträge werden übersprungen; $excludeFids filtert abgewählte Datei-IDs heraus.
+ * @param array<int,string> $excludeFids
+ * @return array<array{path:string,name:string,mime:string}>
+ */
+function driveFolderAnhang(string $folderId, string $tmpPrefix, array $excludeFids, string $mimeFallback): array {
     try {
         $files = driveListChildren($folderId);
     } catch (RuntimeException $e) {
-        logError('plakateAnhang list: ' . $e->getMessage());
+        logError($tmpPrefix . 'Anhang list: ' . $e->getMessage());
         return [];
     }
-    // Jede Datei im designierten Plakate-Ordner wird angehängt (Bytes -> Temp-Datei,
-    // via Shutdown-Hook aufgeräumt, damit der pfadbasierte SMTP-Mailer unverändert bleibt).
-    $result = [];
+    $exclude = array_flip(array_map('strval', $excludeFids));
+    $result  = [];
     foreach ($files as $f) {
-        if ($f['isFolder'] || $f['id'] === '') {
+        if ($f['isFolder'] || $f['id'] === '' || isset($exclude[$f['id']])) {
             continue;
         }
         try {
             $bytes = driveDownload($f['id']);
         } catch (RuntimeException $e) {
-            logError('plakateAnhang download: ' . $e->getMessage());
+            logError($tmpPrefix . 'Anhang download: ' . $e->getMessage());
             continue;
         }
-        $tmp = tempnam(sys_get_temp_dir(), 'plakat_');
+        $tmp = tempnam(sys_get_temp_dir(), $tmpPrefix . '_');
         if ($tmp === false) {
             continue;
         }
@@ -305,7 +343,7 @@ function plakateAnhang(PDO $pdo): array {
         $result[] = [
             'path' => $tmp,
             'name' => $f['name'],
-            'mime' => $f['mimeType'] !== '' ? $f['mimeType'] : 'application/pdf',
+            'mime' => $f['mimeType'] !== '' ? $f['mimeType'] : $mimeFallback,
         ];
     }
     return $result;

@@ -161,7 +161,7 @@ Damit wir Ihren Markenauftritt optimal vorbereiten können, bitten wir Sie, uns 
 
 **2. Banner / Hussen**
 
-Für unsere Absperrgitter empfehlen wir **Hussen** statt klassischer Banner – geringerer Aufwand, kein Kabelbinder-Abfall nach dem Event. Die Bemaßungen finden Sie hier: [Absperrgitter Bemaßungen (PNG)](https://atsv-kirchseeon-marktlauf.de/assets/images/Werbefl%C3%A4chen/Absperrgitter%20Bema%C3%9Fungen.png)
+Für unsere Absperrgitter empfehlen wir **Hussen** statt klassischer Banner – geringerer Aufwand, kein Kabelbinder-Abfall nach dem Event. Die Bemaßungen finden Sie im Anhang.
 
 Lieferadresse:
 
@@ -229,7 +229,7 @@ function sponsorBestaetigungSektionen(): array {
             'text'    => "**2. Banner / Hussen**\n\n"
                        . "Für unsere Absperrgitter empfehlen wir **Hussen** statt klassischer Banner – "
                        . "geringerer Aufwand, kein Kabelbinder-Abfall nach dem Event. "
-                       . "Die Bemaßungen finden Sie hier: [Absperrgitter Bemaßungen (PNG)](https://atsv-kirchseeon-marktlauf.de/assets/images/Werbefl%C3%A4chen/Absperrgitter%20Bema%C3%9Fungen.png)\n\n"
+                       . "Die Bemaßungen finden Sie im Anhang.\n\n"
                        . "Lieferadresse:\n\n"
                        . "ATSV Kirchseeon  \n"
                        . "c/o ORGA Marktlauf, z. Hd. Frau Jenny Fischer  \n"

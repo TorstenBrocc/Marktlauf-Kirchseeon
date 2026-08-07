@@ -20,11 +20,13 @@ $pdo       = getDbConnection();
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCsrfToken($_POST['csrf_token'] ?? '') && driveConfigured()) {
     $target = trim((string) ($_POST['folder'] ?? ''));
     $action = (string) ($_POST['action'] ?? '');
-    if ($target !== '' && in_array($action, ['set_plakat', 'set_bilder'], true)) {
+    if ($target !== '' && in_array($action, ['set_plakat', 'set_bilder', 'set_bestaetigung_assets'], true)) {
         $set = $pdo->prepare('INSERT INTO einstellungen (`key`, `value`) VALUES (:k, :v) ON DUPLICATE KEY UPDATE `value` = :v2');
         if ($action === 'set_plakat') {
             $jahr = driveRennJahr($pdo);
             $set->execute(['k' => 'plakat_folder_' . $jahr, 'v' => $target, 'v2' => $target]);
+        } elseif ($action === 'set_bestaetigung_assets') {
+            $set->execute(['k' => 'bestaetigung_assets_folder', 'v' => $target, 'v2' => $target]);
         } else {
             $set->execute(['k' => 'bilder_folder_id', 'v' => $target, 'v2' => $target]);
         }
@@ -372,7 +374,7 @@ if ($configured) {
         function designate(action, msg, fid, name) {
             const body = new URLSearchParams({ csrf_token: CSRF, action: action, folder: fid });
             fetch('dateien.php', { method: 'POST', body: body })
-                .then(() => { if (action === 'set_plakat') plakatFolder = fid; else bilderFolder = fid; showToast(msg + ' „' + name + '“.'); });
+                .then(() => { if (action === 'set_plakat') plakatFolder = fid; else if (action === 'set_bilder') bilderFolder = fid; showToast(msg + ' „' + name + '“.'); });
         }
 
         // Drag & Drop: interne Verschiebung (Knoten auf Ordner) + externer Upload (Datei vom Rechner).
@@ -474,6 +476,7 @@ if ($configured) {
                 ctx.appendChild(ctxSep());
                 ctx.appendChild(ctxItem('📌 Als Plakate-Ordner (' + RENNJAHR + ')', '', () => { selectFolder(node); designate('set_plakat', 'Plakate-Ordner (' + RENNJAHR + ') gesetzt:', node.dataset.fid, node.dataset.name); }));
                 ctx.appendChild(ctxItem('🖼️ Als Bilder-Ordner', '', () => { selectFolder(node); designate('set_bilder', 'Bilder-Ordner gesetzt:', node.dataset.fid, node.dataset.name); }));
+                ctx.appendChild(ctxItem('📎 Als Bestätigungs-Anhang-Ordner', '', () => { selectFolder(node); designate('set_bestaetigung_assets', 'Bestätigungs-Anhang-Ordner gesetzt:', node.dataset.fid, node.dataset.name); }));
                 if (HELFER_ROOT && !root && rootOf(node) === HELFER_ROOT) {
                     ctx.appendChild(ctxSep());
                     ctx.appendChild(ctxItem('👁 Sichtbarkeit für Helfer…', '', () => openVisibility(node)));
