@@ -744,19 +744,11 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                             <textarea id="kontaktweg" name="kontaktweg" rows="2"><?= htmlspecialchars($sponsor['kontaktweg'] ?? '') ?></textarea>
                         </div>
 
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="website">Website</label>
-                                <input type="text" id="website" name="website" maxlength="255"
-                                       placeholder="z. B. beispiel.de"
-                                       value="<?= htmlspecialchars($sponsor['website'] ?? '') ?>">
-                            </div>
-                            <div class="form-group">
-                                <label for="quellenurl">Quellenlink (Recherche-Beleg)</label>
-                                <input type="url" id="quellenurl" name="quellenurl" maxlength="500"
-                                       placeholder="https://…"
-                                       value="<?= htmlspecialchars($sponsor['quellenurl'] ?? '') ?>">
-                            </div>
+                        <div class="form-group">
+                            <label for="quellenurl">Quellenlink (Recherche-Beleg)</label>
+                            <input type="url" id="quellenurl" name="quellenurl" maxlength="500"
+                                   placeholder="https://…"
+                                   value="<?= htmlspecialchars($sponsor['quellenurl'] ?? '') ?>">
                         </div>
                     </div>
 
@@ -764,8 +756,7 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                         <h2>Öffentliche Darstellung (Website-Rotation)</h2>
                         <p style="font-size:0.8rem; color: var(--text-light); margin-top:-0.5rem; margin-bottom:1rem;">
                             Steuert das Sponsoren-Laufband auf der Startseite. Der Sponsor erscheint nur mit
-                            gesetztem Haken <em>und</em> hochgeladenem Logo. Verlinkt wird auf die oben
-                            eingetragene <strong>Website</strong>.
+                            gesetztem Haken <em>und</em> Logo. Verlinkt wird auf die hier eingetragene <strong>Website</strong>.
                         </p>
 
                         <div class="form-group">
@@ -776,53 +767,65 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                             </div>
                         </div>
 
+                        <div class="form-group">
+                            <label for="website">Website (Ziel der Verlinkung)</label>
+                            <input type="text" id="website" name="website" maxlength="255"
+                                   placeholder="z. B. beispiel.de"
+                                   value="<?= htmlspecialchars($sponsor['website'] ?? '') ?>">
+                        </div>
+
                         <?php if ($isEdit && driveConfigured()): ?>
                             <div class="form-group">
                                 <label>Logo aus dem Drive-Ordner wählen</label>
                                 <?php if ($driveFolderId === ''): ?>
-                                    <p style="font-size:0.85rem; color: var(--text-light); margin:0.2rem 0 0.5rem;">
-                                        Noch kein Sponsor-Ordner verknüpft. Bei Status „zugesagt" wird er automatisch angelegt — oder jetzt anlegen:
+                                    <p style="font-size:0.85rem; color: var(--text-light); margin:0.2rem 0 0;">
+                                        Sobald der Status auf „zugesagt" steht und gespeichert wird, legt das System
+                                        automatisch einen Sponsor-Ordner im Drive an. Danach erscheint hier die Auswahl.
                                     </p>
-                                    <button type="submit" name="do_ensure_folder" value="1" class="btn" style="margin-top:0.2rem;">Drive-Ordner anlegen &amp; verknüpfen</button>
                                 <?php elseif ($driveError !== ''): ?>
                                     <p style="font-size:0.85rem; color:#c0392b;"><?= htmlspecialchars($driveError) ?></p>
-                                <?php elseif (empty($driveImages)): ?>
-                                    <p style="font-size:0.85rem; color: var(--text-light);">
-                                        Der Sponsor-Ordner enthält noch keine Bilddateien. Lege Logos im Drive-Ordner ab oder lade unten direkt hoch.
-                                    </p>
                                 <?php else: ?>
-                                    <p style="font-size:0.8rem; color: var(--text-light); margin:0.2rem 0 0.5rem;">
-                                        Datei aus dem Sponsor-Ordner wählen — wird beim Speichern web-optimiert übernommen.
+                                    <p style="font-size:0.8rem; margin:0.2rem 0 0.5rem;">
+                                        <a href="https://drive.google.com/drive/folders/<?= htmlspecialchars($driveFolderId) ?>" target="_blank" rel="noopener noreferrer">Sponsor-Ordner im Drive öffnen ↗</a>
                                     </p>
-                                    <label style="display:block; margin-bottom:0.3rem;">
-                                        <input type="radio" name="logo_drive_pick" value="" <?= empty($sponsor['logo_drive_file_id']) ? 'checked' : '' ?>> — keine Änderung —
-                                    </label>
-                                    <?php foreach ($driveImages as $img): ?>
+                                    <?php if (empty($driveImages)): ?>
+                                        <p style="font-size:0.85rem; color: var(--text-light);">
+                                            Noch keine Bilddateien im Ordner. Lege Logos in den Drive-Ordner oder lade unten direkt hoch.
+                                        </p>
+                                    <?php else: ?>
+                                        <p style="font-size:0.8rem; color: var(--text-light); margin:0.2rem 0 0.5rem;">
+                                            Datei aus dem Sponsor-Ordner wählen — wird beim Speichern web-optimiert übernommen.
+                                        </p>
                                         <label style="display:block; margin-bottom:0.3rem;">
-                                            <input type="radio" name="logo_drive_pick" value="<?= htmlspecialchars($img['id']) ?>"
-                                                <?= ($sponsor['logo_drive_file_id'] ?? '') === $img['id'] ? 'checked' : '' ?>>
-                                            <?= htmlspecialchars($img['name']) ?>
+                                            <input type="radio" name="logo_drive_pick" value="" <?= empty($sponsor['logo_drive_file_id']) ? 'checked' : '' ?>> — keine Änderung —
                                         </label>
-                                    <?php endforeach; ?>
+                                        <?php foreach ($driveImages as $img): ?>
+                                            <label style="display:block; margin-bottom:0.3rem;">
+                                                <input type="radio" name="logo_drive_pick" value="<?= htmlspecialchars($img['id']) ?>"
+                                                    <?= ($sponsor['logo_drive_file_id'] ?? '') === $img['id'] ? 'checked' : '' ?>>
+                                                <?= htmlspecialchars($img['name']) ?>
+                                            </label>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
                                 <?php endif; ?>
                             </div>
                         <?php endif; ?>
 
                         <div class="form-group">
                             <label for="logo"><?= $isEdit && driveConfigured() && $driveFolderId !== '' ? 'Logo direkt hochladen (Alternative zur Drive-Auswahl)' : 'Logo fürs Laufband' ?></label>
+                            <input type="file" id="logo" name="logo" accept="image/png,image/jpeg,image/svg+xml">
+                            <p style="font-size:0.8rem; color: var(--text-light); margin-top:0.4rem;">
+                                Am besten <strong>freigestellt (ohne Hintergrund)</strong> als PNG, liegend (~2:1),
+                                mind. ca. 460×230&nbsp;px. SVG geht auch. Wird automatisch web-optimiert.
+                            </p>
                             <?php if (!empty($sponsor['logo_web_asset'])): ?>
-                                <div style="margin-bottom:0.5rem;">
+                                <div style="margin-top:0.7rem;">
+                                    <div style="font-size:0.8rem; color: var(--text-light); margin-bottom:0.3rem;">Aktuelles Logo:</div>
                                     <img src="../assets/sponsoren-live/<?= htmlspecialchars($sponsor['logo_web_asset']) ?>"
                                          alt="Aktuelles Logo"
                                          style="max-height:60px; max-width:220px; background:#f4f4f4; padding:6px; border-radius:6px;">
                                 </div>
                             <?php endif; ?>
-                            <input type="file" id="logo" name="logo" accept="image/png,image/jpeg,image/svg+xml">
-                            <p style="font-size:0.8rem; color: var(--text-light); margin-top:0.4rem;">
-                                Am besten: <strong>PNG mit transparentem Hintergrund</strong>, liegend (~2:1),
-                                mind. ca. 460×230&nbsp;px. SVG geht auch. Kein weißer Kasten drumherum –
-                                das Logo wird automatisch web-optimiert.
-                            </p>
                         </div>
                     </div>
 
