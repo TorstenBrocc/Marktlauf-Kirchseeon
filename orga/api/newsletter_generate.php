@@ -43,6 +43,16 @@ $identity = @file_get_contents($refDir . '01_identity.md') ?: '';
 $style    = @file_get_contents($refDir . '02_style.md') ?: '';
 $template = @file_get_contents($refDir . '03_html_master_template.md') ?: '{{CONTENT}}';
 
+// Marken-Farben aus der gemeinsamen Quelle einsetzen ({{token:--x}} -> Hex).
+// E-Mail-tauglich: konkrete Hex serverseitig statt CSS-Variablen (Mail-Clients kennen
+// kein var()). Unbekannte Tokens bleiben als Platzhalter stehen (fällt im Review auf,
+// statt still eine falsche/leere Farbe zu setzen). Quelle: src/design_tokens.php (Spec E3).
+require_once __DIR__ . '/../../src/design_tokens.php';
+$tokenMap = ds_token_map();
+$template = preg_replace_callback('/\{\{token:(--[\w-]+)\}\}/', static function (array $m) use ($tokenMap): string {
+    return $tokenMap[$m[1]] ?? $m[0];
+}, $template);
+
 // --- Body (HTML-Fragment) ---
 $bodyPrompt = "Du schreibst den Inhalt eines Vereins-Newsletters.\n\n"
     . "IDENTITÄT:\n" . $identity . "\n\nSTIL:\n" . $style . "\n\n"

@@ -44,7 +44,7 @@ Hero-Grün mit Volltonfallback, Orange nur als CTA. Abmeldelink + Pflicht-Postan
 
     <!-- Hero: Grünfläche mit Verlauf (Volltonfarbe als Fallback) -->
     <tr>
-      <td class="pad" bgcolor="#009640" style="background-color:#009640; background-image:linear-gradient(128deg,#12a877 0%,#5cbd45 55%,#86c93c 100%); padding:34px 40px 30px 40px;">
+      <td class="pad" bgcolor="{{token:--color-primary}}" style="background-color:{{token:--color-primary}}; background-image:linear-gradient(128deg,{{token:--hero-gradient-start}} 0%,{{token:--hero-gradient-mid}} 55%,#86c93c 100%); padding:34px 40px 30px 40px;">
         <p style="margin:0 0 12px 0; font-family:'Segoe UI',Tahoma,Arial,sans-serif; font-size:12px; font-weight:bold; letter-spacing:2px; text-transform:uppercase; color:#f4fbe6; mso-line-height-rule:exactly; line-height:16px;">Marktlauf Kirchseeon</p>
         <h1 class="h1" style="margin:0; font-family:'Trebuchet MS',Verdana,Arial,sans-serif; font-size:34px; font-weight:bold; color:#ffffff; mso-line-height-rule:exactly; line-height:38px;">{{TITLE}}</h1>
       </td>
@@ -63,11 +63,11 @@ Hero-Grün mit Volltonfallback, Orange nur als CTA. Abmeldelink + Pflicht-Postan
         <img src="https://atsv-kirchseeon-marktlauf.de/assets/images/ATSV_Logo-750x968.png" alt="ATSV Kirchseeon 1906 e.V." width="38" style="display:block; margin:0 auto 12px auto; width:38px; height:auto; border:0;" />
         <p style="margin:0 0 14px 0; font-family:'Segoe UI',Helvetica,Arial,sans-serif; font-size:13px; font-weight:bold; color:#eafbe4; mso-line-height-rule:exactly; line-height:20px;">ATSV Kirchseeon 1906 e.V.</p>
         <p style="margin:0; font-family:'Segoe UI',Helvetica,Arial,sans-serif; font-size:12px; color:#a3b3a6; mso-line-height-rule:exactly; line-height:19px;">
-          <a href="https://atsv-kirchseeon-marktlauf.de" target="_blank" style="color:#bcd531; text-decoration:none;">Website</a>
+          <a href="https://atsv-kirchseeon-marktlauf.de" target="_blank" style="color:{{token:--hero-gradient-end}}; text-decoration:none;">Website</a>
           &nbsp;·&nbsp;
-          <a href="https://atsv-kirchseeon-marktlauf.de/impressum.html" target="_blank" style="color:#bcd531; text-decoration:none;">Impressum</a>
+          <a href="https://atsv-kirchseeon-marktlauf.de/impressum.html" target="_blank" style="color:{{token:--hero-gradient-end}}; text-decoration:none;">Impressum</a>
           &nbsp;·&nbsp;
-          <a href="https://atsv-kirchseeon-marktlauf.de/datenschutz.html" target="_blank" style="color:#bcd531; text-decoration:none;">Datenschutz</a>
+          <a href="https://atsv-kirchseeon-marktlauf.de/datenschutz.html" target="_blank" style="color:{{token:--hero-gradient-end}}; text-decoration:none;">Datenschutz</a>
         </p>
       </td>
     </tr>
