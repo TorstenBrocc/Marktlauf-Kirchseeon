@@ -57,7 +57,7 @@ if (!$error && driveConfigured()) {
     try {
         $pdo = getDbConnection();
         $helferRoot = driveRootFolderId($pdo, 'helfer');
-        foreach (driveListFilesRecursive($helferRoot) as $f) {
+        foreach (driveListFilesRecursiveCached($helferRoot) as $f) {
             $helferDateien[] = [
                 'source'       => 'drive',
                 'ref'          => $f['id'],
