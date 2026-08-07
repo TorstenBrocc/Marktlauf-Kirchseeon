@@ -12,6 +12,12 @@
 
 declare(strict_types=1);
 
+// Nur per CLI/SSH ausführbar (Strato-SSH meldet cgi statt cli → Bypass via MARKTLAUF_CLI=1).
+if (php_sapi_name() !== 'cli' && getenv('MARKTLAUF_CLI') !== '1') {
+    http_response_code(403);
+    exit('CLI only');
+}
+
 require_once __DIR__ . '/../src/db.php';
 require_once __DIR__ . '/../src/sponsor_rotation.php';
 
