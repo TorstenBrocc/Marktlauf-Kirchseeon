@@ -101,6 +101,16 @@ if ($configured) {
         .vis-row { display:flex; align-items:center; gap:0.55rem; padding:0.32rem 0.2rem; font-size:0.9rem; cursor:pointer; }
         .vis-row input { flex:0 0 auto; width:1.05rem; height:1.05rem; }
         .vis-actions { display:flex; justify-content:flex-end; gap:0.6rem; }
+        .fb-trash { margin-top:1rem; }
+        .fb-trash-toggle { background:none; border:1px solid var(--border); border-radius:6px; padding:0.4rem 0.8rem; font-size:0.85rem; cursor:pointer; color:var(--text); }
+        .fb-trash-toggle:hover { border-color:var(--primary); color:var(--primary); }
+        .fb-trash-panel { margin-top:0.6rem; border:1px solid var(--border); border-radius:8px; background:var(--white); padding:0.5rem 0.75rem; box-shadow:var(--shadow-card); }
+        .fb-trash-panel[hidden] { display:none; }
+        .trash-row { display:flex; align-items:center; gap:0.5rem; padding:0.34rem 0.2rem; border-bottom:1px solid var(--border); }
+        .trash-row:last-child { border-bottom:none; }
+        .trash-restore { font-size:0.72rem; padding:0.2rem 0.6rem; border:1px solid var(--border); border-radius:4px; background:var(--white); cursor:pointer; color:var(--text); white-space:nowrap; flex:0 0 auto; }
+        .trash-restore:hover { border-color:var(--primary); color:var(--primary); }
+        .trash-empty, .trash-loading { color:var(--text-light); font-size:0.85rem; padding:0.4rem 0.2rem; }
     </style>
 </head>
 <body>
@@ -129,7 +139,12 @@ if ($configured) {
                 <?php endforeach; ?>
             </ul>
 
-            <p class="fb-hint">Live aus dem geteilten Laufwerk „Marktlauf Orga". Ordnerzeile anklicken = auf-/zuklappen. <b>Rechtsklick</b> auf eine Zeile öffnet das Menü (Umbenennen, Löschen, Neuer Unterordner, Hochladen, Ordner festlegen). Dateien vom Rechner auf einen Ordner <b>ziehen</b> lädt sie hoch; Baum-Zeilen untereinander ziehen verschiebt. <b>Mehrere auswählen:</b> Strg/Cmd + Klick, dann Rechtsklick zum Sammel-Löschen oder die Auswahl auf einen Ordner ziehen.</p>
+            <p class="fb-hint">Live aus dem geteilten Laufwerk „Marktlauf Orga". Ordnerzeile anklicken = auf-/zuklappen. <b>Rechtsklick</b> auf eine Zeile öffnet das Menü (Umbenennen, Löschen, Neuer Unterordner, Hochladen, Ordner festlegen). Dateien vom Rechner auf einen Ordner <b>ziehen</b> lädt sie hoch; Baum-Zeilen untereinander ziehen verschiebt. <b>Mehrere auswählen:</b> Strg/Cmd + Klick, dann Rechtsklick zum Sammel-Löschen oder die Auswahl auf einen Ordner ziehen. Gelöschtes landet im Papierkorb (siehe unten) und ist wiederherstellbar.</p>
+
+            <div class="fb-trash">
+                <button type="button" class="fb-trash-toggle" id="trash-toggle">🗑 Papierkorb anzeigen</button>
+                <div class="fb-trash-panel" id="trash-panel" hidden></div>
+            </div>
 
             <div id="vis-modal" hidden>
                 <div class="vis-box">
@@ -515,6 +530,49 @@ if ($configured) {
                     showToast(d.count ? ('Sichtbar für ' + d.count + ' Schicht(en).') : 'Für alle Helfer sichtbar.');
                 })
                 .catch(() => alert('Speichern fehlgeschlagen.'));
+        });
+
+        // Papierkorb (Drive-Trash des geteilten Laufwerks): anzeigen + wiederherstellen.
+        const trashToggle = document.getElementById('trash-toggle');
+        const trashPanel = document.getElementById('trash-panel');
+        function renderTrash() {
+            trashPanel.innerHTML = '<div class="trash-loading">Lädt…</div>';
+            fetch('api/trash_list.php')
+                .then(r => r.json())
+                .then(d => {
+                    const items = d.items || [];
+                    if (!items.length) { trashPanel.innerHTML = '<div class="trash-empty">Papierkorb ist leer.</div>'; return; }
+                    trashPanel.innerHTML = '';
+                    items.forEach(it => {
+                        const row = document.createElement('div'); row.className = 'trash-row';
+                        const nm = document.createElement('span'); nm.className = 'tname';
+                        nm.textContent = (it.isFolder ? '📁' : fileIcon(it.mimeType || '')) + ' ' + it.name;
+                        const meta = document.createElement('span'); meta.className = 'tmeta'; meta.textContent = it.isFolder ? 'Ordner' : fmtSize(it.size || 0);
+                        const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'trash-restore'; btn.textContent = 'Wiederherstellen';
+                        btn.addEventListener('click', () => restoreTrash(it.id, row));
+                        row.appendChild(nm); row.appendChild(meta); row.appendChild(btn);
+                        trashPanel.appendChild(row);
+                    });
+                })
+                .catch(() => { trashPanel.innerHTML = '<div class="trash-empty">Fehler beim Laden.</div>'; });
+        }
+        function restoreTrash(fid, row) {
+            fetch('api/trash_restore.php', { method: 'POST', body: new URLSearchParams({ csrf_token: CSRF, fid: fid }) })
+                .then(r => r.json())
+                .then(d => {
+                    if (!d.ok) { alert(d.message || 'Wiederherstellen fehlgeschlagen.'); return; }
+                    row.remove();
+                    showToast('Wiederhergestellt.');
+                    tree.querySelectorAll(':scope > li > .tnode-root').forEach(n => { if (n.dataset.loaded === '1') loadChildren(n); });
+                    if (!trashPanel.querySelector('.trash-row')) trashPanel.innerHTML = '<div class="trash-empty">Papierkorb ist leer.</div>';
+                })
+                .catch(() => alert('Wiederherstellen fehlgeschlagen.'));
+        }
+        trashToggle.addEventListener('click', () => {
+            const show = trashPanel.hidden;
+            trashPanel.hidden = !show;
+            trashToggle.textContent = show ? '🗑 Papierkorb ausblenden' : '🗑 Papierkorb anzeigen';
+            if (show) renderTrash();
         });
 
         // Start: beide Wurzeln aufklappen.
