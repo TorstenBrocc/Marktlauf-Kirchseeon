@@ -90,6 +90,34 @@ if (!$error) {
         // Tabelle/Spalte evtl. nicht (mehr) vorhanden
     }
 }
+// Strang 3: einteilungsspezifische Sichtbarkeit. Eine Drive-Datei mit Schicht-Zuordnung
+// erscheint nur, wenn der Helfer einer der zugeordneten Schichten zugeteilt ist; Dateien
+// ohne Zuordnung (und lokaler Alt-Bestand) bleiben für alle sichtbar.
+if (!$error && $helfer && $helferDateien !== []) {
+    try {
+        $pdo = getDbConnection();
+        $visMap = [];
+        foreach ($pdo->query('SELECT drive_file_id, schicht_id FROM helfer_datei_sichtbarkeit')->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $visMap[$row['drive_file_id']][] = (int) $row['schicht_id'];
+        }
+        if ($visMap !== []) {
+            $meine = $pdo->prepare('SELECT schicht_id FROM schicht_zuteilung WHERE helfer_id = :id');
+            $meine->execute(['id' => $helfer['id']]);
+            $meineSchichten = array_map('intval', $meine->fetchAll(PDO::FETCH_COLUMN));
+            $helferDateien = array_values(array_filter($helferDateien, static function ($d) use ($visMap, $meineSchichten) {
+                if ($d['source'] !== 'drive') {
+                    return true; // lokaler Alt-Bestand: global
+                }
+                if (!isset($visMap[$d['ref']])) {
+                    return true; // ohne Zuordnung: global
+                }
+                return array_intersect($visMap[$d['ref']], $meineSchichten) !== [];
+            }));
+        }
+    } catch (PDOException $e) {
+        // Migration 041 evtl. noch nicht angewandt -> kein Filter (alles global)
+    }
+}
 
 $einsaetze = [];
 if (!$error) {
