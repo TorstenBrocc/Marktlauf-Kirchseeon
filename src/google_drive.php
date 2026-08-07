@@ -577,6 +577,57 @@ function driveTrash(string $fileId): void
     );
 }
 
+/**
+ * Files/folders currently in the shared drive's trash (recoverable).
+ * @return array<int,array{id:string,name:string,mimeType:string,size:int,modifiedTime:string,isFolder:bool}>
+ */
+function driveListTrash(): array
+{
+    $out       = [];
+    $pageToken = '';
+    do {
+        $params = [
+            'q'                         => 'trashed = true',
+            'corpora'                   => 'drive',
+            'driveId'                   => driveSharedDriveId(),
+            'includeItemsFromAllDrives' => 'true',
+            'supportsAllDrives'         => 'true',
+            'fields'                    => 'nextPageToken,files(id,name,mimeType,size,modifiedTime)',
+            'orderBy'                   => 'folder,name',
+            'pageSize'                  => 200,
+        ];
+        if ($pageToken !== '') {
+            $params['pageToken'] = $pageToken;
+        }
+        $data = driveApiGet('https://www.googleapis.com/drive/v3/files?' . http_build_query($params));
+        foreach (($data['files'] ?? []) as $f) {
+            $mime  = (string) ($f['mimeType'] ?? '');
+            $out[] = [
+                'id'           => (string) ($f['id'] ?? ''),
+                'name'         => (string) ($f['name'] ?? ''),
+                'mimeType'     => $mime,
+                'size'         => (int) ($f['size'] ?? 0),
+                'modifiedTime' => (string) ($f['modifiedTime'] ?? ''),
+                'isFolder'     => $mime === DRIVE_FOLDER_MIME,
+            ];
+        }
+        $pageToken = (string) ($data['nextPageToken'] ?? '');
+    } while ($pageToken !== '');
+
+    return $out;
+}
+
+/** Restore a trashed file/folder (files.update trashed=false). @throws RuntimeException */
+function driveRestore(string $fileId): void
+{
+    driveApiSend(
+        'PATCH',
+        'https://www.googleapis.com/drive/v3/files/' . rawurlencode($fileId) . '?' . http_build_query(['supportsAllDrives' => 'true', 'fields' => 'id']),
+        json_encode(['trashed' => false], JSON_UNESCAPED_UNICODE),
+        ['Content-Type: application/json']
+    );
+}
+
 // --- Internal helpers -------------------------------------------------------
 
 /** GET a Drive JSON endpoint (Bearer added); returns decoded array. @throws */
