@@ -229,21 +229,22 @@ function ds_render_grid(array $items, array $map): string
 
         /* Shell: Menü links, Inhalt rechts. */
         .ds-shell { display: flex; gap: 1.5rem; align-items: flex-start; }
-        .ds-nav { flex: 0 0 190px; position: sticky; top: 1rem; display: flex; flex-direction: column; gap: 0.15rem; }
-        .ds-nav button {
-            appearance: none; border: 0; background: transparent; text-align: left; cursor: pointer;
-            font: inherit; color: var(--text); padding: 0.55rem 0.75rem; border-radius: 8px;
+        html { scroll-behavior: smooth; }
+        .ds-nav { flex: 0 0 200px; position: sticky; top: 1rem; align-self: flex-start; max-height: calc(100vh - 2rem); overflow-y: auto; display: flex; flex-direction: column; gap: 0.15rem; }
+        .ds-nav a {
+            text-decoration: none; color: var(--text); padding: 0.55rem 0.75rem; border-radius: 8px;
             display: flex; align-items: center; gap: 0.5rem; transition: background 0.12s;
         }
-        .ds-nav button:hover { background: var(--bg); }
-        .ds-nav button.is-active { background: var(--primary); color: #fff; font-weight: 600; }
+        .ds-nav a:hover { background: var(--bg); }
+        .ds-nav a.is-active { background: var(--primary); color: #fff; font-weight: 600; }
         .ds-nav .ds-nav-count { margin-left: auto; font-size: 0.72rem; opacity: 0.7; font-variant-numeric: tabular-nums; }
-        .ds-nav button.is-active .ds-nav-count { opacity: 0.85; }
+        .ds-nav a.is-active .ds-nav-count { opacity: 0.85; }
         .ds-content { flex: 1 1 auto; min-width: 0; }
 
-        .ds-section { display: none; }
-        .ds-section.is-active { display: block; }
-        .ds-section > h2 { font-size: 1.1rem; margin: 0 0 0.35rem; }
+        /* Fließende Seite: alle Sektionen untereinander, Menü springt per Anker. */
+        .ds-section { scroll-margin-top: 1.5rem; padding-bottom: 2.25rem; margin-bottom: 2.25rem; border-bottom: 1px solid var(--border); }
+        .ds-section:last-child { border-bottom: 0; }
+        .ds-section > h2 { font-size: 1.15rem; margin: 0 0 0.35rem; }
         .ds-section > .ds-lead { color: var(--text-light); font-size: 0.85rem; margin: 0 0 1.25rem; max-width: 60ch; line-height: 1.5; }
 
         .ds-grid { display: grid; gap: 0.85rem; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
@@ -295,17 +296,16 @@ function ds_render_grid(array $items, array $map): string
         .ds-snip-copy { margin-left: auto; flex: 0 0 auto; appearance: none; border: 1px solid var(--primary); background: var(--primary); color: #fff; font: inherit; font-size: 0.8rem; font-weight: 600; padding: 0.4rem 0.8rem; border-radius: 8px; cursor: pointer; transition: background 0.12s; }
         .ds-snip-copy:hover { background: var(--primary-dark, #007230); }
         .ds-snip-copy:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
-        .ds-snip-frame { display: block; width: 100%; height: 340px; border: 0; background: var(--white); }
+        /* Auto-Height: JS setzt die echte Höhe (misst den iframe-Inhalt) — keine Beschneidung. */
+        .ds-fit { display: block; width: 100%; border: 0; background: var(--white); min-height: 120px; }
 
         .ds-guide-group { font-size: 0.95rem; margin: 1.5rem 0 0.75rem; padding-bottom: 0.35rem; border-bottom: 2px solid var(--border); }
         .ds-guide-group:first-of-type { margin-top: 0; }
         .ds-guide-grid { display: grid; gap: 0.85rem; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
         .ds-guide { margin: 0; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--white); box-shadow: var(--shadow-card); }
-        .ds-guide-frame { display: block; width: 100%; height: 210px; border: 0; background: var(--white); }
         .ds-guide-cap { padding: 0.55rem 0.75rem 0.65rem; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 0.15rem; }
         .ds-guide-cap strong { font-size: 0.85rem; }
         .ds-guide-cap span { font-size: 0.74rem; color: var(--text-light); line-height: 1.4; }
-        .ds-comp-frame { display: block; width: 100%; height: 300px; border: 0; background: var(--white); }
         .ds-tpl-grid { display: grid; gap: 0.85rem; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
         .ds-tpl { margin: 0; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--white); box-shadow: var(--shadow-card); }
         .ds-tpl img { display: block; width: 100%; height: auto; border-bottom: 1px solid var(--border); background: var(--bg); }
@@ -323,7 +323,7 @@ function ds_render_grid(array $items, array $map): string
             transition: opacity 0.2s, transform 0.2s; z-index: 1000;
         }
         #ds-toast.show { opacity: 1; transform: translate(-50%, 0); }
-        @media (prefers-reduced-motion: reduce) { .ds-tile, #ds-toast, .ds-nav button { transition: none; } }
+        @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .ds-tile, #ds-toast, .ds-nav a { transition: none; } }
     </style>
 </head>
 <body>
@@ -361,16 +361,16 @@ function ds_render_grid(array $items, array $map): string
                             ? '<span class="ds-nav-count">' . str_pad((string) $count, 2, '0', STR_PAD_LEFT) . '</span>'
                             : '';
                         ?>
-                        <button type="button" class="ds-nav-btn<?= $key === $defaultSection ? ' is-active' : '' ?>"
-                                data-section="<?= htmlspecialchars($key) ?>">
+                        <a class="ds-nav-link<?= $key === $defaultSection ? ' is-active' : '' ?>"
+                           href="#ds-<?= htmlspecialchars($key) ?>">
                             <?= htmlspecialchars($label) ?><?= $countBadge ?>
-                        </button>
+                        </a>
                     <?php endforeach; ?>
                 </nav>
 
                 <div class="ds-content">
                     <!-- Marke -->
-                    <section class="ds-section is-active" id="ds-brand" data-section="brand">
+                    <section class="ds-section" id="ds-brand" data-section="brand">
                         <h2>Marke</h2>
                         <p class="ds-lead">Die tragenden Werte. Grün trägt die Marke, Orange ist die Aktion.</p>
                         <div class="ds-brand-row">
@@ -433,8 +433,8 @@ function ds_render_grid(array $items, array $map): string
                                 <div class="ds-guide-grid">
                                     <?php foreach ($items as $it): ?>
                                         <figure class="ds-guide">
-                                            <iframe class="ds-guide-frame" src="../design-system/guidelines/<?= htmlspecialchars($it['file']) ?>"
-                                                    sandbox loading="lazy" title="<?= htmlspecialchars($it['name']) ?>"></iframe>
+                                            <iframe class="ds-fit" src="../design-system/guidelines/<?= htmlspecialchars($it['file']) ?>"
+                                                    sandbox="allow-scripts allow-same-origin" loading="lazy" title="<?= htmlspecialchars($it['name']) ?>"></iframe>
                                             <figcaption class="ds-guide-cap">
                                                 <strong><?= htmlspecialchars($it['name']) ?></strong>
                                                 <?php if ($it['sub'] !== ''): ?><span><?= htmlspecialchars($it['sub']) ?></span><?php endif; ?>
@@ -463,8 +463,8 @@ function ds_render_grid(array $items, array $map): string
                                         </div>
                                         <button type="button" class="ds-snip-copy" data-code="snip-code-<?= $i ?>">HTML kopieren</button>
                                     </header>
-                                    <iframe class="ds-snip-frame" src="../design-system/snippets/<?= htmlspecialchars($s['preview']) ?>"
-                                            sandbox loading="lazy" title="Vorschau: <?= htmlspecialchars($s['name']) ?>"></iframe>
+                                    <iframe class="ds-fit" src="../design-system/snippets/<?= htmlspecialchars($s['preview']) ?>"
+                                            sandbox="allow-scripts allow-same-origin" loading="lazy" title="Vorschau: <?= htmlspecialchars($s['name']) ?>"></iframe>
                                     <pre id="snip-code-<?= $i ?>" class="ds-snip-code" hidden><?= htmlspecialchars($s['code']) ?></pre>
                                 </article>
                             <?php endforeach; ?>
@@ -482,8 +482,8 @@ function ds_render_grid(array $items, array $map): string
                         <div class="ds-guide-grid">
                             <?php foreach ($componentItems as $c): ?>
                                 <figure class="ds-guide">
-                                    <iframe class="ds-comp-frame" src="../design-system/components/<?= htmlspecialchars($c['file']) ?>"
-                                            sandbox="allow-scripts" loading="lazy" title="<?= htmlspecialchars($c['name']) ?>"></iframe>
+                                    <iframe class="ds-fit" src="../design-system/components/<?= htmlspecialchars($c['file']) ?>"
+                                            sandbox="allow-scripts allow-same-origin" loading="lazy" title="<?= htmlspecialchars($c['name']) ?>"></iframe>
                                     <figcaption class="ds-guide-cap">
                                         <strong><?= htmlspecialchars($c['name']) ?></strong>
                                         <?php if ($c['sub'] !== ''): ?><span><?= htmlspecialchars($c['sub']) ?></span><?php endif; ?>
@@ -546,32 +546,37 @@ function ds_render_grid(array $items, array $map): string
             });
         }
 
-        // Sektions-Umschaltung (Menü links). Deep-Link via #section im Hash.
-        var navBtns  = Array.prototype.slice.call(document.querySelectorAll('.ds-nav-btn'));
+        // Scrollspy: fließende Seite, Menü markiert die Sektion beim Scrollen (Anker-Sprung via href).
+        var navLinks = Array.prototype.slice.call(document.querySelectorAll('.ds-nav-link'));
         var sections = Array.prototype.slice.call(document.querySelectorAll('.ds-section'));
-        function showSection(key) {
-            var matched = false;
-            sections.forEach(function (s) {
-                var on = s.dataset.section === key;
-                s.classList.toggle('is-active', on);
-                if (on) matched = true;
-            });
-            navBtns.forEach(function (b) { b.classList.toggle('is-active', b.dataset.section === key); });
-            return matched;
+        var linkByKey = {};
+        navLinks.forEach(function (a) { linkByKey[(a.getAttribute('href') || '').replace('#', '')] = a; });
+        function setActive(id) {
+            navLinks.forEach(function (a) { a.classList.remove('is-active'); });
+            if (linkByKey[id]) linkByKey[id].classList.add('is-active');
         }
-        navBtns.forEach(function (b) {
-            b.addEventListener('click', function () {
-                var key = b.dataset.section;
-                if (showSection(key) && history.replaceState) {
-                    history.replaceState(null, '', '#' + key);
-                }
-            });
+        if ('IntersectionObserver' in window && sections.length) {
+            var spy = new IntersectionObserver(function (entries) {
+                entries.forEach(function (e) { if (e.isIntersecting) setActive(e.target.id); });
+            }, { rootMargin: '-8% 0px -82% 0px', threshold: 0 });
+            sections.forEach(function (s) { spy.observe(s); });
+        }
+
+        // Auto-Height: iframe-Inhalt messen (same-origin) und die Höhe setzen — keine Beschneidung.
+        function fitFrame(f) {
+            try {
+                var doc = f.contentDocument || (f.contentWindow && f.contentWindow.document);
+                var h = doc && doc.documentElement ? doc.documentElement.scrollHeight : 0;
+                if (h > 0) { f.style.height = h + 'px'; }
+            } catch (e) { /* Fallback: min-height aus CSS */ }
+        }
+        document.querySelectorAll('iframe.ds-fit').forEach(function (f) {
+            function schedule() { [0, 400, 1000, 2000].forEach(function (t) { setTimeout(function () { fitFrame(f); }, t); }); }
+            f.addEventListener('load', schedule);
+            if (f.contentDocument && f.contentDocument.readyState === 'complete') { schedule(); }
         });
-        // Beim Laden: Hash respektieren, sonst Default.
-        var initial = (location.hash || '').replace('#', '');
-        if (initial) showSection(initial);
-        window.addEventListener('hashchange', function () {
-            showSection((location.hash || '').replace('#', ''));
+        window.addEventListener('resize', function () {
+            document.querySelectorAll('iframe.ds-fit').forEach(fitFrame);
         });
 
         // Klick-zum-Kopieren.
