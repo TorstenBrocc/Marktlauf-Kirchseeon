@@ -35,6 +35,12 @@ dist/
 build/
 venv/
 
+# Ausnahme: self-hosted Third-Party-Frontend-Assets (Leaflet u. a.). Das sind
+# ausgelieferte Bibliotheken, KEIN Composer-/Build-vendor — sie müssen deployt
+# werden (DSGVO: kein CDN). Deshalb aus dem generischen vendor/-Ignore herausgelöst.
+!assets/vendor/
+!assets/vendor/**
+
 # --- Logs ---
 npm-debug.log*
 yarn-debug.log*

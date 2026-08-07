@@ -6,6 +6,14 @@
  * geladen, sondern erst dynamisch, wenn die Karten-Bereiche in den Viewport
  * scrollen (Vorschau-/Standortkarte) bzw. das Höhenprofil-Modal geöffnet wird
  * (leaflet-elevation). Das senkt die Total Blocking Time beim Seitenaufbau.
+ *
+ * Datenschutz: Leaflet-Kern + GPX-Plugin werden self-hosted aus assets/vendor/
+ * geladen (kein unpkg/cdnjs → kein Besucher-IP-Abfluss an US-CDNs). Ausnahme
+ * bis auf Weiteres: leaflet-elevation (nur im Höhenprofil-Modal, klick-getriggert)
+ * lädt sich seine schweren Abhängigkeiten (d3, togeojson, leaflet-almostover,
+ * leaflet-geometryutil) selbst dynamisch von unpkg nach — sauberes Self-Hosting
+ * braucht ein eigenes Vendoring-Paket + Live-Test. Siehe
+ * intern/design-system-integration-spec.md (offener Punkt).
  */
 
 // ── Dynamischer Asset-Loader (lädt jede CSS/JS-Datei bei Bedarf, nur einmal) ──
@@ -46,12 +54,10 @@ let _leafletCorePromise = null;
 function loadLeafletCore() {
   if (_leafletCorePromise) return _leafletCorePromise;
   _leafletCorePromise = (async () => {
-    await loadStylesheet("https://unpkg.com/leaflet@1.9.4/dist/leaflet.css");
-    await loadScript(
-      "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js",
-      "sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-    );
-    await loadScript("https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js");
+    // Self-hosted (assets/vendor/), kein CDN. Same-origin → keine SRI/crossOrigin nötig.
+    await loadStylesheet("assets/vendor/leaflet/leaflet.css");
+    await loadScript("assets/vendor/leaflet/leaflet.js");
+    await loadScript("assets/vendor/leaflet-gpx/gpx.min.js");
   })();
   return _leafletCorePromise;
 }
@@ -62,6 +68,9 @@ function loadElevationPlugin() {
   if (_elevationPromise) return _elevationPromise;
   _elevationPromise = (async () => {
     await loadLeafletCore();
+    // TODO Self-Hosting: leaflet-elevation lädt dynamisch d3/togeojson/almostover/
+    // geometryutil von unpkg nach → eigenes Vendoring-Paket + Live-Test nötig,
+    // bevor diese beiden Zeilen auf assets/vendor/ zeigen können.
     await loadStylesheet("https://unpkg.com/@raruto/leaflet-elevation@2.5.2/dist/leaflet-elevation.css");
     await loadScript("https://unpkg.com/@raruto/leaflet-elevation@2.5.2/dist/leaflet-elevation.js");
   })();
