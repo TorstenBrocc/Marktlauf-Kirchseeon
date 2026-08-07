@@ -737,6 +737,19 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                             <?php endforeach; ?>
                             </tbody>
                         </table>
+
+                        <div class="form-group">
+                            <div class="checkbox-single">
+                                <input type="checkbox" id="rechnung_betrag_brutto" name="rechnung_betrag_brutto" value="1"
+                                       <?= ($sponsor['rechnung_betrag_brutto'] ?? 0) ? 'checked' : '' ?>>
+                                <label for="rechnung_betrag_brutto">Diesen Sponsor brutto abrechnen (übersteuert die globale Einstellung)</label>
+                            </div>
+                            <p style="font-size:0.85rem; color: var(--text-light); margin:0.2rem 0 0;">
+                                Ist der Haken gesetzt, wird der Paketbetrag für diesen Sponsor als <strong>Brutto</strong>
+                                abgerechnet (USt wird herausgerechnet) — unabhängig vom globalen Schalter. Ohne Haken gilt
+                                die globale Einstellung (aktuell: <strong><?= $bruttoGlobal ? 'brutto' : 'netto' ?></strong>).
+                            </p>
+                        </div>
                     </div>
 
                     <div class="form-card">
