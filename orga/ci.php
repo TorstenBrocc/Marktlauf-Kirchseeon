@@ -2,11 +2,9 @@
 /**
  * CI & Design-Tokens — lebende Referenz.
  *
- * Liest die Dashboard-Tokens zur Laufzeit aus der Single Source of Truth
- * (`orga/css/orga.css`, :root) und rendert sie. Keine Werte hier hartcodieren —
- * neue Tokens in orga.css erscheinen automatisch. Die oeffentliche Marken-Palette
- * (base.css: Gold, Marken-Schriften, Hero-Verlauf) ist bewusst NICHT hier, sondern
- * im Design-System-Paket unter intern/design-system/ — das Dashboard bleibt getrennt.
+ * Liest die Design-Tokens zur Laufzeit aus der Single Source of Truth
+ * (`css/base.css`, :root) und rendert sie. Keine Werte hier hartcodieren —
+ * neue Tokens in base.css erscheinen automatisch.
  */
 
 declare(strict_types=1);
@@ -15,6 +13,25 @@ require_once __DIR__ . '/api/_auth.php';
 
 $user    = getCurrentUserFromGuard();
 $isAdmin = isAdminFromGuard();
+
+$cssPath    = __DIR__ . '/../css/base.css';
+$cssRelPath = 'css/base.css';
+
+/** @var array<string,string> $tokens name => value, in Deklarationsreihenfolge */
+$tokens  = [];
+$cssRead = false;
+$rawCss  = @file_get_contents($cssPath);
+if ($rawCss !== false) {
+    $cssRead = true;
+    // Ersten :root { ... }-Block greifen (Default-/Light-Tokens)
+    if (preg_match('/:root\s*\{(.*?)\}/s', $rawCss, $block)) {
+        if (preg_match_all('/(--[\w-]+)\s*:\s*([^;]+);/', $block[1], $pairs, PREG_SET_ORDER)) {
+            foreach ($pairs as $p) {
+                $tokens[$p[1]] = trim($p[2]);
+            }
+        }
+    }
+}
 
 /** Art eines Tokens für die Darstellung bestimmen. */
 function ci_kind(string $name, string $value): string
@@ -61,44 +78,12 @@ function ci_resolve(string $value, array $tokens): ?string
     return null;
 }
 
-/**
- * Eine CSS-Datei einlesen und ihre :root-Tokens gruppiert zurückgeben.
- * @return array{read:bool,tokens:array<string,string>,groups:array<string,array>,gradient:?string}
- */
-function ci_parse(string $cssPath): array
-{
-    $tokens = [];
-    $read   = false;
-    $raw    = @file_get_contents($cssPath);
-    if ($raw !== false) {
-        $read = true;
-        // Ersten :root { ... }-Block greifen (Default-/Light-Tokens)
-        if (preg_match('/:root\s*\{(.*?)\}/s', $raw, $block)) {
-            if (preg_match_all('/(--[\w-]+)\s*:\s*([^;]+);/', $block[1], $pairs, PREG_SET_ORDER)) {
-                foreach ($pairs as $p) {
-                    $tokens[$p[1]] = trim($p[2]);
-                }
-            }
-        }
-    }
-
-    $groups = [];
-    foreach ($tokens as $name => $value) {
-        $kind = ci_kind($name, $value);
-        $groups[ci_group($name, $kind)][] = ['name' => $name, 'value' => $value, 'kind' => $kind];
-    }
-
-    $gradient = null;
-    if (isset($tokens['--hero-gradient-start'], $tokens['--hero-gradient-mid'], $tokens['--hero-gradient-end'])) {
-        $gradient = sprintf(
-            'linear-gradient(120deg, %s 0%%, %s 55%%, %s 100%%)',
-            $tokens['--hero-gradient-start'],
-            $tokens['--hero-gradient-mid'],
-            $tokens['--hero-gradient-end']
-        );
-    }
-
-    return ['read' => $read, 'tokens' => $tokens, 'groups' => $groups, 'gradient' => $gradient];
+// Tokens in Gruppen einsortieren
+$groups = [];
+foreach ($tokens as $name => $value) {
+    $kind  = ci_kind($name, $value);
+    $group = ci_group($name, $kind);
+    $groups[$group][] = ['name' => $name, 'value' => $value, 'kind' => $kind];
 }
 
 $groupOrder = [
@@ -111,26 +96,21 @@ $groupNote = [
     'Hero & Kooperation' => 'nur in Hero-Klassen',
     'Graustufen'         => 'Flächen · Text · Ränder',
     'Status'             => 'Rückmeldungen',
+    'Schrift'            => 'System-Näherung — Fonts werden im Dashboard nicht geladen',
     'Abstände'           => 'Spacing-Skala',
     'Schatten'           => 'Elevation',
 ];
 
-// Zwei bereits ÖFFENTLICHE Quellen — keine zusätzliche Preisgabe:
-// Dashboard-Tokens (orga.css) + Website-/Marken-Tokens (base.css).
-$sources = [
-    [
-        'label' => 'Dashboard',
-        'rel'   => 'orga/css/orga.css',
-        'note'  => 'Density-first · Orga-Oberfläche',
-        'data'  => ci_parse(__DIR__ . '/css/orga.css'),
-    ],
-    [
-        'label' => 'Website & Marke',
-        'rel'   => 'css/base.css',
-        'note'  => 'Öffentliche Event-Website · Markenpalette',
-        'data'  => ci_parse(__DIR__ . '/../css/base.css'),
-    ],
-];
+// Hero-Verlauf aus Einzeltokens zusammensetzen (falls vorhanden)
+$gradient = null;
+if (isset($tokens['--hero-gradient-start'], $tokens['--hero-gradient-mid'], $tokens['--hero-gradient-end'])) {
+    $gradient = sprintf(
+        'linear-gradient(120deg, %s 0%%, %s 55%%, %s 100%%)',
+        $tokens['--hero-gradient-start'],
+        $tokens['--hero-gradient-mid'],
+        $tokens['--hero-gradient-end']
+    );
+}
 
 /** Eine Token-Kachel rendern. */
 function ci_card(array $t, array $tokens): string
@@ -188,9 +168,6 @@ function ci_card(array $t, array $tokens): string
     <title>CI &amp; Design-Tokens | ATSV Kirchseeon Marktlauf</title>
     <link rel="stylesheet" href="css/orga.css?v=<?= @filemtime(__DIR__ . '/css/orga.css') ?>">
     <link rel="icon" type="image/svg+xml" href="../assets/images/logo-final.svg">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Montserrat:wght@500;700;800;900&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         .ci-intro {
             color: var(--text-light);
@@ -344,152 +321,74 @@ function ci_card(array $t, array $tokens): string
         @media (prefers-reduced-motion: reduce) {
             .ci-card, #ci-toast { transition: none; }
         }
-        .ci-source-head { margin: 2.75rem 0 1.25rem; }
-        .ci-source-head h2 { font-size: 1.35rem; margin: 0 0 0.2rem; }
-        .ci-source-head p { margin: 0; font-size: 0.82rem; color: var(--text-light); }
-        .ci-source-head p code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; background: #eee; padding: 0.05em 0.35em; border-radius: 4px; font-size: 0.85em; }
-        .ci-logo-grid { display: grid; gap: 0.85rem; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
-        .ci-logo-card { background: var(--white); border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow-card); overflow: hidden; }
-        .ci-logo-stage { height: 120px; display: grid; place-items: center; background: #f4f5f2; padding: 16px; }
-        .ci-logo-stage img { max-width: 100%; max-height: 88px; height: auto; }
-        .ci-logo-card .ci-meta { border-top: 1px solid var(--border); }
-        .ci-rule-grid { display: grid; gap: 0.85rem; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
-        .ci-rule { background: var(--white); border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow-card); padding: 1rem 1.1rem; font-size: 0.86rem; line-height: 1.5; color: var(--text); }
-        .ci-rule h3 { margin: 0 0 0.4rem; font-size: 0.95rem; }
-        .ci-swatch-row { display: flex; gap: 6px; margin-top: 0.6rem; }
-        .ci-swatch-row span { flex: 1; height: 22px; border-radius: 5px; }
     </style>
 </head>
 <body>
 <?php $activeNav = 'ci'; require __DIR__ . '/_sidebar.php'; ?>
         <main class="main-content">
             <header class="content-header">
-                <h1>CI &amp; Design</h1>
+                <h1>CI &amp; Design-Tokens</h1>
             </header>
 
             <p class="ci-intro">
-                Lebende Marken- &amp; Design-Referenz. Die Token-Kacheln werden bei jedem Aufruf direkt aus den
-                <code>:root</code>-Blöcken gelesen (<strong>Dashboard</strong> = <code>orga/css/orga.css</code>,
-                <strong>Website &amp; Marke</strong> = <code>css/base.css</code>) — Single Source of Truth, driftfrei.
+                Lebende Referenz der Website-Palette. Die Werte werden bei jedem Aufruf direkt aus
+                <code><?= htmlspecialchars($cssRelPath) ?></code> (<code>:root</code>) gelesen — Single Source of Truth.
                 Klick auf eine Kachel kopiert den Wert, Klick auf den Variablennamen kopiert <code>var(--token)</code>.
-                Darunter kuratiertes Marken-Narrativ (Logos, Regeln) — die Nutzungsvorgaben, die kein Token abbildet.
             </p>
 
-            <?php foreach ($sources as $src): $d = $src['data']; ?>
-                <div class="ci-source-head">
-                    <h2><?= htmlspecialchars($src['label']) ?></h2>
-                    <p>Live aus <code><?= htmlspecialchars($src['rel']) ?></code> (<code>:root</code>) · <?= htmlspecialchars($src['note']) ?></p>
+            <?php if (!$cssRead): ?>
+                <div class="ci-error">
+                    <strong>Konnte <?= htmlspecialchars($cssRelPath) ?> nicht lesen.</strong>
+                    Bitte Pfad/Deployment prüfen.
                 </div>
-
-                <?php if (!$d['read']): ?>
-                    <div class="ci-error"><strong><?= htmlspecialchars($src['rel']) ?> nicht lesbar.</strong> Pfad/Deployment prüfen.</div>
-                <?php elseif (empty($d['tokens'])): ?>
-                    <div class="ci-error"><strong>Keine Tokens im <code>:root</code>-Block.</strong> Struktur von <?= htmlspecialchars($src['rel']) ?> prüfen.</div>
-                <?php else: ?>
-                    <?php foreach ($groupOrder as $groupName): ?>
-                        <?php if (empty($d['groups'][$groupName])) continue; ?>
-                        <section class="ci-group">
-                            <div class="ci-group-head">
-                                <h2><?= htmlspecialchars($groupName) ?></h2>
-                                <span class="ci-count"><?= str_pad((string) count($d['groups'][$groupName]), 2, '0', STR_PAD_LEFT) ?></span>
-                                <?php if (!empty($groupNote[$groupName])): ?>
-                                    <span class="ci-note"><?= htmlspecialchars($groupNote[$groupName]) ?></span>
-                                <?php endif; ?>
-                            </div>
-                            <div class="ci-grid">
-                                <?php foreach ($d['groups'][$groupName] as $t): ?>
-                                    <?= ci_card($t, $d['tokens']) ?>
-                                <?php endforeach; ?>
-                            </div>
-                        </section>
-                    <?php endforeach; ?>
-
-                    <?php if ($d['gradient'] !== null): ?>
-                        <section class="ci-group">
-                            <div class="ci-group-head">
-                                <h2>Hero-Verlauf</h2>
-                                <span class="ci-count">01</span>
-                                <span class="ci-note">start → mid → end</span>
-                            </div>
-                            <div class="ci-grid">
-                                <button class="ci-card ci-card--wide" type="button"
-                                        data-copy="<?= htmlspecialchars($d['gradient']) ?>" data-label="Verlauf" title="Verlauf kopieren">
-                                    <span class="ci-gradient-chip" style="background:<?= htmlspecialchars($d['gradient']) ?>"></span>
-                                    <div class="ci-meta">
-                                        <span class="ci-var">hero-gradient</span>
-                                        <span class="ci-val"><?= htmlspecialchars(
-                                            $d['tokens']['--hero-gradient-start'] . ' → ' .
-                                            $d['tokens']['--hero-gradient-mid'] . ' → ' .
-                                            $d['tokens']['--hero-gradient-end']
-                                        ) ?></span>
-                                    </div>
-                                </button>
-                            </div>
-                        </section>
-                    <?php endif; ?>
-                <?php endif; ?>
-            <?php endforeach; ?>
-
-            <!-- Narrativ: Logos (öffentliche Assets, bereits im Repo) -->
-            <div class="ci-source-head">
-                <h2>Logos</h2>
-                <p>Öffentliche Marken-Assets aus <code>assets/images/</code>. Auf farbigem Grund immer in der weißen Plakette.</p>
-            </div>
-            <div class="ci-logo-grid">
-                <?php
-                $logos = [
-                    ['marktlauf-wordmark.png', 'Wortmarke', 'Header'],
-                    ['ATSV_Logo-750x968.png', 'ATSV-Wappen', 'Veranstalter'],
-                    ['logo-final.svg', 'Bildmarke', 'Favicon · Dashboard'],
-                    ['Wort-u-Bildmarke-Gemeinde.png', 'Gemeinde Kirchseeon', 'nur Kooperation'],
-                    ['laeufer.png', 'Läufer-Silhouette', 'Gold · Hero/Plakat'],
-                    ['logo_ohne_kreis.svg', 'Peak-Zeichen', 'Wasserzeichen'],
-                ];
-                foreach ($logos as [$file, $name, $use]):
-                    $logoSrc = '../assets/images/' . rawurlencode($file);
-                ?>
-                    <div class="ci-logo-card">
-                        <span class="ci-logo-stage"><img src="<?= htmlspecialchars($logoSrc) ?>" alt="<?= htmlspecialchars($name) ?>" loading="lazy"></span>
-                        <div class="ci-meta">
-                            <span class="ci-var"><?= htmlspecialchars($name) ?></span>
-                            <span class="ci-val"><?= htmlspecialchars($use) ?></span>
+            <?php elseif (empty($tokens)): ?>
+                <div class="ci-error">
+                    <strong>Keine Tokens im <code>:root</code>-Block gefunden.</strong>
+                    Struktur von <?= htmlspecialchars($cssRelPath) ?> prüfen.
+                </div>
+            <?php else: ?>
+                <?php foreach ($groupOrder as $groupName): ?>
+                    <?php if (empty($groups[$groupName])) continue; ?>
+                    <section class="ci-group">
+                        <div class="ci-group-head">
+                            <h2><?= htmlspecialchars($groupName) ?></h2>
+                            <span class="ci-count"><?= str_pad((string) count($groups[$groupName]), 2, '0', STR_PAD_LEFT) ?></span>
+                            <?php if (!empty($groupNote[$groupName])): ?>
+                                <span class="ci-note"><?= htmlspecialchars($groupNote[$groupName]) ?></span>
+                            <?php endif; ?>
                         </div>
-                    </div>
+                        <div class="ci-grid">
+                            <?php foreach ($groups[$groupName] as $t): ?>
+                                <?= ci_card($t, $tokens) ?>
+                            <?php endforeach; ?>
+                        </div>
+                    </section>
                 <?php endforeach; ?>
-            </div>
 
-            <!-- Narrativ: Marken-Regeln (kuratiert, driftfrei — keine Token-Werte) -->
-            <div class="ci-source-head">
-                <h2>Marken-Regeln</h2>
-                <p>Kuratiert aus dem Design-System-Briefing — die Nutzung; die Werte stehen oben.</p>
-            </div>
-            <div class="ci-rule-grid">
-                <div class="ci-rule">
-                    <h3>Hero-Verlauf</h3>
-                    Genau <strong>ein</strong> Verlauf, nur großflächig (Hero, Story). Links ein Kontrast-Overlay für WCAG-AA. Keine weiteren Verläufe, nie blau-violett.
-                </div>
-                <div class="ci-rule">
-                    <h3>Farb-Rollen</h3>
-                    Grün trägt · Gold highlightet Zahlen/Uhrzeiten · Orange nur Aktion/Warnung. Höchstens zwei Hintergrundfarben je Seite.
-                </div>
-                <div class="ci-rule">
-                    <h3>Status</h3>
-                    Neu · Bestätigt · Abgelehnt — nur als Rückmeldung, nie als Dekoration.
-                    <div class="ci-swatch-row"><span style="background:#f4b81e"></span><span style="background:#2e7d32"></span><span style="background:#d32f2f"></span></div>
-                </div>
-                <div class="ci-rule">
-                    <h3>Typografie</h3>
-                    Fredoka (Display) · Montserrat (Headings/Labels) · Poppins (Fließtext). Das Dashboard nutzt System-Schrift.
-                </div>
-                <div class="ci-rule">
-                    <h3>Formate</h3>
-                    Instagram 1:1 1080×1080 · Portrait 1080×1350 · Story 1080×1920 · Plakat A3 · Rechnung/Brief A4.
-                </div>
-                <div class="ci-rule">
-                    <h3>Volle Referenz</h3>
-                    Logo-Nutzungsregeln, Motion, Do/Don'ts und Vorlagen liegen im Design-System-Paket (intern) — nicht öffentlich.
-                </div>
-            </div>
+                <?php if ($gradient !== null): ?>
+                    <section class="ci-group">
+                        <div class="ci-group-head">
+                            <h2>Hero-Verlauf</h2>
+                            <span class="ci-count">01</span>
+                            <span class="ci-note">start → mid → end</span>
+                        </div>
+                        <div class="ci-grid">
+                            <button class="ci-card ci-card--wide" type="button"
+                                    data-copy="<?= htmlspecialchars($gradient) ?>" data-label="Verlauf" title="Verlauf kopieren">
+                                <span class="ci-gradient-chip" style="background:<?= htmlspecialchars($gradient) ?>"></span>
+                                <div class="ci-meta">
+                                    <span class="ci-var">hero-gradient</span>
+                                    <span class="ci-val"><?= htmlspecialchars(
+                                        $tokens['--hero-gradient-start'] . ' → ' .
+                                        $tokens['--hero-gradient-mid'] . ' → ' .
+                                        $tokens['--hero-gradient-end']
+                                    ) ?></span>
+                                </div>
+                            </button>
+                        </div>
+                    </section>
+                <?php endif; ?>
+            <?php endif; ?>
         </main>
     </div>
 
