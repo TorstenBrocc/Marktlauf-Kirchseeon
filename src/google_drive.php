@@ -366,6 +366,13 @@ function driveBilderFolderId(PDO $pdo): ?string
     return $id !== '' ? $id : null;
 }
 
+/** Designated folder for confirmation-mail attachments (bestaetigung_assets_folder); null if unset. */
+function driveBestaetigungAssetsFolderId(PDO $pdo): ?string
+{
+    $id = driveSetting($pdo, 'bestaetigung_assets_folder');
+    return $id !== '' ? $id : null;
+}
+
 /**
  * List direct children (folders + files) of a folder in the shared drive.
  * @return array<int,array{id:string,name:string,mimeType:string,size:int,modifiedTime:string,isFolder:bool}>

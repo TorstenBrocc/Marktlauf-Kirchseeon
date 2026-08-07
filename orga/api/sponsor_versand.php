@@ -37,6 +37,16 @@ if (!in_array($typ, ['erstanschreiben', 'folgejahr', 'frei', 'bestaetigung'], tr
     $typ = 'erstanschreiben';
 }
 
+// Bestätigung: vom Versender abgewählte Anhang-Dateien (Opt-out, stateless).
+// Greift nur im Einzelversand (immer 1 Sponsor bei der Bestätigung).
+$excludeAssetFids = [];
+if ($typ === 'bestaetigung' && isset($_POST['exclude_asset_fids']) && is_array($_POST['exclude_asset_fids'])) {
+    $excludeAssetFids = array_values(array_filter(array_map(
+        static fn ($v) => trim((string) $v),
+        $_POST['exclude_asset_fids']
+    ), static fn ($v) => $v !== ''));
+}
+
 // IDs einsammeln (Einzel-Button: sponsor_id, Mehrfach-Auswahl: sponsor_ids[])
 $ids = [];
 if (!empty($_POST['sponsor_id'])) {
@@ -133,7 +143,7 @@ try {
     if (count($recipients) === 1) {
         $r = $recipients[0];
         try {
-            $ok = sendSponsorAnschreiben($r['email'], $r['anrede'], $r['vorname'], $r['nachname'], $r['firma'], $typ, $r['paket'], (int)($user['id'] ?? 0));
+            $ok = sendSponsorAnschreiben($r['email'], $r['anrede'], $r['vorname'], $r['nachname'], $r['firma'], $typ, $r['paket'], (int)($user['id'] ?? 0), $excludeAssetFids);
         } catch (Throwable $e) {
             $ok = false;
             logError('Sponsor-Versand (einzeln) Exception: ' . $e->getMessage());
