@@ -82,8 +82,10 @@ function rechnungEntwurfErstellen(PDO $pdo, int $sponsorId, ?int $userId): array
 
     $pakete       = sponsoringPakete($pdo);
     $paketDef     = $pakete[$sponsor['paket'] ?? ''] ?? [];
+    // Pro-Sponsor-Haken „brutto abrechnen" übersteuert den globalen Default (sonst gilt global).
     $globalBrutto = rechnungGlobalBrutto($pdo);
-    $snap         = rechnungSnapshotVonSponsor($sponsor, $paketDef, $globalBrutto);
+    $istBrutto    = ((int) ($sponsor['rechnung_betrag_brutto'] ?? 0) === 1) ? true : $globalBrutto;
+    $snap         = rechnungSnapshotVonSponsor($sponsor, $paketDef, $istBrutto);
 
     $ins = $pdo->prepare('
         INSERT INTO sponsor_rechnungen

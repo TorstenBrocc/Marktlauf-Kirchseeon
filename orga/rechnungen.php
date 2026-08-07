@@ -141,11 +141,11 @@ $paketLabel = static function (?string $p): string {
                                         <div class="rech-actions">
                                             <a href="sponsor_form.php?id=<?= (int) $s['id'] ?>" class="btn btn-small btn-secondary">Sponsor öffnen</a>
                                             <form method="post" action="api/rechnung_crud.php"
-                                                  onsubmit="return confirm('Rechnung für <?= htmlspecialchars(addslashes($s['firma']), ENT_QUOTES) ?> erzeugen?');">
+                                                  onsubmit="return confirm('Entwurf für <?= htmlspecialchars(addslashes($s['firma']), ENT_QUOTES) ?> erzeugen?');">
                                                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                                                 <input type="hidden" name="action" value="generate">
                                                 <input type="hidden" name="sponsor_ids[]" value="<?= (int) $s['id'] ?>">
-                                                <button type="submit" class="btn btn-small btn-primary">Rechnung erzeugen</button>
+                                                <button type="submit" class="btn btn-small btn-primary">Entwurf erzeugen</button>
                                             </form>
                                         </div>
                                     </td>
