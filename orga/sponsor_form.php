@@ -426,7 +426,7 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
             <?php endif; ?>
 
             <div class="form-container">
-                <form method="post" action="api/sponsor_crud.php">
+                <form method="post" action="api/sponsor_crud.php" enctype="multipart/form-data">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                     <input type="hidden" name="action" value="<?= $isEdit ? 'update' : 'create' ?>">
                     <?php if ($isEdit): ?>
@@ -751,6 +751,40 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                                        placeholder="https://…"
                                        value="<?= htmlspecialchars($sponsor['quellenurl'] ?? '') ?>">
                             </div>
+                        </div>
+                    </div>
+
+                    <div class="form-card">
+                        <h2>Öffentliche Darstellung (Website-Rotation)</h2>
+                        <p style="font-size:0.8rem; color: var(--text-light); margin-top:-0.5rem; margin-bottom:1rem;">
+                            Steuert das Sponsoren-Laufband auf der Startseite. Der Sponsor erscheint nur mit
+                            gesetztem Haken <em>und</em> hochgeladenem Logo. Verlinkt wird auf die oben
+                            eingetragene <strong>Website</strong>.
+                        </p>
+
+                        <div class="form-group">
+                            <div class="checkbox-single">
+                                <input type="checkbox" id="in_rotation" name="in_rotation" value="1"
+                                       <?= ($sponsor['in_rotation'] ?? 0) ? 'checked' : '' ?>>
+                                <label for="in_rotation">In der Website-Rotation anzeigen</label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="logo">Logo fürs Laufband</label>
+                            <?php if (!empty($sponsor['logo_web_asset'])): ?>
+                                <div style="margin-bottom:0.5rem;">
+                                    <img src="../assets/sponsoren-live/<?= htmlspecialchars($sponsor['logo_web_asset']) ?>"
+                                         alt="Aktuelles Logo"
+                                         style="max-height:60px; max-width:220px; background:#f4f4f4; padding:6px; border-radius:6px;">
+                                </div>
+                            <?php endif; ?>
+                            <input type="file" id="logo" name="logo" accept="image/png,image/jpeg,image/svg+xml">
+                            <p style="font-size:0.8rem; color: var(--text-light); margin-top:0.4rem;">
+                                Am besten: <strong>PNG mit transparentem Hintergrund</strong>, liegend (~2:1),
+                                mind. ca. 460×230&nbsp;px. SVG geht auch. Kein weißer Kasten drumherum –
+                                das Logo wird automatisch web-optimiert.
+                            </p>
                         </div>
                     </div>
 

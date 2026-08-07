@@ -10,6 +10,36 @@ require_once __DIR__ . '/_auth.php';
 require_once __DIR__ . '/../../src/db.php';
 require_once __DIR__ . '/../../src/logger.php';
 require_once __DIR__ . '/../../src/sponsor_status.php';
+require_once __DIR__ . '/../../src/sponsor_rotation.php';
+
+/**
+ * Rotations-Felder (Aktiv-Haken + optionaler Logo-Upload) persistieren und den
+ * öffentlichen Feed neu schreiben. Kapselt die Fehlerbehandlung an einer Stelle.
+ */
+function sponsorApplyRotation(PDO $pdo, int $sponsorId, string $firma): void {
+    $inRotation = isset($_POST['in_rotation']) ? 1 : 0;
+    $logoAsset = null;
+    try {
+        if (isset($_FILES['logo'])) {
+            $logoAsset = materializeSponsorLogo($sponsorId, $firma, $_FILES['logo']);
+        }
+    } catch (RuntimeException $e) {
+        $_SESSION['flash_error'] = $e->getMessage();
+    }
+    $sql = 'UPDATE sponsors SET in_rotation = :r'
+         . ($logoAsset !== null ? ', logo_web_asset = :l' : '')
+         . ' WHERE id = :id';
+    $params = ['r' => $inRotation, 'id' => $sponsorId];
+    if ($logoAsset !== null) {
+        $params['l'] = $logoAsset;
+    }
+    $pdo->prepare($sql)->execute($params);
+    try {
+        writeSponsorenFeed($pdo);
+    } catch (Throwable $e) {
+        logError('Sponsor-Feed schreiben: ' . $e->getMessage());
+    }
+}
 
 /**
  * prioritaet aus dem Formular (leer|1|2|3) validieren.
@@ -268,6 +298,8 @@ try {
                 // Table may not exist yet
             }
 
+            sponsorApplyRotation($pdo, $newSponsorId, $firma);
+
             $_SESSION['flash_success'] = 'Sponsor angelegt.';
             header('Location: ../sponsoren.php');
             exit;
@@ -386,6 +418,8 @@ try {
                 // Table may not exist yet
             }
 
+            sponsorApplyRotation($pdo, $sponsorId, $firma);
+
             $_SESSION['flash_success'] = 'Sponsor aktualisiert.';
             header('Location: ../sponsor_form.php?id=' . $sponsorId);
             exit;
@@ -399,6 +433,12 @@ try {
 
             $stmt = $pdo->prepare('DELETE FROM sponsors WHERE id = :id');
             $stmt->execute(['id' => $sponsorId]);
+            deleteSponsorLogo($sponsorId);
+            try {
+                writeSponsorenFeed($pdo);
+            } catch (Throwable $e) {
+                logError('Sponsor-Feed schreiben (delete): ' . $e->getMessage());
+            }
             $_SESSION['flash_success'] = 'Sponsor gelöscht.';
             header('Location: ../sponsoren.php');
             exit;
