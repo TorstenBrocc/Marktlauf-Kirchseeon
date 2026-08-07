@@ -1,0 +1,12 @@
+-- 042_drop_dateien.sql
+-- Rückbau des stillgelegten Datei-Index (gdrive-storage-spec.md §2.5): der Datei-Baum
+-- liest live aus Google Drive; kein Code nutzt `dateien` mehr (driveReconcile + die
+-- Helfer-Fallbacks in zugang.php/file_download.php + die Kategorie-API wurden entfernt).
+--
+-- DESTRUKTIV: DROP committet auf MySQL implizit, kein Rollback. Strato zieht tägliche
+-- Backups. Bilanz vor DROP (read-only geprüft 2026-08-07): 4 Zeilen, alle bereich='orga'
+-- (0 helfer); 3× provider='drive' (Dateien bleiben in Drive), 1× 'local' (Datei bleibt
+-- physisch in storage/files/orga/). Der aktive Baum zeigte diese Index-Zeilen ohnehin nicht.
+--
+-- BLEIBT bewusst erhalten: `drive_kategorie_ordner` (aktiver Ordner-ID-Cache am Wurzel-Fallback).
+DROP TABLE IF EXISTS dateien;
