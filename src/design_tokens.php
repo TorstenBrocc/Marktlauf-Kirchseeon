@@ -112,3 +112,19 @@ function ds_resolve(string $value, array $map): ?string
     }
     return null;
 }
+
+/**
+ * Rendert alle kanonischen Tokens als ein `:root{}`-CSS-Block.
+ *
+ * Für statische DS-Paket-Seiten (Guidelines), die eine Token-Quelle brauchen, ohne dass
+ * das Paket-`styles.css` (Derivat) mitdeployt wird — so bleibt base.css/orga.css die eine
+ * Quelle (Spec E2). Doppelt geführte Tokens: die spätere Quelle (orga) gewinnt, wie in CSS üblich.
+ */
+function ds_render_root_css(?string $root = null): string
+{
+    $lines = [];
+    foreach (ds_load_tokens($root) as $t) {
+        $lines[] = '  ' . $t['name'] . ': ' . $t['value'] . ';';
+    }
+    return ":root {\n" . implode("\n", $lines) . "\n}\n";
+}
