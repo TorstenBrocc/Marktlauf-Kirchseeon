@@ -42,11 +42,9 @@ function sponsorApplyRotation(PDO $pdo, int $sponsorId, string $firma): void {
         }
     }
 
-    // Drive-Ordner sicherstellen: automatisch bei Zusage, oder auf Knopfdruck (do_ensure_folder).
+    // Drive-Ordner automatisch anlegen, sobald der Sponsor auf „zugesagt" steht (und noch keinen hat).
     try {
-        $wantFolder = isset($_POST['do_ensure_folder'])
-            || sponsorStatusFromPost($_POST['status'] ?? '') === 'zugesagt';
-        if ($wantFolder && driveConfigured()) {
+        if (sponsorStatusFromPost($_POST['status'] ?? '') === 'zugesagt' && driveConfigured()) {
             $chk = $pdo->prepare('SELECT drive_folder_id FROM sponsors WHERE id = :id');
             $chk->execute(['id' => $sponsorId]);
             if ((string) ($chk->fetchColumn() ?: '') === '') {

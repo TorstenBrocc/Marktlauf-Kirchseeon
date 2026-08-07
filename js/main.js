@@ -422,6 +422,8 @@ function initSponsorMarquee() {
     let moved = 0;
     let last = 0;
     let pos = 0;   // Autoplay-Position als Fliesskommawert, siehe frame()
+    let dragCaptured = false;  // Pointer erst bei echtem Ziehen einfangen (siehe pointerdown)
+    let activePointerId = 0;
 
     function running(now) {
         return !dragging && !touching && !hovering && !document.hidden &&
@@ -460,20 +462,31 @@ function initSponsorMarquee() {
         // damit das vertikale Seiten-Scrollen frei
         if (e.pointerType === 'touch') { touching = true; return; }
         dragging = true;
+        dragCaptured = false;
+        activePointerId = e.pointerId;
         startX = e.clientX;
         startScroll = wrap.scrollLeft;
-        wrap.classList.add('is-dragging');
-        // Schlaegt der Capture fehl, laeuft das Ziehen ueber die normale
-        // Event-Bubbling-Kette weiter — nur nicht ausserhalb des Elements
-        try { wrap.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+        // BEWUSST kein setPointerCapture hier: das wuerde das nachfolgende
+        // click-Event auf den Wrap umleiten statt auf das <a> — ein direkter
+        // Klick auf ein Logo wuerde dann nicht navigieren. Capture passiert
+        // erst, wenn wirklich gezogen wird (siehe pointermove).
     });
 
     wrap.addEventListener('pointermove', function(e) {
         if (!dragging) return;
         const dx = e.clientX - startX;
         moved = Math.max(moved, Math.abs(dx));
-        wrap.scrollLeft = startScroll - dx;
-        normalize();
+        // Erst ab dem Drag-Schwellwert wird es ein Ziehen: dann Pointer einfangen
+        // und scrollen. Darunter bleibt es ein Klick, der das <a> navigieren laesst.
+        if (!dragCaptured && moved > DRAG_THRESHOLD) {
+            dragCaptured = true;
+            wrap.classList.add('is-dragging');
+            try { wrap.setPointerCapture(activePointerId); } catch (err) { /* ignore */ }
+        }
+        if (dragCaptured) {
+            wrap.scrollLeft = startScroll - dx;
+            normalize();
+        }
     });
 
     function endDrag(e) {
@@ -481,6 +494,7 @@ function initSponsorMarquee() {
         if (e.pointerType === 'touch') { touching = false; return; }
         if (!dragging) return;
         dragging = false;
+        dragCaptured = false;
         wrap.classList.remove('is-dragging');
     }
     wrap.addEventListener('pointerup', endDrag);
