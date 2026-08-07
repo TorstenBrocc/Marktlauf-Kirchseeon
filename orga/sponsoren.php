@@ -90,7 +90,9 @@ if ($filterStatus !== '' && sponsorStatusValid($filterStatus)) {
     $where[] = "status != 'abgelehnt'";
 }
 
-if ($filterPaket !== '' && in_array($filterPaket, ['hauptsponsor', 'gold', 'silber', 'bronze'], true)) {
+if ($filterPaket === 'sach') {
+    $where[] = 'sachsponsor = 1';
+} elseif ($filterPaket !== '' && in_array($filterPaket, ['hauptsponsor', 'gold', 'silber', 'bronze'], true)) {
     $where[] = 'paket = :paket';
     $params['paket'] = $filterPaket;
 }
@@ -521,6 +523,17 @@ try {
             text-transform: uppercase;
             margin-left: 0.5rem;
         }
+        /* Sachsponsoring: Sachspende statt Geld. Farbe wie Zusage (status-zugesagt). */
+        .sach-badge {
+            display: inline-block;
+            padding: 0.125rem 0.375rem;
+            background: #d4edda;
+            color: #155724;
+            border-radius: 3px;
+            font-size: 0.625rem;
+            text-transform: uppercase;
+            margin-left: 0.5rem;
+        }
         .gruppe-badge {
             display: inline-block;
             padding: 0.05rem 0.375rem;
@@ -670,6 +683,7 @@ try {
                             <option value="gold" <?= $filterPaket === 'gold' ? 'selected' : '' ?>>Gold</option>
                             <option value="silber" <?= $filterPaket === 'silber' ? 'selected' : '' ?>>Silber</option>
                             <option value="bronze" <?= $filterPaket === 'bronze' ? 'selected' : '' ?>>Bronze</option>
+                            <option value="sach" <?= $filterPaket === 'sach' ? 'selected' : '' ?>>Sachsponsor</option>
                         </select>
                     </div>
                     <?php if ($hasZustaendig): ?>
@@ -789,6 +803,9 @@ try {
                                         <?php endif; ?>
                                         <?php if ($s['kein_kontakt']): ?>
                                             <span class="kein-kontakt-badge">Kein Kontakt</span>
+                                        <?php endif; ?>
+                                        <?php if (!empty($s['sachsponsor'])): ?>
+                                            <span class="sach-badge" title="Sachspende statt Geld">Sach</span>
                                         <?php endif; ?>
                                         <?php if (!empty($s['ort'])): ?>
                                             <div class="ap-email"><?= htmlspecialchars($s['ort']) ?></div>
