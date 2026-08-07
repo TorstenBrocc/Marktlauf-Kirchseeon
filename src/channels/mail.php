@@ -11,6 +11,7 @@ require_once __DIR__ . '/../logger.php';
 require_once __DIR__ . '/../sponsor_brief.php';
 require_once __DIR__ . '/../verein_brief.php';
 require_once __DIR__ . '/../google_drive.php';
+require_once __DIR__ . '/../sponsor_rotation.php';
 
 /**
  * BCC-Adresse für ausgehende Mails: bei JEDEM Versand bekommt info@ eine
@@ -243,7 +244,8 @@ function sendSponsorAnschreiben(
     string $firma,
     string $typ = 'erstanschreiben',
     string $paket = '',
-    int $userId = 0
+    int $userId = 0,
+    int $sponsorId = 0
 ): bool {
     if (!sponsorBriefSlugValid($typ)) {
         $typ = 'erstanschreiben';
@@ -258,7 +260,19 @@ function sendSponsorAnschreiben(
     $htmlBody    = sponsorBriefRenderHtml($vorlage['koerper_md'], $ctx);
     $textBody    = sponsorBriefRenderText($vorlage['koerper_md'], $ctx);
     $attachments = in_array($typ, ['frei', 'bestaetigung'], true) ? plakateAnhang($pdo) : [];
-    return sendMail($to, $subject, $textBody, $htmlBody, $attachments);
+    $ok = sendMail($to, $subject, $textBody, $htmlBody, $attachments);
+
+    // Nach erfolgreichem Bestätigungs-Versand die Mail 1:1 als PDF im Sponsor-Ordner
+    // ablegen. Nicht-blockierend: ein Fehler hier darf den Versand nie beeinflussen.
+    if ($ok && $typ === 'bestaetigung' && $sponsorId > 0) {
+        try {
+            fileSponsorBestaetigungPdf($pdo, $sponsorId, $firma, $subject, $textBody);
+        } catch (Throwable $e) {
+            logError('Bestätigungs-PDF ablegen: ' . $e->getMessage());
+        }
+    }
+
+    return $ok;
 }
 
 /**
