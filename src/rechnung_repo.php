@@ -108,8 +108,18 @@ function rechnungEntwurfErstellen(PDO $pdo, int $sponsorId, ?int $userId): array
         'erstellt_von'       => $userId,
     ]);
 
+    $neueId = (int) $pdo->lastInsertId();
+
+    // Sponsor als abgerechnet markieren (aber ein bereits bezahlter bleibt bezahlt).
+    try {
+        $pdo->prepare("UPDATE sponsors SET status = 'abgerechnet' WHERE id = :id AND status <> 'bezahlt'")
+            ->execute(['id' => $sponsorId]);
+    } catch (PDOException $e) {
+        // Status-ENUM evtl. noch nicht migriert -> Status unverändert lassen
+    }
+
     return [
-        'id'       => (int) $pdo->lastInsertId(),
+        'id'       => $neueId,
         'snapshot' => $snap,
         'sponsor'  => $sponsor,
     ];

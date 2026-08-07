@@ -648,36 +648,7 @@ try {
                     <span class="versand-count" id="versand-count">0 ausgewählt</span>
                     <p class="versand-hint">Versand erfolgt über <strong>info@atsv-kirchseeon-marktlauf.de</strong></p>
                 </form>
-                <div class="action-bar-sep"></div>
-                <button type="button" class="btn btn-small btn-primary" id="rechnung-btn"
-                        data-csrf="<?= htmlspecialchars($csrfToken) ?>">Rechnung erzeugen</button>
-                <span class="versand-hint">Erzeugt Entwürfe &amp; benachrichtigt den Kassier</span>
             </div>
-            <script>
-            (function () {
-                var btn = document.getElementById('rechnung-btn');
-                if (!btn) return;
-                btn.addEventListener('click', function () {
-                    var ids = Array.prototype.slice
-                        .call(document.querySelectorAll('.row-check:checked'))
-                        .map(function (c) { return c.value; });
-                    if (ids.length === 0) { alert('Bitte zuerst Sponsoren auswählen.'); return; }
-                    if (!confirm(ids.length + ' Rechnungsentwurf/-entwürfe erzeugen und den Kassier benachrichtigen?')) return;
-                    var f = document.createElement('form');
-                    f.method = 'post';
-                    f.action = 'api/rechnung_crud.php';
-                    function add(n, v) {
-                        var i = document.createElement('input');
-                        i.type = 'hidden'; i.name = n; i.value = v; f.appendChild(i);
-                    }
-                    add('csrf_token', btn.dataset.csrf);
-                    add('action', 'generate');
-                    ids.forEach(function (id) { add('sponsor_ids[]', id); });
-                    document.body.appendChild(f);
-                    f.submit();
-                });
-            })();
-            </script>
 
             <div class="filter-merk-row">
                 <div class="filter-col">

@@ -37,6 +37,21 @@ foreach ($nummeriert as $r) {
         'historie' => rechnungVersandHistorie($pdo, $rid),
     ];
 }
+
+// Abzurechnen: zugesagte Sponsoren (noch nicht abgerechnet). Von hier wird die Rechnung erzeugt.
+$abzurechnen = [];
+try {
+    $stmt = $pdo->query("SELECT id, firma, paket, summe FROM sponsors WHERE status = 'zugesagt' ORDER BY firma");
+    $abzurechnen = $stmt->fetchAll();
+} catch (PDOException $e) {
+    // ignore
+}
+$paketLabel = static function (?string $p): string {
+    return match ($p) {
+        'hauptsponsor' => 'Hauptsponsor', 'gold' => 'Gold', 'silber' => 'Silber', 'bronze' => 'Bronze',
+        default => '— kein Paket —',
+    };
+};
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -96,11 +111,36 @@ foreach ($nummeriert as $r) {
             <?php endif; ?>
 
             <p class="rech-intro">
-                Sponsoring-Rechnungen werden aus der <a href="sponsoren.php">Sponsorenliste</a> erzeugt
-                (Sponsoren auswählen → „Rechnung erzeugen"). Jede Rechnung wartet hier als Entwurf,
-                bis die fortlaufende Rechnungsnummer (Format <strong>NN-JJJJ</strong>, z.&nbsp;B. 05-2026)
-                vergeben ist. Danach ist das PDF endgültig.
+                Ablauf: zugesagte Sponsoren unten <strong>abrechnen</strong> → die Rechnung wartet als
+                Entwurf auf die fortlaufende Nummer (Format <strong>NN-JJJJ</strong>) → nach der
+                Nummernvergabe an den Sponsor senden. Beim Abrechnen wird der Sponsor automatisch auf
+                Status „Abgerechnet" gesetzt.
             </p>
+
+            <h2 class="rech-section-title">Abzurechnen<?= $abzurechnen ? ' (' . count($abzurechnen) . ')' : '' ?></h2>
+            <?php if (!$abzurechnen): ?>
+                <p class="rech-empty">Keine zugesagten Sponsoren offen.</p>
+            <?php else: ?>
+                <?php foreach ($abzurechnen as $s): ?>
+                    <div class="rech-card wartet">
+                        <div class="rech-head">
+                            <span class="rech-firma"><?= htmlspecialchars($s['firma']) ?></span>
+                            <span class="rech-meta"><?= htmlspecialchars($paketLabel($s['paket'])) ?></span>
+                            <span class="rech-betrag"><?= ((float) $s['summe'] > 0) ? $eur($s['summe']) . ' (Paket)' : '' ?></span>
+                        </div>
+                        <div class="rech-actions">
+                            <a href="sponsor_form.php?id=<?= (int) $s['id'] ?>" class="btn btn-small btn-secondary">Sponsor öffnen</a>
+                            <form method="post" action="api/rechnung_crud.php"
+                                  onsubmit="return confirm('Rechnung für <?= htmlspecialchars(addslashes($s['firma']), ENT_QUOTES) ?> erzeugen?');">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                                <input type="hidden" name="action" value="generate">
+                                <input type="hidden" name="sponsor_ids[]" value="<?= (int) $s['id'] ?>">
+                                <button type="submit" class="btn btn-small btn-primary">Rechnung erzeugen</button>
+                            </form>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
 
             <h2 class="rech-section-title">Wartet auf Nummer<?= $entwuerfe ? ' (' . count($entwuerfe) . ')' : '' ?></h2>
             <?php if (!$entwuerfe): ?>
