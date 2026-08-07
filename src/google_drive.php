@@ -259,6 +259,34 @@ function driveUploadToFolder(string $folderId, string $tmpPath, string $name, st
     return $id;
 }
 
+/**
+ * Findet (ohne Anlegen) den Rechnungsordner Orga/<jahr>/Finanzen/Sponsoren-Abrechnungen
+ * im geteilten Laufwerk. Rückgabe: Ordner-ID oder null, sobald eine Ebene fehlt.
+ * Bewusst find-only: die Ordnerstruktur wird vom Menschen im Drive gepflegt.
+ */
+function driveFindeRechnungsordner(int $jahr): ?string
+{
+    $rootId = driveFindFolder(driveBereichName('orga'), driveSharedDriveId());
+    if ($rootId === null) {
+        return null;
+    }
+    $jahrId = driveFindFolder((string) $jahr, $rootId);
+    if ($jahrId === null) {
+        return null;
+    }
+    $finanzenId = driveFindFolder('Finanzen', $jahrId);
+    if ($finanzenId === null) {
+        return null;
+    }
+    return driveFindFolder('Sponsoren-Abrechnungen', $finanzenId);
+}
+
+/** Menschenlesbarer Zielpfad — für Fehlermeldungen, wenn der Ordner fehlt. */
+function driveRechnungsordnerPfad(int $jahr): string
+{
+    return 'Orga / ' . $jahr . ' / Finanzen / Sponsoren-Abrechnungen';
+}
+
 /** Download raw bytes of a Drive file. @throws RuntimeException */
 function driveDownload(string $fileId): string
 {

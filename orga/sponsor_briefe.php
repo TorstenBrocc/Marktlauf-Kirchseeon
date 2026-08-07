@@ -29,7 +29,7 @@ $pdo = getDbConnection();
 $vorlage = sponsorBriefLoad($pdo, $slug, (int) $user['id']);
 $defaults = sponsorBriefDefaults();
 $default = $defaults[$slug];
-$platzhalter = sponsorBriefPlatzhalterHilfe();
+$platzhalter = sponsorBriefPlatzhalterHilfe($slug);
 
 // Erstanschreiben = shared für alle; die anderen drei = user-scoped.
 $isUserScoped = in_array($slug, ['folgejahr', 'bestaetigung', 'frei'], true);
@@ -393,6 +393,7 @@ if (!empty($briefSettings['sponsoring_pakete'])) {
             const body = new URLSearchParams();
             body.set('csrf_token', csrf);
             body.set('koerper_md', ta.value);
+            body.set('slug', <?= json_encode($slug) ?>);
             fetch('api/sponsor_brief_preview.php', {
                 method: 'POST',
                 headers: { 'X-Requested-With': 'fetch' },

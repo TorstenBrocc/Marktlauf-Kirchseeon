@@ -27,6 +27,16 @@ $entwuerfe   = array_values(array_filter($alle, static fn ($r) => $r['status'] =
 $nummeriert  = array_values(array_filter($alle, static fn ($r) => $r['status'] === 'nummeriert'));
 
 $eur = static fn ($v) => number_format((float) $v, 2, ',', '.') . ' €';
+
+// Für nummerierte Rechnungen: mögliche Empfänger-Adressen + Versand-Historie
+$versandDaten = [];
+foreach ($nummeriert as $r) {
+    $rid = (int) $r['id'];
+    $versandDaten[$rid] = [
+        'emails'   => rechnungSponsorEmails($pdo, (int) $r['sponsor_id']),
+        'historie' => rechnungVersandHistorie($pdo, $rid),
+    ];
+}
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -62,6 +72,12 @@ $eur = static fn ($v) => number_format((float) $v, 2, ',', '.') . ' €';
         }
         .rech-empty { color: var(--text-light); font-size: 0.9rem; padding: 0.5rem 0; }
         .rech-hint { font-size: 0.78rem; color: var(--text-light); }
+        .rech-nr-form select {
+            padding: 0.35rem 0.5rem; border: 1px solid var(--border);
+            border-radius: 4px; font-size: 0.85rem; max-width: 260px;
+        }
+        .rech-hist { margin-top: 0.6rem; padding-top: 0.5rem; border-top: 1px dashed var(--border); }
+        .rech-hist-row { font-size: 0.78rem; color: var(--text-light); line-height: 1.5; }
     </style>
 </head>
 <body>
@@ -137,10 +153,46 @@ $eur = static fn ($v) => number_format((float) $v, 2, ',', '.') . ' €';
                             </span>
                             <span class="rech-betrag"><?= $eur($r['brutto']) ?> brutto</span>
                         </div>
+                        <?php
+                            $rid = (int) $r['id'];
+                            $emails = $versandDaten[$rid]['emails'] ?? [];
+                            $hist   = $versandDaten[$rid]['historie'] ?? [];
+                            $schonGesendet = false;
+                            foreach ($hist as $h) { if ($h['ergebnis'] === 'ok') { $schonGesendet = true; break; } }
+                        ?>
                         <div class="rech-actions">
-                            <a href="api/rechnung_download.php?id=<?= (int) $r['id'] ?>" target="_blank" rel="noopener"
+                            <a href="api/rechnung_download.php?id=<?= $rid ?>" target="_blank" rel="noopener"
                                class="btn btn-small btn-secondary">Rechnung öffnen (PDF)</a>
+                            <?php if ($emails): ?>
+                                <form method="post" action="api/rechnung_versand.php" class="rech-nr-form"
+                                      onsubmit="return confirmVersand(this, <?= $schonGesendet ? 'true' : 'false' ?>);">
+                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                                    <input type="hidden" name="id" value="<?= $rid ?>">
+                                    <label class="rech-hint" for="empf-<?= $rid ?>">An:</label>
+                                    <select id="empf-<?= $rid ?>" name="empfaenger">
+                                        <?php foreach ($emails as $em): ?>
+                                            <option value="<?= htmlspecialchars($em) ?>"><?= htmlspecialchars($em) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <button type="submit" class="btn btn-small btn-primary"><?= $schonGesendet ? 'Erneut senden' : 'An Sponsor senden' ?></button>
+                                </form>
+                            <?php else: ?>
+                                <span class="rech-hint">Keine E-Mail-Adresse hinterlegt — bitte beim Sponsor ergänzen.</span>
+                            <?php endif; ?>
                         </div>
+                        <?php if ($hist): ?>
+                            <div class="rech-hist">
+                                <?php foreach ($hist as $h): ?>
+                                    <div class="rech-hist-row">
+                                        <?= $h['ergebnis'] === 'ok' ? '✓ gesendet' : '✗ Fehler' ?>
+                                        · <?= htmlspecialchars(date('d.m.Y H:i', strtotime((string) $h['versendet_am']))) ?>
+                                        · <?= htmlspecialchars($h['empfaenger']) ?>
+                                        <?= !empty($h['von_name']) ? ' · ' . htmlspecialchars($h['von_name']) : '' ?>
+                                        <?= $h['ergebnis'] !== 'ok' && !empty($h['hinweis']) ? ' · ' . htmlspecialchars($h['hinweis']) : '' ?>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 <?php endforeach; ?>
             <?php endif; ?>
@@ -148,6 +200,15 @@ $eur = static fn ($v) => number_format((float) $v, 2, ',', '.') . ' €';
         </main>
     </div>
     <script>
+    function confirmVersand(form, schonGesendet) {
+        var sel = form.querySelector('select[name="empfaenger"]');
+        var to = sel ? sel.value : '';
+        var msg = (schonGesendet
+            ? 'Diese Rechnung wurde bereits gesendet. ERNEUT senden'
+            : 'Rechnung senden')
+            + ' an ' + to + '?\n\nDas PDF wird zusätzlich in Google Drive abgelegt.';
+        return window.confirm(msg);
+    }
     (function() {
         const burger = document.getElementById('burger-btn');
         const sidebar = document.getElementById('sidebar');
