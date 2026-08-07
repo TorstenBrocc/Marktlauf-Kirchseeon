@@ -16,6 +16,7 @@ require_once __DIR__ . '/../../src/db.php';
 require_once __DIR__ . '/../../src/logger.php';
 require_once __DIR__ . '/../../src/channels/mail.php';
 require_once __DIR__ . '/../../src/sponsor_status.php';
+require_once __DIR__ . '/../../src/sponsor_beleg.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: ../sponsoren.php');
@@ -132,7 +133,7 @@ try {
     if (count($recipients) === 1) {
         $r = $recipients[0];
         try {
-            $ok = sendSponsorAnschreiben($r['email'], $r['anrede'], $r['vorname'], $r['nachname'], $r['firma'], $typ, $r['paket'], (int)($user['id'] ?? 0), (int)($r['sponsor_id'] ?? 0));
+            $ok = sendSponsorAnschreiben($r['email'], $r['anrede'], $r['vorname'], $r['nachname'], $r['firma'], $typ, $r['paket'], (int)($user['id'] ?? 0));
         } catch (Throwable $e) {
             $ok = false;
             logError('Sponsor-Versand (einzeln) Exception: ' . $e->getMessage());
@@ -141,6 +142,18 @@ try {
         if ($ok) {
             sponsorMarkGesendet($pdo, $r['sponsor_id'], $typ);
             $_SESSION['flash_success'] = 'Anschreiben gesendet an ' . htmlspecialchars($r['firma']) . '.' . $hinweis;
+
+            // Bestätigung: Beleg-PDF im Sponsor-Ordner ablegen (Mail bleibt einmalig).
+            if ($typ === 'bestaetigung') {
+                try {
+                    archiveSponsorBestaetigung($pdo, (int) $r['sponsor_id'], (int) ($user['id'] ?? 0));
+                } catch (Throwable $e) {
+                    logError('Beleg-Ablage (einzeln): ' . $e->getMessage());
+                    $_SESSION['flash_error'] = 'Mail versendet, aber der Bestätigungs-Beleg wurde NICHT im Drive abgelegt: '
+                        . htmlspecialchars($e->getMessage())
+                        . ' — Ursache beheben und in der Sponsoren-Maske über „Bestätigungs-Beleg im Drive ablegen" erneut versuchen.';
+                }
+            }
         } else {
             $_SESSION['flash_error'] = 'Versand fehlgeschlagen (siehe Log).' . $hinweis;
         }
