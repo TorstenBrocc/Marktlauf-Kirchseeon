@@ -609,6 +609,18 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                             </div>
                         </div>
 
+                        <div class="form-group">
+                            <div class="checkbox-single">
+                                <input type="checkbox" id="sachsponsor" name="sachsponsor" value="1"
+                                       <?= ($sponsor['sachsponsor'] ?? 0) ? 'checked' : '' ?>>
+                                <label for="sachsponsor">Sachsponsoring (Sachspende statt Geld)</label>
+                            </div>
+                            <p style="font-size:0.85rem; color: var(--text-light); margin:0.2rem 0 0;">
+                                Bringt am Renntag Sachleistungen mit (kein Geld, keine Rechnung).
+                                Was mitgebracht wurde, ins Feld „Notizen“ schreiben.
+                            </p>
+                        </div>
+
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="prioritaet">Priorität</label>

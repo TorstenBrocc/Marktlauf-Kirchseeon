@@ -58,7 +58,7 @@ try {
     $pdo = getDbConnection();
 
     $placeholders = implode(',', array_fill(0, count($ids), '?'));
-    $stmt = $pdo->prepare("SELECT id, firma, paket, kein_kontakt FROM sponsors WHERE id IN ($placeholders)");
+    $stmt = $pdo->prepare("SELECT id, firma, paket, sachsponsor, kein_kontakt FROM sponsors WHERE id IN ($placeholders)");
     $stmt->execute($ids);
     $sponsoren = [];
     foreach ($stmt->fetchAll() as $row) {
@@ -106,7 +106,10 @@ try {
                 'vorname'    => (string) $ap['vorname'],
                 'nachname'   => (string) $ap['nachname'],
                 'firma'      => (string) $sponsor['firma'],
-                'paket'      => (string) ($sponsor['paket'] ?? ''),
+                // Sachsponsoren tragen kein Geldpaket; für {{paket_text}} im Brief
+                // ("…als Sachsponsor unterstützen") das Flag über den Paket-Kanal
+                // durchreichen. sponsorLevelText() mappt 'sachsponsor' → 'Sachsponsor'.
+                'paket'      => $sponsor['sachsponsor'] ? 'sachsponsor' : (string) ($sponsor['paket'] ?? ''),
             ];
         }
     }

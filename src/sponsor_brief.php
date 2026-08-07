@@ -306,7 +306,7 @@ function sponsorBriefPlatzhalterHilfe(string $slug = ''): array {
                                . "• sonst → \"Sehr geehrte Damen und Herren,\"",
         '{{vorname}}'       => 'Vorname des Ansprechpartners',
         '{{firma}}'         => 'Firmenname des Sponsors',
-        '{{paket_text}}'    => 'Paketname (Hauptsponsor / Gold-Sponsor / Silber-Sponsor / Bronze-Sponsor)',
+        '{{paket_text}}'    => 'Paketname (Hauptsponsor / Gold-Sponsor / Silber-Sponsor / Bronze-Sponsor / Sachsponsor)',
         '{{paket_tabelle}}' => 'Tabelle aller Sponsoring-Pakete mit Preisen und Highlights',
         '{{signatur}}'      => "Signatur-Block (Name, Aufgabe, Telefon, E-Mail, Social-Media-Logos)\n"
                                . "Die persönlichen Daten stammen aus der Benutzerverwaltung (dein Profil).\n"
@@ -391,6 +391,7 @@ function sponsorLevelText(string $paket): string {
         'hauptsponsor' => 'Hauptsponsor',
         'gold'         => 'Gold-Sponsor',
         'silber'       => 'Silber-Sponsor',
+        'sachsponsor'  => 'Sachsponsor',
         default        => 'Bronze-Sponsor',
     };
 }
