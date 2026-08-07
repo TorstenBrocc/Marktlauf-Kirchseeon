@@ -70,6 +70,7 @@ if ($configured) {
         .tnode { display:flex; align-items:center; gap:0.45rem; padding:0.32rem 0.45rem; border-radius:6px; cursor:pointer; }
         .tnode:hover { background:#f2f8f4; }
         .tnode.selected { background:rgba(0,150,64,0.12); }
+        .tnode.marked { background:rgba(0,150,64,0.22); outline:1px solid var(--primary); outline-offset:-1px; }
         .tnode-root > .tname { font-weight:600; color:var(--primary-dark); }
         .tnode-file { cursor:default; }
         .ttoggle { width:2.2rem; font-size:2rem; line-height:1; text-align:center; color:var(--text-light); flex:0 0 auto; user-select:none; }
@@ -114,7 +115,7 @@ if ($configured) {
                 <?php endforeach; ?>
             </ul>
 
-            <p class="fb-hint">Live aus dem geteilten Laufwerk „Marktlauf Orga". Ordnerzeile anklicken = auf-/zuklappen. <b>Rechtsklick</b> auf eine Zeile öffnet das Menü (Umbenennen, Löschen, Neuer Unterordner, Hochladen, Ordner festlegen). Dateien vom Rechner auf einen Ordner <b>ziehen</b> lädt sie hoch; Baum-Zeilen untereinander ziehen verschiebt.</p>
+            <p class="fb-hint">Live aus dem geteilten Laufwerk „Marktlauf Orga". Ordnerzeile anklicken = auf-/zuklappen. <b>Rechtsklick</b> auf eine Zeile öffnet das Menü (Umbenennen, Löschen, Neuer Unterordner, Hochladen, Ordner festlegen). Dateien vom Rechner auf einen Ordner <b>ziehen</b> lädt sie hoch; Baum-Zeilen untereinander ziehen verschiebt. <b>Mehrere auswählen:</b> Strg/Cmd + Klick, dann Rechtsklick zum Sammel-Löschen oder die Auswahl auf einen Ordner ziehen.</p>
 
             <?php endif; ?>
         </main>
@@ -133,6 +134,14 @@ if ($configured) {
         const tree = document.getElementById('fb-tree');
         const toast = document.getElementById('fb-toast');
         let draggedFid = null;
+        const marked = new Set(); // Mehrfachauswahl (fids)
+
+        function setMark(node, on) {
+            if (isRoot(node.dataset.fid)) return; // Wurzeln nicht markierbar
+            node.classList.toggle('marked', on);
+            if (on) marked.add(node.dataset.fid); else marked.delete(node.dataset.fid);
+        }
+        function clearMarks() { marked.clear(); tree.querySelectorAll('.tnode.marked').forEach(n => n.classList.remove('marked')); }
 
         const esc = s => (window.CSS && CSS.escape) ? CSS.escape(s) : s;
         const isRoot = fid => ROOTS.indexOf(fid) > -1;
@@ -215,8 +224,14 @@ if ($configured) {
             node.classList.add('selected');
         }
 
-        // Klicks im Baum: Ordner auf-/zuklappen (delegiert).
+        // Klicks im Baum: Strg/Cmd+Klick markiert (Mehrfachauswahl); sonst Ordner auf-/zuklappen.
         tree.addEventListener('click', function (e) {
+            const anyNode = e.target.closest('.tnode');
+            if ((e.ctrlKey || e.metaKey) && anyNode) {
+                setMark(anyNode, !anyNode.classList.contains('marked'));
+                return;
+            }
+            clearMarks();
             const folderNode = e.target.closest('.tnode-folder');
             if (folderNode) { selectFolder(folderNode); toggleFolder(folderNode); }
         });
@@ -242,6 +257,33 @@ if ($configured) {
             const body = new URLSearchParams({ csrf_token: CSRF, fid: node.dataset.fid });
             fetch('api/file_delete.php', { method: 'POST', body: body, redirect: 'manual' })
                 .then(() => { node.closest('li').remove(); showToast('In den Papierkorb verschoben.'); });
+        }
+        function doDeleteMany(fids) {
+            const targets = fids.filter(f => !isRoot(f));
+            if (targets.length === 0) return;
+            if (!confirm(targets.length + ' Einträge in den Papierkorb?')) return;
+            Promise.all(targets.map(f => fetch('api/file_delete.php', { method: 'POST', body: new URLSearchParams({ csrf_token: CSRF, fid: f }), redirect: 'manual' })))
+                .then(() => {
+                    targets.forEach(f => { const n = tree.querySelector('.tnode[data-fid="' + esc(f) + '"]'); if (n) n.closest('li').remove(); });
+                    clearMarks();
+                    showToast(targets.length + ' Einträge in den Papierkorb verschoben.');
+                });
+        }
+        function doMoveMany(fids, target) {
+            const jobs = fids.filter(f => !isRoot(f) && f !== target).map(f => {
+                const source = parentFidOf(f);
+                if (source === '') return null;
+                return fetch('api/file_move.php', { method: 'POST', body: new URLSearchParams({ csrf_token: CSRF, fid: f, target: target, source: source }) })
+                    .then(r => r.json()).then(d => ({ f: f, ok: !!d.ok }));
+            }).filter(Boolean);
+            if (jobs.length === 0) return;
+            Promise.all(jobs).then(results => {
+                results.forEach(res => { if (res.ok) { const n = tree.querySelector('.tnode[data-fid="' + esc(res.f) + '"]'); if (n) n.closest('li').remove(); } });
+                refreshFolder(target);
+                clearMarks();
+                const ok = results.filter(r => r.ok).length;
+                showToast(ok + ' von ' + results.length + ' verschoben.');
+            });
         }
         function doCreateFolder(parentFid, parentName, name) {
             const body = new URLSearchParams({ csrf_token: CSRF, parent: parentFid, name: name });
@@ -306,6 +348,8 @@ if ($configured) {
 
             // (b) Interne Verschiebung eines Baum-Knotens.
             if (!draggedFid || draggedFid === target) { draggedFid = null; return; }
+            // Mehrfachauswahl: wird ein markierter Knoten gezogen, verschiebt die ganze Auswahl.
+            if (marked.has(draggedFid) && marked.size > 1) { doMoveMany([...marked], target); draggedFid = null; return; }
             const source = parentFidOf(draggedFid);
             const moved = draggedFid; draggedFid = null;
             if (source === '') { showToast('Diese Zeile lässt sich nicht verschieben.'); return; }
@@ -342,6 +386,17 @@ if ($configured) {
             if (!node) return;
             e.preventDefault();
             ctx.innerHTML = '';
+            // Mehrfachauswahl: Rechtsklick auf einen markierten Knoten -> Sammel-Aktion.
+            if (marked.size > 1 && marked.has(node.dataset.fid)) {
+                ctx.appendChild(ctxItem('🗑 ' + marked.size + ' Einträge in den Papierkorb', 'danger', () => doDeleteMany([...marked])));
+                ctx.hidden = false;
+                let mx = e.clientX, my = e.clientY;
+                if (mx + ctx.offsetWidth > window.innerWidth) mx = window.innerWidth - ctx.offsetWidth - 4;
+                if (my + ctx.offsetHeight > window.innerHeight) my = window.innerHeight - ctx.offsetHeight - 4;
+                ctx.style.left = Math.max(4, mx) + 'px';
+                ctx.style.top = Math.max(4, my) + 'px';
+                return;
+            }
             const isFolder = node.classList.contains('tnode-folder');
             const root = isRoot(node.dataset.fid);
             if (isFolder) {
