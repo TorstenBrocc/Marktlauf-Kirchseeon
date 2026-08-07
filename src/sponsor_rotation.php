@@ -62,17 +62,43 @@ function materializeSponsorLogo(int $sponsorId, string $firma, array $file): ?st
     if ((int) ($file['size'] ?? 0) > 5 * 1024 * 1024) {
         throw new RuntimeException('Logo ist zu groß (max. 5 MB).');
     }
+    return storeSponsorLogo($sponsorId, $firma, $tmp, true, (string) ($file['name'] ?? ''));
+}
 
-    $mime = (new finfo(FILEINFO_MIME_TYPE))->file($tmp);
+/**
+ * Wie materializeSponsorLogo, aber aus einer vorhandenen Datei (z. B. Bestands-Asset beim Seed).
+ */
+function importSponsorLogoFromPath(int $sponsorId, string $firma, string $srcPath): ?string
+{
+    if (!is_file($srcPath)) {
+        throw new RuntimeException('Quell-Logo nicht gefunden: ' . $srcPath);
+    }
+    return storeSponsorLogo($sponsorId, $firma, $srcPath, false, $srcPath);
+}
+
+/**
+ * Gemeinsamer Kern: Logo validieren, ablegen (Move bei Upload, sonst Copy), web-optimieren.
+ * $nameHint dient nur der SVG-Erkennung, wenn finfo den MIME nicht eindeutig als image/svg+xml meldet.
+ */
+function storeSponsorLogo(int $sponsorId, string $firma, string $srcPath, bool $wasUploaded, string $nameHint = ''): ?string
+{
+    $mime = (new finfo(FILEINFO_MIME_TYPE))->file($srcPath);
     $extByMime = [
         'image/png'     => 'png',
         'image/jpeg'    => 'jpg',
         'image/svg+xml' => 'svg',
     ];
-    if (!isset($extByMime[$mime])) {
-        throw new RuntimeException('Logo-Typ nicht erlaubt. Erlaubt: PNG, JPG, SVG.');
+    $ext = $extByMime[$mime] ?? null;
+    if ($ext === null) {
+        // finfo meldet SVG je nach System als text/xml o. ä. — per Namens-Hint + Inhalt absichern.
+        $hint = $nameHint !== '' ? $nameHint : $srcPath;
+        if (preg_match('/\.svg$/i', $hint) && strpos((string) @file_get_contents($srcPath), '<svg') !== false) {
+            $mime = 'image/svg+xml';
+            $ext  = 'svg';
+        } else {
+            throw new RuntimeException('Logo-Typ nicht erlaubt. Erlaubt: PNG, JPG, SVG.');
+        }
     }
-    $ext = $extByMime[$mime];
 
     if (!is_dir(SPONSOR_LOGO_DIR) && !@mkdir(SPONSOR_LOGO_DIR, 0775, true) && !is_dir(SPONSOR_LOGO_DIR)) {
         throw new RuntimeException('Logo-Verzeichnis konnte nicht angelegt werden.');
@@ -83,7 +109,8 @@ function materializeSponsorLogo(int $sponsorId, string $firma, array $file): ?st
 
     $name = 'sponsor-' . $sponsorId . '-' . sponsorSlug($firma) . '.' . $ext;
     $dest = SPONSOR_LOGO_DIR . '/' . $name;
-    if (!@move_uploaded_file($tmp, $dest)) {
+    $ok = $wasUploaded ? @move_uploaded_file($srcPath, $dest) : @copy($srcPath, $dest);
+    if (!$ok) {
         throw new RuntimeException('Logo konnte nicht gespeichert werden.');
     }
     @chmod($dest, 0644);
