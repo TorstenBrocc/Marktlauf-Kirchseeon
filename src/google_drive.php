@@ -496,14 +496,14 @@ function driveBreadcrumb(string $folderId, string $rootId): array
 function driveListFilesRecursive(string $rootId, int $maxFolders = 400): array
 {
     $files = [];
-    $queue = [$rootId];
+    $queue = [['id' => $rootId, 'anc' => [$rootId]]]; // anc = Ordnerkette Root..dieser Ordner
     $seen  = 0;
     while ($queue !== [] && $seen < $maxFolders) {
-        $folderId = array_shift($queue);
+        $cur = array_shift($queue);
         $seen++;
-        foreach (driveListChildren($folderId) as $child) {
+        foreach (driveListChildren($cur['id']) as $child) {
             if ($child['isFolder']) {
-                $queue[] = $child['id'];
+                $queue[] = ['id' => $child['id'], 'anc' => array_merge($cur['anc'], [$child['id']])];
             } else {
                 $files[] = [
                     'id'           => $child['id'],
@@ -511,6 +511,7 @@ function driveListFilesRecursive(string $rootId, int $maxFolders = 400): array
                     'mimeType'     => $child['mimeType'],
                     'size'         => $child['size'],
                     'modifiedTime' => $child['modifiedTime'],
+                    'ancestors'    => $cur['anc'], // Ordner von Root bis inkl. direktem Elternordner
                 ];
             }
         }

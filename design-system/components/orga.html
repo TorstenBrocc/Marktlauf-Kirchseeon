@@ -1,0 +1,96 @@
+<!DOCTYPE html><html lang="de"><head><meta charset="utf-8">
+<link rel="stylesheet" href="../tokens.php">
+<link rel="stylesheet" href="../../css/fonts.css">
+<style>body{margin:0;padding:20px;font-family:var(--font-main);background:var(--white);color:var(--text-strong)}a{color:var(--link)}a:hover{color:var(--link-hover)}.row{display:flex;flex-wrap:wrap;gap:14px;align-items:center}.lbl{font-family:var(--font-heading);font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-400);margin-bottom:8px}</style>
+<script src="../../assets/vendor/react/react.production.min.js"></script>
+<script src="../../assets/vendor/react/react-dom.production.min.js"></script>
+<script src="../_ds_bundle.js"></script></head><body><div id="root"></div>
+<script>const {
+  KpiTile,
+  Kachel,
+  DataTable,
+  OrgaSidebar,
+  Badge
+} = window.MarktlaufKirchseeonDesignSystem_48e1b5;
+function Demo() {
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: '16px',
+      alignItems: 'flex-start'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      border: '1px solid var(--orga-border)',
+      borderRadius: '8px',
+      overflow: 'hidden',
+      background: 'var(--white)'
+    }
+  }, /*#__PURE__*/React.createElement(OrgaSidebar, {
+    base: "../../",
+    active: "helfer",
+    items: [{
+      key: 'dashboard',
+      label: 'Cockpit'
+    }, {
+      key: 'helfer',
+      label: 'Helfer-Übersicht',
+      section: 'HELFER-ORGA'
+    }, {
+      key: 'schichten',
+      label: 'Einsatzplan',
+      section: 'HELFER-ORGA'
+    }, {
+      key: 'sponsoren',
+      label: 'Sponsoren',
+      section: 'SPONSOREN-HANDLING'
+    }, {
+      key: 'ticker',
+      label: 'Live-Ticker',
+      section: 'KOMMUNIKATION',
+      badge: 'Phase 3'
+    }],
+    user: {
+      name: 'Torsten Tyras',
+      role: 'Admin'
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '12px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(3,1fr)',
+      gap: '10px'
+    }
+  }, /*#__PURE__*/React.createElement(KpiTile, {
+    title: "Helfer",
+    value: "42",
+    label: "Anmeldungen \xB7 3 neu",
+    signal: "attention"
+  }), /*#__PURE__*/React.createElement(KpiTile, {
+    title: "Einsatzplan",
+    value: "88/96",
+    label: "Pl\xE4tze besetzt",
+    signal: "attention"
+  }), /*#__PURE__*/React.createElement(KpiTile, {
+    title: "Sponsoren",
+    value: "17",
+    label: "4.200 \u20AC zugesagt",
+    signal: "neutral"
+  })), /*#__PURE__*/React.createElement(DataTable, {
+    columns: ['Name', 'E-Mail', 'Status'],
+    rows: [['Anna Bauer', 'anna.bauer@example.de', /*#__PURE__*/React.createElement(Badge, {
+      tone: "bestaetigt"
+    }, "Best\xE4tigt")], ['Michael Huber', 'm.huber@example.de', /*#__PURE__*/React.createElement(Badge, {
+      tone: "neu"
+    }, "Neu")]]
+  }), /*#__PURE__*/React.createElement(Kachel, {
+    title: "Notiz"
+  }, "Verpflegungsstand braucht noch zwei Helfer ab 11:00 Uhr.")));
+}
+ReactDOM.createRoot(document.getElementById('root')).render(/*#__PURE__*/React.createElement(Demo, null));</script></body></html>

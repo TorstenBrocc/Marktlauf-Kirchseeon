@@ -464,6 +464,10 @@ if ($configured) {
                 ctx.appendChild(ctxSep());
                 ctx.appendChild(ctxItem('📌 Als Plakate-Ordner (' + RENNJAHR + ')', '', () => { selectFolder(node); designate('set_plakat', 'Plakate-Ordner (' + RENNJAHR + ') gesetzt:', node.dataset.fid, node.dataset.name); }));
                 ctx.appendChild(ctxItem('🖼️ Als Bilder-Ordner', '', () => { selectFolder(node); designate('set_bilder', 'Bilder-Ordner gesetzt:', node.dataset.fid, node.dataset.name); }));
+                if (HELFER_ROOT && !root && rootOf(node) === HELFER_ROOT) {
+                    ctx.appendChild(ctxSep());
+                    ctx.appendChild(ctxItem('👁 Sichtbarkeit für Helfer…', '', () => openVisibility(node)));
+                }
             } else {
                 const dlHref = 'api/file_download.php?fid=' + encodeURIComponent(node.dataset.fid);
                 ctx.appendChild(ctxItem('⬇ Download', '', () => { window.location.href = dlHref; }));
@@ -492,7 +496,11 @@ if ($configured) {
         let visFid = null;
         function openVisibility(node) {
             visFid = node.dataset.fid;
-            visModal.querySelector('.vis-file').textContent = node.dataset.name;
+            const isFolder = node.classList.contains('tnode-folder');
+            visModal.querySelector('.vis-file').textContent = (isFolder ? '📁 ' : '') + node.dataset.name;
+            visModal.querySelector('.vis-hint').innerHTML = isFolder
+                ? 'Gilt für den <b>Ordner und alle Dateien darin</b>, die keine eigene Zuordnung haben. Keine Auswahl = für alle Helfer sichtbar.'
+                : 'Keine Auswahl = für <b>alle</b> Helfer sichtbar. Auswahl = nur Helfer der markierten Schichten sehen diese Datei in ihrem Zugang.';
             const list = visModal.querySelector('.vis-list');
             list.textContent = 'Lädt…';
             visModal.hidden = false;

@@ -1,0 +1,101 @@
+<!DOCTYPE html><html lang="de"><head><meta charset="utf-8">
+<link rel="stylesheet" href="../tokens.php">
+<link rel="stylesheet" href="../../css/fonts.css">
+<style>body{margin:0;padding:20px;font-family:var(--font-main);background:var(--white);color:var(--text-strong)}a{color:var(--link)}a:hover{color:var(--link-hover)}.row{display:flex;flex-wrap:wrap;gap:14px;align-items:center}.lbl{font-family:var(--font-heading);font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-400);margin-bottom:8px}</style>
+<script src="../../assets/vendor/react/react.production.min.js"></script>
+<script src="../../assets/vendor/react/react-dom.production.min.js"></script>
+<script src="../_ds_bundle.js"></script></head><body><div id="root"></div>
+<script>const {
+  RunCard,
+  TimelineItem,
+  RouteCard,
+  LogoPlakette,
+  KoopBadge,
+  Countdown,
+  LiveTicker,
+  SponsorMarquee,
+  SectionHeading
+} = window.MarktlaufKirchseeonDesignSystem_48e1b5;
+function Demo() {
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '20px'
+    }
+  }, /*#__PURE__*/React.createElement(LiveTicker, {
+    entries: [{
+      typ: 'info',
+      text: 'Startnummern-Ausgabe ab 09:00 Uhr am JEK.'
+    }]
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: 'var(--gradient-hero)',
+      padding: '18px',
+      borderRadius: 'var(--radius-lg)',
+      display: 'flex',
+      gap: '18px',
+      alignItems: 'center',
+      flexWrap: 'wrap'
+    }
+  }, /*#__PURE__*/React.createElement(LogoPlakette, {
+    base: "../../"
+  }), /*#__PURE__*/React.createElement(KoopBadge, {
+    base: "../../"
+  }), /*#__PURE__*/React.createElement(Countdown, null)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr',
+      gap: '16px'
+    }
+  }, /*#__PURE__*/React.createElement(RunCard, {
+    category: "Bambini",
+    distance: "500m",
+    description: "Der perfekte Einstieg f\xFCr die kleinsten Sportler."
+  }), /*#__PURE__*/React.createElement(RouteCard, {
+    title: "Jugend & Erwachsene",
+    distance: "10km",
+    age: "ab 16 Jahre",
+    disclaimer: "* Streckenverlauf unter Vorbehalt",
+    gpxHref: "#"
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      maxWidth: '440px'
+    }
+  }, /*#__PURE__*/React.createElement(SectionHeading, {
+    align: "left",
+    rule: true
+  }, "Zeitplan"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'relative',
+      marginTop: '20px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'absolute',
+      left: '8px',
+      top: 0,
+      width: '2px',
+      height: '100%',
+      background: 'var(--gray-200)'
+    }
+  }), /*#__PURE__*/React.createElement(TimelineItem, {
+    time: "10:00 Uhr",
+    event: "Bambini \xB7 500 m",
+    note: "bis 6 Jahre"
+  }), /*#__PURE__*/React.createElement(TimelineItem, {
+    time: "10:30 Uhr",
+    event: "Sch\xFCler \xB7 1 km & 2 km",
+    note: "ab 6 Jahre",
+    last: true
+  }))), /*#__PURE__*/React.createElement(SponsorMarquee, {
+    logos: [{
+      src: '../../assets/images/sponsor-apotheke-st-josef.png',
+      alt: 'Apotheke St. Josef'
+    }, {
+      src: '../../assets/images/platzhalter-sponsoren-logo.png',
+      alt: 'Sponsorenlogo'
+    }]
+  }));
+}
+ReactDOM.createRoot(document.getElementById('root')).render(/*#__PURE__*/React.createElement(Demo, null));</script></body></html>
