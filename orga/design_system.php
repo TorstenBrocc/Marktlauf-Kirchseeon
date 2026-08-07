@@ -57,6 +57,26 @@ $snippetItems = array_values(array_filter(array_map(static function (array $s) u
     return $s;
 }, $snippetItems)));
 
+// Guidelines — kuratierte Doku-Karten aus dem Paket (Brand/Colors/Type/Spacing),
+// auf die kanonische Token-Quelle (../design-system/tokens.php) + self-hosted Fonts
+// umgebogen. Gruppierung/Titel aus dem @dsCard-Kommentar im Dateikopf.
+$guidelineDir    = __DIR__ . '/../design-system/guidelines';
+$guidelineGroups = [];
+foreach (glob($guidelineDir . '/*.html') ?: [] as $path) {
+    $head = (string) @file_get_contents($path, false, null, 0, 500);
+    preg_match('/group="([^"]*)"/', $head, $g);
+    preg_match('/name="([^"]*)"/', $head, $n);
+    preg_match('/subtitle="([^"]*)"/', $head, $sub);
+    $group = ($g[1] ?? '') !== '' ? $g[1] : 'Weitere';
+    $guidelineGroups[$group][] = [
+        'file' => basename($path),
+        'name' => ($n[1] ?? '') !== '' ? $n[1] : basename($path, '.html'),
+        'sub'  => $sub[1] ?? '',
+    ];
+}
+ksort($guidelineGroups);
+$guidelineCount = array_sum(array_map('count', $guidelineGroups));
+
 // Hero-Verlauf aus Einzeltokens zusammensetzen (falls vorhanden).
 $gradient = null;
 if (isset($map['--hero-gradient-start'], $map['--hero-gradient-mid'], $map['--hero-gradient-end'])) {
@@ -77,6 +97,7 @@ $menu = [
     'spacing'    => 'Abstände & Maße',
     'type'       => 'Typografie',
     'elevation'  => 'Radius & Schatten',
+    'guidelines' => 'Guidelines',
     'snippets'   => 'Snippets',
     'components' => 'Komponenten',
     'templates'  => 'Templates',
@@ -246,6 +267,15 @@ function ds_render_grid(array $items, array $map): string
         .ds-snip-copy:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
         .ds-snip-frame { display: block; width: 100%; height: 340px; border: 0; background: var(--white); }
 
+        .ds-guide-group { font-size: 0.95rem; margin: 1.5rem 0 0.75rem; padding-bottom: 0.35rem; border-bottom: 2px solid var(--border); }
+        .ds-guide-group:first-of-type { margin-top: 0; }
+        .ds-guide-grid { display: grid; gap: 0.85rem; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+        .ds-guide { margin: 0; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--white); box-shadow: var(--shadow-card); }
+        .ds-guide-frame { display: block; width: 100%; height: 210px; border: 0; background: var(--white); }
+        .ds-guide-cap { padding: 0.55rem 0.75rem 0.65rem; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 0.15rem; }
+        .ds-guide-cap strong { font-size: 0.85rem; }
+        .ds-guide-cap span { font-size: 0.74rem; color: var(--text-light); line-height: 1.4; }
+
         @media (max-width: 720px) {
             .ds-shell { flex-direction: column; }
             .ds-nav { position: static; flex-direction: row; flex-wrap: wrap; width: 100%; }
@@ -286,9 +316,11 @@ function ds_render_grid(array $items, array $map): string
                 <nav class="ds-nav" aria-label="Design-System-Sektionen">
                     <?php foreach ($menu as $key => $label): ?>
                         <?php
-                        $count = $key === 'snippets'
-                            ? count($snippetItems)
-                            : (isset($sections[$key]) ? count($sections[$key]) : 0);
+                        $count = match ($key) {
+                            'snippets'   => count($snippetItems),
+                            'guidelines' => $guidelineCount,
+                            default      => isset($sections[$key]) ? count($sections[$key]) : 0,
+                        };
                         $countBadge = $count > 0
                             ? '<span class="ds-nav-count">' . str_pad((string) $count, 2, '0', STR_PAD_LEFT) . '</span>'
                             : '';
@@ -351,6 +383,31 @@ function ds_render_grid(array $items, array $map): string
                         <h2>Radius &amp; Schatten</h2>
                         <p class="ds-lead">Rundungen und Elevation für Karten und Flächen.</p>
                         <?= ds_render_grid($sections['elevation'], $map) ?>
+                    </section>
+
+                    <!-- Guidelines -->
+                    <section class="ds-section" id="ds-guidelines" data-section="guidelines">
+                        <h2>Guidelines</h2>
+                        <p class="ds-lead">Kuratierte Design-Karten aus dem Paket — auf die kanonische Token-Quelle und self-hosted Schriften umgebogen (kein CDN, keine Google-Fonts).</p>
+                        <?php if ($guidelineGroups === []): ?>
+                            <p class="ds-empty">Keine Guidelines gefunden (Deployment von <code>design-system/guidelines/</code> prüfen).</p>
+                        <?php else: ?>
+                            <?php foreach ($guidelineGroups as $group => $items): ?>
+                                <h3 class="ds-guide-group"><?= htmlspecialchars($group) ?></h3>
+                                <div class="ds-guide-grid">
+                                    <?php foreach ($items as $it): ?>
+                                        <figure class="ds-guide">
+                                            <iframe class="ds-guide-frame" src="../design-system/guidelines/<?= htmlspecialchars($it['file']) ?>"
+                                                    sandbox loading="lazy" title="<?= htmlspecialchars($it['name']) ?>"></iframe>
+                                            <figcaption class="ds-guide-cap">
+                                                <strong><?= htmlspecialchars($it['name']) ?></strong>
+                                                <?php if ($it['sub'] !== ''): ?><span><?= htmlspecialchars($it['sub']) ?></span><?php endif; ?>
+                                            </figcaption>
+                                        </figure>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
                     </section>
 
                     <!-- Snippets -->
