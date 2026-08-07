@@ -50,8 +50,7 @@ if ($uuid === '' || strlen($uuid) > 64) {
     }
 }
 
-// Helfer-Dateien: live aus dem Drive-Helfer-Ordner (aktueller Weg seit Paket 7) PLUS
-// noch nicht abgelöster lokaler Alt-Bestand aus der dateien-Tabelle (Übergang).
+// Helfer-Dateien: live aus dem Drive-Helfer-Ordner (Drive = Quelle der Wahrheit).
 $helferDateien = [];
 if (!$error && driveConfigured()) {
     try {
@@ -70,25 +69,6 @@ if (!$error && driveConfigured()) {
         }
     } catch (Throwable $e) {
         logError('Helfer-Zugang Drive-Liste: ' . $e->getMessage());
-    }
-}
-if (!$error) {
-    try {
-        $pdo = getDbConnection();
-        $dateiStmt = $pdo->prepare("SELECT id, originalname, mimetype, groesse, created_at FROM dateien WHERE bereich = 'helfer' AND (provider = 'local' OR provider IS NULL) ORDER BY created_at DESC");
-        $dateiStmt->execute();
-        foreach ($dateiStmt->fetchAll() as $d) {
-            $helferDateien[] = [
-                'source'       => 'local',
-                'ref'          => (string) $d['id'],
-                'originalname' => $d['originalname'],
-                'mimetype'     => $d['mimetype'],
-                'groesse'      => $d['groesse'],
-                'created_at'   => $d['created_at'],
-            ];
-        }
-    } catch (PDOException $e) {
-        // Tabelle/Spalte evtl. nicht (mehr) vorhanden
     }
 }
 // Strang 3: einteilungsspezifische Sichtbarkeit. Eine Drive-Datei mit Schicht-Zuordnung
