@@ -107,6 +107,14 @@ $templateItems = array_values(array_filter([
     ['thumb' => 'social-post.webp',      'name' => 'Social-Media-Post',    'sub' => 'Instagram-Formate 1:1, 4:5 und 9:16 in zwei Marken-Varianten.'],
 ], static fn (array $t): bool => is_file($templateDir . '/' . $t['thumb'])));
 
+// Readme — die Fließtext-Einleitung des DS-Pakets (design-system/readme.md), serverseitig
+// zu HTML gerendert. Überschriften werden um eine Ebene abgesenkt (# → h2), damit die
+// Seiten-<h1> eindeutig bleibt (SEO). Kein CDN, keine externen Ressourcen.
+$readmePath = __DIR__ . '/../design-system/readme.md';
+$readmeHtml = is_file($readmePath)
+    ? ds_render_markdown((string) @file_get_contents($readmePath), 1)
+    : '';
+
 // Hero-Verlauf aus Einzeltokens zusammensetzen (falls vorhanden).
 $gradient = null;
 if (isset($map['--hero-gradient-start'], $map['--hero-gradient-mid'], $map['--hero-gradient-end'])) {
@@ -122,6 +130,7 @@ $accent  = $map['--color-accent']  ?? $map['--accent']  ?? '#ff6b35';
 
 /** Menü der Sektionen: key => Anzeigename. */
 $menu = [
+    'readme'     => 'Readme',
     'brand'      => 'Marke',
     'colors'     => 'Farben',
     'spacing'    => 'Abstände & Maße',
@@ -132,7 +141,7 @@ $menu = [
     'components' => 'Komponenten',
     'templates'  => 'Templates',
 ];
-$defaultSection = 'brand';
+$defaultSection = 'readme';
 
 /** Herkunfts-Badge (Website/Marke vs. Dashboard). */
 function ds_src_badge(string $source): string
@@ -210,6 +219,117 @@ function ds_render_grid(array $items, array $map): string
         $html .= ds_card($t, $map);
     }
     return $html . '</div>';
+}
+
+/** Inline-Formatierung eines bereits zeilenweise zerlegten Fragments (nach dem Escapen). */
+function ds_md_inline(string $text): string
+{
+    $out = htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
+    // Inline-Code zuerst schützen, damit ** / [] darin literal bleiben.
+    $out = preg_replace('/`([^`]+)`/', '<code>$1</code>', $out);
+    $out = preg_replace('/\*\*(.+?)\*\*/', '<strong>$1</strong>', $out);
+    // Links [Text](url) — nur http(s), sonst als Text belassen.
+    $out = preg_replace_callback('/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/', static function (array $m): string {
+        return '<a href="' . $m[2] . '" target="_blank" rel="noopener noreferrer">' . $m[1] . '</a>';
+    }, $out);
+    return $out;
+}
+
+/**
+ * Minimaler, self-contained Markdown->HTML-Renderer für die Readme-Einleitung.
+ * Deckt genau das ab, was readme.md nutzt: ATX-Headings, Absätze, GFM-Pipe-Tabellen,
+ * `-`-Listen (mit lazy continuation), horizontale Linien und Inline (bold/code/link).
+ * $headingOffset senkt jede Überschrift um n Ebenen ab (1 → # wird zu <h2>).
+ */
+function ds_render_markdown(string $md, int $headingOffset = 0): string
+{
+    $lines = preg_split('/\r\n|\r|\n/', $md) ?: [];
+    $n     = count($lines);
+    $html  = '';
+    $i     = 0;
+
+    $isBlank = static fn (string $l): bool => trim($l) === '';
+    $isRule  = static fn (string $l): bool => (bool) preg_match('/^\s*-{3,}\s*$/', $l);
+    $isHead  = static fn (string $l): bool => (bool) preg_match('/^\s*#{1,6}\s+/', $l);
+    $isList  = static fn (string $l): bool => (bool) preg_match('/^\s*[-*]\s+/', $l);
+    // Tabellen-Trennzeile: |---|:--:| o. Ä.
+    $isTableSep = static fn (string $l): bool => (bool) preg_match('/^\s*\|?\s*:?-{1,}:?\s*(\|\s*:?-{1,}:?\s*)+\|?\s*$/', $l);
+    $splitRow = static function (string $l): array {
+        $l = trim($l);
+        $l = preg_replace('/^\||\|$/', '', $l);
+        return array_map('trim', explode('|', (string) $l));
+    };
+
+    while ($i < $n) {
+        $line = $lines[$i];
+
+        if ($isBlank($line)) { $i++; continue; }
+
+        if ($isRule($line)) { $html .= "<hr>\n"; $i++; continue; }
+
+        if ($isHead($line)) {
+            preg_match('/^\s*(#{1,6})\s+(.*)$/', $line, $m);
+            $level = min(6, strlen($m[1]) + $headingOffset);
+            $html .= '<h' . $level . '>' . ds_md_inline(rtrim($m[2], " #")) . '</h' . $level . ">\n";
+            $i++;
+            continue;
+        }
+
+        // Tabelle: aktuelle Zeile hat |, nächste ist Trennzeile.
+        if (strpos($line, '|') !== false && $i + 1 < $n && $isTableSep($lines[$i + 1])) {
+            $head = $splitRow($line);
+            $i   += 2; // Kopf + Trennzeile
+            $rows = [];
+            while ($i < $n && !$isBlank($lines[$i]) && strpos($lines[$i], '|') !== false && !$isHead($lines[$i])) {
+                $rows[] = $splitRow($lines[$i]);
+                $i++;
+            }
+            $html .= "<table class=\"ds-md-table\">\n<thead><tr>";
+            foreach ($head as $c) { $html .= '<th>' . ds_md_inline($c) . '</th>'; }
+            $html .= "</tr></thead>\n<tbody>\n";
+            foreach ($rows as $r) {
+                $html .= '<tr>';
+                foreach ($head as $ci => $_) { $html .= '<td>' . ds_md_inline($r[$ci] ?? '') . '</td>'; }
+                $html .= "</tr>\n";
+            }
+            $html .= "</tbody>\n</table>\n";
+            continue;
+        }
+
+        if ($isList($line)) {
+            $items = [];
+            while ($i < $n && !$isBlank($lines[$i]) && !$isHead($lines[$i]) && !$isRule($lines[$i])) {
+                if ($isList($lines[$i])) {
+                    $items[] = preg_replace('/^\s*[-*]\s+/', '', $lines[$i]);
+                } elseif ($items !== []) {
+                    // Lazy continuation: Fortsetzungszeile an letztes Item anhängen.
+                    $items[count($items) - 1] .= ' ' . trim($lines[$i]);
+                } else {
+                    break;
+                }
+                $i++;
+            }
+            $html .= "<ul class=\"ds-md-list\">\n";
+            foreach ($items as $it) { $html .= '<li>' . ds_md_inline($it) . "</li>\n"; }
+            $html .= "</ul>\n";
+            continue;
+        }
+
+        // Absatz: aufeinanderfolgende Zeilen bis Leerzeile/Blockstart, mit Leerzeichen verbunden.
+        $para = [];
+        while ($i < $n && !$isBlank($lines[$i]) && !$isHead($lines[$i]) && !$isRule($lines[$i]) && !$isList($lines[$i])) {
+            if (strpos($lines[$i], '|') !== false && $i + 1 < $n && $isTableSep($lines[$i + 1])) {
+                break;
+            }
+            $para[] = trim($lines[$i]);
+            $i++;
+        }
+        if ($para !== []) {
+            $html .= '<p>' . ds_md_inline(implode(' ', $para)) . "</p>\n";
+        }
+    }
+
+    return $html;
 }
 ?>
 <!DOCTYPE html>
@@ -306,9 +426,30 @@ function ds_render_grid(array $items, array $map): string
         .ds-guide-cap { padding: 0.55rem 0.75rem 0.65rem; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 0.15rem; }
         .ds-guide-cap strong { font-size: 0.85rem; }
         .ds-guide-cap span { font-size: 0.74rem; color: var(--text-light); line-height: 1.4; }
-        .ds-tpl-grid { display: grid; gap: 0.85rem; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+        /* Komponenten: eine Kachel pro Zeile, volle Content-Breite (Guidelines-Grid bleibt mehrspaltig). */
+        .ds-guide-grid--full { grid-template-columns: 1fr; }
+
+        /* Templates: eine Kachel pro Zeile; Vorschau scrollbar (unterschiedlich hohe Motive). */
+        .ds-tpl-grid { display: grid; gap: 0.85rem; grid-template-columns: 1fr; }
         .ds-tpl { margin: 0; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--white); box-shadow: var(--shadow-card); }
-        .ds-tpl img { display: block; width: 100%; height: auto; border-bottom: 1px solid var(--border); background: var(--bg); }
+        .ds-tpl-scroll { max-height: 60vh; overflow-y: auto; border-bottom: 1px solid var(--border); background: var(--bg); }
+        .ds-tpl img { display: block; width: 100%; height: auto; }
+
+        /* Readme: gerenderte Markdown-Prosa. */
+        .ds-readme { max-width: 74ch; color: var(--text); font-size: 0.9rem; line-height: 1.6; }
+        .ds-readme h2 { font-size: 1.05rem; margin: 1.75rem 0 0.6rem; padding-bottom: 0.3rem; border-bottom: 2px solid var(--border); }
+        .ds-readme h3 { font-size: 0.95rem; margin: 1.4rem 0 0.5rem; }
+        .ds-readme h4 { font-size: 0.88rem; margin: 1.1rem 0 0.4rem; }
+        .ds-readme > h2:first-child, .ds-readme > h3:first-child { margin-top: 0; }
+        .ds-readme p { margin: 0 0 0.9rem; }
+        .ds-readme ul { margin: 0 0 0.9rem; padding-left: 1.25rem; }
+        .ds-readme li { margin: 0.2rem 0; }
+        .ds-readme code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; background: #eee; padding: 0.1em 0.4em; border-radius: 4px; font-size: 0.85em; word-break: break-word; }
+        .ds-readme a { color: var(--primary); }
+        .ds-readme hr { border: 0; border-top: 1px solid var(--border); margin: 1.75rem 0; }
+        .ds-md-table { border-collapse: collapse; width: 100%; margin: 0 0 1rem; font-size: 0.82rem; }
+        .ds-md-table th, .ds-md-table td { border: 1px solid var(--border); padding: 0.4rem 0.6rem; text-align: left; vertical-align: top; }
+        .ds-md-table th { background: var(--bg); font-weight: 600; }
 
         @media (max-width: 720px) {
             .ds-shell { flex-direction: column; }
@@ -369,6 +510,17 @@ function ds_render_grid(array $items, array $map): string
                 </nav>
 
                 <div class="ds-content">
+                    <!-- Readme -->
+                    <section class="ds-section" id="ds-readme" data-section="readme">
+                        <h2>Readme</h2>
+                        <p class="ds-lead">Einleitung des Design-System-Pakets — die zwei Oberflächen, Quellen, Content- und visuelle Grundlagen. Gerendert aus <code>design-system/readme.md</code>.</p>
+                        <?php if ($readmeHtml === ''): ?>
+                            <p class="ds-empty">Keine Readme gefunden (Deployment von <code>design-system/readme.md</code> prüfen).</p>
+                        <?php else: ?>
+                            <div class="ds-readme"><?= $readmeHtml ?></div>
+                        <?php endif; ?>
+                    </section>
+
                     <!-- Marke -->
                     <section class="ds-section" id="ds-brand" data-section="brand">
                         <h2>Marke</h2>
@@ -479,7 +631,7 @@ function ds_render_grid(array $items, array $map): string
                         <?php if ($componentItems === []): ?>
                             <p class="ds-empty">Keine Komponenten gefunden (Deployment von <code>design-system/components/</code> prüfen).</p>
                         <?php else: ?>
-                        <div class="ds-guide-grid">
+                        <div class="ds-guide-grid ds-guide-grid--full">
                             <?php foreach ($componentItems as $c): ?>
                                 <figure class="ds-guide">
                                     <iframe class="ds-fit" src="../design-system/components/<?= htmlspecialchars($c['file']) ?>"
@@ -504,8 +656,10 @@ function ds_render_grid(array $items, array $map): string
                         <div class="ds-tpl-grid">
                             <?php foreach ($templateItems as $t): ?>
                                 <figure class="ds-tpl">
-                                    <img src="../design-system/templates/<?= htmlspecialchars($t['thumb']) ?>"
-                                         alt="Vorschau: <?= htmlspecialchars($t['name']) ?>" loading="lazy">
+                                    <div class="ds-tpl-scroll">
+                                        <img src="../design-system/templates/<?= htmlspecialchars($t['thumb']) ?>"
+                                             alt="Vorschau: <?= htmlspecialchars($t['name']) ?>" loading="lazy">
+                                    </div>
                                     <figcaption class="ds-guide-cap">
                                         <strong><?= htmlspecialchars($t['name']) ?></strong>
                                         <span><?= htmlspecialchars($t['sub']) ?></span>
