@@ -455,6 +455,18 @@ function initSponsorMarquee() {
     wrap.addEventListener('mouseenter', function() { hovering = true; });
     wrap.addEventListener('mouseleave', function() { hovering = false; });
 
+    // Klick auf ein Logo oeffnet target="_blank" in einem neuen Tab -> diese Seite
+    // wird versteckt, ein mouseleave/pointerup bleibt dabei aus. Ohne Reset bliebe
+    // hovering/dragging haengen und das Laufband liefe nach der Rueckkehr nicht weiter.
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            hovering = false;
+            touching = false;
+            dragging = false;
+            dragCaptured = false;
+        }
+    });
+
     wrap.addEventListener('pointerdown', function(e) {
         if (e.pointerType === 'mouse' && e.button !== 0) return;
         moved = 0;
