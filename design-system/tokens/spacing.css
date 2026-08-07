@@ -1,0 +1,24 @@
+/* Spacing — the site scale is deliberately generous ("more breathing room");
+   the orga dashboard runs a separate, dense control scale. */
+:root {
+  --space-xs: 0.5rem;
+  --space-sm: 1rem;
+  --space-md: 1.5rem;
+  --space-lg: 3rem;
+  --space-xl: 6rem;
+  --space-xxl: 8rem;
+
+  /* Layout */
+  --container-max: 1200px;
+  --shell-max: 1360px;      /* header + hero inner */
+  --shell-pad: 44px;
+  --marquee-max: 1272px;
+  --header-height: 82px;
+  --header-height-md: 70px;
+  --header-height-sm: 60px;
+  --sidebar-width: 230px;
+
+  /* Orga density */
+  --control-pad-y: 0.45rem;
+  --control-pad-x: 0.9rem;
+}
