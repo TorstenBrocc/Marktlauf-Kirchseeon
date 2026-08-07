@@ -38,6 +38,25 @@ foreach ($tokens as $t) {
     }
 }
 
+// Snippets — statische, self-contained HTML-Bloecke aus dem DS-Paket (Inc 2),
+// oeffentlich ausgeliefert unter website/design-system/snippets/. Keine externen Refs.
+$snippetDir   = __DIR__ . '/../design-system/snippets';
+$snippetItems = [
+    ['preview' => 'live-ticker.html',         'copy' => 'live-ticker.snippet.html',      'name' => 'Live-Ticker',          'sub' => 'Meldeband über dem Header (3 Meldungstypen)'],
+    ['preview' => 'newsletter-mail.html',      'copy' => 'newsletter-master.snippet.html', 'name' => 'Newsletter-Master',    'sub' => 'HTML-Grundgerüst für Mailings'],
+    ['preview' => 'newsletter-beispiel.html',  'copy' => 'newsletter-beispiel.html',       'name' => 'Newsletter-Beispiel',  'sub' => 'Ausgefülltes Beispiel-Mailing'],
+    ['preview' => 'raceresult-infotext.html',  'copy' => 'raceresult-infotext.html',       'name' => 'RaceResult Info-Text', 'sub' => 'HTML-Block für das INFO-Feld'],
+];
+// Nur real vorhandene Snippets zeigen; Kopier-Inhalt serverseitig laden.
+$snippetItems = array_values(array_filter(array_map(static function (array $s) use ($snippetDir): ?array {
+    if (!is_file($snippetDir . '/' . $s['preview'])) {
+        return null;
+    }
+    $raw = @file_get_contents($snippetDir . '/' . $s['copy']);
+    $s['code'] = $raw !== false ? $raw : '';
+    return $s;
+}, $snippetItems)));
+
 // Hero-Verlauf aus Einzeltokens zusammensetzen (falls vorhanden).
 $gradient = null;
 if (isset($map['--hero-gradient-start'], $map['--hero-gradient-mid'], $map['--hero-gradient-end'])) {
@@ -58,6 +77,7 @@ $menu = [
     'spacing'    => 'Abstände & Maße',
     'type'       => 'Typografie',
     'elevation'  => 'Radius & Schatten',
+    'snippets'   => 'Snippets',
     'components' => 'Komponenten',
     'templates'  => 'Templates',
 ];
@@ -215,6 +235,17 @@ function ds_render_grid(array $items, array $map): string
         .ds-todo strong { color: var(--text); }
         .ds-error { background: var(--error-bg, #fdecec); color: var(--error, #b3261e); border: 1px solid var(--error, #b3261e); border-radius: 8px; padding: 1rem 1.25rem; }
 
+        .ds-snip-list { display: flex; flex-direction: column; gap: 1.1rem; }
+        .ds-snip { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--white); box-shadow: var(--shadow-card); }
+        .ds-snip-head { display: flex; align-items: center; gap: 0.75rem; padding: 0.7rem 0.9rem; border-bottom: 1px solid var(--border); }
+        .ds-snip-title { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+        .ds-snip-title strong { font-size: 0.92rem; }
+        .ds-snip-title span { font-size: 0.76rem; color: var(--text-light); }
+        .ds-snip-copy { margin-left: auto; flex: 0 0 auto; appearance: none; border: 1px solid var(--primary); background: var(--primary); color: #fff; font: inherit; font-size: 0.8rem; font-weight: 600; padding: 0.4rem 0.8rem; border-radius: 8px; cursor: pointer; transition: background 0.12s; }
+        .ds-snip-copy:hover { background: var(--primary-dark, #007230); }
+        .ds-snip-copy:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+        .ds-snip-frame { display: block; width: 100%; height: 340px; border: 0; background: var(--white); }
+
         @media (max-width: 720px) {
             .ds-shell { flex-direction: column; }
             .ds-nav { position: static; flex-direction: row; flex-wrap: wrap; width: 100%; }
@@ -255,7 +286,9 @@ function ds_render_grid(array $items, array $map): string
                 <nav class="ds-nav" aria-label="Design-System-Sektionen">
                     <?php foreach ($menu as $key => $label): ?>
                         <?php
-                        $count = isset($sections[$key]) ? count($sections[$key]) : 0;
+                        $count = $key === 'snippets'
+                            ? count($snippetItems)
+                            : (isset($sections[$key]) ? count($sections[$key]) : 0);
                         $countBadge = $count > 0
                             ? '<span class="ds-nav-count">' . str_pad((string) $count, 2, '0', STR_PAD_LEFT) . '</span>'
                             : '';
@@ -318,6 +351,32 @@ function ds_render_grid(array $items, array $map): string
                         <h2>Radius &amp; Schatten</h2>
                         <p class="ds-lead">Rundungen und Elevation für Karten und Flächen.</p>
                         <?= ds_render_grid($sections['elevation'], $map) ?>
+                    </section>
+
+                    <!-- Snippets -->
+                    <section class="ds-section" id="ds-snippets" data-section="snippets">
+                        <h2>Snippets</h2>
+                        <p class="ds-lead">Fertige, self-contained HTML-Blöcke zum Kopieren — kein CDN, keine externen Schriften. Vorschau links, „HTML kopieren" liefert den einbettbaren Block.</p>
+                        <?php if ($snippetItems === []): ?>
+                            <p class="ds-empty">Keine Snippets gefunden (Deployment von <code>design-system/snippets/</code> prüfen).</p>
+                        <?php else: ?>
+                        <div class="ds-snip-list">
+                            <?php foreach ($snippetItems as $i => $s): ?>
+                                <article class="ds-snip">
+                                    <header class="ds-snip-head">
+                                        <div class="ds-snip-title">
+                                            <strong><?= htmlspecialchars($s['name']) ?></strong>
+                                            <span><?= htmlspecialchars($s['sub']) ?></span>
+                                        </div>
+                                        <button type="button" class="ds-snip-copy" data-code="snip-code-<?= $i ?>">HTML kopieren</button>
+                                    </header>
+                                    <iframe class="ds-snip-frame" src="../design-system/snippets/<?= htmlspecialchars($s['preview']) ?>"
+                                            sandbox loading="lazy" title="Vorschau: <?= htmlspecialchars($s['name']) ?>"></iframe>
+                                    <pre id="snip-code-<?= $i ?>" class="ds-snip-code" hidden><?= htmlspecialchars($s['code']) ?></pre>
+                                </article>
+                            <?php endforeach; ?>
+                        </div>
+                        <?php endif; ?>
                     </section>
 
                     <!-- Komponenten (folgt) -->
@@ -427,6 +486,18 @@ function ds_render_grid(array $items, array $map): string
                     copy(v.dataset.copy, 'Variable');
                 });
             }
+        });
+
+        // Snippet-HTML kopieren (kurzer Toast, nicht der ganze Block).
+        document.querySelectorAll('.ds-snip-copy').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var pre = document.getElementById(btn.dataset.code);
+                if (!pre || !navigator.clipboard) return;
+                navigator.clipboard.writeText(pre.textContent).then(
+                    function () { toast('HTML kopiert'); },
+                    function () { toast('Kopieren blockiert'); }
+                );
+            });
         });
     })();
     </script>
