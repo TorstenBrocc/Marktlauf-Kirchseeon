@@ -97,6 +97,10 @@ if ($configured) {
         .vis-box h3 { margin:0 0 0.35rem; }
         .vis-file { font-weight:600; color:var(--primary-dark); margin:0 0 0.5rem; word-break:break-word; }
         .vis-hint { font-size:0.78rem; color:var(--text-light); margin:0 0 0.75rem; }
+        .vis-quick { display:flex; gap:0.5rem; margin-bottom:0.5rem; }
+        .vis-quick button { font-size:0.75rem; padding:0.2rem 0.6rem; border:1px solid var(--border); border-radius:4px; background:var(--white); cursor:pointer; color:var(--text); }
+        .vis-quick button:hover { border-color:var(--primary); color:var(--primary); }
+        .trestr { flex:0 0 auto; font-size:0.8rem; opacity:0.75; margin-left:0.2rem; }
         .vis-list { overflow-y:auto; border:1px solid var(--border); border-radius:6px; padding:0.4rem 0.5rem; margin-bottom:1rem; }
         .vis-row { display:flex; align-items:center; gap:0.55rem; padding:0.32rem 0.2rem; font-size:0.9rem; cursor:pointer; }
         .vis-row input { flex:0 0 auto; width:1.05rem; height:1.05rem; }
@@ -151,6 +155,7 @@ if ($configured) {
                     <h3>Sichtbarkeit für Helfer</h3>
                     <p class="vis-file"></p>
                     <p class="vis-hint">Keine Auswahl = für <b>alle</b> Helfer sichtbar. Auswahl = nur Helfer der markierten Schichten sehen diese Datei in ihrem Zugang.</p>
+                    <div class="vis-quick"><button type="button" id="vis-all">Alle</button><button type="button" id="vis-none">Keine</button></div>
                     <div class="vis-list"></div>
                     <div class="vis-actions">
                         <button type="button" class="btn btn-secondary btn-small" id="vis-cancel">Abbrechen</button>
@@ -224,6 +229,11 @@ if ($configured) {
                 const meta = document.createElement('span'); meta.className = 'tmeta'; meta.textContent = fmtSize(item.size || 0);
                 node.appendChild(sp); node.appendChild(name); node.appendChild(meta);
                 li.appendChild(node);
+            }
+            if (item.restricted) {
+                const b = document.createElement('span'); b.className = 'trestr'; b.textContent = '👁';
+                b.title = 'Sichtbarkeit für Helfer eingeschränkt';
+                node.appendChild(b);
             }
             return li;
         }
@@ -525,6 +535,8 @@ if ($configured) {
                 .catch(() => { list.textContent = 'Fehler beim Laden.'; });
         }
         document.getElementById('vis-cancel').addEventListener('click', () => { visModal.hidden = true; });
+        document.getElementById('vis-all').addEventListener('click', () => visModal.querySelectorAll('.vis-list input').forEach(c => { c.checked = true; }));
+        document.getElementById('vis-none').addEventListener('click', () => visModal.querySelectorAll('.vis-list input').forEach(c => { c.checked = false; }));
         visModal.addEventListener('click', e => { if (e.target === visModal) visModal.hidden = true; });
         document.getElementById('vis-save').addEventListener('click', () => {
             const ids = [].map.call(visModal.querySelectorAll('.vis-list input:checked'), c => c.value);
@@ -536,6 +548,7 @@ if ($configured) {
                     if (!d.ok) { alert(d.message || 'Speichern fehlgeschlagen.'); return; }
                     visModal.hidden = true;
                     showToast(d.count ? ('Sichtbar für ' + d.count + ' Schicht(en).') : 'Für alle Helfer sichtbar.');
+                    const pf = parentFidOf(visFid); if (pf) refreshFolder(pf); // Badge im Baum aktualisieren
                 })
                 .catch(() => alert('Speichern fehlgeschlagen.'));
         });

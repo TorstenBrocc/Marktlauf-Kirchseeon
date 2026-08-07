@@ -33,12 +33,30 @@ try {
     $items = [];
     foreach (driveListChildren($parent) as $c) {
         $items[] = [
-            'id'       => $c['id'],
-            'name'     => $c['name'],
-            'isFolder' => $c['isFolder'],
-            'size'     => $c['size'],
-            'mimeType' => $c['mimeType'],
+            'id'         => $c['id'],
+            'name'       => $c['name'],
+            'isFolder'   => $c['isFolder'],
+            'size'       => $c['size'],
+            'mimeType'   => $c['mimeType'],
+            'restricted' => false,
         ];
+    }
+    // Strang 3: markieren, welche Kinder eine Helfer-Schicht-Zuordnung haben (👁 im Baum).
+    if ($items !== []) {
+        try {
+            $pdo = getDbConnection();
+            $ids = array_column($items, 'id');
+            $ph  = implode(',', array_fill(0, count($ids), '?'));
+            $st  = $pdo->prepare("SELECT DISTINCT drive_file_id FROM helfer_datei_sichtbarkeit WHERE drive_file_id IN ($ph)");
+            $st->execute($ids);
+            $restricted = array_fill_keys($st->fetchAll(PDO::FETCH_COLUMN), true);
+            foreach ($items as &$it) {
+                $it['restricted'] = isset($restricted[$it['id']]);
+            }
+            unset($it);
+        } catch (PDOException $e) {
+            // Migration 041 evtl. nicht angewandt -> ohne Markierung
+        }
     }
     echo json_encode(['ok' => true, 'items' => $items], JSON_UNESCAPED_UNICODE);
 } catch (Throwable $e) {

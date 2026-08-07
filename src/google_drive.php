@@ -519,6 +519,30 @@ function driveListFilesRecursive(string $rootId, int $maxFolders = 400): array
     return $files;
 }
 
+/**
+ * Wie driveListFilesRecursive(), aber mit kurzem Datei-Cache (TTL) je Wurzel, damit die
+ * Helferseite nicht bei jedem Aufruf den ganzen Teilbaum neu aus Drive holt. Das rohe Listing
+ * ist nicht personalisiert (Sichtbarkeitsfilter läuft danach pro Request), daher cachebar.
+ */
+function driveListFilesRecursiveCached(string $rootId, int $ttl = 180): array
+{
+    $cacheDir  = __DIR__ . '/../storage/cache';
+    $cacheFile = $cacheDir . '/gdrive_tree_' . md5($rootId) . '.json';
+    if (is_file($cacheFile) && (time() - (int) @filemtime($cacheFile)) < $ttl) {
+        $cached = json_decode((string) @file_get_contents($cacheFile), true);
+        if (is_array($cached)) {
+            return $cached;
+        }
+    }
+    $files = driveListFilesRecursive($rootId);
+    if (!is_dir($cacheDir)) {
+        @mkdir($cacheDir, 0700, true);
+    }
+    @file_put_contents($cacheFile, json_encode($files), LOCK_EX);
+    @chmod($cacheFile, 0600);
+    return $files;
+}
+
 /** Security gate: true only if $fileId lives somewhere under $ancestorId (walks parents up). */
 function driveIsDescendantOf(string $fileId, string $ancestorId): bool
 {
