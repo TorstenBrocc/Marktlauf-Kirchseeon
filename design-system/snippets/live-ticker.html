@@ -1,0 +1,45 @@
+<!-- @dsCard group="Snippets" viewport="700x330" name="Live-Ticker — Band über dem Header" subtitle="Meldeband für den Renntag, drei Meldungstypen" -->
+<!DOCTYPE html><html lang="de"><head><meta charset="utf-8">
+<link rel="stylesheet" href="../styles.css">
+<style>body{margin:0;padding:20px;background:#ffffff;font-family:var(--font-main),system-ui,sans-serif;color:var(--text-strong)}
+a{color:var(--link)}a:hover{color:var(--link-hover)}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:12px}
+.lbl{font-family:var(--font-heading);font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-400)}
+button{font-family:var(--font-heading);font-size:12px;font-weight:700;letter-spacing:.04em;background:var(--color-primary);color:#fff;border:none;border-radius:999px;padding:9px 20px;cursor:pointer}
+button:hover{background:var(--color-primary-dark)}
+.prev{border:1px solid var(--gray-200);border-radius:12px;padding:0;overflow:hidden;background:#fff}
+textarea{width:100%;box-sizing:border-box;height:150px;margin-top:14px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;line-height:1.5;color:var(--gray-600);background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;padding:12px;resize:vertical}
+.hint{font-size:12px;line-height:1.6;color:var(--gray-500);margin-top:10px}</style></head><body>
+<div class="bar"><span class="lbl">Website · über dem Header, im Dokumentfluss</span><button id="copy" type="button">HTML kopieren</button></div>
+<div class="prev"><div role="status" aria-live="polite" style="background:#1c3a1c;color:#ffffff;padding:.6rem 1rem;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:.88rem;line-height:1.4;">
+<div style="max-width:900px;margin:0 auto;display:flex;align-items:flex-start;gap:.75rem;">
+<span style="display:flex;align-items:center;gap:.35rem;font-weight:700;white-space:nowrap;padding-top:1px;color:#7dda8a;text-transform:uppercase;font-size:.78rem;letter-spacing:.04em;">
+<span style="width:7px;height:7px;border-radius:50%;background:#7dda8a;flex-shrink:0;"></span>Live</span>
+<div style="flex:1;display:flex;flex-direction:column;gap:.3rem;">
+<div style="display:flex;align-items:baseline;gap:.5rem;">
+<span style="font-size:.72rem;font-weight:700;padding:.1rem .45rem;border-radius:10px;flex-shrink:0;color:#ffffff;background:#1a73e8;">info</span>
+<span style="flex:1;">Startnummern-Ausgabe ab 09:00 Uhr am JEK.</span>
+</div>
+<div style="display:flex;align-items:baseline;gap:.5rem;">
+<span style="font-size:.72rem;font-weight:700;padding:.1rem .45rem;border-radius:10px;flex-shrink:0;color:#ffffff;background:#e67e22;">warnung</span>
+<span style="flex:1;">Westring ab 09:30 Uhr gesperrt &mdash; bitte Parkplatz Schulstra&szlig;e nutzen.</span>
+</div>
+<div style="display:flex;align-items:baseline;gap:.5rem;">
+<span style="font-size:.72rem;font-weight:700;padding:.1rem .45rem;border-radius:10px;flex-shrink:0;color:#ffffff;background:#009640;">ergebnis</span>
+<span style="flex:1;">Bambini-Lauf beendet &mdash; Urkunden am Info-Stand.</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<textarea id="src" readonly spellcheck="false"></textarea>
+<div class="hint">Als erstes Element in <code>&lt;body&gt;</code>, direkt vor <code>src/layout/header.php</code>. Nicht fixiert. Sind keine Meldungen aktiv, das gesamte Band <strong>nicht</strong> ausgeben — kein leeres Band. Typ-Farben: <code>info</code> #1a73e8, <code>warnung</code> #e67e22, <code>ergebnis</code> #009640. Vollständiger Auftrag in <code>docs/Briefing-Claude-Code.md</code>, Abschnitt 2.</div>
+<script>
+const raw = document.getElementById('src');
+raw.value = "<div role=\"status\" aria-live=\"polite\" style=\"background:#1c3a1c;color:#ffffff;padding:.6rem 1rem;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:.88rem;line-height:1.4;\">\n<div style=\"max-width:900px;margin:0 auto;display:flex;align-items:flex-start;gap:.75rem;\">\n<span style=\"display:flex;align-items:center;gap:.35rem;font-weight:700;white-space:nowrap;padding-top:1px;color:#7dda8a;text-transform:uppercase;font-size:.78rem;letter-spacing:.04em;\">\n<span style=\"width:7px;height:7px;border-radius:50%;background:#7dda8a;flex-shrink:0;\"></span>Live</span>\n<div style=\"flex:1;display:flex;flex-direction:column;gap:.3rem;\">\n<div style=\"display:flex;align-items:baseline;gap:.5rem;\">\n<span style=\"font-size:.72rem;font-weight:700;padding:.1rem .45rem;border-radius:10px;flex-shrink:0;color:#ffffff;background:#1a73e8;\">info</span>\n<span style=\"flex:1;\">Startnummern-Ausgabe ab 09:00 Uhr am JEK.</span>\n</div>\n<div style=\"display:flex;align-items:baseline;gap:.5rem;\">\n<span style=\"font-size:.72rem;font-weight:700;padding:.1rem .45rem;border-radius:10px;flex-shrink:0;color:#ffffff;background:#e67e22;\">warnung</span>\n<span style=\"flex:1;\">Westring ab 09:30 Uhr gesperrt &mdash; bitte Parkplatz Schulstra&szlig;e nutzen.</span>\n</div>\n<div style=\"display:flex;align-items:baseline;gap:.5rem;\">\n<span style=\"font-size:.72rem;font-weight:700;padding:.1rem .45rem;border-radius:10px;flex-shrink:0;color:#ffffff;background:#009640;\">ergebnis</span>\n<span style=\"flex:1;\">Bambini-Lauf beendet &mdash; Urkunden am Info-Stand.</span>\n</div>\n</div>\n</div>\n</div>\n";
+document.getElementById('copy').addEventListener('click', () => {
+  raw.select(); document.execCommand('copy');
+  const b = document.getElementById('copy'); b.textContent = 'Kopiert';
+  setTimeout(() => { b.textContent = 'HTML kopieren'; }, 1600);
+});
+</script></body></html>
