@@ -237,6 +237,9 @@ if (!empty($briefSettings['sponsoring_pakete'])) {
                         <?php if ($hasStandardtext): ?>
                             <button type="button" class="btn btn-secondary" id="reset-default">Standardtext wiederherstellen</button>
                         <?php endif; ?>
+                        <?php if ($slug === 'bestaetigung'): ?>
+                            <button type="button" class="btn btn-secondary" id="reset-original">Alles auf Original zurücksetzen</button>
+                        <?php endif; ?>
                         <span id="draft-status" class="brief-hint"><?= htmlspecialchars($draftHinweis) ?></span>
                     </div>
                 </div>
@@ -547,6 +550,33 @@ if (!empty($briefSettings['sponsoring_pakete'])) {
             if (betreffEl) betreffEl.value = DEFAULT_BETREFF;
             composeBody();
         };
+
+        // Totaler Fallback („Alles auf Original zurücksetzen"): unabhängig von Auswahl und
+        // Bearbeitung den kompletten Original-Brief wiederherstellen — alle Abschnitte anhaken,
+        // alle Texte + Betreff auf das feste Code-Original, Body neu bauen. Die Notbremse, wenn
+        // jemand seinen Stand zerlegt hat.
+        var resetOriginalBtn = document.getElementById('reset-original');
+        if (resetOriginalBtn) {
+            resetOriginalBtn.addEventListener('click', function() {
+                if (!confirm('Wirklich ALLES verwerfen und den kompletten Original-Brief wiederherstellen?\n\nAlle Abschnitte werden wieder angehakt, alle Texte und der Betreff auf den Originalstand gesetzt.')) {
+                    return;
+                }
+                document.querySelectorAll('.baustein-cb').forEach(function(cb) {
+                    cb.checked = true;
+                    cb.dispatchEvent(new Event('change')); // persistiert die Auswahl in localStorage
+                });
+                document.querySelectorAll('.baustein-text').forEach(function(t) {
+                    var id = t.dataset.id;
+                    if (id in SECTION_ORIGINS) {
+                        t.value = SECTION_ORIGINS[id];
+                        t.dispatchEvent(new Event('input')); // persistiert den Ursprung in localStorage
+                    }
+                });
+                var betreffEl = document.getElementById('betreff');
+                if (betreffEl) betreffEl.value = DEFAULT_BETREFF;
+                composeBody();
+            });
+        }
 
         // Klappmenü: Text ▾ / ▴ toggle
         document.querySelectorAll('.baustein-expand-btn').forEach(function(expandBtn) {
