@@ -557,12 +557,15 @@ function sponsorBriefPaketTabelleHtml(PDO $pdo): string {
     // im Editor unerreichbar — zusammen mit der Tabellenkopfzeile ergab das
     // zwei Titelzeilen in Folge. Der Block liefert jetzt nur noch Daten, die
     // Überschrift steht als "### …" in der Vorlage und ist damit editierbar.
-    return '<table style="width: 100%; border-collapse: collapse; margin: 20px 0;">'
+    return '<table style="width: 100%; border-collapse: collapse; margin: 20px 0 6px;">'
         . '<tr style="background-color: #f2f2f2;">'
         . '<th style="border: 1px solid #dddddd; text-align: left; padding: 8px;">Paket</th>'
         . '<th style="border: 1px solid #dddddd; text-align: left; padding: 8px;">Investition</th>'
         . '<th style="border: 1px solid #dddddd; text-align: left; padding: 8px;">Highlights</th>'
-        . '</tr>' . $rows . '</table>';
+        . '</tr>' . $rows . '</table>'
+        . '<p style="font-size: 12px; color: #666666; margin: 0 0 20px;">'
+        . 'Alle Paketpreise verstehen sich netto zzgl. der gesetzlichen Umsatzsteuer (19&nbsp;%).'
+        . '</p>';
 }
 
 function sponsorBriefPaketTextListe(PDO $pdo): string {

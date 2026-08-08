@@ -15,9 +15,8 @@ $user = getCurrentUserFromGuard();
 $isAdmin = isAdminFromGuard();
 $csrfToken = generateCsrfToken();
 
-// Aktuell hinterlegte Pakete + globaler Netto/Brutto-Schalter (für die Rechnungs-Karte)
+// Aktuell hinterlegte Pakete (für die Rechnungs-Karte). Paketpreise sind immer netto.
 $rechnungPakete = sponsoringPakete(getDbConnection());
-$bruttoGlobal   = rechnungGlobalBrutto(getDbConnection());
 
 $flashSuccess = $_SESSION['flash_success'] ?? '';
 $flashError = $_SESSION['flash_error'] ?? '';
@@ -712,9 +711,8 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                         <h2>Rechnung / Leistung</h2>
                         <p style="font-size:0.8rem; color: var(--text-light); margin-top:-0.5rem; margin-bottom:0.75rem;">
                             Für die Sponsoring-Rechnung. <strong>Leistung und Betrag kommen aus dem
-                            gebuchten Paket</strong> (siehe Tabelle). Ob Paketpreise netto oder brutto gelten,
-                            steht zentral in den <em>Sponsorenbriefe-Einstellungen</em>
-                            (aktuell: <strong><?= $bruttoGlobal ? 'brutto' : 'netto' ?></strong>).
+                            gebuchten Paket</strong> (siehe Tabelle). Paketpreise verstehen sich immer
+                            <strong>netto</strong> (zzgl. 19&nbsp;% USt).
                         </p>
 
                         <table style="width:100%;border-collapse:collapse;font-size:0.78rem;margin-bottom:1.25rem;color:var(--text-light)">
@@ -746,8 +744,8 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                             </div>
                             <p style="font-size:0.85rem; color: var(--text-light); margin:0.2rem 0 0;">
                                 Ist der Haken gesetzt, wird der Paketbetrag für diesen Sponsor als <strong>Brutto</strong>
-                                abgerechnet (USt wird herausgerechnet) — unabhängig vom globalen Schalter. Ohne Haken gilt
-                                die globale Einstellung (aktuell: <strong><?= $bruttoGlobal ? 'brutto' : 'netto' ?></strong>).
+                                abgerechnet (USt wird herausgerechnet). Ohne Haken wird <strong>netto</strong> abgerechnet
+                                (Paketpreis zzgl. USt) — das ist der Normalfall.
                             </p>
                         </div>
                     </div>
