@@ -144,6 +144,7 @@ if (!empty($briefSettings['sponsoring_pakete'])) {
         .plakat-item { display: flex; align-items: center; flex-wrap: nowrap; gap: 0.75rem; padding: 0.5rem 0.75rem; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; }
         .plakat-item span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
         .plakat-item .btn-del { flex-shrink: 0; padding: 0.25rem 0.6rem; font-size: 0.8rem; }
+        .plakat-item .anhang-abwahl { flex-shrink: 0; accent-color: var(--primary); width: 1rem; height: 1rem; cursor: pointer; margin: 0; }
         .plakat-section-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; flex-wrap: wrap; }
         .plakat-badge { display: inline-flex; align-items: center; gap: 0.3rem; background: var(--primary); color: #fff; border-radius: 12px; padding: 0.15rem 0.6rem; font-size: 0.75rem; font-weight: 600; }
         .plakat-hinweis { font-size: 0.8rem; color: var(--text); background: rgba(255,193,7,0.15); border: 1px solid rgba(255,193,7,0.55); border-radius: 6px; padding: 0.5rem 0.75rem; margin: 0.75rem 0 0.5rem; line-height: 1.5; }
@@ -242,6 +243,7 @@ if (!empty($briefSettings['sponsoring_pakete'])) {
             </form>
 
             <?php if (in_array($slug, ['frei', 'bestaetigung'], true)):
+                $istBestaetigung = $slug === 'bestaetigung';
                 $plakatFolder = driveConfigured() ? drivePlakatFolderId($pdo, driveRennJahr($pdo)) : null;
                 $plakat_files = [];
                 if ($plakatFolder !== null) {
@@ -249,36 +251,62 @@ if (!empty($briefSettings['sponsoring_pakete'])) {
                         foreach (driveListChildren($plakatFolder) as $pf) { if (!$pf['isFolder']) { $plakat_files[] = $pf; } }
                     } catch (Throwable $e) { $plakat_files = []; }
                 }
+                $assetFolder = ($istBestaetigung && driveConfigured()) ? driveBestaetigungAssetsFolderId($pdo) : null;
+                $asset_files = [];
+                if ($assetFolder !== null) {
+                    try {
+                        foreach (driveListChildren($assetFolder) as $af) { if (!$af['isFolder']) { $asset_files[] = $af; } }
+                    } catch (Throwable $e) { $asset_files = []; }
+                }
             ?>
             <div class="brief-card" style="margin-top:1.25rem">
                 <div class="plakat-section">
                     <div class="plakat-section-header">
-                        <strong>📎 Plakate als Anhang</strong>
-                        <?php if (count($plakat_files) > 0): ?>
-                            <span class="plakat-badge"><?= count($plakat_files) ?> Datei<?= count($plakat_files) !== 1 ? 'en' : '' ?> werden angehängt</span>
-                        <?php endif; ?>
+                        <strong>📎 <?= $istBestaetigung ? 'Anhänge' : 'Plakate als Anhang' ?></strong>
                     </div>
-                    <?php if ($plakatFolder === null): ?>
-                        <p class="brief-hint" style="margin:0.5rem 0;">Kein Plakate-Ordner festgelegt. Öffne unter „Dateien" den gewünschten Ordner und klicke „📌 Als Plakate-Ordner".</p>
-                    <?php elseif (count($plakat_files) > 0): ?>
-                    <ul class="plakat-liste">
-                        <?php foreach ($plakat_files as $pf): $kb = round((int)$pf['size'] / 1024); ?>
-                            <li class="plakat-item">
-                                <span title="<?= htmlspecialchars($pf['name']) ?>">📄 <?= htmlspecialchars($pf['name']) ?></span>
-                                <small class="brief-hint"><?= $kb ?> KB</small>
-                                <form method="post" action="api/plakat_loeschen.php" style="margin:0;" onsubmit="return confirm('Plakat löschen?');">
-                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                                    <input type="hidden" name="fid" value="<?= htmlspecialchars($pf['id']) ?>">
-                                    <input type="hidden" name="redirect" value="sponsor_briefe.php?slug=<?= urlencode($slug) ?>">
-                                    <button type="submit" class="btn btn-secondary btn-del">Löschen</button>
-                                </form>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
-                    <?php else: ?>
-                    <p class="brief-hint" style="margin:0.5rem 0;">Der festgelegte Plakate-Ordner ist leer — Anschreiben werden ohne Anhang gesendet.</p>
-                    <?php endif; ?>
-                    <p class="plakat-hinweis">⚠️ Der Anhang kommt live aus dem festgelegten Plakate-Ordner (Renn-Jahr aus den Einstellungen). Was dort liegt, wird angehängt.</p>
+
+                    <?php
+                    // Eine Anhang-Gruppe (Plakate oder Bestätigungs-Assets) rendern.
+                    // Bei der Bestätigung bekommt jede Datei eine Abwahl-Checkbox; die Abwahl
+                    // lebt browser-seitig (localStorage) und gilt bis zum nächsten Versand.
+                    $renderGruppe = function (array $files, ?string $folder, string $gruppe, string $icon,
+                                              string $titel, string $emptyMsg, string $keinOrdnerMsg) use ($istBestaetigung, $csrfToken, $slug) {
+                        if ($istBestaetigung): ?>
+                        <h4 style="font-size:0.82rem;font-weight:600;color:var(--text-light);margin:0.9rem 0 0.3rem;"><?= htmlspecialchars($titel) ?></h4>
+                        <?php endif; ?>
+                        <?php if ($folder === null): ?>
+                            <p class="brief-hint" style="margin:0.5rem 0;"><?= $keinOrdnerMsg ?></p>
+                        <?php elseif (count($files) > 0): ?>
+                        <ul class="plakat-liste">
+                            <?php foreach ($files as $f): $kb = round((int)($f['size'] ?? 0) / 1024); ?>
+                                <li class="plakat-item">
+                                    <?php if ($istBestaetigung): ?>
+                                    <input type="checkbox" class="anhang-abwahl" data-group="<?= $gruppe ?>"
+                                           value="<?= htmlspecialchars($f['id']) ?>" title="An-/Abwählen" checked>
+                                    <?php endif; ?>
+                                    <span title="<?= htmlspecialchars($f['name']) ?>"><?= $icon ?> <?= htmlspecialchars($f['name']) ?></span>
+                                    <small class="brief-hint"><?= $kb ?> KB</small>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                        <?php else: ?>
+                        <p class="brief-hint" style="margin:0.5rem 0;"><?= $emptyMsg ?></p>
+                        <?php endif;
+                    };
+
+                    $renderGruppe($plakat_files, $plakatFolder, 'plakat', '📄', 'Plakate',
+                        'Der festgelegte Plakate-Ordner ist leer — es werden keine Plakate angehängt.',
+                        'Kein Plakate-Ordner festgelegt. Öffne unter „Dateien" den gewünschten Ordner und klicke „📌 Als Plakate-Ordner".');
+
+                    if ($istBestaetigung) {
+                        $renderGruppe($asset_files, $assetFolder, 'asset', '📎', 'Bestätigungs-Anhänge',
+                            'Der Bestätigungs-Anhang-Ordner ist leer.',
+                            'Kein Bestätigungs-Anhang-Ordner festgelegt. Öffne unter „Dateien" den Ordner „Sponsoren-Bestätigung" und klicke „📎 Als Bestätigungs-Anhang-Ordner".');
+                    }
+                    ?>
+
+                    <p class="plakat-hinweis">⚠️ Die Anhänge kommen live aus den festgelegten Ordnern — was dort liegt, wird angehängt.<?php if ($istBestaetigung): ?> Abgewählte Dateien bleiben abgewählt bis zum nächsten Versand, danach sind wieder alle dabei. Die Abwahl gilt nur für dich.<?php endif; ?> Dateien endgültig entfernen: unter „Dateien".</p>
+
                     <?php if ($plakatFolder !== null): ?>
                     <form method="post" action="api/file_upload.php" enctype="multipart/form-data" class="plakat-upload-form">
                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
@@ -286,7 +314,7 @@ if (!empty($briefSettings['sponsoring_pakete'])) {
                         <input type="hidden" name="folder" value="<?= htmlspecialchars($plakatFolder) ?>">
                         <input type="hidden" name="redirect_after" value="sponsor_briefe.php?slug=<?= urlencode($slug) ?>">
                         <input type="file" name="datei" accept="application/pdf" required style="font-size:0.9rem;">
-                        <button type="submit" class="btn btn-primary">PDF hochladen</button>
+                        <button type="submit" class="btn btn-primary">Plakat-PDF hochladen</button>
                     </form>
                     <?php endif; ?>
                 </div>
@@ -408,13 +436,18 @@ if (!empty($briefSettings['sponsoring_pakete'])) {
         });
 
         <?php if ($hasStandardtext): ?>
+        // Standard-Reset. Bei der Bestätigung überschreibt der Abschnitts-Block unten
+        // window.resetBriefDefault, damit der Body aus den angehakten Abschnitten neu entsteht.
+        window.resetBriefDefault = function() {
+            ta.value = defaultText;
+            betreff.value = defaultBetreff;
+            renderPreview();
+        };
         document.getElementById('reset-default').addEventListener('click', function() {
             if (!confirm('Text und Betreff auf die Standardvorlage zurücksetzen? Ungespeicherte Änderungen gehen verloren.')) {
                 return;
             }
-            ta.value = defaultText;
-            betreff.value = defaultBetreff;
-            renderPreview();
+            window.resetBriefDefault();
         });
         <?php endif; ?>
 
@@ -477,10 +510,43 @@ if (!empty($briefSettings['sponsoring_pakete'])) {
             "Sollte Ihnen etwas fehlen oder Sie noch Fragen haben, kommen Sie jederzeit gerne auf mich zu.\n\nVielen Dank für Ihre Unterstützung und Ihr Vertrauen – gemeinsam machen wir den Marktlauf Kirchseeon zu einem unvergesslichen Erlebnis!\n\n{{signatur}}",
             JSON_UNESCAPED_UNICODE
         ) ?>;
+        // Ursprungstexte der Abschnitte (Code-Default) — Fallback für „Standardtext wiederherstellen".
+        const SECTION_ORIGINS = <?= json_encode(array_column(sponsorBestaetigungSektionen(), 'text', 'id'), JSON_UNESCAPED_UNICODE) ?>;
+        const DEFAULT_BETREFF = <?= json_encode($default['betreff'], JSON_UNESCAPED_UNICODE) ?>;
 
         const ta = document.getElementById('koerper_md');
         const btn = document.getElementById('btn-zusammenstellen');
         if (!btn || !ta) return;
+
+        // Body aus INTRO + angehakten Abschnitten + OUTRO bauen. Schreibt NUR hier bzw. beim
+        // Reset in den Markdown — Tippen/Haken/Schließen im Panel lässt den Body bewusst unangetastet.
+        function composeBody() {
+            var parts = [INTRO];
+            document.querySelectorAll('.baustein-cb').forEach(function(cb) {
+                if (!cb.checked) return;
+                var textArea = document.querySelector('.baustein-text[data-id="' + cb.dataset.id + '"]');
+                if (textArea && textArea.value.trim() !== '') parts.push(textArea.value);
+            });
+            parts.push(OUTRO);
+            ta.value = parts.join('\n\n');
+            ta.dispatchEvent(new Event('input'));
+        }
+
+        // „Standardtext wiederherstellen" bei der Bestätigung: Abschnitts-Texte zurück auf den
+        // Ursprung (Fallback), die aktuelle Haken-Auswahl bleibt, dann Body aus den angehakten
+        // Abschnitten neu zusammenstellen. Abgewählte Abschnitte bleiben also draußen.
+        window.resetBriefDefault = function() {
+            document.querySelectorAll('.baustein-text').forEach(function(t) {
+                var id = t.dataset.id;
+                if (id in SECTION_ORIGINS) {
+                    t.value = SECTION_ORIGINS[id];
+                    t.dispatchEvent(new Event('input')); // persistiert den Ursprung in localStorage
+                }
+            });
+            var betreffEl = document.getElementById('betreff');
+            if (betreffEl) betreffEl.value = DEFAULT_BETREFF;
+            composeBody();
+        };
 
         // Klappmenü: Text ▾ / ▴ toggle
         document.querySelectorAll('.baustein-expand-btn').forEach(function(expandBtn) {
@@ -499,15 +565,7 @@ if (!empty($briefSettings['sponsoring_pakete'])) {
             if (ta.value.trim() !== '' && !confirm('Den aktuellen Text überschreiben und neu zusammenstellen?')) {
                 return;
             }
-            var parts = [INTRO];
-            document.querySelectorAll('.baustein-cb').forEach(function(cb) {
-                if (!cb.checked) return;
-                var textArea = document.querySelector('.baustein-text[data-id="' + cb.dataset.id + '"]');
-                if (textArea && textArea.value.trim() !== '') parts.push(textArea.value);
-            });
-            parts.push(OUTRO);
-            ta.value = parts.join('\n\n');
-            ta.dispatchEvent(new Event('input'));
+            composeBody();
         });
     })();
 
@@ -542,6 +600,35 @@ if (!empty($briefSettings['sponsoring_pakete'])) {
         });
         document.querySelectorAll('.baustein-text').forEach(function(t) {
             t.addEventListener('input', saveBausteinState);
+        });
+    })();
+
+    // Anhang-Abwahl (Plakate + Bestätigungs-Assets): browser-seitig, pro Person, bis zum
+    // nächsten Versand. Gespeichert werden nur die ABGEWÄHLTEN Drive-IDs je Gruppe.
+    // Derselbe Speicher-Schlüssel wird auf der Versandseite gelesen und dort nach erfolgreichem
+    // Versand geleert (dann sind wieder alle Anhänge dabei).
+    (function() {
+        var KEY = 'mkl_anhang_abwahl';
+        function load() {
+            try { var s = JSON.parse(localStorage.getItem(KEY) || '{}'); return { plakat: s.plakat || [], asset: s.asset || [] }; }
+            catch(e) { return { plakat: [], asset: [] }; }
+        }
+        function save(s) { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch(e) {} }
+        var boxes = document.querySelectorAll('.anhang-abwahl');
+        if (!boxes.length) return;
+        var state = load();
+        boxes.forEach(function(cb) {
+            var g = cb.dataset.group;
+            cb.checked = (state[g] || []).indexOf(cb.value) === -1;
+            cb.addEventListener('change', function() {
+                var s = load();
+                var arr = s[g] || [];
+                var i = arr.indexOf(cb.value);
+                if (cb.checked) { if (i !== -1) arr.splice(i, 1); }
+                else if (i === -1) { arr.push(cb.value); }
+                s[g] = arr;
+                save(s);
+            });
         });
     })();
     <?php endif; ?>

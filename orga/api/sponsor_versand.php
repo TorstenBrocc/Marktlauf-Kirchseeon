@@ -37,15 +37,20 @@ if (!in_array($typ, ['erstanschreiben', 'folgejahr', 'frei', 'bestaetigung'], tr
     $typ = 'erstanschreiben';
 }
 
-// Bestätigung: vom Versender abgewählte Anhang-Dateien (Opt-out, stateless).
-// Greift nur im Einzelversand (immer 1 Sponsor bei der Bestätigung).
-$excludeAssetFids = [];
-if ($typ === 'bestaetigung' && isset($_POST['exclude_asset_fids']) && is_array($_POST['exclude_asset_fids'])) {
-    $excludeAssetFids = array_values(array_filter(array_map(
+// Bestätigung: vom Versender abgewählte Anhang-Dateien (Opt-out). Die Abwahl lebt
+// browser-seitig (localStorage) und gilt bis zum nächsten Versand; sie wird als
+// exclude_*_fids[] mitgeschickt. Greift nur im Einzelversand (immer 1 Sponsor bei der Bestätigung).
+$readExcludeFids = static function (string $key): array {
+    if (!isset($_POST[$key]) || !is_array($_POST[$key])) {
+        return [];
+    }
+    return array_values(array_filter(array_map(
         static fn ($v) => trim((string) $v),
-        $_POST['exclude_asset_fids']
+        $_POST[$key]
     ), static fn ($v) => $v !== ''));
-}
+};
+$excludeAssetFids  = $typ === 'bestaetigung' ? $readExcludeFids('exclude_asset_fids')  : [];
+$excludePlakatFids = $typ === 'bestaetigung' ? $readExcludeFids('exclude_plakat_fids') : [];
 
 // IDs einsammeln (Einzel-Button: sponsor_id, Mehrfach-Auswahl: sponsor_ids[])
 $ids = [];
@@ -143,7 +148,7 @@ try {
     if (count($recipients) === 1) {
         $r = $recipients[0];
         try {
-            $ok = sendSponsorAnschreiben($r['email'], $r['anrede'], $r['vorname'], $r['nachname'], $r['firma'], $typ, $r['paket'], (int)($user['id'] ?? 0), $excludeAssetFids);
+            $ok = sendSponsorAnschreiben($r['email'], $r['anrede'], $r['vorname'], $r['nachname'], $r['firma'], $typ, $r['paket'], (int)($user['id'] ?? 0), $excludeAssetFids, $excludePlakatFids);
         } catch (Throwable $e) {
             $ok = false;
             logError('Sponsor-Versand (einzeln) Exception: ' . $e->getMessage());
@@ -152,6 +157,10 @@ try {
         if ($ok) {
             sponsorMarkGesendet($pdo, $r['sponsor_id'], $typ);
             $_SESSION['flash_success'] = 'Anschreiben gesendet an ' . htmlspecialchars($r['firma']) . '.' . $hinweis;
+            // Reset-Signal: eine Bestätigung ging raus → Browser setzt die Anhang-Abwahl zurück (alle wieder dran).
+            if ($typ === 'bestaetigung') {
+                $_SESSION['bestaetigung_versand_done'] = true;
+            }
 
             // Bestätigung: Beleg-PDF im Sponsor-Ordner ablegen (Mail bleibt einmalig).
             if ($typ === 'bestaetigung') {
@@ -190,6 +199,11 @@ try {
             'von'        => $user['id'] ?? null,
         ]);
         $queued++;
+    }
+
+    // Reset-Signal auch im Queue-Fall (Bestätigung mit mehreren Kontakten): ein Versand wurde ausgelöst.
+    if ($typ === 'bestaetigung' && $queued > 0) {
+        $_SESSION['bestaetigung_versand_done'] = true;
     }
 
     $scriptPath = realpath(__DIR__ . '/../../bin/sponsor_versand.php');
