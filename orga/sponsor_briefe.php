@@ -106,7 +106,7 @@ if (!empty($briefSettings['sponsoring_pakete'])) {
             box-sizing: border-box; resize: vertical;
         }
         #preview-frame {
-            width: 100%; height: 460px; border: 1px solid var(--border); border-radius: 4px; background: #fff;
+            width: 100%; height: 460px; border: 1px solid var(--border); border-radius: 4px; background: #fff; box-sizing: border-box;
         }
         .brief-split-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
         .brief-split-head h3 { margin: 0; }
@@ -487,7 +487,7 @@ if (!empty($briefSettings['sponsoring_pakete'])) {
         if (typeof ResizeObserver !== 'undefined') {
             new ResizeObserver(function(entries) {
                 for (var entry of entries) {
-                    frame.style.height = Math.min(entry.contentRect.height, 700) + 'px';
+                    frame.style.height = Math.min(entry.target.offsetHeight, 700) + 'px';
                 }
             }).observe(ta);
         }
