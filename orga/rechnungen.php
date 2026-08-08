@@ -38,20 +38,12 @@ foreach ($nummeriert as $r) {
     ];
 }
 
-// Abzurechnen: zugesagte Sponsoren mit Paket (noch nicht abgerechnet, nicht ausgenommen).
-// Ausgenommen: bewusst aus der Abrechnung genommene Sponsoren (nicht_abrechnen=1) — reversibel.
+// Abzurechnen: zugesagte Sponsoren mit Paket UND hinterlegtem Betrag. Ohne Betrag (summe) ist ein
+// Sponsor nicht abzurechnen und erscheint nicht — steuerbar über das Betrag-Feld am Sponsor.
 $abzurechnen = [];
-$ausgenommen = [];
 try {
-    // Nur Sponsoren mit Paket sind abrechnungsrelevant (Paket = Abrechnungsgrundlage).
-    $stmt = $pdo->query("SELECT id, firma, paket, summe, nicht_abrechnen FROM sponsors WHERE status = 'zugesagt' AND paket IS NOT NULL AND paket <> '' ORDER BY firma");
-    foreach ($stmt->fetchAll() as $row) {
-        if ((int) ($row['nicht_abrechnen'] ?? 0) === 1) {
-            $ausgenommen[] = $row;
-        } else {
-            $abzurechnen[] = $row;
-        }
-    }
+    $stmt = $pdo->query("SELECT id, firma, paket, summe FROM sponsors WHERE status = 'zugesagt' AND paket IS NOT NULL AND paket <> '' AND summe > 0 ORDER BY firma");
+    $abzurechnen = $stmt->fetchAll();
 } catch (PDOException $e) {
     // ignore
 }
@@ -117,7 +109,8 @@ $paketLabel = static function (?string $p): string {
 
             <p class="rech-intro">
                 Ablauf: unten <strong>Abzurechnen</strong> stehen alle zugesagten Sponsoren mit Paket
-                — hier <strong>Rechnung erzeugen</strong>. Die Rechnung wandert dann als Entwurf nach
+                und hinterlegtem Betrag — hier <strong>Entwurf erzeugen</strong>. Sponsoren ohne Betrag
+                erscheinen nicht; den Betrag pflegst du am Sponsor. Die Rechnung wandert dann als Entwurf nach
                 <strong>Wartet auf Nummer</strong>: Dort trägt der Kassier die fortlaufende
                 Rechnungs-<strong>Nummer</strong> ein (nur die laufende Zahl, das Jahr <?= date('Y') ?>
                 ergänzt das System automatisch). Nach der Nummernvergabe kann die Rechnung unter
@@ -127,7 +120,7 @@ $paketLabel = static function (?string $p): string {
 
             <h2 class="rech-section-title">Abzurechnen<?= $abzurechnen ? ' (' . count($abzurechnen) . ')' : '' ?></h2>
             <?php if (!$abzurechnen): ?>
-                <p class="rech-empty">Keine zugesagten Sponsoren mit Paket offen.</p>
+                <p class="rech-empty">Keine zugesagten Sponsoren mit Paket und Betrag offen.</p>
             <?php else: ?>
                 <div class="table-wrap">
                     <table class="data-table">
@@ -144,7 +137,7 @@ $paketLabel = static function (?string $p): string {
                                 <tr>
                                     <td class="rech-firma"><?= htmlspecialchars($s['firma']) ?></td>
                                     <td><?= htmlspecialchars($paketLabel($s['paket'])) ?></td>
-                                    <td class="rech-betrag"><?= ((float) $s['summe'] > 0) ? $eur($s['summe']) : '–' ?></td>
+                                    <td class="rech-betrag"><?= $eur($s['summe']) ?></td>
                                     <td>
                                         <div class="rech-actions">
                                             <a href="sponsor_form.php?id=<?= (int) $s['id'] ?>" class="btn btn-small btn-secondary">Sponsor öffnen</a>
@@ -154,49 +147,6 @@ $paketLabel = static function (?string $p): string {
                                                 <input type="hidden" name="action" value="generate">
                                                 <input type="hidden" name="sponsor_ids[]" value="<?= (int) $s['id'] ?>">
                                                 <button type="submit" class="btn btn-small btn-primary">Entwurf erzeugen</button>
-                                            </form>
-                                            <form method="post" action="api/rechnung_crud.php"
-                                                  onsubmit="return confirm('<?= htmlspecialchars(addslashes($s['firma']), ENT_QUOTES) ?> aus der Abrechnung nehmen? (Sponsor bleibt erhalten, lässt sich wieder aufnehmen.)');">
-                                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                                                <input type="hidden" name="action" value="abrechnung_ausnehmen">
-                                                <input type="hidden" name="id" value="<?= (int) $s['id'] ?>">
-                                                <button type="submit" class="btn btn-small btn-secondary">Nicht abrechnen</button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-            <?php endif; ?>
-
-            <?php if ($ausgenommen): ?>
-                <h2 class="rech-section-title">Von der Abrechnung ausgenommen (<?= count($ausgenommen) ?>)</h2>
-                <div class="table-wrap">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Firma</th>
-                                <th>Paket</th>
-                                <th>Betrag</th>
-                                <th>Aktion</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($ausgenommen as $s): ?>
-                                <tr>
-                                    <td class="rech-firma"><?= htmlspecialchars($s['firma']) ?></td>
-                                    <td><?= htmlspecialchars($paketLabel($s['paket'])) ?></td>
-                                    <td class="rech-betrag"><?= ((float) $s['summe'] > 0) ? $eur($s['summe']) : '–' ?></td>
-                                    <td>
-                                        <div class="rech-actions">
-                                            <a href="sponsor_form.php?id=<?= (int) $s['id'] ?>" class="btn btn-small btn-secondary">Sponsor öffnen</a>
-                                            <form method="post" action="api/rechnung_crud.php">
-                                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                                                <input type="hidden" name="action" value="abrechnung_wiederaufnehmen">
-                                                <input type="hidden" name="id" value="<?= (int) $s['id'] ?>">
-                                                <button type="submit" class="btn btn-small btn-primary">Wieder aufnehmen</button>
                                             </form>
                                         </div>
                                     </td>
