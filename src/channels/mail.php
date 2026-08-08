@@ -244,7 +244,8 @@ function sendSponsorAnschreiben(
     string $typ = 'erstanschreiben',
     string $paket = '',
     int $userId = 0,
-    array $excludeAssetFids = []
+    array $excludeAssetFids = [],
+    array $excludePlakatFids = []
 ): bool {
     if (!sponsorBriefSlugValid($typ)) {
         $typ = 'erstanschreiben';
@@ -261,9 +262,10 @@ function sendSponsorAnschreiben(
     // Freier Brief + Bestätigung: aktuelle Plakate anhängen (Abschnitt „Plakate anbei").
     // Zusätzlich hängt die Bestätigung den designierten Bestätigungs-Anhang-Ordner an
     // (Absperrgitter-Bemaßungen etc.) — mit stateless Opt-out über $excludeAssetFids.
+    // Plakat-Abwahl greift nur bei der Bestätigung; der freie Brief hängt weiterhin alle an.
     $attachments = [];
     if (in_array($typ, ['frei', 'bestaetigung'], true)) {
-        $attachments = plakateAnhang($pdo);
+        $attachments = plakateAnhang($pdo, $typ === 'bestaetigung' ? $excludePlakatFids : []);
     }
     if ($typ === 'bestaetigung') {
         $attachments = array_merge($attachments, bestaetigungAssetsAnhang($pdo, $excludeAssetFids));
@@ -273,9 +275,11 @@ function sendSponsorAnschreiben(
 
 /**
  * Aktuelle Plakat-PDFs aus dem designierten Plakate-Ordner als Anhang-Array laden.
+ * $excludeFids: vom Versender abgewählte Drive-Datei-IDs (nur Bestätigungs-Versand; sonst []).
+ * @param array<int,string> $excludeFids
  * @return array<array{path:string,name:string,mime:string}>
  */
-function plakateAnhang(PDO $pdo): array {
+function plakateAnhang(PDO $pdo, array $excludeFids = []): array {
     if (!driveConfigured()) {
         return [];
     }
@@ -285,7 +289,7 @@ function plakateAnhang(PDO $pdo): array {
         logError('plakateAnhang: kein Plakate-Ordner für Renn-Jahr ' . $jahr . ' festgelegt');
         return [];
     }
-    return driveFolderAnhang($folderId, 'plakat', [], 'application/pdf');
+    return driveFolderAnhang($folderId, 'plakat', $excludeFids, 'application/pdf');
 }
 
 /**

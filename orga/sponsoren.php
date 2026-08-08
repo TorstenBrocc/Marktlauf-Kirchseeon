@@ -16,7 +16,9 @@ $csrfToken = generateCsrfToken();
 $flashSuccess = $_SESSION['flash_success'] ?? '';
 $flashError = $_SESSION['flash_error'] ?? '';
 $importReport = $_SESSION['import_report'] ?? [];
-unset($_SESSION['flash_success'], $_SESSION['flash_error'], $_SESSION['import_report']);
+// Reset-Signal: nach erfolgreichem Bestätigungs-Versand setzt der Browser die Anhang-Abwahl zurück.
+$bestaetigungVersandDone = !empty($_SESSION['bestaetigung_versand_done']);
+unset($_SESSION['flash_success'], $_SESSION['flash_error'], $_SESSION['import_report'], $_SESSION['bestaetigung_versand_done']);
 
 $filterStatus = $_GET['status'] ?? '';
 $filterPaket = $_GET['paket'] ?? '';
@@ -968,13 +970,58 @@ try {
         });
         updateCount();
 
-        // Opt-out-Liste der Bestätigungs-Anhänge: lazy laden, sobald „Bestätigung" gewählt ist.
+        // Opt-out-Liste der Bestätigungs-Anhänge (Plakate + Assets): lazy laden, sobald
+        // „Bestätigung" gewählt ist. Die Abwahl lebt browser-seitig (localStorage, derselbe
+        // Schlüssel wie im Brief-Editor) und gilt bis zum nächsten Versand.
         const typSel   = document.getElementById('anschreiben_typ');
         const baBox     = document.getElementById('bestaetigung-assets');
         const baList    = document.getElementById('ba-list');
         const baStatus  = document.getElementById('ba-status');
         const versandForm = document.getElementById('versand-form');
         let baLoaded = false;
+
+        const ABWAHL_KEY = 'mkl_anhang_abwahl';
+        function abwahlLoad() {
+            try { var s = JSON.parse(localStorage.getItem(ABWAHL_KEY) || '{}'); return { plakat: s.plakat || [], asset: s.asset || [] }; }
+            catch(e) { return { plakat: [], asset: [] }; }
+        }
+        function abwahlSave(s) { try { localStorage.setItem(ABWAHL_KEY, JSON.stringify(s)); } catch(e) {} }
+
+        // Reset nach erfolgreichem Bestätigungs-Versand: Abwahl leeren → wieder alle Anhänge dran.
+        <?php if ($bestaetigungVersandDone): ?>
+        try { localStorage.removeItem(ABWAHL_KEY); } catch(e) {}
+        <?php endif; ?>
+
+        function renderGruppe(gruppe, titel, items) {
+            if (!items || items.length === 0) return 0;
+            const state = abwahlLoad();
+            const h = document.createElement('div');
+            h.style.cssText = 'font-weight:600;font-size:.82rem;color:#555;margin:.35rem 0 .1rem;';
+            h.textContent = titel;
+            baList.appendChild(h);
+            items.forEach(function(f) {
+                const lbl = document.createElement('label');
+                lbl.style.cssText = 'display:flex;align-items:center;gap:.4rem;cursor:pointer;';
+                const cb = document.createElement('input');
+                cb.type = 'checkbox'; cb.className = 'anhang-abwahl-send'; cb.value = f.id;
+                cb.dataset.group = gruppe;
+                cb.checked = (state[gruppe] || []).indexOf(f.id) === -1;
+                cb.addEventListener('change', function() {
+                    const s = abwahlLoad();
+                    const arr = s[gruppe] || [];
+                    const i = arr.indexOf(f.id);
+                    if (cb.checked) { if (i !== -1) arr.splice(i, 1); }
+                    else if (i === -1) { arr.push(f.id); }
+                    s[gruppe] = arr;
+                    abwahlSave(s);
+                });
+                const span = document.createElement('span');
+                span.textContent = f.name;
+                lbl.appendChild(cb); lbl.appendChild(span);
+                baList.appendChild(lbl);
+            });
+            return items.length;
+        }
 
         function loadBestaetigungAssets() {
             if (baLoaded || !baList) return;
@@ -985,22 +1032,15 @@ try {
                 .then(function(d) {
                     baList.innerHTML = '';
                     if (!d || !d.ok) { baStatus.textContent = '⚠️ Ordner nicht lesbar'; return; }
-                    if (d.configured === false) {
-                        baStatus.textContent = '— kein Ordner festgelegt (in „Dateien" per Rechtsklick setzen)';
+                    let n = renderGruppe('plakat', 'Plakate', d.plakat);
+                    n += renderGruppe('asset', 'Bestätigungs-Anhänge', d.asset);
+                    if (n === 0) {
+                        baStatus.textContent = d.configured === false
+                            ? '— keine Anhänge (Ordner nicht festgelegt/leer)'
+                            : '— keine Anhänge vorhanden';
                         return;
                     }
-                    if (!d.items || d.items.length === 0) { baStatus.textContent = '— Ordner ist leer'; return; }
-                    baStatus.textContent = '(alle vorausgewählt — zum Weglassen abwählen)';
-                    d.items.forEach(function(f) {
-                        const lbl = document.createElement('label');
-                        lbl.style.cssText = 'display:flex;align-items:center;gap:.4rem;cursor:pointer;';
-                        const cb = document.createElement('input');
-                        cb.type = 'checkbox'; cb.className = 'ba-check'; cb.checked = true; cb.value = f.id;
-                        const span = document.createElement('span');
-                        span.textContent = f.name;
-                        lbl.appendChild(cb); lbl.appendChild(span);
-                        baList.appendChild(lbl);
-                    });
+                    baStatus.textContent = '(alle vorausgewählt — zum Weglassen abwählen; gilt bis zum nächsten Versand)';
                 })
                 .catch(function() { baStatus.textContent = '⚠️ Ordner nicht lesbar'; baLoaded = false; });
         }
@@ -1031,16 +1071,17 @@ try {
                     + 'Der Versand läuft anschließend über das CLI-Script (15 Sek. Abstand pro Mail).');
             }
             if (!ok) return false;
-            // Abgewählte Bestätigungs-Anhänge als exclude_asset_fids[] anhängen (stateless, nur dieser Versand).
+            // Abgewählte Anhänge je Gruppe als exclude_*_fids[] mitschicken (nur Bestätigung).
             if (versandForm) {
-                versandForm.querySelectorAll('input[name="exclude_asset_fids[]"]').forEach(function(el) { el.remove(); });
+                versandForm.querySelectorAll('input[name="exclude_asset_fids[]"], input[name="exclude_plakat_fids[]"]').forEach(function(el) { el.remove(); });
                 if (typ && typ.value === 'bestaetigung') {
-                    document.querySelectorAll('.ba-check').forEach(function(cb) {
-                        if (!cb.checked) {
-                            const hid = document.createElement('input');
-                            hid.type = 'hidden'; hid.name = 'exclude_asset_fids[]'; hid.value = cb.value;
-                            versandForm.appendChild(hid);
-                        }
+                    document.querySelectorAll('.anhang-abwahl-send').forEach(function(cb) {
+                        if (cb.checked) return;
+                        const hid = document.createElement('input');
+                        hid.type = 'hidden';
+                        hid.name = cb.dataset.group === 'plakat' ? 'exclude_plakat_fids[]' : 'exclude_asset_fids[]';
+                        hid.value = cb.value;
+                        versandForm.appendChild(hid);
                     });
                 }
             }

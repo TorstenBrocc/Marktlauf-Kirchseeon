@@ -1,8 +1,11 @@
 <?php
 /**
- * Liefert die Dateien des designierten Bestätigungs-Anhang-Ordners (JSON) —
- * für die Opt-out-Liste beim Versand einer Sponsoring-Bestätigung. Nur eingeloggte Orga/Admin.
- * Stateless: keine Speicherung, jeder Versand startet mit allen Dateien vorausgewählt.
+ * Liefert die anhängbaren Dateien für die Sponsoring-Bestätigung (JSON) — getrennt nach
+ * Plakaten (designierter Plakate-Ordner) und Bestätigungs-Assets (eigener Ordner).
+ * Grundlage für die Opt-out-Liste beim Versand. Nur eingeloggte Orga/Admin.
+ *
+ * Die Abwahl selbst lebt browser-seitig (localStorage) und gilt bis zum nächsten Versand;
+ * dieser Endpoint liefert nur die aktuell vorhandenen Dateien, immer den Ist-Stand des Ordners.
  */
 
 declare(strict_types=1);
@@ -15,16 +18,14 @@ require_once __DIR__ . '/../../src/google_drive.php';
 header('Content-Type: application/json; charset=utf-8');
 
 if (!driveConfigured()) {
-    echo json_encode(['ok' => false, 'items' => []]);
+    echo json_encode(['ok' => false, 'plakat' => [], 'asset' => []]);
     exit;
 }
 
-try {
-    $pdo      = getDbConnection();
-    $folderId = driveBestaetigungAssetsFolderId($pdo);
+/** @return array<int,array{id:string,name:string}> */
+$listFolder = static function (?string $folderId): array {
     if ($folderId === null) {
-        echo json_encode(['ok' => true, 'items' => [], 'configured' => false], JSON_UNESCAPED_UNICODE);
-        exit;
+        return [];
     }
     $items = [];
     foreach (driveListChildren($folderId) as $c) {
@@ -33,9 +34,21 @@ try {
         }
         $items[] = ['id' => $c['id'], 'name' => $c['name']];
     }
-    echo json_encode(['ok' => true, 'items' => $items, 'configured' => true], JSON_UNESCAPED_UNICODE);
+    return $items;
+};
+
+try {
+    $pdo          = getDbConnection();
+    $plakatFolder = drivePlakatFolderId($pdo, driveRennJahr($pdo));
+    $assetFolder  = driveBestaetigungAssetsFolderId($pdo);
+    echo json_encode([
+        'ok'         => true,
+        'configured' => $assetFolder !== null,
+        'plakat'     => $listFolder($plakatFolder),
+        'asset'      => $listFolder($assetFolder),
+    ], JSON_UNESCAPED_UNICODE);
 } catch (Throwable $e) {
     logError('bestaetigung_assets: ' . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['ok' => false, 'items' => []]);
+    echo json_encode(['ok' => false, 'plakat' => [], 'asset' => []]);
 }
