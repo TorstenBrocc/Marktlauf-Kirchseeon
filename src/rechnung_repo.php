@@ -16,7 +16,7 @@ require_once __DIR__ . '/rechnung.php';
  * gebuchten Pakets (aus sponsoringPakete()). Leistung + Betrag kommen aus dem Paket, sofern
  * nicht pro Sponsor überschrieben. Wirft InvalidArgumentException, wenn Pflichtdaten fehlen.
  */
-function rechnungSnapshotVonSponsor(array $sponsor, array $paketDef = [], bool $globalBrutto = false): array
+function rechnungSnapshotVonSponsor(array $sponsor, array $paketDef = [], bool $istBrutto = false): array
 {
     $firma = trim((string) ($sponsor['rechnung_firma'] ?? '')) !== ''
         ? trim((string) $sponsor['rechnung_firma'])
@@ -33,7 +33,7 @@ function rechnungSnapshotVonSponsor(array $sponsor, array $paketDef = [], bool $
     if ($plz === '' || $ort === '') { $fehlt[] = 'PLZ/Ort (Rechnungsanschrift)'; }
 
     try {
-        $b = rechnungBetraegeFuerSponsor($sponsor, $paketDef, null, $globalBrutto);
+        $b = rechnungBetraegeFuerSponsor($sponsor, $paketDef, null, $istBrutto);
     } catch (InvalidArgumentException $e) {
         $fehlt[] = $e->getMessage();
         $b = null;
@@ -82,10 +82,9 @@ function rechnungEntwurfErstellen(PDO $pdo, int $sponsorId, ?int $userId): array
 
     $pakete       = sponsoringPakete($pdo);
     $paketDef     = $pakete[$sponsor['paket'] ?? ''] ?? [];
-    // Pro-Sponsor-Haken „brutto abrechnen" übersteuert den globalen Default (sonst gilt global).
-    $globalBrutto = rechnungGlobalBrutto($pdo);
-    $istBrutto    = ((int) ($sponsor['rechnung_betrag_brutto'] ?? 0) === 1) ? true : $globalBrutto;
-    $snap         = rechnungSnapshotVonSponsor($sponsor, $paketDef, $istBrutto);
+    // Paketpreise sind immer netto; nur der Pro-Sponsor-Haken schaltet diese Rechnung auf brutto.
+    $istBrutto = ((int) ($sponsor['rechnung_betrag_brutto'] ?? 0) === 1);
+    $snap      = rechnungSnapshotVonSponsor($sponsor, $paketDef, $istBrutto);
 
     $ins = $pdo->prepare('
         INSERT INTO sponsor_rechnungen
