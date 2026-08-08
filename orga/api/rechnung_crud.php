@@ -64,6 +64,28 @@ if ($action === 'assign_number') {
     exit;
 }
 
+if ($action === 'abrechnung_ausnehmen' || $action === 'abrechnung_wiederaufnehmen') {
+    $id   = (int) ($_POST['id'] ?? 0);
+    $wert = $action === 'abrechnung_ausnehmen' ? 1 : 0;
+    if ($id <= 0) {
+        $_SESSION['flash_error'] = 'Ungültige Sponsor-ID.';
+        header('Location: ../rechnungen.php');
+        exit;
+    }
+    try {
+        $pdo->prepare('UPDATE sponsors SET nicht_abrechnen = :v WHERE id = :id')
+            ->execute(['v' => $wert, 'id' => $id]);
+        $_SESSION['flash_success'] = $wert === 1
+            ? 'Sponsor aus der Abrechnung genommen (bleibt erhalten, jederzeit wieder aufnehmbar).'
+            : 'Sponsor wieder zur Abrechnung aufgenommen.';
+    } catch (PDOException $e) {
+        logError('Abrechnung ausnehmen/aufnehmen: ' . $e->getMessage());
+        $_SESSION['flash_error'] = 'Datenbankfehler.';
+    }
+    header('Location: ../rechnungen.php');
+    exit;
+}
+
 if ($action === 'generate') {
     $ids = array_values(array_unique(array_map('intval', (array) ($_POST['sponsor_ids'] ?? []))));
     $ids = array_filter($ids, static fn ($v) => $v > 0);
