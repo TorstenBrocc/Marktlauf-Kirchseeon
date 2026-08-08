@@ -235,10 +235,10 @@ if (!empty($briefSettings['sponsoring_pakete'])) {
                             <button type="submit" class="btn btn-primary">Speichern</button>
                         <?php endif; ?>
                         <?php if ($hasStandardtext): ?>
-                            <button type="button" class="btn btn-secondary" id="reset-default">Standardtext wiederherstellen</button>
+                            <button type="button" class="btn btn-secondary" id="reset-default"><?= $slug === 'bestaetigung' ? 'Reset Abschnittsblöcke' : 'Standardtext wiederherstellen' ?></button>
                         <?php endif; ?>
                         <?php if ($slug === 'bestaetigung'): ?>
-                            <button type="button" class="btn btn-secondary" id="reset-original">Alles auf Original zurücksetzen</button>
+                            <button type="button" class="btn btn-secondary" id="reset-original">Ursprungstext</button>
                         <?php endif; ?>
                         <span id="draft-status" class="brief-hint"><?= htmlspecialchars($draftHinweis) ?></span>
                     </div>
