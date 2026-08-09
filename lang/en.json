@@ -87,10 +87,11 @@
   "footer.legal_title": "Legal",
   "footer.legal.impressum": "Imprint",
   "footer.legal.privacy": "Privacy Policy",
+  "footer.legal.terms": "Terms of Participation",
   "footer.realized_by": "Conception and realization: <a href=\"/humans.txt\" rel=\"author\" class=\"footer-credits-link\">Torsten Tyras</a>",
   "footer.copyright": "© 2026 ATS Kirchseeon e.V. | All rights reserved.",
   "legal.imprint_title": "Imprint",
-  "legal.tmg_title": "Information according to §5 TMG:",
+  "legal.tmg_title": "Information according to §5 DDG:",
   "legal.address": "Allgemeiner Turn- und Sportverein Kirchseeon e.V., Sportplatzweg 7, 85614 Kirchseeon​",
   "legal.representation": "Authorized Representatives:",
   "legal.representatives": "Stefan Reinhart – 1st Chairman\\nMatthias Gramüller – 2nd Chairman",
@@ -196,7 +197,7 @@
   "faq.q6": "Do I get a certificate?",
   "faq.a6": "Certificates are expected to be available for download after the race, or will be sent by email.",
   "faq.q7": "What happens in bad weather?",
-  "faq.a7": "The Marktlauf takes place in almost any weather. We announce any short-notice changes on this website, via our social media channels and – for everyone who registered with an email address – by notification through RaceResult.",
+  "faq.a7": "The Marktlauf takes place in almost any weather. We announce any short-notice changes on this website, via our social media channels and – for everyone who registered with an email address – by notification through RaceResult. The binding rules on cancellation and force majeure are set out in our <a href='teilnahmebedingungen.html'>terms of participation</a>.",
   "faq.q8": "Can I transfer or change my registration?",
   "faq.a8": "Would you like to transfer your place or change your registration? Please get in touch via our <a href=\"#connect\">contact form</a> on our website."
 }
