@@ -12,6 +12,7 @@ require_once __DIR__ . '/../../src/logger.php';
 require_once __DIR__ . '/../../src/sponsor_status.php';
 require_once __DIR__ . '/../../src/sponsor_rotation.php';
 require_once __DIR__ . '/../../src/sponsor_beleg.php';
+require_once __DIR__ . '/../../src/rechnung.php';
 
 /**
  * Rotations-Felder (Aktiv-Haken + optionaler Logo-Upload) persistieren und den
@@ -162,9 +163,24 @@ if (($_POST['action'] ?? '') === 'inline_update') {
 
         if ($field === 'paket') {
             $paket = in_array($value, ['hauptsponsor', 'gold', 'silber', 'bronze', 'sachsponsor'], true) ? $value : null;
-            $pdo->prepare('UPDATE sponsors SET paket = :v WHERE id = :id')
-                ->execute(['v' => $paket, 'id' => $sponsorId]);
-            echo json_encode(['ok' => true, 'paket' => $paket]);
+            $neueSumme = null; // null = summe unangetastet lassen
+            if (in_array($paket, ['gold', 'silber', 'bronze'], true)) {
+                // Tier ⇒ fester Betrag aus dem Paket; summe mitziehen, damit Übersicht/Summe/Abrechnung stimmen.
+                $pakete = sponsoringPakete($pdo);
+                $neueSumme = paketBetrag($pakete[$paket]['investition'] ?? null);
+                $pdo->prepare('UPDATE sponsors SET paket = :v, summe = :s WHERE id = :id')
+                    ->execute(['v' => $paket, 's' => $neueSumme, 'id' => $sponsorId]);
+            } elseif ($paket === 'sachsponsor') {
+                // Sachsponsor ⇒ kein Geld.
+                $neueSumme = 0.0;
+                $pdo->prepare('UPDATE sponsors SET paket = :v, summe = NULL WHERE id = :id')
+                    ->execute(['v' => $paket, 'id' => $sponsorId]);
+            } else {
+                // Hauptsponsor (individuell) oder kein Typ: summe nicht überschreiben.
+                $pdo->prepare('UPDATE sponsors SET paket = :v WHERE id = :id')
+                    ->execute(['v' => $paket, 'id' => $sponsorId]);
+            }
+            echo json_encode(['ok' => true, 'paket' => $paket, 'summe' => $neueSumme]);
             exit;
         }
 
