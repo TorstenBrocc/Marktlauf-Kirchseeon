@@ -1,7 +1,7 @@
 <?php
 /**
  * Leistungs-Matrix — welche Leistungen sind je Sponsor vereinbart und zu erbringen.
- * Zeilen: zugesagte/abgerechnete Sponsoren mit Typ. Spalten: Katalog-Positionen (kumulativ
+ * Zeilen: zugesagte/bestätigte/abgerechnete Sponsoren mit Typ. Spalten: Katalog-Positionen (kumulativ
  * aus dem Typ vorbelegt, pro Sponsor an-/abwählbar). Haken = vereinbart (nicht „erledigt").
  * Details: intern/sponsoring-modell-spec.md §c.
  */
@@ -22,7 +22,7 @@ $katalog = sponsorLeistungenKatalog();
 $sponsoren = [];
 try {
     $stmt = $pdo->query("SELECT id, firma, paket FROM sponsors
-        WHERE paket IS NOT NULL AND paket <> '' AND status IN ('zugesagt','abgerechnet','bezahlt')
+        WHERE paket IS NOT NULL AND paket <> '' AND status IN ('zugesagt','bestaetigt','abgerechnet','bezahlt')
         ORDER BY firma");
     $sponsoren = $stmt->fetchAll();
 } catch (PDOException $e) {
@@ -85,7 +85,7 @@ $typLabel = static fn (?string $p): string => match ($p) {
             </p>
 
             <?php if (!$sponsoren): ?>
-                <p class="lm-empty">Keine zugesagten Sponsoren mit Typ.</p>
+                <p class="lm-empty">Keine zugesagten oder bestätigten Sponsoren mit Typ.</p>
             <?php else: ?>
                 <div class="lm-wrap">
                     <table class="lm-table">

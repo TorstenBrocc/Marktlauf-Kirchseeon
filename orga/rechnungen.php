@@ -38,11 +38,12 @@ foreach ($nummeriert as $r) {
     ];
 }
 
-// Abzurechnen: zugesagte Sponsoren mit Paket UND hinterlegtem Betrag. Ohne Betrag (summe) ist ein
-// Sponsor nicht abzurechnen und erscheint nicht — steuerbar über das Betrag-Feld am Sponsor.
+// Abzurechnen: zugesagte bzw. bereits bestätigte Sponsoren mit Paket UND hinterlegtem Betrag. Ohne
+// Betrag (summe) ist ein Sponsor nicht abzurechnen und erscheint nicht — steuerbar über das
+// Betrag-Feld am Sponsor.
 $abzurechnen = [];
 try {
-    $stmt = $pdo->query("SELECT id, firma, paket, summe FROM sponsors WHERE status = 'zugesagt' AND paket IS NOT NULL AND paket <> '' AND summe > 0 ORDER BY firma");
+    $stmt = $pdo->query("SELECT id, firma, paket, summe FROM sponsors WHERE status IN ('zugesagt','bestaetigt') AND paket IS NOT NULL AND paket <> '' AND summe > 0 ORDER BY firma");
     $abzurechnen = $stmt->fetchAll();
 } catch (PDOException $e) {
     // ignore
@@ -108,8 +109,9 @@ $paketLabel = static function (?string $p): string {
             <?php endif; ?>
 
             <p class="rech-intro">
-                Ablauf: unten <strong>Abzurechnen</strong> stehen alle zugesagten Sponsoren mit Paket
-                und hinterlegtem Betrag — hier <strong>Entwurf erzeugen</strong>. Sponsoren ohne Betrag
+                Ablauf: unten <strong>Abzurechnen</strong> stehen alle zugesagten und bestätigten
+                Sponsoren mit Paket und hinterlegtem Betrag — hier <strong>Entwurf erzeugen</strong>.
+                Sponsoren ohne Betrag
                 erscheinen nicht; den Betrag pflegst du am Sponsor. Die Rechnung wandert dann als Entwurf nach
                 <strong>Wartet auf Nummer</strong>: Dort trägt der Kassier die fortlaufende
                 Rechnungs-<strong>Nummer</strong> ein (nur die laufende Zahl, das Jahr <?= date('Y') ?>
@@ -120,7 +122,7 @@ $paketLabel = static function (?string $p): string {
 
             <h2 class="rech-section-title">Abzurechnen<?= $abzurechnen ? ' (' . count($abzurechnen) . ')' : '' ?></h2>
             <?php if (!$abzurechnen): ?>
-                <p class="rech-empty">Keine zugesagten Sponsoren mit Paket und Betrag offen.</p>
+                <p class="rech-empty">Keine zugesagten oder bestätigten Sponsoren mit Paket und Betrag offen.</p>
             <?php else: ?>
                 <div class="table-wrap">
                     <table class="data-table">
