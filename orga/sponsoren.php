@@ -869,7 +869,7 @@ try {
                                             <?php endforeach; ?>
                                         </select>
                                     </td>
-                                    <td><?= $s['summe'] ? number_format((float)$s['summe'], 2, ',', '.') . ' €' : '–' ?></td>
+                                    <td class="summe-cell"><?= $s['summe'] ? number_format((float)$s['summe'], 2, ',', '.') . ' €' : '–' ?></td>
                                     <td>
                                         <select class="inline-select status-select ampel-<?= sponsorStatusAmpel($s['status']) ?>"
                                                 data-id="<?= $s['id'] ?>" data-field="status" title="Status ändern">
@@ -1161,7 +1161,7 @@ try {
     (function() {
         const csrf = <?= json_encode($csrfToken) ?>;
         const ampelClasses = ['ampel-grau', 'ampel-blau', 'ampel-gelb', 'ampel-gruen', 'ampel-rot'];
-        const paketClasses = ['paket-hauptsponsor', 'paket-gold', 'paket-silber', 'paket-bronze', 'paket-none'];
+        const paketClasses = ['paket-hauptsponsor', 'paket-gold', 'paket-silber', 'paket-bronze', 'paket-sachsponsor', 'paket-none'];
 
         function applyClass(sel, keep, cls) {
             keep.forEach(function(c) { sel.classList.remove(c); });
@@ -1206,6 +1206,17 @@ try {
                                 }
                             } else if (sel.dataset.field === 'paket') {
                                 applyClass(sel, paketClasses, 'paket-' + (d.paket || 'none'));
+                                // Betrag folgt dem Typ: Summe-Zelle live nachziehen (null = unverändert lassen).
+                                if (d.summe !== null && d.summe !== undefined) {
+                                    const row = sel.closest('tr');
+                                    const cell = row ? row.querySelector('.summe-cell') : null;
+                                    if (cell) {
+                                        const n = parseFloat(d.summe);
+                                        cell.textContent = (n > 0)
+                                            ? n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'
+                                            : '–';
+                                    }
+                                }
                             }
                             sel.classList.add('saved');
                             setTimeout(function() { sel.classList.remove('saved'); }, 1200);
