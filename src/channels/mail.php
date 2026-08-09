@@ -270,12 +270,12 @@ function sendSponsorAnschreiben(
     if ($typ === 'bestaetigung') {
         $attachments = array_merge($attachments, bestaetigungAssetsAnhang($pdo, $excludeAssetFids));
     }
-    // Sponsoring-Bedingungen (ein Dokument, Geld + Sach) als PDF anhängen: an
-    // Erstansprache/Folgejahr (bei Vertragsschluss präsent), Bestätigung und die reine
-    // Nachreich-Mail (Altfälle). Vom freien Brief bewusst ausgenommen. Nicht abwählbar.
+    // Sponsoring-Bedingungen aus dem Drive-Ordner „_assets Sponsoren" anhängen — Haus-Konvention:
+    // Das Dokument liegt im Ordner (vom Team gepflegt), das System hängt es an; es wird NICHT
+    // systemseitig erzeugt. Greift bei Erstansprache/Folgejahr/Bestätigung/Nachreich-Mail; vom
+    // freien Brief bewusst ausgenommen. Nicht abwählbar.
     if (in_array($typ, ['erstanschreiben', 'folgejahr', 'bestaetigung', 'bedingungen'], true)) {
-        require_once __DIR__ . '/../sponsor_bedingungen_pdf.php';
-        $attachments = array_merge($attachments, sponsorBedingungenAnhang(driveRennJahr($pdo)));
+        $attachments = array_merge($attachments, sponsorBedingungenAnhang($pdo));
     }
     return sendMail($to, $subject, $textBody, $htmlBody, $attachments);
 }
@@ -315,6 +315,57 @@ function bestaetigungAssetsAnhang(PDO $pdo, array $excludeFids = []): array {
         return [];
     }
     return driveFolderAnhang($folderId, 'bestaetigung', $excludeFids, 'application/octet-stream');
+}
+
+/**
+ * Sponsoring-Bedingungen aus dem Drive-Ordner „_assets Sponsoren" (unter Orga/Sponsoren) als
+ * pfadbasierte Anhänge. Angehängt werden nur Dateien mit „Bedingung" im Namen — so bleiben andere
+ * Assets im Ordner unberührt. Das Dokument wird NICHT systemseitig erzeugt (Haus-Konvention); die
+ * Vorlage zum Ablegen liefert `src/sponsor_bedingungen_pdf.php` (Download im Briefvorlagen-Editor).
+ * @return array<array{path:string,name:string,mime:string}>
+ */
+function sponsorBedingungenAnhang(PDO $pdo): array {
+    if (!driveConfigured()) {
+        return [];
+    }
+    require_once __DIR__ . '/../sponsor_rotation.php';
+    $folderId = driveFindFolder('_assets Sponsoren', sponsorDriveRootId($pdo));
+    if ($folderId === null) {
+        logError('sponsorBedingungenAnhang: Ordner „_assets Sponsoren" nicht gefunden');
+        return [];
+    }
+    try {
+        $files = driveListChildren($folderId);
+    } catch (RuntimeException $e) {
+        logError('sponsorBedingungenAnhang list: ' . $e->getMessage());
+        return [];
+    }
+    $result = [];
+    foreach ($files as $f) {
+        if ($f['isFolder'] || $f['id'] === '' || stripos($f['name'], 'bedingung') === false) {
+            continue;
+        }
+        try {
+            $bytes = driveDownload($f['id']);
+        } catch (RuntimeException $e) {
+            logError('sponsorBedingungenAnhang download: ' . $e->getMessage());
+            continue;
+        }
+        $tmp = tempnam(sys_get_temp_dir(), 'spbed_');
+        if ($tmp === false) {
+            continue;
+        }
+        file_put_contents($tmp, $bytes);
+        register_shutdown_function(static function () use ($tmp) {
+            @unlink($tmp);
+        });
+        $result[] = [
+            'path' => $tmp,
+            'name' => $f['name'],
+            'mime' => $f['mimeType'] !== '' ? $f['mimeType'] : 'application/pdf',
+        ];
+    }
+    return $result;
 }
 
 /**

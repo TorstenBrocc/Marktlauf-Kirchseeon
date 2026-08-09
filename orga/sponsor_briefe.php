@@ -172,6 +172,14 @@ if (!empty($briefSettings['sponsoring_pakete'])) {
                 <?php endforeach; ?>
             </div>
 
+            <?php if (in_array($slug, ['erstanschreiben', 'folgejahr', 'bestaetigung', 'bedingungen', 'rechnung'], true)): ?>
+            <div style="display:flex;align-items:center;gap:.55rem;margin-bottom:1rem;padding:.7rem .9rem;border:1px solid rgba(0,150,64,.35);border-radius:8px;background:rgba(0,150,64,.06);font-size:.92rem;">
+                <span style="font-size:1.1rem;">📎</span>
+                <span><strong>Sponsoring-Bedingungen.pdf</strong> wird dieser Mail automatisch angehängt (fest, nicht abwählbar) — die Datei kommt aus dem Drive-Ordner <em>Orga/Sponsoren/_assets Sponsoren</em>.
+                <a href="api/sponsor_bedingungen_download.php" target="_blank" rel="noopener" style="color:var(--primary-dark);">Vorlage herunterladen</a> und dort ablegen.</span>
+            </div>
+            <?php endif; ?>
+
             <form method="post" action="api/sponsor_brief_save.php" id="brief-form">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                 <input type="hidden" name="slug" value="<?= htmlspecialchars($slug) ?>">
