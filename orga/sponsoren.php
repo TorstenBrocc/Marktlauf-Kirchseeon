@@ -665,14 +665,7 @@ try {
                     <p class="versand-hint">Versand erfolgt über <strong>info@atsv-kirchseeon-marktlauf.de</strong></p>
                     <div id="bestaetigung-assets" hidden
                          style="width:100%;flex-basis:100%;margin-top:.5rem;padding:.6rem .8rem;border:1px solid #d9d9d9;border-radius:8px;background:rgba(0,150,64,.04);font-size:.9rem;">
-                        <div style="font-weight:600;margin-bottom:.35rem;">📎 Anhänge <span id="ba-status" style="font-weight:400;color:#666;"></span></div>
-                        <div id="bed-fixed" hidden style="margin-bottom:.35rem;">
-                            <label style="display:flex;align-items:center;gap:.4rem;opacity:.9;cursor:not-allowed;">
-                                <input type="checkbox" checked disabled title="immer dabei – nicht abwählbar">
-                                <span>📄 Sponsoring-Bedingungen.pdf</span>
-                                <span style="color:#666;font-size:.82rem;">— immer dabei, nicht abwählbar</span>
-                            </label>
-                        </div>
+                        <div style="font-weight:600;margin-bottom:.35rem;">📎 Anhänge der Bestätigung <span id="ba-status" style="font-weight:400;color:#666;"></span></div>
                         <div id="ba-list" style="display:flex;flex-direction:column;gap:.25rem;"></div>
                     </div>
                 </form>
@@ -1053,22 +1046,11 @@ try {
                 .catch(function() { baStatus.textContent = '⚠️ Ordner nicht lesbar'; baLoaded = false; });
         }
 
-        // Typen, die die Sponsoring-Bedingungen (fix, nicht abwählbar) anhängen.
-        const ATTACH_BEDINGUNGEN = ['erstanschreiben', 'folgejahr', 'bestaetigung', 'bedingungen'];
-        const bedFixed = document.getElementById('bed-fixed');
         function syncBaVisibility() {
             if (!baBox) return;
-            const typ = typSel ? typSel.value : '';
-            const showBed    = ATTACH_BEDINGUNGEN.indexOf(typ) !== -1;
-            const showAssets = (typ === 'bestaetigung');
-            if (bedFixed) bedFixed.hidden = !showBed;
-            baBox.hidden = !(showBed || showAssets);
-            if (showAssets) {
-                loadBestaetigungAssets();               // füllt #ba-list (abwählbar)
-            } else {
-                if (baList) baList.innerHTML = '';       // nur die fixe Bedingungen-Zeile bleibt
-                if (baStatus) baStatus.textContent = '';
-            }
+            const on = typSel && typSel.value === 'bestaetigung';
+            baBox.hidden = !on;
+            if (on) loadBestaetigungAssets();
         }
         if (typSel) { typSel.addEventListener('change', syncBaVisibility); syncBaVisibility(); }
 

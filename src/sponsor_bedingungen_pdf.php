@@ -1,12 +1,15 @@
 <?php
 
 /**
- * Sponsoring-Bedingungen als PDF-Anhang — EIN Dokument für Geld- und Sachsponsoring.
+ * Sponsoring-Bedingungen als PDF — EIN Dokument für Geld- und Sachsponsoring.
  *
- * Grundlage/Design: intern/rechtstexte-update-spec.md (③). Layout markenkonform aus
- * dem Rechnungs-PDF abgeleitet (Fonts Montserrat/Poppins, Grün, Kopf mit Wappen,
- * 3-Spalten-Fuß, Stammdaten aus rechnungStammdaten()). Jahr dynamisch.
- * Rechtlicher Hinweis: kein Ersatz für anwaltliche Prüfung (v. a. bei größeren Beträgen).
+ * Rolle (siehe intern/rechtstexte-update-spec.md §3): Dieser Renderer ERZEUGT nur die
+ * Vorlage (Download/Seed). Der Versand hängt die Bedingungen NICHT hier erzeugt an, sondern
+ * zieht die abgelegte Datei aus dem Drive-Ordner (Haus-Konvention — nur die Rechnung wird
+ * systemseitig generiert). Kein Jahres-Zwang: das Dokument ist bewusst generisch.
+ *
+ * Layout markenkonform aus dem Rechnungs-PDF (Fonts Montserrat/Poppins, Grün, Kopf mit Wappen,
+ * 3-Spalten-Fuß mit Marktlauf-Kontakt). Rechtlicher Hinweis: kein Ersatz für anwaltliche Prüfung.
  */
 
 declare(strict_types=1);
@@ -17,24 +20,22 @@ require_once __DIR__ . '/rechnung.php';
 class SponsorBedingungenPdf extends FPDF
 {
     private array $s;
-    private int $jahr;
 
-    private array $green1 = [0, 150, 64];    // #009640 Absenderzeile
-    private array $green2 = [0, 114, 48];    // #007230 h1
-    private array $ink    = [31, 42, 34];    // #1f2a22 Überschriften
-    private array $body   = [51, 65, 85];    // #334155 Fließtext
-    private array $label  = [100, 116, 139]; // #64748b Labels/Footer-Überschriften
-    private array $muted  = [148, 163, 184]; // #94a3b8 Subzeile/Footertext
-    private array $lnHead = [230, 232, 224]; // #e6e8e0 Trennlinien
+    private array $green1 = [0, 150, 64];    // #009640
+    private array $green2 = [0, 114, 48];    // #007230
+    private array $ink    = [31, 42, 34];    // #1f2a22
+    private array $body   = [51, 65, 85];    // #334155
+    private array $label  = [100, 116, 139]; // #64748b
+    private array $muted  = [148, 163, 184]; // #94a3b8
+    private array $lnHead = [230, 232, 224]; // #e6e8e0
 
     private float $L = 18.0;
     private float $R = 192.0;
 
-    public function __construct(int $jahr)
+    public function __construct()
     {
         parent::__construct('P', 'mm', 'A4');
-        $this->s    = rechnungStammdaten();
-        $this->jahr = $jahr;
+        $this->s = rechnungStammdaten();
         $this->SetAutoPageBreak(true, 30);
         $this->SetMargins(18, 14, 18);
         $this->AddFont('pop', '', 'Poppins-Light.php');
@@ -42,7 +43,7 @@ class SponsorBedingungenPdf extends FPDF
         $this->AddFont('popsb', '', 'Poppins-SemiBold.php');
         $this->AddFont('mont', '', 'Montserrat-SemiBold.php');
         $this->AddFont('montbd', '', 'Montserrat-Bold.php');
-        $this->SetTitle($this->t('Sponsoring-Bedingungen Marktlauf Kirchseeon ' . $jahr));
+        $this->SetTitle($this->t('Sponsoring-Bedingungen Marktlauf Kirchseeon'));
         $this->SetCreator($this->t('ATSV Kirchseeon Marktlauf'));
     }
 
@@ -67,7 +68,6 @@ class SponsorBedingungenPdf extends FPDF
 
     public function Header(): void {}
 
-    /** 3-Spalten-Fußzeile am unteren Satzspiegelrand — auf jeder Seite. */
     public function Footer(): void
     {
         $L = $this->L; $R = $this->R;
@@ -101,7 +101,6 @@ class SponsorBedingungenPdf extends FPDF
         }
     }
 
-    /** Abschnitt: Nummer+Titel, dann Fließtext. */
     private function section(string $titel, string $text): void
     {
         $this->Ln(3.5);
@@ -115,7 +114,6 @@ class SponsorBedingungenPdf extends FPDF
         $this->MultiCell($this->R - $this->L, 5.4, $this->t($text), 0, 'L');
     }
 
-    /** Eingerückter, beschrifteter Unterpunkt (für §3 Geld/Sach). */
     private function subPoint(string $label, string $text): void
     {
         $this->Ln(1.5);
@@ -133,9 +131,8 @@ class SponsorBedingungenPdf extends FPDF
     {
         $this->AddPage();
         $L = $this->L; $R = $this->R;
-        $jahr = $this->jahr;
 
-        // ===== Kopf (wie Rechnung) =====
+        // Kopf (wie Rechnung)
         $this->SetXY($L, 14);
         $this->SetFont('montbd', '', 8);
         $this->SetTextColor(...$this->green1);
@@ -150,7 +147,7 @@ class SponsorBedingungenPdf extends FPDF
         }
         $this->hline($L, $R, 34, $this->lnHead, 0.3);
 
-        // ===== Titel =====
+        // Titel
         $this->SetXY($L, 41);
         $this->SetFont('mont', '', 23);
         $this->SetTextColor(...$this->green2);
@@ -158,24 +155,23 @@ class SponsorBedingungenPdf extends FPDF
         $this->SetX($L);
         $this->SetFont('pop', '', 10.5);
         $this->SetTextColor(...$this->muted);
-        $this->Cell(0, 6, $this->t('Marktlauf Kirchseeon ' . $jahr . '  ·  gültig für Geld- und Sachsponsoring'), 0, 1, 'L');
+        $this->Cell(0, 6, $this->t('Marktlauf Kirchseeon  ·  gültig für Geld- und Sachsponsoring'), 0, 1, 'L');
 
-        // ===== Einleitung =====
+        // Einleitung
         $this->SetXY($L, 60);
         $this->SetFont('pop', '', 10.5);
         $this->SetTextColor(...$this->body);
         $this->MultiCell($R - $L, 5.4, $this->t(
             'Diese Bedingungen regeln die Zusammenarbeit zwischen dem ' . $this->s['verein'] . ' (Veranstalter) '
-            . 'und dem Sponsor des Marktlauf Kirchseeon ' . $jahr . '. Sie gelten für Geld- und Sachsponsoring; '
-            . 'die jeweils einschlägigen Absätze sind gekennzeichnet.'
+            . 'und dem Sponsor des Marktlauf Kirchseeon. Sie gelten für Geld- und Sachsponsoring; die jeweils '
+            . 'einschlägigen Absätze sind gekennzeichnet.'
         ), 0, 'L');
 
-        // ===== Abschnitte =====
         $this->section('§1  Gegenstand & Gegenleistung',
-            'Der Sponsor unterstützt den Marktlauf Kirchseeon ' . $jahr . ' mit dem in der Sponsoring-Bestätigung '
-            . 'bzw. Rechnung genannten Geldbetrag und/oder mit der dort genannten Sachleistung. Im Gegenzug erhält '
-            . 'er die zugesagte Sichtbarkeit gemäß gebuchtem Paket bzw. Vereinbarung für die Dauer der Vorbereitung '
-            . 'und Durchführung der Veranstaltung.');
+            'Der Sponsor unterstützt den Marktlauf Kirchseeon mit dem in der Sponsoring-Bestätigung bzw. Rechnung '
+            . 'genannten Geldbetrag und/oder mit der dort genannten Sachleistung. Im Gegenzug erhält er die '
+            . 'zugesagte Sichtbarkeit gemäß gebuchtem Paket bzw. Vereinbarung für die Dauer der Vorbereitung und '
+            . 'Durchführung der Veranstaltung.');
 
         $this->section('§2  Leistungszeitraum',
             'Die vereinbarte Sichtbarkeit wird überwiegend bereits im Vorfeld erbracht (u. a. Nennung/Logo auf der '
@@ -206,34 +202,10 @@ class SponsorBedingungenPdf extends FPDF
     }
 }
 
-/** PDF-Bytes der Sponsoring-Bedingungen (ein Dokument, Geld + Sach). */
-function sponsorBedingungenPdfBytes(int $jahr): string
+/** PDF-Bytes der Sponsoring-Bedingungen (Vorlage zum Download/Seed). */
+function sponsorBedingungenPdfBytes(): string
 {
-    $pdf = new SponsorBedingungenPdf($jahr);
+    $pdf = new SponsorBedingungenPdf();
     $pdf->render();
     return (string) $pdf->Output('S');
-}
-
-/**
- * Sponsoring-Bedingungen als pfadbasiertes Anhang-Array (Bytes -> Temp-Datei,
- * via Shutdown-Hook aufgeräumt — passt zum pfadbasierten SMTP-Mailer).
- * @return array<int,array{path:string,name:string,mime:string}>
- */
-function sponsorBedingungenAnhang(int $jahr): array
-{
-    $bytes = sponsorBedingungenPdfBytes($jahr);
-    $tmp   = tempnam(sys_get_temp_dir(), 'spbed_');
-    if ($tmp === false) {
-        logError('sponsorBedingungenAnhang: Temp-Datei fehlgeschlagen');
-        return [];
-    }
-    file_put_contents($tmp, $bytes);
-    register_shutdown_function(static function () use ($tmp) {
-        @unlink($tmp);
-    });
-    return [[
-        'path' => $tmp,
-        'name' => 'Sponsoring-Bedingungen.pdf',
-        'mime' => 'application/pdf',
-    ]];
 }
