@@ -592,33 +592,27 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
 
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="paket">Paket</label>
+                                <label for="paket">Sponsoring-Typ</label>
                                 <select id="paket" name="paket">
-                                    <option value="hauptsponsor" <?= ($sponsor['paket'] ?? '') === 'hauptsponsor' ? 'selected' : '' ?>>Hauptsponsor</option>
                                     <option value="gold" <?= ($sponsor['paket'] ?? '') === 'gold' ? 'selected' : '' ?>>Gold</option>
                                     <option value="silber" <?= ($sponsor['paket'] ?? '') === 'silber' ? 'selected' : '' ?>>Silber</option>
                                     <option value="bronze" <?= ($sponsor['paket'] ?? '') === 'bronze' ? 'selected' : '' ?>>Bronze</option>
-                                    <option value="" <?= ($sponsor['paket'] ?? '') === '' || ($sponsor['paket'] ?? null) === null ? 'selected' : '' ?>>– Kein Paket –</option>
+                                    <option value="hauptsponsor" <?= ($sponsor['paket'] ?? '') === 'hauptsponsor' ? 'selected' : '' ?>>Hauptsponsor</option>
+                                    <option value="sachsponsor" <?= ($sponsor['paket'] ?? '') === 'sachsponsor' ? 'selected' : '' ?>>Sachsponsor</option>
+                                    <option value="" <?= ($sponsor['paket'] ?? '') === '' || ($sponsor['paket'] ?? null) === null ? 'selected' : '' ?>>– noch offen –</option>
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label for="summe">Summe (€)</label>
-                                <input type="number" id="summe" name="summe" step="0.01" min="0"
+                                <label for="summe">Betrag (€)</label>
+                                <input type="number" id="summe" name="summe" step="1" min="0"
                                        value="<?= $sponsor['summe'] ?? '' ?>">
                             </div>
                         </div>
-
-                        <div class="form-group">
-                            <div class="checkbox-single">
-                                <input type="checkbox" id="sachsponsor" name="sachsponsor" value="1"
-                                       <?= ($sponsor['sachsponsor'] ?? 0) ? 'checked' : '' ?>>
-                                <label for="sachsponsor">Sachsponsoring (Sachspende statt Geld)</label>
-                            </div>
-                            <p style="font-size:0.85rem; color: var(--text-light); margin:0.2rem 0 0;">
-                                Bringt am Renntag Sachleistungen mit (kein Geld, keine Rechnung).
-                                Was mitgebracht wurde, ins Feld „Notizen“ schreiben.
-                            </p>
-                        </div>
+                        <p style="font-size:0.85rem; color: var(--text-light); margin:0.2rem 0 0.5rem;">
+                            Gold/Silber/Bronze setzen den <strong>Betrag</strong> automatisch aus dem Pakettarif
+                            (überschreibbar). <strong>Hauptsponsor</strong>: Betrag individuell eintragen.
+                            <strong>Sachsponsor</strong>: kein Geld, keine Rechnung — was mitgebracht wird, ins Feld „Notizen“.
+                        </p>
 
                         <div class="form-row">
                             <div class="form-group">
@@ -1099,6 +1093,29 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
         overlay.addEventListener('click', closeSidebar);
         sidebar.querySelectorAll('.nav-item a').forEach(function(link) {
             link.addEventListener('click', closeSidebar);
+        });
+    })();
+
+    // Betrag folgt dem Sponsoring-Typ: Gold/Silber/Bronze aus dem Pakettarif vorbefüllen,
+    // Hauptsponsor (individuell) / Sachsponsor (kein Geld) / offen -> Betrag leeren.
+    (function() {
+        const TYP_BETRAG = <?php
+            $typBetrag = [];
+            foreach (['gold', 'silber', 'bronze'] as $pk) {
+                $b = paketBetrag($rechnungPakete[$pk]['investition'] ?? null);
+                if ($b !== null && $b > 0) { $typBetrag[$pk] = (int) $b; }
+            }
+            echo json_encode($typBetrag, JSON_UNESCAPED_UNICODE);
+        ?>;
+        const sel = document.getElementById('paket');
+        const betrag = document.getElementById('summe');
+        if (!sel || !betrag) return;
+        sel.addEventListener('change', function() {
+            if (Object.prototype.hasOwnProperty.call(TYP_BETRAG, sel.value)) {
+                betrag.value = TYP_BETRAG[sel.value];
+            } else {
+                betrag.value = '';
+            }
         });
     })();
     </script>

@@ -92,9 +92,7 @@ if ($filterStatus !== '' && sponsorStatusValid($filterStatus)) {
     $where[] = "status != 'abgelehnt'";
 }
 
-if ($filterPaket === 'sach') {
-    $where[] = 'sachsponsor = 1';
-} elseif ($filterPaket !== '' && in_array($filterPaket, ['hauptsponsor', 'gold', 'silber', 'bronze'], true)) {
+if ($filterPaket !== '' && in_array($filterPaket, ['hauptsponsor', 'gold', 'silber', 'bronze', 'sachsponsor'], true)) {
     $where[] = 'paket = :paket';
     $params['paket'] = $filterPaket;
 }
@@ -473,6 +471,7 @@ try {
         .paket-gold { background: #ffd700; color: #333; }
         .paket-silber { background: #c0c0c0; color: #333; }
         .paket-bronze { background: #cd7f32; color: white; }
+        .paket-sachsponsor { background: #6b7280; color: white; }
         /* Inline-Dropdowns (Paket/Status direkt in der Tabelle ändern) */
         .inline-select {
             padding: 0.25rem 0.4rem;
@@ -490,6 +489,7 @@ try {
         .paket-select.paket-gold { background: #ffd700; color: #333; border-color: #e6c200; }
         .paket-select.paket-silber { background: #c0c0c0; color: #333; border-color: #a8a8a8; }
         .paket-select.paket-bronze { background: #cd7f32; color: white; border: none; }
+        .paket-select.paket-sachsponsor { background: #6b7280; color: white; border: none; }
         .paket-select.paket-none { color: var(--text-light); }
         /* Status-Dropdown: farbiger Rand nach Ampel */
         .status-select { border-left-width: 4px; }
@@ -690,7 +690,7 @@ try {
                             <option value="gold" <?= $filterPaket === 'gold' ? 'selected' : '' ?>>Gold</option>
                             <option value="silber" <?= $filterPaket === 'silber' ? 'selected' : '' ?>>Silber</option>
                             <option value="bronze" <?= $filterPaket === 'bronze' ? 'selected' : '' ?>>Bronze</option>
-                            <option value="sach" <?= $filterPaket === 'sach' ? 'selected' : '' ?>>Sachsponsor</option>
+                            <option value="sachsponsor" <?= $filterPaket === 'sachsponsor' ? 'selected' : '' ?>>Sachsponsor</option>
                         </select>
                     </div>
                     <?php if ($hasZustaendig): ?>
@@ -811,7 +811,7 @@ try {
                                         <?php if ($s['kein_kontakt']): ?>
                                             <span class="kein-kontakt-badge">Kein Kontakt</span>
                                         <?php endif; ?>
-                                        <?php if (!empty($s['sachsponsor'])): ?>
+                                        <?php if (($s['paket'] ?? '') === 'sachsponsor'): ?>
                                             <span class="sach-badge" title="Sachspende statt Geld">Sach</span>
                                         <?php endif; ?>
                                         <?php if (!empty($s['ort'])): ?>
@@ -864,7 +864,7 @@ try {
                                         <select class="inline-select paket-select paket-<?= $s['paket'] ?: 'none' ?>"
                                                 data-id="<?= $s['id'] ?>" data-field="paket" title="Paket ändern">
                                             <option value="" <?= !$s['paket'] ? 'selected' : '' ?>>–</option>
-                                            <?php foreach (['hauptsponsor' => 'Hauptsponsor', 'gold' => 'Gold', 'silber' => 'Silber', 'bronze' => 'Bronze'] as $pk => $pl): ?>
+                                            <?php foreach (['hauptsponsor' => 'Hauptsponsor', 'gold' => 'Gold', 'silber' => 'Silber', 'bronze' => 'Bronze', 'sachsponsor' => 'Sachsponsor'] as $pk => $pl): ?>
                                                 <option value="<?= $pk ?>" <?= $s['paket'] === $pk ? 'selected' : '' ?>><?= $pl ?></option>
                                             <?php endforeach; ?>
                                         </select>
