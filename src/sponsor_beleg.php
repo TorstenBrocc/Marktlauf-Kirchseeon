@@ -28,7 +28,7 @@ function archiveSponsorBestaetigung(PDO $pdo, int $sponsorId, int $userId = 0): 
         throw new RuntimeException('Google Drive ist nicht konfiguriert — Ablage nicht möglich.');
     }
 
-    $s = $pdo->prepare('SELECT firma, paket, sachsponsor FROM sponsors WHERE id = :id');
+    $s = $pdo->prepare('SELECT firma, paket FROM sponsors WHERE id = :id');
     $s->execute(['id' => $sponsorId]);
     $sp = $s->fetch();
     if (!$sp) {
@@ -47,7 +47,7 @@ function archiveSponsorBestaetigung(PDO $pdo, int $sponsorId, int $userId = 0): 
     if ($userId === 0) {
         $userId = (int) ($_SESSION['user_id'] ?? 0);
     }
-    $paket = !empty($sp['sachsponsor']) ? 'sachsponsor' : (string) ($sp['paket'] ?? '');
+    $paket = (string) ($sp['paket'] ?? '');
 
     $vorlage  = sponsorBriefLoad($pdo, 'bestaetigung', $userId);
     $ctx      = sponsorBriefContext($pdo, $userId, (string) $k['anrede'], (string) $k['vorname'], (string) $k['nachname'], $firma, $paket);

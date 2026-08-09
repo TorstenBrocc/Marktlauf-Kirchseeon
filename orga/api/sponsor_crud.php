@@ -161,7 +161,7 @@ if (($_POST['action'] ?? '') === 'inline_update') {
         }
 
         if ($field === 'paket') {
-            $paket = in_array($value, ['hauptsponsor', 'gold', 'silber', 'bronze'], true) ? $value : null;
+            $paket = in_array($value, ['hauptsponsor', 'gold', 'silber', 'bronze', 'sachsponsor'], true) ? $value : null;
             $pdo->prepare('UPDATE sponsors SET paket = :v WHERE id = :id')
                 ->execute(['v' => $paket, 'id' => $sponsorId]);
             echo json_encode(['ok' => true, 'paket' => $paket]);
@@ -293,13 +293,12 @@ try {
             $gruppeId = sponsorGruppeIdFromPost($pdo, $_POST['gruppe_name'] ?? '');
 
             $stmt = $pdo->prepare('
-                INSERT INTO sponsors (firma, paket, sachsponsor, prioritaet, ort, summe, status, kein_kontakt, kein_kontakt_grund, kein_kontakt_wer, kein_kontakt_datum, notizen, wiedervorlage, gruppe_id, rechnung_firma, rechnung_strasse, rechnung_plz, rechnung_ort, rechnung_email, rechnung_leistung, leistung_zeitraum, rechnung_betrag_brutto, branche, foerderprogramm, kontaktweg, website, quellenurl)
-                VALUES (:firma, :paket, :sachsponsor, :prioritaet, :ort, :summe, :status, :kein_kontakt, :kein_kontakt_grund, :kein_kontakt_wer, :kein_kontakt_datum, :notizen, :wiedervorlage, :gruppe_id, :rechnung_firma, :rechnung_strasse, :rechnung_plz, :rechnung_ort, :rechnung_email, :rechnung_leistung, :leistung_zeitraum, :rechnung_betrag_brutto, :branche, :foerderprogramm, :kontaktweg, :website, :quellenurl)
+                INSERT INTO sponsors (firma, paket, prioritaet, ort, summe, status, kein_kontakt, kein_kontakt_grund, kein_kontakt_wer, kein_kontakt_datum, notizen, wiedervorlage, gruppe_id, rechnung_firma, rechnung_strasse, rechnung_plz, rechnung_ort, rechnung_email, rechnung_leistung, leistung_zeitraum, rechnung_betrag_brutto, branche, foerderprogramm, kontaktweg, website, quellenurl)
+                VALUES (:firma, :paket, :prioritaet, :ort, :summe, :status, :kein_kontakt, :kein_kontakt_grund, :kein_kontakt_wer, :kein_kontakt_datum, :notizen, :wiedervorlage, :gruppe_id, :rechnung_firma, :rechnung_strasse, :rechnung_plz, :rechnung_ort, :rechnung_email, :rechnung_leistung, :leistung_zeitraum, :rechnung_betrag_brutto, :branche, :foerderprogramm, :kontaktweg, :website, :quellenurl)
             ');
             $stmt->execute([
                 'firma'              => $firma,
                 'paket'              => $_POST['paket'] ?: null,
-                'sachsponsor'        => isset($_POST['sachsponsor']) ? 1 : 0,
                 'prioritaet'         => sponsorPrioritaetFromPost($_POST['prioritaet'] ?? ''),
                 'ort'                => trim($_POST['ort'] ?? '') ?: null,
                 'summe'              => (float) ($_POST['summe'] ?? 0) ?: null,
@@ -394,7 +393,6 @@ try {
                 UPDATE sponsors SET
                     firma = :firma,
                     paket = :paket,
-                    sachsponsor = :sachsponsor,
                     prioritaet = :prioritaet,
                     ort = :ort,
                     summe = :summe,
@@ -424,7 +422,6 @@ try {
             $stmt->execute([
                 'firma'              => $firma,
                 'paket'              => $_POST['paket'] ?: null,
-                'sachsponsor'        => isset($_POST['sachsponsor']) ? 1 : 0,
                 'prioritaet'         => sponsorPrioritaetFromPost($_POST['prioritaet'] ?? ''),
                 'ort'                => trim($_POST['ort'] ?? '') ?: null,
                 'summe'              => (float) ($_POST['summe'] ?? 0) ?: null,
