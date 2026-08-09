@@ -33,7 +33,7 @@ if (!verifyCsrfToken($csrfToken)) {
 $user = getCurrentUserFromGuard();
 
 $typ = $_POST['anschreiben_typ'] ?? 'erstanschreiben';
-if (!in_array($typ, ['erstanschreiben', 'folgejahr', 'frei', 'bestaetigung'], true)) {
+if (!in_array($typ, ['erstanschreiben', 'folgejahr', 'frei', 'bestaetigung', 'bedingungen'], true)) {
     $typ = 'erstanschreiben';
 }
 

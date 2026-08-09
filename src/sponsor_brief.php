@@ -38,7 +38,7 @@ function sponsorFormatDatum(string $ymd, string $fallback): string {
 
 /** Gültige Vorlagen-Slugs (= Anschreiben-Typen). */
 function sponsorBriefSlugs(): array {
-    return ['erstanschreiben', 'folgejahr', 'frei', 'bestaetigung', 'rechnung'];
+    return ['erstanschreiben', 'folgejahr', 'frei', 'bestaetigung', 'rechnung', 'bedingungen'];
 }
 
 function sponsorBriefSlugValid(string $slug): bool {
@@ -67,6 +67,8 @@ Gerade als lokales Unternehmen sind Sie hier mittendrin statt nur dabei: Ihre Ku
 
 Sachsponsoring (z. B. Verpflegung, Preise für die Siegerehrung) und individuelle Absprachen sind ebenfalls jederzeit möglich – einfach kurz melden.
 
+Grundlage einer möglichen Zusammenarbeit sind unsere beiliegenden Sponsoring-Bedingungen (Anhang).
+
 **Rückmeldung erbeten bis zum {{antwort_bis}}** – so stellen wir sicher, dass Sie auf allen Druckmaterialien (Startnummern, Shirts) optimal platziert sind.
 
 Ich freue mich auf Ihre Rückmeldung und darauf, Sie am 20. September persönlich begrüßen zu dürfen.
@@ -93,6 +95,8 @@ Gerade als lokales Unternehmen sind Sie hier mittendrin statt nur dabei: Ihre Ku
 
 Sachsponsoring (z. B. Verpflegung, Preise für die Siegerehrung) und individuelle Absprachen sind ebenfalls jederzeit möglich – einfach kurz melden.
 
+Grundlage einer möglichen Zusammenarbeit sind unsere beiliegenden Sponsoring-Bedingungen (Anhang).
+
 **Rückmeldung erbeten bis zum {{antwort_bis}}** – so stellen wir sicher, dass Sie auf allen Druckmaterialien (Startnummern, Shirts) optimal platziert sind.
 
 Ich freue mich auf Ihre Rückmeldung und darauf, Sie am 20. September persönlich begrüßen zu dürfen.
@@ -117,8 +121,22 @@ vielen Dank für Ihre Unterstützung des Marktlaufs Kirchseeon. Anbei erhalten S
 
 Über einen Ausgleich auf die auf der Rechnung genannte Bankverbindung innerhalb von 14 Tagen freuen wir uns.
 
+Es gelten unsere beiliegenden Sponsoring-Bedingungen; mit Begleichung der Rechnung gelten diese als vereinbart.
+
 Mit sportlichen Grüßen
 ATSV Kirchseeon e.V. – Abteilung Marktlauf
+MD;
+
+    $bedingungen = <<<MD
+{{anrede}}
+
+vielen Dank für Ihre Unterstützung des Marktlaufs Kirchseeon! Wir haben unsere Sponsoring-Bedingungen formalisiert – Sie finden sie im Anhang.
+
+Bitte bestätigen Sie uns kurz per Antwort auf diese E-Mail, dass Sie mit den beiliegenden Bedingungen einverstanden sind.
+
+Vielen Dank und herzliche Grüße
+
+{{signatur}}
 MD;
 
     return [
@@ -141,6 +159,11 @@ MD;
             'name'       => 'Rechnungs-Begleitmail',
             'betreff'    => 'Ihre Sponsoring-Rechnung – Marktlauf Kirchseeon',
             'koerper_md' => $rechnung,
+        ],
+        'bedingungen' => [
+            'name'       => 'Sponsoring-Bedingungen nachreichen',
+            'betreff'    => 'Unsere Sponsoring-Bedingungen – Marktlauf Kirchseeon, {{firma}}',
+            'koerper_md' => $bedingungen,
         ],
         'bestaetigung' => [
             'name'       => 'Bestätigung Sponsoring',
@@ -197,6 +220,8 @@ Damit wir Ihnen die Rechnung korrekt ausstellen können, benötigen wir Ihre vol
 Sollte Ihnen etwas fehlen oder Sie noch Fragen haben, kommen Sie jederzeit gerne auf mich zu.
 
 Vielen Dank für Ihre Unterstützung und Ihr Vertrauen – gemeinsam machen wir den Marktlauf Kirchseeon zu einem unvergesslichen Erlebnis!
+
+Grundlage unserer Zusammenarbeit sind die beiliegenden Sponsoring-Bedingungen. Bitte geben Sie uns dazu eine kurze positive Rückmeldung – damit gelten sie als vereinbart.
 
 Herzliche Grüße
 
