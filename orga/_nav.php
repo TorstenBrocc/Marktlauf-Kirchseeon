@@ -153,6 +153,12 @@ return [
         },
     ],
     [
+        'key'     => 'leistungen',
+        'label'   => 'Leistungen',
+        'section' => 'SPONSOREN-HANDLING',
+        'href'    => 'leistungen.php',
+    ],
+    [
         'key'     => 'vereine',
         'label'   => 'Vereine & Laufevents',
         'section' => 'VEREINE & LAUFEVENTS',
