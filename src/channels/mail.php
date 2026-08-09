@@ -270,6 +270,13 @@ function sendSponsorAnschreiben(
     if ($typ === 'bestaetigung') {
         $attachments = array_merge($attachments, bestaetigungAssetsAnhang($pdo, $excludeAssetFids));
     }
+    // Sponsoring-Bedingungen (ein Dokument, Geld + Sach) als PDF anhängen: an
+    // Erstansprache/Folgejahr (bei Vertragsschluss präsent), Bestätigung und die reine
+    // Nachreich-Mail (Altfälle). Vom freien Brief bewusst ausgenommen. Nicht abwählbar.
+    if (in_array($typ, ['erstanschreiben', 'folgejahr', 'bestaetigung', 'bedingungen'], true)) {
+        require_once __DIR__ . '/../sponsor_bedingungen_pdf.php';
+        $attachments = array_merge($attachments, sponsorBedingungenAnhang(driveRennJahr($pdo)));
+    }
     return sendMail($to, $subject, $textBody, $htmlBody, $attachments);
 }
 

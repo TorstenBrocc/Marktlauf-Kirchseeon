@@ -114,6 +114,14 @@ $attachments = [[
     'name' => 'Rechnung_' . $nummer . '.pdf',
     'mime' => 'application/pdf',
 ]];
+// --- ALTFALL-RETROFIT (2026) — nach den 4 Bestandssponsoren rückbaubar ---
+// Bedingungen an die Rechnung + Klausel „mit Begleichung als vereinbart" (rechnung-Vorlage),
+// weil diese Sponsoren ihre Bestätigung noch OHNE Bedingungen erhalten haben. Für Neu-Sponsoren
+// gehen die Bedingungen ohnehin bei Erstanschreiben/Bestätigung mit. Rückbau: diesen Block +
+// die Klausel in sponsorBriefDefaults()['rechnung'] + den Hinweis in orga/rechnungen.php entfernen.
+require_once __DIR__ . '/../../src/sponsor_bedingungen_pdf.php';
+$attachments = array_merge($attachments, sponsorBedingungenAnhang(driveRennJahr($pdo)));
+// --- Ende Altfall-Retrofit ---
 $kassier = rechnungStammdaten()['kassier_email'];
 
 $ok = false;
