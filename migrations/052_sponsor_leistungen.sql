@@ -5,8 +5,8 @@
 -- freitext: Banner-/Startertüten-Text bzw. RaceResult-Gutscheincode bei Startplätzen.
 
 CREATE TABLE sponsor_leistungen (
-  id          INT AUTO_INCREMENT PRIMARY KEY,
-  sponsor_id  INT NOT NULL,
+  id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  sponsor_id  INT UNSIGNED NOT NULL,
   position    VARCHAR(40) NOT NULL,
   vereinbart  TINYINT(1) NOT NULL DEFAULT 1,
   freitext    TEXT NULL,
