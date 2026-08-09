@@ -87,10 +87,11 @@
   "footer.legal_title": "Rechtliches",
   "footer.legal.impressum": "Impressum",
   "footer.legal.privacy": "Datenschutzerklärung",
+  "footer.legal.terms": "Teilnahmebedingungen",
   "footer.realized_by": "Konzeption und Realisierung: <a href=\"/humans.txt\" rel=\"author\" class=\"footer-credits-link\">Torsten Tyras</a>",
   "footer.copyright": "© 2026 ATS Kirchseeon e.V. | Alle Rechte vorbehalten.",
   "legal.imprint_title": "Impressum und Datenschutz",
-  "legal.tmg_title": "Angaben gem. §5 TMG:",
+  "legal.tmg_title": "Angaben gem. §5 DDG:",
   "legal.address": "Allgemeiner Turn- und Sportverein Kirchseeon e.V., Sportplatzweg 7, 85614 Kirchseeon​",
   "legal.representation": "Vertretungsberechtigt:",
   "legal.representatives": "Stefan Reinhart – 1. Vorstand\nMatthias Gramüller – 2. Vorstand",
@@ -196,7 +197,7 @@
   "faq.q6": "Bekomme ich eine Urkunde?",
   "faq.a6": "Urkunden sind voraussichtlich nach dem Lauf zum Download verfügbar bzw. werden per E-Mail zugeschickt.",
   "faq.q7": "Was passiert bei schlechtem Wetter?",
-  "faq.a7": "Der Marktlauf findet bei nahezu jedem Wetter statt. Kurzfristige Änderungen kommunizieren wir über diese Homepage, unsere Social-Media-Kanäle und – für alle, die sich mit E-Mail-Adresse registriert haben – per Benachrichtigung über RaceResult.",
+  "faq.a7": "Der Marktlauf findet bei nahezu jedem Wetter statt. Kurzfristige Änderungen kommunizieren wir über diese Homepage, unsere Social-Media-Kanäle und – für alle, die sich mit E-Mail-Adresse registriert haben – per Benachrichtigung über RaceResult. Die verbindlichen Regelungen zu Absage und höherer Gewalt stehen in den <a href='teilnahmebedingungen.html'>Teilnahmebedingungen</a>.",
   "faq.q8": "Kann ich meine Anmeldung übertragen oder ändern?",
   "faq.a8": "Du möchtest deinen Startplatz übertragen oder deine Anmeldung ändern? Melde dich bitte über unser <a href=\"#connect\">Kontaktformular</a> auf unserer Website bei uns."
 }
