@@ -146,16 +146,17 @@ function paketLeistung(array $paketDef, string $zeitraum): string
 /**
  * Netto/USt/Brutto für einen Sponsor. Der Betrag kommt immer aus dem gebuchten Paket und ist
  * netto — außer der Sponsor hat den Brutto-Haken gesetzt ($istBrutto), dann wird die USt aus dem
- * Paketpreis herausgerechnet. Wirft InvalidArgumentException, wenn kein Paketpreis ermittelbar ist.
+ * Paketpreis herausgerechnet. Wirft InvalidArgumentException, wenn kein Betrag hinterlegt ist.
  */
 function rechnungBetraegeFuerSponsor(array $sponsor, array $paketDef, ?float $ustSatz = null, bool $istBrutto = false): array
 {
     $satz = $ustSatz ?? rechnungStammdaten()['ust_satz'];
 
-    // Betrag kommt immer aus dem gebuchten Paket (netto), sofern kein Pro-Sponsor-Brutto-Haken.
-    $preis = paketBetrag($paketDef['investition'] ?? null);
-    if ($preis === null || $preis <= 0) {
-        throw new InvalidArgumentException('Betrag (Paket ohne Festpreis — bitte den Paketpreis in den Einstellungen setzen)');
+    // Betrag kommt aus dem Betrag-Feld des Sponsors (summe) — typgesteuert vorbefüllt
+    // (Gold/Silber/Bronze aus Pakettarif, Hauptsponsor individuell). netto, sofern kein Brutto-Haken.
+    $preis = (float) ($sponsor['summe'] ?? 0);
+    if ($preis <= 0) {
+        throw new InvalidArgumentException('Betrag (kein Betrag am Sponsor hinterlegt)');
     }
     return rechnungBetraegeAusBetrag($preis, $istBrutto, $satz);
 }
