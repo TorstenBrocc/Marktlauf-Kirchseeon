@@ -18,6 +18,7 @@ const SPONSOR_STATUS = [
     'angefragt'   => ['label' => 'Angeschrieben', 'ampel' => 'blau'],
     'in_klaerung' => ['label' => 'In Klärung',    'ampel' => 'gelb'],
     'zugesagt'    => ['label' => 'Zugesagt',      'ampel' => 'gruen'],
+    'bestaetigt'  => ['label' => 'Bestätigt',     'ampel' => 'gruen'],
     'abgerechnet' => ['label' => 'Abgerechnet',   'ampel' => 'gruen'],
     'bezahlt'     => ['label' => 'Bezahlt',       'ampel' => 'gruen'],
     'abgelehnt'   => ['label' => 'Abgelehnt',     'ampel' => 'rot'],

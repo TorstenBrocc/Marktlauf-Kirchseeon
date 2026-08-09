@@ -111,7 +111,7 @@ return [
         'href'    => 'sponsoren.php',
         'kpi'   => static function (PDO $pdo): array {
             $anzahl = (int) $pdo->query('SELECT COUNT(*) FROM sponsors')->fetchColumn();
-            $summe  = (float) $pdo->query("SELECT COALESCE(SUM(summe), 0) FROM sponsors WHERE status IN ('zugesagt', 'bezahlt')")->fetchColumn();
+            $summe  = (float) $pdo->query("SELECT COALESCE(SUM(summe), 0) FROM sponsors WHERE status IN ('zugesagt', 'bestaetigt', 'bezahlt')")->fetchColumn();
             return [
                 'value'  => (string) $anzahl,
                 'label'  => 'Sponsoren' . ($summe > 0 ? ' · ' . number_format($summe, 0, ',', '.') . ' € zugesagt' : ''),

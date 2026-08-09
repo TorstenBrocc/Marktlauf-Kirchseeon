@@ -147,7 +147,7 @@ try {
 $countStmt = $pdo->query('SELECT COUNT(*) FROM sponsors');
 $totalCount = (int) $countStmt->fetchColumn();
 
-$summeStmt = $pdo->query('SELECT SUM(summe) FROM sponsors WHERE status IN ("zugesagt", "bezahlt")');
+$summeStmt = $pdo->query('SELECT SUM(summe) FROM sponsors WHERE status IN ("zugesagt", "bestaetigt", "bezahlt")');
 $gesamtSumme = (float) $summeStmt->fetchColumn();
 
 $merkfeld = '';
