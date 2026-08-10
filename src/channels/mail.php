@@ -9,6 +9,7 @@ require_once __DIR__ . '/../db.php';
 require_once __DIR__ . '/../mailer.php';
 require_once __DIR__ . '/../logger.php';
 require_once __DIR__ . '/../sponsor_brief.php';
+require_once __DIR__ . '/../sponsor_anhaenge.php';
 require_once __DIR__ . '/../verein_brief.php';
 require_once __DIR__ . '/../google_drive.php';
 
@@ -260,23 +261,24 @@ function sendSponsorAnschreiben(
     $subject     = sponsorBriefBetreff($vorlage['betreff'], $ctx);
     $htmlBody    = sponsorBriefRenderHtml($vorlage['koerper_md'], $ctx);
     $textBody    = sponsorBriefRenderText($vorlage['koerper_md'], $ctx);
-    // Freier Brief + Bestätigung: aktuelle Plakate anhängen (Abschnitt „Plakate anbei").
-    // Zusätzlich hängt die Bestätigung den designierten Bestätigungs-Anhang-Ordner an
-    // (Absperrgitter-Bemaßungen etc.) — mit stateless Opt-out über $excludeAssetFids.
-    // Plakat-Abwahl greift nur bei der Bestätigung; der freie Brief hängt weiterhin alle an.
+    // Welche Anhänge an welche Vorlage gehören, steht NICHT mehr hier, sondern zentral in
+    // sponsorAnhangPlan() — dieselbe Quelle, aus der die Anhang-Kachel auf der Versandseite
+    // ihre Liste zeichnet. Damit kann die Kachel nichts anderes behaupten als hier passiert.
+    // Die Sponsoring-Bedingungen sind Haus-Konvention: das Dokument liegt im Drive-Ordner
+    // (vom Team gepflegt), das System hängt es an, es wird nicht systemseitig erzeugt.
+    // Abwahl (Opt-out je Datei) greift nur bei der Bestätigung und nur für 'fest' => false.
     $attachments = [];
-    if (in_array($typ, ['frei', 'bestaetigung'], true)) {
-        $attachments = plakateAnhang($pdo, $typ === 'bestaetigung' ? $excludePlakatFids : []);
-    }
-    if ($typ === 'bestaetigung') {
-        $attachments = array_merge($attachments, bestaetigungAssetsAnhang($pdo, $excludeAssetFids));
-    }
-    // Sponsoring-Bedingungen aus dem Drive-Ordner „_assets Sponsoren" anhängen — Haus-Konvention:
-    // Das Dokument liegt im Ordner (vom Team gepflegt), das System hängt es an; es wird NICHT
-    // systemseitig erzeugt. Greift bei Erstansprache/Folgejahr/Bestätigung/Nachreich-Mail; vom
-    // freien Brief bewusst ausgenommen. Nicht abwählbar.
-    if (in_array($typ, ['erstanschreiben', 'folgejahr', 'bestaetigung', 'bedingungen'], true)) {
-        $attachments = array_merge($attachments, sponsorBedingungenAnhang($pdo));
+    foreach (sponsorAnhangPlan($typ) as $gruppe) {
+        $exclude = [];
+        if (!$gruppe['fest'] && $typ === 'bestaetigung') {
+            $exclude = $gruppe['id'] === 'asset' ? $excludeAssetFids : $excludePlakatFids;
+        }
+        $attachments = array_merge($attachments, match ($gruppe['quelle']) {
+            'plakate'             => plakateAnhang($pdo, $exclude),
+            'bestaetigung_assets' => bestaetigungAssetsAnhang($pdo, $exclude),
+            'bedingungen'         => sponsorBedingungenAnhang($pdo),
+            default               => [],
+        });
     }
     return sendMail($to, $subject, $textBody, $htmlBody, $attachments);
 }

@@ -16,8 +16,8 @@ $csrfToken = generateCsrfToken();
 $flashSuccess = $_SESSION['flash_success'] ?? '';
 $flashError = $_SESSION['flash_error'] ?? '';
 $importReport = $_SESSION['import_report'] ?? [];
-// Reset-Signal: nach erfolgreichem Bestätigungs-Versand setzt der Browser die Anhang-Abwahl zurück.
-$bestaetigungVersandDone = !empty($_SESSION['bestaetigung_versand_done']);
+// Das Reset-Signal der Anhang-Abwahl wertet jetzt die Bestätigungsseite aus (dort steht
+// die Anhang-Kachel); hier wird es nur noch mit aufgeräumt, falls es liegen geblieben ist.
 unset($_SESSION['flash_success'], $_SESSION['flash_error'], $_SESSION['import_report'], $_SESSION['bestaetigung_versand_done']);
 
 $filterStatus = $_GET['status'] ?? '';
@@ -71,7 +71,7 @@ try {
     // ignore
 }
 
-$colCount = 10;
+$colCount = 9;
 if ($hasZustaendig) {
     $colCount++;
 }
@@ -370,7 +370,7 @@ try {
         .ampel-gelb  .ampel-dot { background: #f4b400; }
         .ampel-gruen .ampel-dot { background: var(--primary); }
         .ampel-rot   .ampel-dot { background: var(--error); }
-        /* Kompakte Aktionsleiste (Import/Export + Versand in einer Zeile) */
+        /* Kompakte Aktionsleiste (Import/Export + Absprünge in die Anschreiben) */
         .action-bar {
             display: flex;
             flex-wrap: wrap;
@@ -401,20 +401,9 @@ try {
             font-size: 0.8rem;
             font-weight: 600;
         }
-        /* Hinweis unter den Versand-Controls: eigene volle Zeile (flex-basis 100%) */
-        .versand-hint {
-            flex-basis: 100%;
-            margin: 0.15rem 0 0;
-            font-size: 0.8rem;
-            color: var(--text-light);
-        }
         .action-bar select {
             padding: 0.3rem 0.4rem;
             font-size: 0.8rem;
-        }
-        .versand-count {
-            font-size: 0.78rem;
-            color: var(--text-light);
         }
         .import-report {
             font-size: 0.8rem;
@@ -447,7 +436,6 @@ try {
         .notiz-form.dirty .notiz-save {
             display: inline-block;
         }
-        .col-check { width: 32px; text-align: center; }
         .prio-badge {
             display: inline-block;
             font-size: 0.6rem;
@@ -649,26 +637,13 @@ try {
                     vCard-Export<?= ($filterStatus || $filterPaket) ? ' (gefiltert)' : '' ?>
                 </a>
                 <div class="action-bar-sep"></div>
-                <form id="versand-form" method="post" action="api/sponsor_versand.php"
-                      onsubmit="return confirmVersand();" style="display:contents;">
-                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                    <label for="anschreiben_typ">Anschreiben:</label>
-                    <select id="anschreiben_typ" name="anschreiben_typ">
-                        <option value="erstanschreiben">Erstanschreiben</option>
-                        <option value="folgejahr">Folgejahr / Bestandssponsor</option>
-                        <option value="bestaetigung">Bestätigung Sponsoring</option>
-                        <option value="bedingungen">Bedingungen nachreichen (Altfälle)</option>
-                        <option value="frei">Freier Brief</option>
-                    </select>
-                    <button type="submit" class="btn btn-small btn-primary">Ausgewählte anschreiben</button>
-                    <span class="versand-count" id="versand-count">0 ausgewählt</span>
-                    <p class="versand-hint">Versand erfolgt über <strong>info@atsv-kirchseeon-marktlauf.de</strong></p>
-                    <div id="bestaetigung-assets" hidden
-                         style="width:100%;flex-basis:100%;margin-top:.5rem;padding:.6rem .8rem;border:1px solid #d9d9d9;border-radius:8px;background:rgba(0,150,64,.04);font-size:.9rem;">
-                        <div style="font-weight:600;margin-bottom:.35rem;">📎 Anhänge der Bestätigung <span id="ba-status" style="font-weight:400;color:#666;"></span></div>
-                        <div id="ba-list" style="display:flex;flex-direction:column;gap:.25rem;"></div>
-                    </div>
-                </form>
+                <!-- Anschreiben werden nicht mehr von hier verschickt: jede Vorlage hat ihre
+                     eigene Seite (Empfänger + Brief + Anhänge + Versand an einem Ort).
+                     Diese Liste ist wieder reine Stammdatenpflege.
+                     Spec: intern/sponsoren-anschreiben-seiten-spec.md -->
+                <a href="erstanschreiben.php" class="btn btn-small btn-secondary">Erstanschreiben →</a>
+                <a href="folgeanschreiben.php" class="btn btn-small btn-secondary">Folgeanschreiben →</a>
+                <a href="bestaetigungen.php" class="btn btn-small btn-secondary">Bestätigung →</a>
             </div>
 
             <div class="filter-merk-row">
@@ -751,7 +726,6 @@ try {
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th class="col-check"><input type="checkbox" id="check-all" title="Alle auswählen"></th>
                             <th>Firma</th>
                             <th>Ansprechpartner</th>
                             <th>Branche</th>
@@ -794,11 +768,6 @@ try {
                                 }
                                 ?>
                                 <tr class="<?= $rowClass ?>">
-                                    <td class="col-check">
-                                        <?php if (!$s['kein_kontakt']): ?>
-                                            <input type="checkbox" class="row-check" name="sponsor_ids[]" value="<?= $s['id'] ?>" form="versand-form">
-                                        <?php endif; ?>
-                                    </td>
                                     <td class="firma-cell">
                                         <a href="sponsor_form.php?id=<?= $s['id'] ?>">
                                             <strong><?= htmlspecialchars($s['firma']) ?></strong>
@@ -943,153 +912,6 @@ try {
         </main>
     </div>
     <script>
-    // Sponsor-Auswahl + Versand
-    (function() {
-        const checkAll = document.getElementById('check-all');
-        const countLabel = document.getElementById('versand-count');
-
-        function rowChecks() {
-            return Array.prototype.slice.call(document.querySelectorAll('.row-check'));
-        }
-        function selectedCount() {
-            return rowChecks().filter(function(c) { return c.checked; }).length;
-        }
-        function updateCount() {
-            if (countLabel) {
-                countLabel.textContent = selectedCount() + ' ausgewählt';
-            }
-        }
-
-        if (checkAll) {
-            checkAll.addEventListener('change', function() {
-                rowChecks().forEach(function(c) { c.checked = checkAll.checked; });
-                updateCount();
-            });
-        }
-        rowChecks().forEach(function(c) {
-            c.addEventListener('change', updateCount);
-        });
-        updateCount();
-
-        // Opt-out-Liste der Bestätigungs-Anhänge (Plakate + Assets): lazy laden, sobald
-        // „Bestätigung" gewählt ist. Die Abwahl lebt browser-seitig (localStorage, derselbe
-        // Schlüssel wie im Brief-Editor) und gilt bis zum nächsten Versand.
-        const typSel   = document.getElementById('anschreiben_typ');
-        const baBox     = document.getElementById('bestaetigung-assets');
-        const baList    = document.getElementById('ba-list');
-        const baStatus  = document.getElementById('ba-status');
-        const versandForm = document.getElementById('versand-form');
-        let baLoaded = false;
-
-        const ABWAHL_KEY = 'mkl_anhang_abwahl';
-        function abwahlLoad() {
-            try { var s = JSON.parse(localStorage.getItem(ABWAHL_KEY) || '{}'); return { plakat: s.plakat || [], asset: s.asset || [] }; }
-            catch(e) { return { plakat: [], asset: [] }; }
-        }
-        function abwahlSave(s) { try { localStorage.setItem(ABWAHL_KEY, JSON.stringify(s)); } catch(e) {} }
-
-        // Reset nach erfolgreichem Bestätigungs-Versand: Abwahl leeren → wieder alle Anhänge dran.
-        <?php if ($bestaetigungVersandDone): ?>
-        try { localStorage.removeItem(ABWAHL_KEY); } catch(e) {}
-        <?php endif; ?>
-
-        function renderGruppe(gruppe, titel, items) {
-            if (!items || items.length === 0) return 0;
-            const state = abwahlLoad();
-            const h = document.createElement('div');
-            h.style.cssText = 'font-weight:600;font-size:.82rem;color:#555;margin:.35rem 0 .1rem;';
-            h.textContent = titel;
-            baList.appendChild(h);
-            items.forEach(function(f) {
-                const lbl = document.createElement('label');
-                lbl.style.cssText = 'display:flex;align-items:center;gap:.4rem;cursor:pointer;';
-                const cb = document.createElement('input');
-                cb.type = 'checkbox'; cb.className = 'anhang-abwahl-send'; cb.value = f.id;
-                cb.dataset.group = gruppe;
-                cb.checked = (state[gruppe] || []).indexOf(f.id) === -1;
-                cb.addEventListener('change', function() {
-                    const s = abwahlLoad();
-                    const arr = s[gruppe] || [];
-                    const i = arr.indexOf(f.id);
-                    if (cb.checked) { if (i !== -1) arr.splice(i, 1); }
-                    else if (i === -1) { arr.push(f.id); }
-                    s[gruppe] = arr;
-                    abwahlSave(s);
-                });
-                const span = document.createElement('span');
-                span.textContent = f.name;
-                lbl.appendChild(cb); lbl.appendChild(span);
-                baList.appendChild(lbl);
-            });
-            return items.length;
-        }
-
-        function loadBestaetigungAssets() {
-            if (baLoaded || !baList) return;
-            baLoaded = true;
-            baStatus.textContent = '… lädt';
-            fetch('api/bestaetigung_assets.php', { headers: { 'X-Requested-With': 'fetch' } })
-                .then(function(r) { return r.json(); })
-                .then(function(d) {
-                    baList.innerHTML = '';
-                    if (!d || !d.ok) { baStatus.textContent = '⚠️ Ordner nicht lesbar'; return; }
-                    let n = renderGruppe('plakat', 'Plakate', d.plakat);
-                    n += renderGruppe('asset', 'Bestätigungs-Anhänge', d.asset);
-                    if (n === 0) {
-                        baStatus.textContent = d.configured === false
-                            ? '— keine Anhänge (Ordner nicht festgelegt/leer)'
-                            : '— keine Anhänge vorhanden';
-                        return;
-                    }
-                    baStatus.textContent = '(alle vorausgewählt — zum Weglassen abwählen; gilt bis zum nächsten Versand)';
-                })
-                .catch(function() { baStatus.textContent = '⚠️ Ordner nicht lesbar'; baLoaded = false; });
-        }
-
-        function syncBaVisibility() {
-            if (!baBox) return;
-            const on = typSel && typSel.value === 'bestaetigung';
-            baBox.hidden = !on;
-            if (on) loadBestaetigungAssets();
-        }
-        if (typSel) { typSel.addEventListener('change', syncBaVisibility); syncBaVisibility(); }
-
-        window.confirmVersand = function() {
-            const n = selectedCount();
-            if (n === 0) {
-                alert('Bitte zuerst mindestens einen Sponsor auswählen.');
-                return false;
-            }
-            const typ = document.getElementById('anschreiben_typ');
-            const typLabels = { folgejahr: 'Folgejahr-Anschreiben', frei: 'Freier Brief', erstanschreiben: 'Erstanschreiben', bestaetigung: 'Bestätigung Sponsoring', bedingungen: 'Bedingungen nachreichen' };
-            const typLabel = (typ && typLabels[typ.value]) || 'Erstanschreiben';
-            let ok;
-            if (n === 1) {
-                ok = confirm('1 Sponsor ausgewählt.\n\n' + typLabel + ' jetzt senden?\n'
-                    + '(Hat der Sponsor mehrere Kontakte im Anschreiben markiert, gehen alle einzeln personalisiert raus.)');
-            } else {
-                ok = confirm(n + ' Sponsoren ausgewählt.\n\n' + typLabel + ' in die Sende-Queue stellen? '
-                    + 'Der Versand läuft anschließend über das CLI-Script (15 Sek. Abstand pro Mail).');
-            }
-            if (!ok) return false;
-            // Abgewählte Anhänge je Gruppe als exclude_*_fids[] mitschicken (nur Bestätigung).
-            if (versandForm) {
-                versandForm.querySelectorAll('input[name="exclude_asset_fids[]"], input[name="exclude_plakat_fids[]"]').forEach(function(el) { el.remove(); });
-                if (typ && typ.value === 'bestaetigung') {
-                    document.querySelectorAll('.anhang-abwahl-send').forEach(function(cb) {
-                        if (cb.checked) return;
-                        const hid = document.createElement('input');
-                        hid.type = 'hidden';
-                        hid.name = cb.dataset.group === 'plakat' ? 'exclude_plakat_fids[]' : 'exclude_asset_fids[]';
-                        hid.value = cb.value;
-                        versandForm.appendChild(hid);
-                    });
-                }
-            }
-            return true;
-        };
-    })();
-
     // Merkfeld: Doppelklick sperrt & speichert, erneuter Doppelklick entsperrt
     (function() {
         const wrap = document.getElementById('merkfeld-wrap');

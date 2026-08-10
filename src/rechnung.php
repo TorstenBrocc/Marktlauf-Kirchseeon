@@ -63,7 +63,7 @@ function leistungszeitraumDefault(): string
 /**
  * Kanonische Paket-Definition (Fallback). Die maßgebliche Quelle ist die Einstellung
  * `sponsoring_pakete` (JSON, im Sponsorenbrief-Bereich editierbar) — dieselben Werte wie
- * die `paketeDefaults` in sponsor_briefe.php. Preise sind NETTO zu verstehen.
+ * die Paket-Einstellungen in orga/anschreiben_einstellungen.php. Preise sind NETTO zu verstehen.
  */
 function sponsoringPaketeDefaults(): array
 {

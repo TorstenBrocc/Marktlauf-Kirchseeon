@@ -1,6 +1,6 @@
 <?php
 /**
- * Briefvorlage-Einstellungen speichern (POST) — nur Admin.
+ * Anschreiben-Einstellungen speichern (POST) — Ziel: orga/anschreiben_einstellungen.php.
  * Behandelt ausschließlich: sponsor_brief_event_datum, sponsor_brief_antwort_bis, sponsoring_pakete.
  * (Paketpreise sind immer netto; Brutto-Ausnahme pro Sponsor über die Sponsor-Maske.)
  */
@@ -12,13 +12,13 @@ require_once __DIR__ . '/../../src/db.php';
 require_once __DIR__ . '/../../src/logger.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: ../sponsor_briefe.php');
+    header('Location: ../anschreiben_einstellungen.php');
     exit;
 }
 
 if (!verifyCsrfToken($_POST['csrf_token'] ?? '')) {
     $_SESSION['flash_error'] = 'Ungültige Anfrage.';
-    header('Location: ../sponsor_briefe.php');
+    header('Location: ../anschreiben_einstellungen.php');
     exit;
 }
 
@@ -28,12 +28,12 @@ $briefAntwortBis = trim($_POST['sponsor_brief_antwort_bis'] ?? '');
 
 if ($briefEventDatum !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $briefEventDatum)) {
     $_SESSION['flash_error'] = 'Ungültiges Event-Datum.';
-    header('Location: ../sponsor_briefe.php');
+    header('Location: ../anschreiben_einstellungen.php');
     exit;
 }
 if ($briefAntwortBis !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $briefAntwortBis)) {
     $_SESSION['flash_error'] = 'Ungültige Rückmeldefrist.';
-    header('Location: ../sponsor_briefe.php');
+    header('Location: ../anschreiben_einstellungen.php');
     exit;
 }
 
@@ -68,6 +68,5 @@ try {
     $_SESSION['flash_error'] = 'Datenbankfehler.';
 }
 
-$slug = $_POST['slug'] ?? 'erstanschreiben';
-header('Location: ../sponsor_briefe.php?slug=' . urlencode($slug));
+header('Location: ../anschreiben_einstellungen.php');
 exit;

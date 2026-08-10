@@ -1,7 +1,7 @@
 <?php
 /**
  * Plakat aus dem geteilten Google-Laufwerk löschen (POST). Adressiert per Drive-file-id.
- * Wrapper mit Redirect zurück zum Anschreiben-Editor (sponsor_briefe / vereine_briefe).
+ * Wrapper mit Redirect zurück zur aufrufenden Anschreiben-Seite.
  */
 
 declare(strict_types=1);
@@ -13,7 +13,7 @@ require_once __DIR__ . '/../../src/google_drive.php';
 require_once __DIR__ . '/../../src/datei_audit.php';
 
 $redirect = 'vereine_briefe.php';
-if (!empty($_POST['redirect']) && preg_match('/^(vereine_briefe|sponsor_briefe)\.php\?slug=[\w\-]+$/', (string) $_POST['redirect'])) {
+if (!empty($_POST['redirect']) && preg_match('/^(vereine_briefe\.php\?slug=[\w\-]+|(erstanschreiben|folgeanschreiben|freier_brief|bedingungen|bestaetigungen)\.php)$/', (string) $_POST['redirect'])) {
     $redirect = (string) $_POST['redirect'];
 }
 $back = '../' . $redirect;

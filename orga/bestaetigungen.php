@@ -2,9 +2,10 @@
 /**
  * Sponsoring-Bestätigungen — sponsor-bezogen zusammenstellen statt blind versenden.
  *
- * Links die zugesagten Sponsoren, rechts der Compose-Bereich für den gewählten: Abschnitts-
- * Bausteine an-/abwählen, Live-Vorschau mit den ECHTEN Daten dieses Sponsors (Anrede, Paket,
- * Startplätze, Gutscheincode), dann senden.
+ * Oben der gemeinsame Empfänger-Kopf (Einzel-Modus: Suchfeld + eingeklappte Liste), darunter
+ * der Compose-Bereich für den gewählten Sponsor: Abschnitts-Bausteine an-/abwählen, Live-
+ * Vorschau mit den ECHTEN Daten dieses Sponsors (Anrede, Paket, Startplätze, Gutscheincode),
+ * die Anhang-Kachel mit allem, was mitgeht, dann senden.
  *
  * Bewusst KEIN eigener Versandweg: gesendet wird über `api/sponsor_versand.php` — dort hängen
  * Anhänge, Beleg-PDF im Drive und Fehlerbehandlung schon dran. Der zusammengestellte Text geht
@@ -28,52 +29,50 @@ $csrfToken = generateCsrfToken();
 
 $flashSuccess = $_SESSION['flash_success'] ?? '';
 $flashError = $_SESSION['flash_error'] ?? '';
-unset($_SESSION['flash_success'], $_SESSION['flash_error']);
+// Reset-Signal: nach erfolgreichem Versand setzt der Browser die Anhang-Abwahl zurück,
+// damit beim nächsten Sponsor wieder alle Anhänge dabei sind.
+$bestaetigungVersandDone = !empty($_SESSION['bestaetigung_versand_done']);
+unset($_SESSION['flash_success'], $_SESSION['flash_error'], $_SESSION['bestaetigung_versand_done']);
 
 $pdo = getDbConnection();
 
-// Kandidaten: zugesagte Sponsoren. Nach dem Versand rutscht der Sponsor auf 'bestätigt' und
-// verschwindet damit aus dieser Liste — die Liste ist die offene Arbeit, nicht das Archiv.
-$kandidaten = [];
-try {
-    $stmt = $pdo->query("
-        SELECT s.id, s.firma, s.paket, s.kein_kontakt,
-               (SELECT COUNT(*) FROM sponsor_ansprechpartner a
-                 WHERE a.sponsor_id = s.id AND a.email <> '' AND a.im_anschreiben = 1) AS empfaenger
-        FROM sponsors s
-        WHERE s.status = 'zugesagt'
-        ORDER BY s.firma
-    ");
-    $kandidaten = $stmt->fetchAll();
-} catch (PDOException $e) {
-    // Tabelle evtl. noch nicht da — Seite bleibt bedienbar.
-}
+// Kandidaten, Auswahl und Suchfeld liefert der gemeinsame Empfänger-Kopf (Einzel-Modus);
+// die Zielgruppe „zugesagt" steht in src/sponsor_zielgruppen.php. Nach dem Versand rutscht
+// der Sponsor auf 'bestätigt' und fällt damit aus der Zielgruppe — die Liste ist die offene
+// Arbeit, nicht das Archiv.
+$slug  = 'bestaetigung';
+$modus = 'einzel';
+$seite = 'bestaetigungen.php';
 
-// Je Kandidat die beiden Gutschein-Werte vorberechnen: Basis für die weiche Prüfung beim Senden
-// und für die Ampel in der Liste.
-foreach ($kandidaten as $i => $k) {
+/**
+ * Gutschein-Werte je Kandidat: Basis für die weiche Prüfung beim Senden und für den Marker
+ * in der Liste. Warnfall ist an „Startplätze vereinbart" gehängt und nicht an der Stückzahl —
+ * sonst bliebe der Hauptsponsor (Menge individuell, also null) ohne Warnung, obwohl er
+ * Startplätze bekommt.
+ */
+$gutscheinDaten = static function (PDO $pdo, array $k): array {
     $typ    = (string) ($k['paket'] ?? '') !== '' ? (string) $k['paket'] : null;
-    $anzahl = sponsorStartplaetzeAnzahl($typ);
     $code   = sponsorGutscheincode($pdo, (int) $k['id']);
-    $kandidaten[$i]['startplaetze'] = $anzahl;
-    $kandidaten[$i]['code']         = $code;
-    // Warnfall: Startplätze sind vereinbart, aber es liegt kein Code in der Matrix. Bewusst an
-    // „vereinbart" gehängt und nicht an der Stückzahl — sonst bliebe der Hauptsponsor (Menge
-    // individuell, also null) ohne Warnung, obwohl er Startplätze bekommt.
-    $kandidaten[$i]['code_fehlt']   = sponsorStartplaetzeVereinbart($pdo, (int) $k['id'], $typ) && $code === '';
-}
+    return [
+        'startplaetze' => sponsorStartplaetzeAnzahl($typ),
+        'code'         => $code,
+        'code_fehlt'   => sponsorStartplaetzeVereinbart($pdo, (int) $k['id'], $typ) && $code === '',
+    ];
+};
 
-$sponsorId = (int) ($_GET['sponsor_id'] ?? 0);
-$gewaehlt = null;
-foreach ($kandidaten as $k) {
-    if ((int) $k['id'] === $sponsorId) {
-        $gewaehlt = $k;
-        break;
+// Zusatz-Marker in der Empfängerliste: fehlender Gutscheincode soll schon beim Auswählen
+// auffallen, nicht erst in der Compose-Karte.
+$empfExtraTags = static function (array $k) use ($pdo, $gutscheinDaten): array {
+    $g = $gutscheinDaten($pdo, $k);
+    $tags = [];
+    if ($g['startplaetze'] !== null) {
+        $tags[] = ['text' => (int) $g['startplaetze'] . '× Startplatz', 'warn' => false];
     }
-}
-if ($gewaehlt === null) {
-    $sponsorId = 0;
-}
+    if ($g['code_fehlt']) {
+        $tags[] = ['text' => 'Gutscheincode fehlt', 'warn' => true];
+    }
+    return $tags;
+};
 
 $vorlage = sponsorBriefLoad($pdo, 'bestaetigung', (int) $user['id']);
 $default = sponsorBriefDefaults()['bestaetigung'];
@@ -90,24 +89,12 @@ $typLabel = static fn (?string $p): string => match ($p) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
-    <title>Bestätigungen | ATSV Kirchseeon Marktlauf</title>
+    <title>Bestätigung Sponsoring | ATSV Kirchseeon Marktlauf</title>
     <link rel="stylesheet" href="css/orga.css?v=<?= @filemtime(__DIR__ . '/css/orga.css') ?>">
     <link rel="icon" type="image/svg+xml" href="../assets/images/logo-final.svg">
     <style>
         .best-card { background: var(--white); border-radius: 8px; box-shadow: var(--shadow-card); padding: 1.5rem; margin-bottom: 1.25rem; }
         .best-intro { font-size: 0.9rem; color: var(--text); line-height: 1.6; margin: 0 0 1rem; }
-        .best-empty { font-size: 0.9rem; color: var(--text-light); }
-        .best-liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
-        .best-item {
-            display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
-            padding: 0.6rem 0.85rem; border: 1px solid var(--border); border-radius: 6px;
-            background: var(--bg); font-size: 0.9rem;
-        }
-        .best-item.aktiv { border-color: var(--primary); background: rgba(0, 150, 64, 0.07); }
-        .best-item .firma { font-weight: 600; flex: 1; min-width: 12rem; word-break: break-word; }
-        .best-tag { font-size: 0.72rem; padding: 0.15rem 0.5rem; border-radius: 12px; background: var(--white); border: 1px solid var(--border); color: var(--text-light); white-space: nowrap; }
-        .best-tag.warn { background: rgba(255, 193, 7, 0.18); border-color: rgba(255, 193, 7, 0.6); color: var(--text); }
-        .best-tag.stop { background: var(--error-bg); border-color: var(--error); color: var(--error); }
         .best-split { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
         @media (max-width: 900px) { .best-split { grid-template-columns: 1fr; } }
         .best-split h3 { font-size: 0.9rem; color: var(--text-light); margin: 0 0 0.5rem; }
@@ -139,7 +126,7 @@ $typLabel = static fn (?string $p): string => match ($p) {
 
         <main class="main-content">
             <header class="content-header">
-                <h1>Bestätigungen</h1>
+                <h1>Bestätigung Sponsoring</h1>
             </header>
 
             <?php if ($flashSuccess): ?>
@@ -149,42 +136,25 @@ $typLabel = static fn (?string $p): string => match ($p) {
                 <div class="alert alert-error"><?= htmlspecialchars($flashError) ?></div>
             <?php endif; ?>
 
-            <div class="best-card">
-                <p class="best-intro">
-                    Hier stehen alle <strong>zugesagten</strong> Sponsoren. Einen auswählen, die
-                    Bestätigung mit dessen echten Daten zusammenstellen, in der Vorschau prüfen und
-                    senden. Nach dem Versand wandert der Sponsor auf Status
-                    <strong>Bestätigt</strong> und verschwindet aus dieser Liste; die Bestätigung
-                    wird zusätzlich als Beleg-PDF im Drive-Ordner des Sponsors abgelegt.
-                </p>
+            <?php
+            require __DIR__ . '/_empfaenger_kopf.php';
+            // Gutschein-Werte des gewählten Sponsors nachziehen — die Compose-Karte unten
+            // arbeitet damit (Startplätze, Code, weiche Warnung vor dem Senden).
+            if ($gewaehlt !== null) {
+                $gewaehlt = array_merge($gewaehlt, $gutscheinDaten($pdo, $gewaehlt));
+            }
+            ?>
 
-                <?php if (!$kandidaten): ?>
-                    <p class="best-empty">Keine zugesagten Sponsoren offen — hier ist gerade nichts zu tun.</p>
-                <?php else: ?>
-                <ul class="best-liste">
-                    <?php foreach ($kandidaten as $k): ?>
-                        <li class="best-item<?= (int) $k['id'] === $sponsorId ? ' aktiv' : '' ?>">
-                            <span class="firma"><?= htmlspecialchars($k['firma']) ?></span>
-                            <span class="best-tag"><?= htmlspecialchars($typLabel($k['paket'])) ?></span>
-                            <?php if ($k['startplaetze'] !== null): ?>
-                                <span class="best-tag"><?= (int) $k['startplaetze'] ?>× Startplatz</span>
-                            <?php endif; ?>
-                            <?php if ($k['code_fehlt']): ?>
-                                <span class="best-tag warn" title="Das Paket sieht Startplätze vor, in der Leistungs-Matrix steht aber kein Gutscheincode.">Gutscheincode fehlt</span>
-                            <?php endif; ?>
-                            <?php if ((int) $k['kein_kontakt'] === 1): ?>
-                                <span class="best-tag stop">Kein Kontakt</span>
-                            <?php elseif ((int) $k['empfaenger'] === 0): ?>
-                                <span class="best-tag stop">Kein Empfänger</span>
-                            <?php endif; ?>
-                            <a class="btn btn-secondary btn-small" href="bestaetigungen.php?sponsor_id=<?= (int) $k['id'] ?>#compose">
-                                <?= (int) $k['id'] === $sponsorId ? 'ausgewählt' : 'auswählen' ?>
-                            </a>
-                        </li>
-                    <?php endforeach; ?>
-                </ul>
-                <?php endif; ?>
-            </div>
+            <?php if ($gewaehlt === null): ?>
+                <div class="best-card">
+                    <p class="best-intro">
+                        Oben einen <strong>zugesagten</strong> Sponsor auswählen — die Bestätigung wird
+                        dann mit dessen echten Daten zusammengestellt. Nach dem Versand wandert er auf
+                        Status <strong>Bestätigt</strong> und fällt aus der Liste; die Bestätigung wird
+                        zusätzlich als Beleg-PDF im Drive-Ordner des Sponsors abgelegt.
+                    </p>
+                </div>
+            <?php endif; ?>
 
             <?php if ($gewaehlt !== null): ?>
             <div class="best-card" id="compose">
@@ -252,7 +222,11 @@ $typLabel = static fn (?string $p): string => match ($p) {
                         <iframe id="preview-frame" sandbox="" title="Vorschau"></iframe>
                     </div>
                 </div>
+            </div>
 
+            <?php require __DIR__ . '/_anhang_kachel.php'; ?>
+
+            <div class="best-card">
                 <form method="post" action="api/sponsor_versand.php" id="send-form">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                     <input type="hidden" name="anschreiben_typ" value="bestaetigung">
@@ -361,6 +335,20 @@ $typLabel = static fn (?string $p): string => match ($p) {
 
                 sendBtn.disabled = true;
                 statusEl.textContent = 'Text wird gesichert…';
+
+                // Abwahl aus der Anhang-Kachel mitschicken: ohne diese Felder wären die
+                // Checkboxen wirkungslos und es ginge doch alles raus.
+                const sendForm = document.getElementById('send-form');
+                sendForm.querySelectorAll('input[name="exclude_asset_fids[]"], input[name="exclude_plakat_fids[]"]')
+                    .forEach(function(el) { el.remove(); });
+                document.querySelectorAll('.anhang-abwahl:not(:checked)').forEach(function(cb) {
+                    const hid = document.createElement('input');
+                    hid.type = 'hidden';
+                    hid.name = (cb.dataset.group === 'asset' ? 'exclude_asset_fids[]' : 'exclude_plakat_fids[]');
+                    hid.value = cb.value;
+                    sendForm.appendChild(hid);
+                });
+
                 const body = new URLSearchParams();
                 body.set('csrf_token', csrf);
                 body.set('vorlage_art', 'sponsor');
@@ -381,6 +369,12 @@ $typLabel = static fn (?string $p): string => match ($p) {
             });
         }
     })();
+    <?php endif; ?>
+
+    <?php if ($bestaetigungVersandDone): ?>
+    // Eine Bestätigung ist rausgegangen → Abwahl leeren, damit der nächste Sponsor wieder
+    // alle Anhänge bekommt.
+    try { localStorage.removeItem('mkl_anhang_abwahl'); } catch (e) {}
     <?php endif; ?>
 
     (function() {

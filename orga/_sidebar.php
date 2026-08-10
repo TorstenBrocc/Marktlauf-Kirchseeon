@@ -17,9 +17,10 @@ $navItems  = require __DIR__ . '/_nav.php';
 /**
  * Ein Navigations-Item rendern (Link oder deaktivierter Hinweis inkl. Badge).
  */
-$renderNavItem = static function (array $item, string $activeNav, bool $indent = false): void {
+$renderNavItem = static function (array $item, string $activeNav, int $indent = 0): void {
     $isActive = ($item['key'] ?? '') === $activeNav;
-    $liClass  = 'nav-item' . ($indent ? ' nav-item-sub' : '') . ($isActive ? ' active' : '');
+    $indentClass = $indent > 0 ? ' nav-item-sub' . ($indent > 1 ? ' nav-item-sub-2' : '') : '';
+    $liClass  = 'nav-item' . $indentClass . ($isActive ? ' active' : '');
     $badge    = isset($item['badge'])
         ? ' <span class="badge">' . htmlspecialchars($item['badge']) . '</span>'
         : '';
@@ -52,25 +53,36 @@ $renderNavItem = static function (array $item, string $activeNav, bool $indent =
             </div>
             <ul class="nav-menu">
                 <?php
-                // Sektions-Überschriften werden lazy ausgegeben: erst wenn das erste
-                // tatsächlich sichtbare Item eines neuen Abschnitts gerendert wird.
-                // So entsteht keine leere Überschrift, wenn alle Items eines Abschnitts
-                // (z. B. Admin-Werkzeuge für Nicht-Admins) weggefiltert wurden.
+                // Gruppen- und Sektions-Überschriften werden lazy ausgegeben: erst wenn das
+                // erste tatsächlich sichtbare Item einer neuen Ebene gerendert wird. So
+                // entsteht keine leere Überschrift, wenn alle Items darunter (z. B.
+                // Admin-Werkzeuge für Nicht-Admins) weggefiltert wurden.
+                $lastGroup   = null;
                 $lastSection = null;
                 foreach ($navItems as $item) {
                     if (!empty($item['admin']) && !$isAdmin) {
                         continue; // Admin-Werkzeuge nur für Admins
                     }
+                    $group   = $item['group'] ?? '';
                     $section = $item['section'] ?? '';
+                    if ($group !== $lastGroup) {
+                        if ($group !== '') {
+                            echo '<li class="nav-group">' . htmlspecialchars($group) . '</li>';
+                        }
+                        $lastGroup   = $group;
+                        $lastSection = null; // Abschnitt in der neuen Gruppe neu ausgeben
+                    }
                     if ($section !== $lastSection) {
                         if ($section !== '') {
-                            echo '<li class="nav-section">' . htmlspecialchars($section) . '</li>';
+                            echo '<li class="nav-section' . ($group !== '' ? ' nav-section-sub' : '') . '">'
+                                . htmlspecialchars($section) . '</li>';
                         }
                         $lastSection = $section;
                     }
-                    // Items mit Abschnitts-Überschrift werden eingerückt, damit sie
-                    // optisch klar unter ihrer Überschrift hängen (Dashboard bleibt bündig).
-                    $renderNavItem($item, $activeNav, $section !== '');
+                    // Einrückung wächst mit der Tiefe: Items unter einer Abschnitts-Überschrift
+                    // hängen optisch darunter, Items in einer Gruppe eine Stufe tiefer
+                    // (Dashboard ohne beides bleibt bündig).
+                    $renderNavItem($item, $activeNav, ($section !== '' ? 1 : 0) + ($group !== '' ? 1 : 0));
                 }
                 ?>
             </ul>
