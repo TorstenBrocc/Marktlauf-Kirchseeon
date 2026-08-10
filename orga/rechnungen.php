@@ -274,7 +274,8 @@ $paketLabel = static function (?string $p): string {
                                                         · <?= htmlspecialchars(date('d.m.Y H:i', strtotime((string) $h['versendet_am']))) ?>
                                                         · <?= htmlspecialchars($h['empfaenger']) ?>
                                                         <?= !empty($h['von_name']) ? ' · ' . htmlspecialchars($h['von_name']) : '' ?>
-                                                        <?= $h['ergebnis'] !== 'ok' && !empty($h['hinweis']) ? ' · ' . htmlspecialchars($h['hinweis']) : '' ?>
+                                                        <?php /* Hinweis auch bei Erfolg zeigen: dort steht z. B. „außerhalb des Systems versendet". */ ?>
+                                                        <?= !empty($h['hinweis']) ? ' · ' . htmlspecialchars($h['hinweis']) : '' ?>
                                                     </div>
                                                 <?php endforeach; ?>
                                             </details>
