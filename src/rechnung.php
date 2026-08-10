@@ -194,11 +194,16 @@ function rechnungLeistungsposten(?string $typ, array $state = []): array
         $posten[] = $pos['label'];
     }
 
-    // Gruppen zusammensetzen; geschützte Leerzeichen halten "auf <Ort>" beim Umbruch zusammen.
+    // Gruppen zusammensetzen: "Logo auf Website, Urkunde & Startnummer". Geschützte Leerzeichen
+    // halten das Präfix am ersten Ort und das "&" an seinem Vorgänger, damit beim Umbruch keine
+    // Zeile mit "auf" oder "&" endet bzw. beginnt.
     foreach ($sammler as $gruppe => $teile) {
-        $g    = $gruppen[$gruppe];
-        $join = rtrim($g['join']) . "\u{00A0}";
-        $posten[$gruppePos[$gruppe]] = rtrim($g['prefix']) . "\u{00A0}" . implode($join, $teile);
+        $g       = $gruppen[$gruppe];
+        $letzter = array_pop($teile);
+        $liste   = $teile === []
+            ? $letzter
+            : implode($g['join'], $teile) . "\u{00A0}" . ltrim($g['join_letzter']) . $letzter;
+        $posten[$gruppePos[$gruppe]] = rtrim($g['prefix']) . "\u{00A0}" . $liste;
     }
     return $posten;
 }

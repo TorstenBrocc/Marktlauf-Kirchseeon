@@ -195,7 +195,10 @@ class RechnungPdf extends FPDF
         }
 
         // ===== 4 · h1 =====
-        $this->SetXY($L, 82);
+        // 76 statt 82: die Leerzeile zwischen „Rechnung" und der Anrede entsteht durch das
+        // Höherziehen der Überschrift — der Weißraum darüber war reichlich, und der Textkörper
+        // darunter bleibt damit unverändert an seinem Platz (eine Seite, kein Umbruch).
+        $this->SetXY($L, 76);
         $this->SetFont('mont', '', 23);
         $this->SetTextColor(...$this->green2);
         $this->Cell(0, 10, $this->t('Rechnung'), 0, 1, 'L');
@@ -282,9 +285,11 @@ class RechnungPdf extends FPDF
         $this->Cell($svw, 10, $this->t($this->eur((float) $this->r['brutto'])), 0, 1, 'R');
 
         // ===== 8 · Zahlungskasten =====
-        // sy + 29,5: der Betragsblock endet jetzt bei sy + 26 (engere Summenzeilen),
-        // der Abstand von 3,5 mm zum Kasten bleibt derselbe wie zuvor.
-        $by = $sy + 29.5; $bh = 40.0;
+        // Der Kasten ist bewusst der Ort, an dem Platz geholt wird (so auch das Design-Briefing:
+        // zuerst den Kasten verschlanken, nie die Ränder): 36 statt 40 mm hoch, Zeilen enger,
+        // 2 statt 3,5 mm Abstand zum Betragsblock. Die 6 mm daraus finanzieren die Leerzeile vor
+        // der Grußformel — die Signatur landet dadurch auf derselben Höhe wie zuvor.
+        $by = $sy + 28; $bh = 36.0;
         $this->SetDrawColor(...$this->lnHead);
         $this->SetLineWidth(0.3);
         $this->RoundedRect($L, $by, $R - $L, $bh, 3, 'D');
@@ -301,7 +306,7 @@ class RechnungPdf extends FPDF
             ['Verwendung',   'Rechnung ' . ($this->nummer !== '' ? $this->nummer : '<Nr.>')],
         ];
         foreach ($rows as $j => [$lab, $val]) {
-            $yy = $by + 12.5 + $j * 6.2;
+            $yy = $by + 11.5 + $j * 5.5;
             $this->SetXY($L + 5, $yy);
             $this->SetFont('pop', '', 9.5);
             $this->SetTextColor(...$this->label);
@@ -312,14 +317,15 @@ class RechnungPdf extends FPDF
         }
 
         // ===== 9 · Dank + 10 · Grußformel =====
-        $gy = $by + $bh + 5;
+        $gy = $by + $bh + 4;
         $this->SetXY($L, $gy);
         $this->SetFont('pop', '', 10.5);
         $this->SetTextColor(...$this->body);
         $this->Cell(0, 6, $this->t('Vielen Dank für Ihre Unterstützung des Marktlaufs.'), 0, 1, 'L');
-        $this->SetXY($L, $gy + 8);
-        $this->Cell(0, 6, $this->t('Mit sportlichen Grüßen'), 0, 1, 'L');
+        // +14 statt +8: eine Leerzeile zwischen Dank und Grußformel.
         $this->SetXY($L, $gy + 14);
+        $this->Cell(0, 6, $this->t('Mit sportlichen Grüßen'), 0, 1, 'L');
+        $this->SetXY($L, $gy + 20);
         $this->SetFont('popsb', '', 10.5);
         $this->SetTextColor(...$this->ink);
         $this->Cell(0, 6, $this->t($this->s['verein']), 0, 1, 'L');
