@@ -245,7 +245,8 @@ function sendSponsorAnschreiben(
     string $paket = '',
     int $userId = 0,
     array $excludeAssetFids = [],
-    array $excludePlakatFids = []
+    array $excludePlakatFids = [],
+    int $sponsorId = 0
 ): bool {
     if (!sponsorBriefSlugValid($typ)) {
         $typ = 'erstanschreiben';
@@ -255,7 +256,7 @@ function sendSponsorAnschreiben(
     }
     $pdo         = getDbConnection();
     $vorlage     = sponsorBriefLoad($pdo, $typ, $userId);
-    $ctx         = sponsorBriefContext($pdo, $userId, $anrede, $vorname, $nachname, $firma, $paket);
+    $ctx         = sponsorBriefContext($pdo, $userId, $anrede, $vorname, $nachname, $firma, $paket, $sponsorId);
     $subject     = sponsorBriefBetreff($vorlage['betreff'], $ctx);
     $htmlBody    = sponsorBriefRenderHtml($vorlage['koerper_md'], $ctx);
     $textBody    = sponsorBriefRenderText($vorlage['koerper_md'], $ctx);

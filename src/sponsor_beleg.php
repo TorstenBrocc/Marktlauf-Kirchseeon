@@ -50,7 +50,7 @@ function archiveSponsorBestaetigung(PDO $pdo, int $sponsorId, int $userId = 0): 
     $paket = (string) ($sp['paket'] ?? '');
 
     $vorlage  = sponsorBriefLoad($pdo, 'bestaetigung', $userId);
-    $ctx      = sponsorBriefContext($pdo, $userId, (string) $k['anrede'], (string) $k['vorname'], (string) $k['nachname'], $firma, $paket);
+    $ctx      = sponsorBriefContext($pdo, $userId, (string) $k['anrede'], (string) $k['vorname'], (string) $k['nachname'], $firma, $paket, $sponsorId);
     $subject  = sponsorBriefBetreff($vorlage['betreff'], $ctx);
     $textBody = sponsorBriefRenderText($vorlage['koerper_md'], $ctx);
 

@@ -147,7 +147,7 @@ try {
     if (count($recipients) === 1) {
         $r = $recipients[0];
         try {
-            $ok = sendSponsorAnschreiben($r['email'], $r['anrede'], $r['vorname'], $r['nachname'], $r['firma'], $typ, $r['paket'], (int)($user['id'] ?? 0), $excludeAssetFids, $excludePlakatFids);
+            $ok = sendSponsorAnschreiben($r['email'], $r['anrede'], $r['vorname'], $r['nachname'], $r['firma'], $typ, $r['paket'], (int)($user['id'] ?? 0), $excludeAssetFids, $excludePlakatFids, (int) $r['sponsor_id']);
         } catch (Throwable $e) {
             $ok = false;
             logError('Sponsor-Versand (einzeln) Exception: ' . $e->getMessage());

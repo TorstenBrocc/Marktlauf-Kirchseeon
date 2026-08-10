@@ -88,7 +88,10 @@ try {
                 $job['firma'],
                 $job['anschreiben_typ'],
                 (string) ($job['paket'] ?? ''),
-                (int) ($job['angefordert_von'] ?? 0)
+                (int) ($job['angefordert_von'] ?? 0),
+                [],
+                [],
+                (int) $job['sponsor_id']
             );
 
             if ($ok) {
