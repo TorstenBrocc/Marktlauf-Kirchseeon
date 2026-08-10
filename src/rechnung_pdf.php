@@ -121,12 +121,12 @@ class RechnungPdf extends FPDF
         $this->SetXY($L, 14);
         $this->SetFont('montbd', '', 8);
         $this->SetTextColor(...$this->green1);
-        $this->trackedCell(0, 4, 'ATSV KIRCHSEEON 1906 E.V.', 0.8, 1, 'L');
+        $this->trackedCell(0, 4, 'ALLGEMEINER TURN- UND SPORTVEREIN KIRCHSEEON E.V.', 0.8, 1, 'L');
 
         $this->SetXY($L, 18.5);
         $this->SetFont('mont', '', 17);
         $this->SetTextColor(...$this->ink);
-        $this->Cell(0, 9, $this->t('Abteilung Marktlauf'), 0, 1, 'L');
+        $this->Cell(0, 9, $this->t('Abteilung Marktlauf Kirchseeon'), 0, 1, 'L');
 
         $shield = __DIR__ . '/../assets/images/ATSV_Logo-750x968.png';
         if (is_file($shield)) {
@@ -141,7 +141,7 @@ class RechnungPdf extends FPDF
         $this->SetXY($L, 39);
         $this->SetFont('pop', '', 7);
         $this->SetTextColor(...$this->muted);
-        $this->Cell(0, 3.5, $this->t($this->s['verein'] . ' · ' . $this->s['abteilung'] . ' · '
+        $this->Cell(0, 3.5, $this->t($this->s['verein'] . ' · '
             . $this->s['strasse'] . ' · ' . $this->s['plz'] . ' ' . $this->s['ort']), 0, 1, 'L');
         // Empfänger
         $this->SetXY($L, 45);
@@ -165,7 +165,9 @@ class RechnungPdf extends FPDF
             : date('d.m.Y');
         $nummerAnzeige = $this->nummer !== '' ? $this->nummer : '(wird vergeben)';
         $mx = 120.0; $lblW = 40.0; $valW = $R - $mx - $lblW;
-        $my = 39.0; $rowH = 9.0;
+        // rowH 6.5 statt 9: Zeilenabstand im Metadatenblock halbiert (der Textkörper einer Zeile
+        // ist ~3,2 mm hoch, der Weißraum dazwischen damit ~3,3 statt ~5,8 mm).
+        $my = 39.0; $rowH = 6.5;
         $meta = [
             ['Rechnungsdatum', $datum, false],
             ['Rechnungs-Nr.',  $nummerAnzeige, $this->nummer !== ''],
@@ -177,7 +179,7 @@ class RechnungPdf extends FPDF
             if ($i > 0) {
                 $this->hline($mx, $R, $y, $this->lnMeta, 0.2); // Trenner zwischen Zeilen
             }
-            $this->SetXY($mx, $y + 2.6);
+            $this->SetXY($mx, $y + 0.75); // Text in der schmaleren Zeile weiter zentriert
             $this->SetFont('pop', '', 9);
             $this->SetTextColor(...$this->label);
             $this->Cell($lblW, 5, $this->t($lab), 0, 0, 'L');
@@ -202,7 +204,9 @@ class RechnungPdf extends FPDF
         $this->SetFont('pop', '', 10.5);
         $this->SetTextColor(...$this->body);
         $this->Cell(0, 6, $this->t('Sehr geehrte Damen und Herren,'), 0, 1, 'L');
-        $this->SetX($L);
+        // Leerzeile zwischen Anrede und Satz; der Satz endet damit eine Zeilenhöhe
+        // über dem Tabellenkopf (ty = 118) — bewusst enger als zuvor.
+        $this->SetXY($L, 107);
         $this->MultiCell($R - $L, 6, $this->t(
             'für Ihr Sponsoring berechnen wir gemäß unserer Vereinbarung die folgende Leistung:'
         ), 0, 'L');
@@ -241,10 +245,9 @@ class RechnungPdf extends FPDF
             $this->SetTextColor(...$this->desc);
             $this->MultiCell(120, 5, $this->t($beschr), 0, 'L');
         }
-        $this->SetX($L);
-        $this->SetFont('pop', '', 8.5);
-        $this->SetTextColor(...$this->muted);
-        $this->Cell(0, 5, $this->t('Leistungszeitraum: ' . ($this->r['zeitraum'] ?? '')), 0, 1, 'L');
+        // Keine eigene "Leistungszeitraum"-Zeile: der Zeitraum steht bereits im
+        // Positionstitel ("<Paket>-Sponsoring Marktlauf <Jahr>") und erfüllt dort die
+        // Pflichtangabe nach § 14 Abs. 4 Nr. 6 UStG. Die zweite Nennung war Dopplung.
         $posEnd = $this->GetY() + 2;
         $this->hline($L, $R, $posEnd, $this->lnPos, 0.2);
 
@@ -257,15 +260,17 @@ class RechnungPdf extends FPDF
         $this->SetTextColor(...$this->desc);
         $this->Cell($slw, 6, $this->t('Nettobetrag'), 0, 0, 'L');
         $this->Cell($svw, 6, $this->t($this->eur((float) $this->r['netto'])), 0, 1, 'R');
-        $this->hline($sx, $R, $sy + 7.5, $this->lnPos, 0.2);
+        // Zeilenabstände halbiert: 8 / 8,5 mm statt 10 / 10,5 zwischen den Zeilenanfängen,
+        // Trenner bleiben mittig im jeweiligen Zwischenraum.
+        $this->hline($sx, $R, $sy + 7, $this->lnPos, 0.2);
         // USt
         $ustLabel = 'zzgl. ' . rtrim(rtrim(number_format((float) $this->r['ust_satz'], 2, ',', '.'), '0'), ',') . ' % USt';
-        $this->SetXY($sx, $sy + 10);
+        $this->SetXY($sx, $sy + 8);
         $this->Cell($slw, 6, $this->t($ustLabel), 0, 0, 'L');
         $this->Cell($svw, 6, $this->t($this->eur((float) $this->r['ust_betrag'])), 0, 1, 'R');
-        $this->hline($sx, $R, $sy + 17.5, $this->lnPos, 0.2);
+        $this->hline($sx, $R, $sy + 15, $this->lnPos, 0.2);
         // Rechnungsbetrag
-        $this->SetXY($sx, $sy + 20.5);
+        $this->SetXY($sx, $sy + 16);
         $this->SetFont('montbd', '', 8);
         $this->SetTextColor(...$this->ink);
         $this->trackedCell($slw, 10, 'RECHNUNGSBETRAG', 0.8, 0, 'L');
@@ -274,7 +279,9 @@ class RechnungPdf extends FPDF
         $this->Cell($svw, 10, $this->t($this->eur((float) $this->r['brutto'])), 0, 1, 'R');
 
         // ===== 8 · Zahlungskasten =====
-        $by = $sy + 34; $bh = 40.0;
+        // sy + 29,5: der Betragsblock endet jetzt bei sy + 26 (engere Summenzeilen),
+        // der Abstand von 3,5 mm zum Kasten bleibt derselbe wie zuvor.
+        $by = $sy + 29.5; $bh = 40.0;
         $this->SetDrawColor(...$this->lnHead);
         $this->SetLineWidth(0.3);
         $this->RoundedRect($L, $by, $R - $L, $bh, 3, 'D');
@@ -312,7 +319,7 @@ class RechnungPdf extends FPDF
         $this->SetXY($L, $gy + 14);
         $this->SetFont('popsb', '', 10.5);
         $this->SetTextColor(...$this->ink);
-        $this->Cell(0, 6, $this->t($this->s['verein'] . ' — ' . $this->s['abteilung']), 0, 1, 'L');
+        $this->Cell(0, 6, $this->t($this->s['verein']), 0, 1, 'L');
 
         // ===== 12 · Fußzeile (am unteren Satzspiegelrand) =====
         $this->drawFooter();
@@ -321,33 +328,39 @@ class RechnungPdf extends FPDF
     private function drawFooter(): void
     {
         $L = $this->L; $R = $this->R;
-        $bottom = 279.0;            // 297 - 18
+        $bottom = 283.0;            // 297 - 14: Fußzeile bewusst tiefer als der Satzspiegel
         $lineY  = $bottom - 23.6;   // Linie oben im Footerblock
         $this->hline($L, $R, $lineY, $this->lnHead, 0.3);
 
         $colTop = $lineY + 4;
+        // Spaltenbreiten einzeln, nicht pauschal 54 mm: „Kreissparkasse München Starnberg
+        // Ebersberg" misst in Poppins-Light 7,5 pt 60,0 mm und brach sonst um. MultiCell zieht
+        // links und rechts je 1 mm Zellenrand ab — die Bankspalte braucht deshalb 64 mm Breite
+        // (62 mm nutzbar) und beginnt bei 128, damit sie am Satzspiegelrand 192 endet.
+        // Kontakt beginnt bei 72 mit 56 mm (54 nutzbar), damit die längste Zeile dort —
+        // https://atsv-kirchseeon-marktlauf.de mit 48,4 mm — einzeilig bleibt.
         $cols = [
-            [$L,     'VEREIN', [
+            [$L,     54.0, 'VEREIN', [
                 $this->s['verein'], $this->s['strasse'], $this->s['plz'] . ' ' . $this->s['ort'], $this->s['burozeiten'],
             ]],
-            [77.0,   'KONTAKT', [
+            [72.0,   56.0, 'KONTAKT', [
                 'Telefon ' . str_replace('/', ' ', $this->s['telefon']),
                 'Telefax ' . str_replace('/', ' ', $this->s['telefax']),
                 $this->s['email'], $this->s['web'],
             ]],
-            [137.0,  'BANKVERBINDUNG', [
+            [128.0,  64.0, 'BANKVERBINDUNG', [
                 $this->s['bank1_name'], $this->s['bank1_iban'], $this->s['bank2_name'], $this->s['bank2_iban'],
             ]],
         ];
-        foreach ($cols as [$cx, $head, $lines]) {
+        foreach ($cols as [$cx, $cw, $head, $lines]) {
             $this->SetXY($cx, $colTop);
             $this->SetFont('mont', '', 7);
             $this->SetTextColor(...$this->label);
-            $this->trackedCell(54, 4.2, $head, 0.7, 2, 'L');
+            $this->trackedCell($cw, 4.2, $head, 0.7, 2, 'L');
             $this->SetFont('pop', '', 7.5);
             $this->SetTextColor(...$this->muted);
             foreach ($lines as $ln) {
-                $this->MultiCell(54, 3.8, $this->t($ln), 0, 'L');
+                $this->MultiCell($cw, 3.8, $this->t($ln), 0, 'L');
                 $this->SetX($cx);
             }
         }

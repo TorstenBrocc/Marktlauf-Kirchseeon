@@ -117,7 +117,9 @@ $paketLabel = static function (?string $p): string {
                 Rechnungs-<strong>Nummer</strong> ein (nur die laufende Zahl, das Jahr <?= date('Y') ?>
                 ergänzt das System automatisch). Nach der Nummernvergabe kann die Rechnung unter
                 <strong>Nummeriert</strong> an den Sponsor gesendet werden. Beim Erzeugen wird der
-                Sponsor automatisch auf Status „Abgerechnet" gesetzt.
+                Sponsor automatisch auf Status „Abgerechnet" gesetzt. Solange eine Rechnung
+                <strong>nicht versendet</strong> ist, lässt sie sich <strong>verwerfen</strong> — eine
+                schon vergebene Nummer wird dabei wieder frei.
             </p>
 
             <h2 class="rech-section-title">Abzurechnen<?= $abzurechnen ? ' (' . count($abzurechnen) . ')' : '' ?></h2>
@@ -198,6 +200,13 @@ $paketLabel = static function (?string $p): string {
                                                        title="Laufende Nummer, z. B. 05">
                                                 <span class="rech-nr-suffix">-<?= date('Y') ?></span>
                                                 <button type="submit" class="btn btn-small btn-primary">Nummer vergeben</button>
+                                            </form>
+                                            <form method="post" action="api/rechnung_crud.php"
+                                                  onsubmit="return confirmVerwerfen(this, '<?= htmlspecialchars(addslashes($r['empfaenger_firma']), ENT_QUOTES) ?>', '');">
+                                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                                                <input type="hidden" name="action" value="discard">
+                                                <input type="hidden" name="id" value="<?= (int) $r['id'] ?>">
+                                                <button type="submit" class="btn-action btn-danger">Entwurf verwerfen</button>
                                             </form>
                                         </div>
                                     </td>
@@ -291,6 +300,15 @@ $paketLabel = static function (?string $p): string {
                                             <?php else: ?>
                                                 <span class="rech-hint">Keine E-Mail-Adresse hinterlegt — bitte beim Sponsor ergänzen.</span>
                                             <?php endif; ?>
+                                            <?php if (!$schonGesendet): ?>
+                                                <form method="post" action="api/rechnung_crud.php"
+                                                      onsubmit="return confirmVerwerfen(this, '<?= htmlspecialchars(addslashes($r['empfaenger_firma']), ENT_QUOTES) ?>', '<?= htmlspecialchars((string) $r['rechnungsnummer'], ENT_QUOTES) ?>');">
+                                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                                                    <input type="hidden" name="action" value="discard">
+                                                    <input type="hidden" name="id" value="<?= $rid ?>">
+                                                    <button type="submit" class="btn-action btn-danger">Verwerfen</button>
+                                                </form>
+                                            <?php endif; ?>
                                         </div>
                                     </td>
                                 </tr>
@@ -303,6 +321,15 @@ $paketLabel = static function (?string $p): string {
         </main>
     </div>
     <script>
+    function confirmVerwerfen(form, firma, nummer) {
+        var msg = nummer
+            ? 'Rechnung ' + nummer + ' (' + firma + ') endgültig verwerfen?\n\n'
+              + 'Die Nummer ' + nummer + ' wird dadurch wieder frei und kann neu vergeben werden. '
+              + 'Der Sponsor erscheint wieder unter „Abzurechnen".'
+            : 'Entwurf für ' + firma + ' endgültig verwerfen?\n\n'
+              + 'Der Sponsor erscheint danach wieder unter „Abzurechnen".';
+        return window.confirm(msg);
+    }
     function confirmVersand(form, schonGesendet) {
         var sel = form.querySelector('select[name="empfaenger"]');
         var to = sel ? sel.value : '';
