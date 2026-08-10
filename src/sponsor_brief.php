@@ -20,6 +20,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/logger.php';
+require_once __DIR__ . '/sponsor_leistungen.php';
 
 // Optionaler Markdown-Parser (MIT, gepinnt 1.7.4). Fehlt die Datei, greift der
 // projekteigene Mini-Konverter weiter unten – das Feature bleibt funktionsfähig.
@@ -205,9 +206,11 @@ Wie und wo möchten Sie sich am Renntag aufbauen? Zu welcher Zeit sollen wir mit
 
 Wie soll der Nachlauf gestaltet werden? Benötigen Sie von uns Fotos, Logos oder Ergebnis-Highlights für Ihre Social-Media-Kanäle?
 
-**6. Gutscheinfunktion**
+**6. Freie Startplätze**
 
-Gutscheine gemäß Ihrem Paket werden Ihnen zeitnah zugesandt.
+Gutschein laut Paket {{startplaetze}}x frei verwendbar: {{gutscheincode}}
+
+Bitte bei der Registrierung gern bei Verein {{firma}} (bei gebräuchlichen Kürzeln gern auch dieses) mit angeben, dann können wir sogar eine Gruppenauswertung am Ende machen, wenn gewünscht.
 
 **7. Plakate**
 
@@ -287,10 +290,13 @@ function sponsorBestaetigungSektionen(): array {
         ],
         [
             'id'      => 's6',
-            'titel'   => '6. Gutscheinfunktion',
+            'titel'   => '6. Freie Startplätze',
             'checked' => true,
-            'text'    => "**6. Gutscheinfunktion**\n\n"
-                       . "Gutscheine gemäß Ihrem Paket werden Ihnen zeitnah zugesandt.",
+            'text'    => "**6. Freie Startplätze**\n\n"
+                       . "Gutschein laut Paket {{startplaetze}}x frei verwendbar: {{gutscheincode}}\n\n"
+                       . "Bitte bei der Registrierung gern bei Verein {{firma}} (bei gebräuchlichen "
+                       . "Kürzeln gern auch dieses) mit angeben, dann können wir sogar eine "
+                       . "Gruppenauswertung am Ende machen, wenn gewünscht.",
         ],
         [
             'id'      => 's7',
@@ -338,6 +344,14 @@ function sponsorBriefPlatzhalterHilfe(string $slug = ''): array {
                                . "Enthält KEINE Grußformel – die schreibst du frei in den Text darüber.",
         '{{event_datum}}'   => 'Datum des Marktlaufs (aus Einstellungen)',
         '{{antwort_bis}}'   => 'Rückmeldefrist (aus Einstellungen)',
+        '{{startplaetze}}'  => "Anzahl der freien Startplätze laut Paket (Bronze 1 / Silber 3 / Gold 5).\n"
+                               . "Quelle: Leistungs-Katalog – dieselbe Zahl, die die Leistungs-Matrix anzeigt.\n"
+                               . "Leer beim Sachsponsor (keine Startplätze) und beim Hauptsponsor\n"
+                               . "(individuelle Menge, in der Matrix „indiv.“) – dann selbst eintragen.",
+        '{{gutscheincode}}' => "Gutscheincode für die freien Startplätze.\n"
+                               . "Quelle: Leistungs-Matrix, Zeile des Sponsors, Spalte „Startplätze“.\n"
+                               . "Leer, solange dort nichts hinterlegt ist – dann in der Matrix nachtragen\n"
+                               . "oder den Satz von Hand schreiben.",
     ];
 }
 
@@ -550,7 +564,7 @@ function sponsorBriefPaketeDefault(): array {
         ['key'=>'silber','name'=>'Silber','investition'=>'500 €',
          'highlights'=>'Logo auf Startnummer & Streckenbanner, Namensnennung Presse, Logo auf Lauf-Shirt, 3 Startplätze'],
         ['key'=>'bronze','name'=>'Bronze','investition'=>'250 €',
-         'highlights'=>'Logo auf Website, Startetüten-Branding, Urkunde, Dankesschreiben'],
+         'highlights'=>'Logo auf Website, Startetüten-Branding, Urkunde, Dankesschreiben, 1 Startplatz'],
     ];
 }
 
@@ -606,11 +620,18 @@ function sponsorBriefPaketTextListe(PDO $pdo): string {
 
 /**
  * Platzhalter-Kontext aufbauen.
+ *
+ * $sponsorId ist optional (0 = kein konkreter Sponsor, z. B. Editor-Vorschau): nur sponsor-
+ * bezogene Platzhalter wie {{gutscheincode}} brauchen ihn. Versand, Beleg-PDF und die
+ * Bestätigungs-Seite reichen ihn durch, damit alle drei dieselben Werte sehen.
+ *
  * @return array{inline:array<string,string>, blocksHtml:array<string,string>, blocksText:array<string,string>}
  */
-function sponsorBriefContext(PDO $pdo, int $userId, string $anrede, string $vorname, string $nachname, string $firma, string $paket): array {
+function sponsorBriefContext(PDO $pdo, int $userId, string $anrede, string $vorname, string $nachname, string $firma, string $paket, int $sponsorId = 0): array {
     $firmaText  = trim($firma) !== '' ? trim($firma) : 'Ihr Unternehmen';
     $sig        = sponsorSignatur($pdo, $userId);
+    // Freie Startplätze: Stückzahl aus dem Paket (Katalog), Code aus der Leistungs-Matrix.
+    $startplaetze = sponsorStartplaetzeAnzahl($paket !== '' ? $paket : null);
     $eventDatum = '20. September 2026';
     $antwortBis = '30. August 2026';
     try {
@@ -652,6 +673,8 @@ function sponsorBriefContext(PDO $pdo, int $userId, string $anrede, string $vorn
             '{{paket_text}}'  => sponsorLevelText($paket),
             '{{event_datum}}' => $eventDatum,
             '{{antwort_bis}}' => $antwortBis,
+            '{{startplaetze}}'  => $startplaetze !== null ? (string) $startplaetze : '',
+            '{{gutscheincode}}' => sponsorGutscheincode($pdo, $sponsorId),
         ],
         'blocksHtml' => [
             'paket_tabelle' => sponsorBriefPaketTabelleHtml($pdo),

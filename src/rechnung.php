@@ -69,7 +69,7 @@ function sponsoringPaketeDefaults(): array
         'silber' => ['name' => 'Silber', 'investition' => '500 €',
             'highlights' => 'Logo auf Startnummer & Streckenbanner, Namensnennung Presse, Logo auf Lauf-Shirt, 3 Startplätze'],
         'bronze' => ['name' => 'Bronze', 'investition' => '250 €',
-            'highlights' => 'Logo auf Website, Startetüten-Branding, Urkunde, Dankesschreiben'],
+            'highlights' => 'Logo auf Website, Startetüten-Branding, Urkunde, Dankesschreiben, 1 Startplatz'],
     ];
 }
 

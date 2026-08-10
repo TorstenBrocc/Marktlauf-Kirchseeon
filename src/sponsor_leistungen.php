@@ -42,8 +42,8 @@ function sponsorLeistungenKatalog(): array
         ['key' => 'logo_streckenbanner', 'label' => 'Logo auf Streckenbanner',    'min' => 'silber', 'typ' => 'haken'],
         ['key' => 'presse',              'label' => 'Namensnennung Presse',       'min' => 'silber', 'typ' => 'haken'],
         ['key' => 'logo_shirt',          'label' => 'Logo auf Lauf-Shirt',        'min' => 'silber', 'typ' => 'haken'],
-        ['key' => 'startplaetze',        'label' => 'Startplätze',                'min' => 'silber', 'typ' => 'startplaetze',
-         'menge' => ['silber' => 3, 'gold' => 5]],
+        ['key' => 'startplaetze',        'label' => 'Startplätze',                'min' => 'bronze', 'typ' => 'startplaetze',
+         'menge' => ['bronze' => 1, 'silber' => 3, 'gold' => 5]],
         ['key' => 'banner',              'label' => 'Banner Start-/Zielbereich',  'min' => 'gold',   'typ' => 'haken_text'],
         ['key' => 'stand',               'label' => 'eigener Stand inkl. Fläche', 'min' => 'gold',   'typ' => 'haken'],
         ['key' => 'moderation',          'label' => 'Moderations-Erwähnung',      'min' => 'gold',   'typ' => 'haken'],
@@ -85,6 +85,39 @@ function sponsorLeistungenState(PDO $pdo, int $sponsorId): array
         ];
     }
     return $out;
+}
+
+/**
+ * Stückzahl der freien Startplätze laut Paket — dieselbe Katalog-Quelle, aus der die Matrix
+ * ihre Zahl anzeigt (Silber 3 / Gold 5).
+ * null = es gibt keine Zahl, die im Brief stehen könnte: entweder gilt die Position für den Typ
+ * nicht (Bronze/Sachsponsor/kein Typ) oder die Menge ist individuell (Hauptsponsor, Matrix: „indiv.").
+ */
+function sponsorStartplaetzeAnzahl(?string $typ): ?int
+{
+    foreach (sponsorLeistungenKatalog() as $pos) {
+        if ($pos['key'] === 'startplaetze') {
+            return sponsorLeistungGilt($pos, $typ) ? sponsorStartplaetzeMenge($pos, $typ) : null;
+        }
+    }
+    return null;
+}
+
+/**
+ * Gutscheincode eines Sponsors — der Freitext der Position „Startplätze" aus der Leistungs-Matrix.
+ * Leerstring, wenn kein Sponsor gewählt ist oder noch kein Code hinterlegt wurde; die weiche
+ * Prüfung beim Bestätigungs-Versand (G3) hängt genau an diesem Leerstring.
+ */
+function sponsorGutscheincode(PDO $pdo, int $sponsorId): string
+{
+    if ($sponsorId <= 0) {
+        return '';
+    }
+    $stmt = $pdo->prepare(
+        "SELECT freitext FROM sponsor_leistungen WHERE sponsor_id = :id AND position = 'startplaetze'"
+    );
+    $stmt->execute(['id' => $sponsorId]);
+    return trim((string) ($stmt->fetchColumn() ?: ''));
 }
 
 /**
