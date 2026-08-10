@@ -12,12 +12,16 @@ declare(strict_types=1);
 require_once __DIR__ . '/rechnung.php';
 
 /**
- * Baut aus einer Sponsor-Zeile den Rechnungs-Snapshot. $paketDef ist die Definition des
- * gebuchten Pakets (aus sponsoringPakete()). Leistung + Betrag kommen aus dem Paket, sofern
- * nicht pro Sponsor überschrieben. Wirft InvalidArgumentException, wenn Pflichtdaten fehlen.
+ * Baut aus einer Sponsor-Zeile den Rechnungs-Snapshot. $pakete ist die vollständige
+ * Paket-Definition (aus sponsoringPakete()) — nicht nur das gebuchte Paket, weil der
+ * Leistungstext die kleineren Stufen mit ausschreibt. Leistung + Betrag kommen aus dem Paket,
+ * sofern nicht pro Sponsor überschrieben. Wirft InvalidArgumentException bei fehlenden Pflichtdaten.
  */
-function rechnungSnapshotVonSponsor(array $sponsor, array $paketDef = [], bool $istBrutto = false): array
+function rechnungSnapshotVonSponsor(array $sponsor, array $pakete = [], bool $istBrutto = false): array
 {
+    $paketKey = trim((string) ($sponsor['paket'] ?? ''));
+    $paketDef = $pakete[$paketKey] ?? [];
+
     $firma = trim((string) ($sponsor['rechnung_firma'] ?? '')) !== ''
         ? trim((string) $sponsor['rechnung_firma'])
         : trim((string) ($sponsor['firma'] ?? ''));
@@ -49,7 +53,7 @@ function rechnungSnapshotVonSponsor(array $sponsor, array $paketDef = [], bool $
     }
     $leistung = trim((string) ($sponsor['rechnung_leistung'] ?? ''));
     if ($leistung === '') {
-        $leistung = paketLeistung($paketDef, $zeitraum);
+        $leistung = paketLeistung($pakete, $paketKey, $zeitraum);
     }
 
     return [
@@ -80,11 +84,10 @@ function rechnungEntwurfErstellen(PDO $pdo, int $sponsorId, ?int $userId): array
         throw new RuntimeException('Sponsor nicht gefunden.');
     }
 
-    $pakete       = sponsoringPakete($pdo);
-    $paketDef     = $pakete[$sponsor['paket'] ?? ''] ?? [];
+    $pakete = sponsoringPakete($pdo);
     // Paketpreise sind immer netto; nur der Pro-Sponsor-Haken schaltet diese Rechnung auf brutto.
     $istBrutto = ((int) ($sponsor['rechnung_betrag_brutto'] ?? 0) === 1);
-    $snap      = rechnungSnapshotVonSponsor($sponsor, $paketDef, $istBrutto);
+    $snap      = rechnungSnapshotVonSponsor($sponsor, $pakete, $istBrutto);
 
     $ins = $pdo->prepare('
         INSERT INTO sponsor_rechnungen
@@ -200,6 +203,59 @@ function rechnungNummerVergeben(PDO $pdo, int $id, string $nummer, ?int $userId)
         // UNIQUE-Verletzung o. Ä.
         throw new RuntimeException('Die Nummer ' . $nummer . ' konnte nicht vergeben werden (evtl. bereits vergeben).');
     }
+}
+
+/**
+ * Verwirft eine Rechnung endgültig — Entwurf oder nummeriert, solange sie nie beim Sponsor
+ * gelandet ist. Eine vergebene Nummer wird damit wieder frei (die UNIQUE-Zeile verschwindet),
+ * was genau der Sinn der Aktion ist: eine noch nicht versendete Nummer darf neu verwendet
+ * werden, ein Nummernloch wäre die schlechtere Buchführung.
+ *
+ * Räumt vollständig auf: Protokollzeilen gehen per ON DELETE CASCADE (Migration 043) mit, und
+ * der Sponsor fällt von 'abgerechnet' auf 'bestaetigt' zurück, damit er wieder unter
+ * „Abzurechnen" auftaucht. 'bezahlt' bleibt unangetastet — Geld ist geflossen.
+ *
+ * Wirft RuntimeException, wenn die Rechnung fehlt oder schon erfolgreich versendet wurde.
+ * @return array{nummer:string, firma:string, status_zurueck:bool}
+ */
+function rechnungVerwerfen(PDO $pdo, int $id): array
+{
+    $r = rechnungLaden($pdo, $id);
+    if ($r === null) {
+        throw new RuntimeException('Rechnung nicht gefunden.');
+    }
+
+    foreach (rechnungVersandHistorie($pdo, $id) as $h) {
+        if (($h['ergebnis'] ?? '') === 'ok') {
+            throw new RuntimeException(
+                'Diese Rechnung wurde am ' . date('d.m.Y', strtotime((string) $h['versendet_am']))
+                . ' an ' . $h['empfaenger'] . ' versendet und kann nicht mehr verworfen werden. '
+                . 'Eine versendete Rechnung wird storniert, nicht gelöscht.'
+            );
+        }
+    }
+
+    $sponsorId = (int) ($r['sponsor_id'] ?? 0);
+    $pdo->beginTransaction();
+    try {
+        $pdo->prepare('DELETE FROM sponsor_rechnungen WHERE id = :id')->execute(['id' => $id]);
+        $statusZurueck = false;
+        if ($sponsorId > 0) {
+            $upd = $pdo->prepare("UPDATE sponsors SET status = 'bestaetigt' WHERE id = :id AND status = 'abgerechnet'");
+            $upd->execute(['id' => $sponsorId]);
+            $statusZurueck = $upd->rowCount() > 0;
+        }
+        $pdo->commit();
+    } catch (PDOException $e) {
+        $pdo->rollBack();
+        throw $e;
+    }
+
+    return [
+        'nummer'         => (string) ($r['rechnungsnummer'] ?? ''),
+        'firma'          => (string) ($r['empfaenger_firma'] ?? ''),
+        'status_zurueck' => $statusZurueck,
+    ];
 }
 
 /**

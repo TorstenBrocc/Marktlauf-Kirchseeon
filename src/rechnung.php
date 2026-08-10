@@ -9,6 +9,10 @@
 
 declare(strict_types=1);
 
+// sponsorTypRang(): kanonische Rangordnung der Pakete (bronze < silber < gold < hauptsponsor).
+// Der kumulative Leistungstext braucht sie — die Ordnung wird nicht zweitgeführt.
+require_once __DIR__ . '/sponsor_leistungen.php';
+
 /**
  * Absender-/Vereins-Stammdaten für den Rechnungskopf und den Zahlungshinweis.
  * BIC bewusst nicht gesetzt: für SEPA-Inlandsüberweisungen genügt die IBAN,
@@ -32,11 +36,13 @@ function rechnungStammdaten(): array
         'iban'          => 'DE23 7025 0150 0000 4438 95',
         'bank'          => 'Kreissparkasse München Starnberg Ebersberg',
 
-        // Footer-Kontaktdaten (aus dem Vereinsbriefkopf)
+        // Footer-Kontaktdaten (aus dem Vereinsbriefkopf). Mail + Web sind bewusst die
+        // Marktlauf-Adressen, nicht die des Gesamtvereins: die Rechnung kommt aus der
+        // Abteilung, und Rückfragen sollen dort landen.
         'telefon'       => '08091/9313',
         'telefax'       => '08091/563966',
-        'web'           => 'www.atsv-kirchseeon.de',
-        'email'         => 'atsv@atsv-kirchseeon.de',
+        'web'           => 'https://atsv-kirchseeon-marktlauf.de',
+        'email'         => 'info@atsv-kirchseeon-marktlauf.de',
         'burozeiten'    => 'Bürozeiten: Dienstag 18–19 Uhr',
         // Footer-Bankverbindungen (beide)
         'bank1_name'    => 'Kreissparkasse München Starnberg Ebersberg',
@@ -130,17 +136,70 @@ function rechnungBetraegeAusBetrag(float $betrag, bool $istBrutto, ?float $ustSa
 }
 
 /**
- * Konkreter Leistungstext aus der Paket-Definition (§14: nicht bloß "Sponsoring").
+ * Einzelposten eines Pakets, kumulativ über alle enthaltenen Stufen: Silber = Bronze + Silber,
+ * Gold = Bronze + Silber + Gold, Hauptsponsor = alles. Genau so sind die Paket-Highlights
+ * gepflegt — die höheren Stufen beginnen dort mit "+" ("zusätzlich zum kleineren Paket"), was in
+ * der Brief-Tabelle passt, auf der Rechnung aber allein stand. Das "+" fällt hier weg.
+ *
+ * Einzige Ausnahme von der Summierung sind die Startplätze: sie stapeln sich nicht, es gilt die
+ * Stückzahl der höchsten Stufe, die eine nennt (Silber 3 statt 1+3). Der Posten wandert dabei
+ * ans Ende der Liste.
+ *
+ * @param array<string,array{name?:string,highlights?:string}> $pakete alle Pakete (sponsoringPakete())
+ * @return array<int,string> Posten in Reihenfolge Bronze → gebuchtes Paket
  */
-function paketLeistung(array $paketDef, string $zeitraum): string
+function paketLeistungsposten(array $pakete, ?string $paketKey): array
 {
-    $z    = trim($zeitraum) !== '' ? $zeitraum : leistungszeitraumDefault();
-    $name = trim((string) ($paketDef['name'] ?? '')) ?: 'Sponsoring';
-    $high = trim((string) ($paketDef['highlights'] ?? ''));
-    if ($high === '') {
+    $zielRang = sponsorTypRang($paketKey);
+    if ($zielRang <= 0) {
+        return [];
+    }
+
+    $posten     = [];
+    $startplatz = null;
+    $gesehen    = [];
+    foreach (['bronze', 'silber', 'gold', 'hauptsponsor'] as $stufe) {
+        if (sponsorTypRang($stufe) > $zielRang) {
+            break;
+        }
+        // Führendes "+" der kumulativen Schreibweise entfernen, dann an Kommas zerlegen.
+        $high = ltrim(trim((string) ($pakete[$stufe]['highlights'] ?? '')), '+ ');
+        foreach (explode(',', $high) as $seg) {
+            $seg = trim($seg);
+            if ($seg === '') {
+                continue;
+            }
+            if (preg_match('/startpl(atz|ätze)/iu', $seg) === 1) {
+                $startplatz = $seg; // höhere Stufe ersetzt die niedrigere, statt zu addieren
+                continue;
+            }
+            $key = mb_strtolower($seg);
+            if (isset($gesehen[$key])) {
+                continue; // dieselbe Leistung in zwei Stufen nur einmal nennen
+            }
+            $gesehen[$key] = true;
+            $posten[]      = $seg;
+        }
+    }
+    if ($startplatz !== null) {
+        $posten[] = $startplatz;
+    }
+    return $posten;
+}
+
+/**
+ * Konkreter Leistungstext für die Rechnung (§14: nicht bloß "Sponsoring") — das gebuchte Paket
+ * vollständig ausgeschrieben, inklusive der Leistungen der kleineren Stufen.
+ */
+function paketLeistung(array $pakete, ?string $paketKey, string $zeitraum): string
+{
+    $z      = trim($zeitraum) !== '' ? $zeitraum : leistungszeitraumDefault();
+    $name   = trim((string) ($pakete[$paketKey ?? '']['name'] ?? '')) ?: 'Sponsoring';
+    $posten = paketLeistungsposten($pakete, $paketKey);
+    if ($posten === []) {
         return "$name-Sponsoring $z gemäß unserer Vereinbarung.";
     }
-    return "$name-Sponsoring $z: $high.";
+    return "$name-Sponsoring $z: " . implode(', ', $posten) . '.';
 }
 
 /**

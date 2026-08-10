@@ -4,6 +4,7 @@
  *   action=generate       : aus ausgewählten Sponsoren Rechnungsentwürfe erzeugen
  *                           + Anstoß-Mail an den Kassier (Nummernvergabe im Dashboard).
  *   action=assign_number  : fortlaufende Nummer einer Rechnung vergeben.
+ *   action=discard        : Rechnung verwerfen (nur solange nicht versendet); Nummer wird frei.
  * Muster: sponsor_notiz.php / sponsor_versand.php.
  */
 
@@ -59,6 +60,28 @@ if ($action === 'assign_number') {
     } catch (PDOException $e) {
         logError('Rechnung Nummer vergeben: ' . $e->getMessage());
         $_SESSION['flash_error'] = 'Datenbankfehler bei der Nummernvergabe.';
+    }
+    header('Location: ../rechnungen.php');
+    exit;
+}
+
+if ($action === 'discard') {
+    $id = (int) ($_POST['id'] ?? 0);
+    try {
+        $res = rechnungVerwerfen($pdo, $id);
+        $msg = $res['nummer'] !== ''
+            ? 'Rechnung ' . $res['nummer'] . ' (' . $res['firma'] . ') verworfen — die Nummer '
+                . $res['nummer'] . ' ist wieder frei.'
+            : 'Entwurf (' . $res['firma'] . ') verworfen.';
+        if ($res['status_zurueck']) {
+            $msg .= ' Der Sponsor steht wieder auf „Bestätigt" und erscheint unter „Abzurechnen".';
+        }
+        $_SESSION['flash_success'] = $msg;
+    } catch (RuntimeException $e) {
+        $_SESSION['flash_error'] = $e->getMessage();
+    } catch (PDOException $e) {
+        logError('Rechnung verwerfen (' . $id . '): ' . $e->getMessage());
+        $_SESSION['flash_error'] = 'Datenbankfehler beim Verwerfen.';
     }
     header('Location: ../rechnungen.php');
     exit;
