@@ -12,21 +12,25 @@ require_once __DIR__ . '/../../src/db.php';
 require_once __DIR__ . '/../../src/logger.php';
 require_once __DIR__ . '/../../src/sponsor_brief.php';
 
+// Rücksprungziel: jede Vorlage hat ihre eigene Seite (sponsorBriefSeite()); ohne
+// verwertbaren Slug landet man auf dem Erstanschreiben.
+$slug = (string) ($_POST['slug'] ?? '');
+$ziel = '../' . sponsorBriefSeite($slug);
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: ../sponsor_briefe.php');
+    header('Location: ' . $ziel);
     exit;
 }
 
 if (!verifyCsrfToken($_POST['csrf_token'] ?? '')) {
     $_SESSION['flash_error'] = 'Ungültige Anfrage.';
-    header('Location: ../sponsor_briefe.php');
+    header('Location: ' . $ziel);
     exit;
 }
 
-$slug = (string) ($_POST['slug'] ?? '');
 if (!sponsorBriefSlugValid($slug)) {
     $_SESSION['flash_error'] = 'Unbekannte Vorlage.';
-    header('Location: ../sponsor_briefe.php');
+    header('Location: ' . $ziel);
     exit;
 }
 
@@ -70,5 +74,5 @@ try {
     $_SESSION['flash_error'] = 'Datenbankfehler beim Speichern.';
 }
 
-header('Location: ../sponsor_briefe.php?slug=' . urlencode($slug));
+header('Location: ' . $ziel);
 exit;

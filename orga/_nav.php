@@ -16,6 +16,10 @@
  *   section ?string  Sidebar-Abschnitts-Überschrift; aufeinanderfolgende Items mit
  *                    gleichem Wert werden unter EINER Überschrift gruppiert. Ohne
  *                    section erscheint das Item ohne Überschrift (z. B. Dashboard).
+ *   group  ?string   Optionale DRITTE Ebene ÜBER der section — für Blöcke, die selbst
+ *                    schon in Abschnitte zerfallen (aktuell nur SPONSOREN mit DATEN +
+ *                    SPONSOREN-ANSCHREIBEN). Ohne group bleibt ein Block zweistufig;
+ *                    die Ebene ist rein optisch, sie ändert nichts an den Kacheln.
  *   badge  ?string   kleines Label rechts (z. B. Phase-Kennzeichnung)
  *   tile   bool      als Dashboard-Kachel zeigen (default true; false = nur Sidebar)
  *   kpi    ?callable fn(PDO $pdo): array{value:string, label:string, signal:string}
@@ -104,10 +108,12 @@ return [
             ];
         },
     ],
+    // --- SPONSOREN · DATEN ------------------------------------------------
     [
         'key'     => 'sponsoren',
-        'label'   => 'Sponsoren',
-        'section' => 'SPONSOREN-HANDLING',
+        'label'   => 'Stammdaten',
+        'group'   => 'SPONSOREN',
+        'section' => 'DATEN',
         'href'    => 'sponsoren.php',
         'kpi'   => static function (PDO $pdo): array {
             $anzahl = (int) $pdo->query('SELECT COUNT(*) FROM sponsors')->fetchColumn();
@@ -120,28 +126,76 @@ return [
         },
     ],
     [
-        'key'     => 'sponsor_briefe',
-        'label'   => 'Sponsorenbriefe',
-        'section' => 'SPONSOREN-HANDLING',
-        'href'    => 'sponsor_briefe.php',
+        'key'     => 'leistungen',
+        'label'   => 'Paketleistungen',
+        'group'   => 'SPONSOREN',
+        'section' => 'DATEN',
+        'href'    => 'leistungen.php',
+    ],
+    [
+        'key'     => 'rechnungen',
+        'label'   => '(Ab-)Rechnungen',
+        'group'   => 'SPONSOREN',
+        'section' => 'DATEN',
+        'href'    => 'rechnungen.php',
         'kpi'   => static function (PDO $pdo): array {
-            $offen  = (int) $pdo->query("SELECT COUNT(*) FROM sponsor_versand_queue WHERE status = 'offen'")->fetchColumn();
-            $fehler = (int) $pdo->query("SELECT COUNT(*) FROM sponsor_versand_queue WHERE status = 'fehler'")->fetchColumn();
-            $label = 'offen in Versand-Queue';
-            if ($fehler > 0) {
-                $label .= " · {$fehler} Fehler";
-            }
+            $entwuerfe = (int) $pdo->query("SELECT COUNT(*) FROM sponsor_rechnungen WHERE status = 'entwurf'")->fetchColumn();
+            return [
+                'value'  => (string) $entwuerfe,
+                'label'  => 'Entwürfe ohne Nummer',
+                'signal' => $entwuerfe > 0 ? 'attention' : 'ok',
+            ];
+        },
+    ],
+
+    // --- SPONSOREN · ANSCHREIBEN -------------------------------------------
+    // Eine Seite je Briefvorlage (Empfänger + Brief + Anhänge + Versand an einem Ort).
+    // Spec: intern/sponsoren-anschreiben-seiten-spec.md
+    [
+        'key'     => 'erstanschreiben',
+        'label'   => 'Erstanschreiben',
+        'group'   => 'SPONSOREN',
+        'section' => 'SPONSOREN-ANSCHREIBEN',
+        'href'    => 'erstanschreiben.php',
+        'kpi'   => static function (PDO $pdo): array {
+            $offen = (int) $pdo->query("SELECT COUNT(*) FROM sponsors WHERE status = 'neu' AND kein_kontakt = 0")->fetchColumn();
+            // Die Versand-Queue ist typübergreifend; ihre Fehler hingen bisher an der
+            // Kachel „Sponsorenbriefe". Sie hängen jetzt hier, wo der Bulk-Versand läuft.
+            $fehler = 0;
+            try {
+                $fehler = (int) $pdo->query("SELECT COUNT(*) FROM sponsor_versand_queue WHERE status = 'fehler'")->fetchColumn();
+            } catch (PDOException $e) { /* Queue evtl. noch nicht da */ }
             return [
                 'value'  => (string) $offen,
-                'label'  => $label,
+                'label'  => 'noch nicht angeschrieben' . ($fehler > 0 ? " · {$fehler} Versand-Fehler" : ''),
                 'signal' => ($offen > 0 || $fehler > 0) ? 'attention' : 'ok',
             ];
         },
     ],
     [
+        'key'     => 'folgeanschreiben',
+        'label'   => 'Folgeanschreiben',
+        'group'   => 'SPONSOREN',
+        'section' => 'SPONSOREN-ANSCHREIBEN',
+        'href'    => 'folgeanschreiben.php',
+        'kpi'   => static function (PDO $pdo): array {
+            // Bestandssponsor = jeder ohne ausdrückliches „Kein Kontakt" (Definition TT
+            // 2026-08-10); eine Absage schließt ein erneutes Anschreiben nicht aus.
+            $anzahl = (int) $pdo->query(
+                'SELECT COUNT(*) FROM sponsors WHERE kein_kontakt = 0'
+            )->fetchColumn();
+            return [
+                'value'  => (string) $anzahl,
+                'label'  => 'ansprechbare Sponsoren',
+                'signal' => 'neutral',
+            ];
+        },
+    ],
+    [
         'key'     => 'bestaetigungen',
-        'label'   => 'Bestätigungen',
-        'section' => 'SPONSOREN-HANDLING',
+        'label'   => 'Bestätigung Sponsoring',
+        'group'   => 'SPONSOREN',
+        'section' => 'SPONSOREN-ANSCHREIBEN',
         'href'    => 'bestaetigungen.php',
         'kpi'   => static function (PDO $pdo): array {
             $offen = (int) $pdo->query("SELECT COUNT(*) FROM sponsors WHERE status = 'zugesagt'")->fetchColumn();
@@ -153,24 +207,28 @@ return [
         },
     ],
     [
-        'key'     => 'rechnungen',
-        'label'   => 'Rechnungen',
-        'section' => 'SPONSOREN-HANDLING',
-        'href'    => 'rechnungen.php',
-        'kpi'   => static function (PDO $pdo): array {
-            $entwuerfe = (int) $pdo->query("SELECT COUNT(*) FROM sponsor_rechnungen WHERE status = 'entwurf'")->fetchColumn();
-            return [
-                'value'  => (string) $entwuerfe,
-                'label'  => 'Entwürfe ohne Nummer',
-                'signal' => $entwuerfe > 0 ? 'attention' : 'ok',
-            ];
-        },
+        'key'     => 'freier_brief',
+        'label'   => 'Freier Brief',
+        'group'   => 'SPONSOREN',
+        'section' => 'SPONSOREN-ANSCHREIBEN',
+        'href'    => 'freier_brief.php',
+        'tile'    => false, // Ad-hoc-Werkzeug ohne Kennzahl — flutet sonst das Cockpit
     ],
     [
-        'key'     => 'leistungen',
-        'label'   => 'Leistungen',
-        'section' => 'SPONSOREN-HANDLING',
-        'href'    => 'leistungen.php',
+        'key'     => 'bedingungen',
+        'label'   => 'Bedingungen nachreichen',
+        'group'   => 'SPONSOREN',
+        'section' => 'SPONSOREN-ANSCHREIBEN',
+        'href'    => 'bedingungen.php',
+        'tile'    => false, // Sonderfall Altfälle — Sidebar genügt
+    ],
+    [
+        'key'     => 'anschreiben_einstellungen',
+        'label'   => 'Anschreiben-Einstellungen',
+        'group'   => 'SPONSOREN',
+        'section' => 'SPONSOREN-ANSCHREIBEN',
+        'href'    => 'anschreiben_einstellungen.php',
+        'tile'    => false, // Einstellungen sind kein Arbeitsvorrat
     ],
     [
         'key'     => 'vereine',

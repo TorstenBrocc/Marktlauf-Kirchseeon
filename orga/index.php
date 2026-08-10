@@ -24,6 +24,7 @@ $navItems = require __DIR__ . '/_nav.php';
 // Kacheln nach Sidebar-Abschnitt gruppieren (gleiche Reihenfolge wie in _nav.php),
 // damit Dashboard und Sidebar dieselbe Struktur zeigen.
 $dashboardGroups = [];
+$dashboardTitles = [];
 foreach ($navItems as $item) {
     if (($item['tile'] ?? true) === false || !empty($item['admin'])) {
         continue;
@@ -38,6 +39,11 @@ foreach ($navItems as $item) {
     }
     $section = $item['section'] ?? '';
     $dashboardGroups[$section][] = ['item' => $item, 'kpi' => $kpi];
+    // Gehört der Abschnitt zu einer Gruppe (dritte Sidebar-Ebene), wird sie in die
+    // Überschrift gezogen: „DATEN" allein sagt auf dem Cockpit nichts, „SPONSOREN · DATEN"
+    // schon. Ohne Gruppe bleibt der Abschnittsname wie bisher stehen.
+    $group = $item['group'] ?? '';
+    $dashboardTitles[$section] = $group !== '' ? $group . ' · ' . $section : $section;
 }
 
 /**
@@ -346,7 +352,7 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
             <?php foreach ($dashboardGroups as $section => $tiles): ?>
                 <?php if ($section === 'ADMIN' || $section === '') { continue; } // ADMIN nicht aufs Dashboard; '' unten mit Schnellzugriff ?>
                 <section class="dashboard-group">
-                    <h2 class="dashboard-group-title"><?= htmlspecialchars($section) ?></h2>
+                    <h2 class="dashboard-group-title"><?= htmlspecialchars($dashboardTitles[$section] ?? $section) ?></h2>
                     <div class="dashboard-grid">
                         <?php foreach ($tiles as $tile) { $renderTile($tile); } ?>
                     </div>

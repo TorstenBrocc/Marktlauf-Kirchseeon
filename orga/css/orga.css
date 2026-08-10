@@ -343,6 +343,13 @@ body {
     padding-left: 2.25rem;
 }
 
+/* Dritte Ebene: Items, die zusätzlich unter einer Gruppen-Überschrift hängen
+   (aktuell nur SPONSOREN → DATEN / SPONSOREN-ANSCHREIBEN). */
+.nav-item.nav-item-sub.nav-item-sub-2 a,
+.nav-item.nav-item-sub.nav-item-sub-2 .nav-disabled {
+    padding-left: 3rem;
+}
+
 /* Noch nicht gebautes Nav-Ziel (z. B. Live-Ticker, Phase 3): sichtbar, aber nicht klickbar */
 .nav-item .nav-disabled {
     display: flex;
@@ -360,6 +367,23 @@ body {
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--text-light);
+}
+
+/* Gruppen-Überschrift (Ebene über .nav-section): kräftiger und dunkler, damit die
+   darunter liegenden Abschnitte klar als ihre Unterpunkte lesbar sind. */
+.nav-group {
+    padding: 1.1rem 1.25rem 0.2rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text);
+}
+
+/* Abschnitts-Überschrift innerhalb einer Gruppe: eingerückt und etwas enger am
+   Vorgänger, damit die Staffelung Gruppe → Abschnitt → Item sichtbar wird. */
+.nav-section.nav-section-sub {
+    padding: 0.55rem 1.25rem 0.3rem 2.25rem;
 }
 
 .badge {
@@ -825,3 +849,186 @@ a.card-tile:hover {
     padding-left: 1.1rem;
     line-height: 1.45;
 }
+
+/* ============================================================
+   ANSCHREIBEN-SEITEN — Empfänger-Kopf, Compose, Anhang-Kachel
+   Gemeinsame Bausteine aller Sponsoren-Anschreiben (eine Seite je Briefvorlage).
+   Lagen vorher als <style>-Block in jeder Briefseite; zentral, damit die Seiten
+   nicht auseinanderdriften. Spec: intern/sponsoren-anschreiben-seiten-spec.md
+   ============================================================ */
+
+.brief-card {
+    background: var(--white);
+    border-radius: 8px;
+    box-shadow: var(--shadow-card);
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+}
+
+.brief-hint { font-size: 0.8rem; color: var(--text-light); }
+
+/* --- Empfänger-Kopf --- */
+.empf-kopf {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.85rem 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.empf-kopf-zeile {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.empf-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-light);
+}
+
+.empf-select {
+    padding: 0.4rem 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.9rem;
+    min-width: 15rem;
+    max-width: 100%;
+    box-sizing: border-box;
+    background: var(--white);
+    color: var(--text);
+}
+
+.empf-zahl { font-size: 0.9rem; color: var(--text); }
+.empf-zahl strong { font-size: 1.05rem; color: var(--primary); }
+
+.empf-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(0, 150, 64, 0.1);
+    border: 1px solid var(--primary);
+    color: var(--text);
+    border-radius: 14px;
+    padding: 0.2rem 0.7rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.empf-chip a { color: var(--text-light); text-decoration: none; }
+.empf-chip a:hover { color: var(--error); }
+
+.empf-toggle {
+    margin-left: auto;
+    font-size: 0.8rem;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.25rem 0.6rem;
+    cursor: pointer;
+    color: var(--text-light);
+    white-space: nowrap;
+}
+
+.empf-toggle:hover { background: var(--bg); color: var(--text); }
+
+.empf-hinweis {
+    font-size: 0.82rem;
+    color: var(--text);
+    background: rgba(255, 193, 7, 0.13);
+    border: 1px solid rgba(255, 193, 7, 0.5);
+    border-radius: 6px;
+    padding: 0.5rem 0.7rem;
+    margin: 0.65rem 0 0;
+    line-height: 1.5;
+}
+
+.empf-liste { margin-top: 0.85rem; border-top: 1px solid var(--border); padding-top: 0.75rem; }
+.empf-liste-actions { display: flex; gap: 0.5rem; margin-bottom: 0.6rem; }
+
+.empf-items {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    max-height: 22rem;
+    overflow-y: auto;
+}
+
+.empf-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    padding: 0.45rem 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    font-size: 0.88rem;
+}
+
+.empf-item.aktiv { border-color: var(--primary); background: rgba(0, 150, 64, 0.07); }
+.empf-item .firma { font-weight: 600; flex: 1; min-width: 10rem; word-break: break-word; }
+.empf-item input[type=checkbox] { accent-color: var(--primary); cursor: pointer; flex-shrink: 0; }
+
+.empf-tag {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 12px;
+    background: var(--white);
+    border: 1px solid var(--border);
+    color: var(--text-light);
+    white-space: nowrap;
+}
+
+.empf-tag.stop { background: var(--error-bg); border-color: var(--error); color: var(--error); }
+
+/* --- Anhang-Kachel --- */
+.anhang-kachel-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.5rem;
+}
+
+.anhang-gruppe-titel {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-light);
+    margin: 0.9rem 0 0.35rem;
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.anhang-gruppe-titel .brief-hint { font-weight: 400; }
+.anhang-fest { flex-shrink: 0; font-size: 0.85rem; }
+
+.anhang-warn {
+    font-size: 0.82rem;
+    color: var(--text);
+    background: rgba(255, 193, 7, 0.15);
+    border: 1px solid rgba(255, 193, 7, 0.55);
+    border-radius: 6px;
+    padding: 0.5rem 0.7rem;
+    margin: 0.3rem 0 0;
+    line-height: 1.5;
+}
+
+.empf-tag.warn { background: rgba(255, 193, 7, 0.18); border-color: rgba(255, 193, 7, 0.6); color: var(--text); }
+
+/* Dateiliste der Anhang-Kachel (geteiltes Partial _anhang_kachel.php) */
+.plakat-liste { list-style: none; margin: 0.4rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.plakat-item { display: flex; align-items: center; flex-wrap: nowrap; gap: 0.75rem; padding: 0.5rem 0.75rem; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; }
+.plakat-item span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.plakat-item .anhang-abwahl { flex-shrink: 0; accent-color: var(--primary); width: 1rem; height: 1rem; cursor: pointer; margin: 0; }
+.plakat-hinweis { font-size: 0.8rem; color: var(--text); background: rgba(255,193,7,0.15); border: 1px solid rgba(255,193,7,0.55); border-radius: 6px; padding: 0.5rem 0.75rem; margin: 0.9rem 0 0.5rem; line-height: 1.5; }
+.plakat-upload-form { margin-top: 0.75rem; display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }

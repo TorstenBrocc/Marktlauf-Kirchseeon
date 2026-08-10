@@ -47,6 +47,22 @@ function sponsorBriefSlugValid(string $slug): bool {
 }
 
 /**
+ * Auf welcher Orga-Seite wird diese Vorlage bearbeitet und versendet?
+ * Seit 2026-08-10 hat jede Vorlage ihre eigene Seite; APIs, die nach dem Speichern
+ * zurückspringen, fragen hier nach dem Ziel statt einen Sammel-Editor anzunehmen.
+ */
+function sponsorBriefSeite(string $slug): string {
+    return match ($slug) {
+        'folgejahr'    => 'folgeanschreiben.php',
+        'frei'         => 'freier_brief.php',
+        'bestaetigung' => 'bestaetigungen.php',
+        'bedingungen'  => 'bedingungen.php',
+        'rechnung'     => 'rechnungen.php',
+        default        => 'erstanschreiben.php',
+    };
+}
+
+/**
  * Standard-Vorlagen (Betreff + Markdown-Körper). Einzige Quelle der Wahrheit.
  * @return array<string, array{name:string, betreff:string, koerper_md:string}>
  */
@@ -352,6 +368,35 @@ function sponsorBriefPlatzhalterHilfe(string $slug = ''): array {
                                . "Quelle: Leistungs-Matrix, Zeile des Sponsors, Spalte „Startplätze“.\n"
                                . "Leer, solange dort nichts hinterlegt ist – dann in der Matrix nachtragen\n"
                                . "oder den Satz von Hand schreiben.",
+    ];
+}
+
+/**
+ * Woher der Wert eines Platzhalters stammt — die Angabe, die den Chip-Tooltips fehlt.
+ *
+ * Die Beschreibung („was er einsetzt") liefert sponsorBriefPlatzhalterHilfe(); hier steht
+ * die Herkunft, damit auf der Einstellungsseite beantwortbar wird, WO man nachtragen muss,
+ * wenn ein Platzhalter leer bleibt. 'ziel' verlinkt genau dorthin (leer = kein Ziel).
+ *
+ * @return array<string, array{quelle:string, ziel:string}>
+ */
+function sponsorBriefPlatzhalterQuelle(): array {
+    return [
+        '{{anrede}}'          => ['quelle' => 'Ansprechpartner des Sponsors (Anrede + Nachname, sonst Firma)', 'ziel' => 'sponsoren.php'],
+        '{{vorname}}'         => ['quelle' => 'Ansprechpartner des Sponsors',                                  'ziel' => 'sponsoren.php'],
+        '{{firma}}'           => ['quelle' => 'Sponsor-Stammdaten',                                            'ziel' => 'sponsoren.php'],
+        '{{paket_text}}'      => ['quelle' => 'Paket-Feld des Sponsors',                                       'ziel' => 'sponsoren.php'],
+        '{{paket_tabelle}}'   => ['quelle' => 'Diese Seite, Abschnitt „Sponsoring-Pakete"',                     'ziel' => ''],
+        '{{event_datum}}'     => ['quelle' => 'Diese Seite, Abschnitt „Termine"',                               'ziel' => ''],
+        '{{antwort_bis}}'     => ['quelle' => 'Diese Seite, Abschnitt „Termine"',                               'ziel' => ''],
+        '{{signatur}}'        => ['quelle' => 'Dein Profil in der Benutzerverwaltung',                          'ziel' => 'benutzer_edit.php'],
+        '{{startplaetze}}'    => ['quelle' => 'Leistungs-Katalog (Paketregel)',                                 'ziel' => 'leistungen.php'],
+        '{{gutscheincode}}'   => ['quelle' => 'Leistungs-Matrix, Zeile des Sponsors',                           'ziel' => 'leistungen.php'],
+        '{{rechnungsnummer}}' => ['quelle' => 'Rechnungsdatensatz',                                             'ziel' => 'rechnungen.php'],
+        '{{betrag}}'          => ['quelle' => 'Rechnungsdatensatz',                                             'ziel' => 'rechnungen.php'],
+        '{{netto}}'           => ['quelle' => 'Rechnungsdatensatz',                                             'ziel' => 'rechnungen.php'],
+        '{{leistung}}'        => ['quelle' => 'Rechnungsdatensatz (Paket/Leistung)',                            'ziel' => 'rechnungen.php'],
+        '{{zeitraum}}'        => ['quelle' => 'Rechnungsdatensatz (Leistungszeitraum)',                         'ziel' => 'rechnungen.php'],
     ];
 }
 

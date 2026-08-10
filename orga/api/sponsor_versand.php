@@ -18,10 +18,16 @@ require_once __DIR__ . '/../../src/channels/mail.php';
 require_once __DIR__ . '/../../src/sponsor_status.php';
 require_once __DIR__ . '/../../src/sponsor_beleg.php';
 
-// Rücksprungziel: die Bestätigungs-Seite schickt ihre Nutzer zu sich zurück statt in die
+// Rücksprungziel: jede Anschreiben-Seite schickt ihre Nutzer zu sich zurück statt in die
 // Sponsoren-Liste. Feste Whitelist — kein offener Redirect aus dem Request. Muss vor der
 // ersten Weiterleitung stehen (Methoden- und CSRF-Guard nutzen es bereits).
-$redirectTo = in_array($_POST['redirect_to'] ?? '', ['bestaetigungen.php'], true)
+$redirectTo = in_array($_POST['redirect_to'] ?? '', [
+    'bestaetigungen.php',
+    'erstanschreiben.php',
+    'folgeanschreiben.php',
+    'freier_brief.php',
+    'bedingungen.php',
+], true)
     ? '../' . $_POST['redirect_to']
     : '../sponsoren.php';
 
