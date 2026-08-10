@@ -121,12 +121,13 @@ class RechnungPdf extends FPDF
         $this->SetXY($L, 14);
         $this->SetFont('montbd', '', 8);
         $this->SetTextColor(...$this->green1);
-        $this->trackedCell(0, 4, 'ALLGEMEINER TURN- UND SPORTVEREIN KIRCHSEEON E.V.', 0.8, 1, 'L');
+        // "e.V." bewusst klein-e inmitten der Versalzeile, Gründungsjahr angehängt (TT, 2026-08-10).
+        $this->trackedCell(0, 4, 'ALLGEMEINER TURN- UND SPORTVEREIN KIRCHSEEON e.V. - 1906', 0.8, 1, 'L');
 
         $this->SetXY($L, 18.5);
         $this->SetFont('mont', '', 17);
         $this->SetTextColor(...$this->ink);
-        $this->Cell(0, 9, $this->t('Abteilung Marktlauf Kirchseeon'), 0, 1, 'L');
+        $this->Cell(0, 9, $this->t("Abteilung 'Marktlauf Kirchseeon'"), 0, 1, 'L');
 
         $shield = __DIR__ . '/../assets/images/ATSV_Logo-750x968.png';
         if (is_file($shield)) {
@@ -230,7 +231,9 @@ class RechnungPdf extends FPDF
             $titel  = $voll;
             $beschr = '';
         }
-        $beschr = str_replace(', ', ' · ', rtrim($beschr, '.'));
+        // Kein Komma→"·"-Ersatz mehr: die Posten kommen bereits mit " · " getrennt, und die
+        // Kommas innerhalb der Logo-Aufzählung ("Logo auf Website, auf Startnummer") gehören dazu.
+        $beschr = rtrim($beschr, '.');
 
         $this->SetXY($L, $ty + 9);
         $this->SetFont('popsb', '', 10.5);
