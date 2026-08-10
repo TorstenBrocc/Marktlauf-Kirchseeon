@@ -208,6 +208,13 @@ return [
         },
     ],
     [
+        'key'     => 'newsletter',
+        'label'   => 'Newsletter',
+        'section' => 'KOMMUNIKATION',
+        'href'    => 'newsletter.php',
+        // Fakten → KI-Newsletter → Brevo-Entwurf. Kein KPI → reiner Absprung-Link.
+    ],
+    [
         'key'     => 'vorlagen',
         'label'   => 'Grafik-Vorlagen',
         'section' => 'KOMMUNIKATION',

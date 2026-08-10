@@ -161,7 +161,7 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
         #so-error { display: none; color: #dc2626; font-size: 0.88rem; margin-top: 0.5rem; }
         #so-saved-msg { display: none; color: #16a34a; font-size: 0.88rem; }
 
-        /* Eingabefelder (Anlass, Prompt, Stichpunkte, Hashtags, RR-URL, Newsletter) */
+        /* Eingabefelder (Anlass, Prompt, Stichpunkte, Hashtags, RR-URL) */
         .so-field { margin-bottom: 0.9rem; }
         .so-field label { display: block; font-size: 0.85rem; color: var(--text-light); margin-bottom: 0.35rem; }
         .so-field input[type="text"], .so-field input[type="url"], .so-field textarea, .so-field select {
@@ -184,12 +184,7 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
         .so-guide h3 { font-size: 0.9rem; margin: 0.9rem 0 0.3rem; }
         .so-guide ul { margin: 0 0 0.5rem 1.1rem; padding: 0; }
         .so-guide code { background: var(--bg); padding: 0.05rem 0.3rem; border-radius: 3px; }
-        /* Newsletter */
-        .so-nl-preview { width: 100%; height: 420px; border: 1px solid var(--border); border-radius: 6px; background: #fff; }
-        .so-subjects { list-style: none; padding: 0; margin: 0.5rem 0 0; display: flex; flex-direction: column; gap: 0.4rem; }
-        .so-subjects li { display: flex; gap: 0.5rem; align-items: center; font-size: 0.9rem; }
-        #so-nl-error, #so-rr-msg, #so-ht-msg { font-size: 0.82rem; margin-top: 0.4rem; }
-        #so-nl-error { display: none; color: #dc2626; }
+        #so-rr-msg, #so-ht-msg { font-size: 0.82rem; margin-top: 0.4rem; }
 
         /* Facebook-blauer Meta-Business-Button */
         .so-mba-btn { background: #1877F2; color: #fff; }
@@ -282,7 +277,7 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
     <main class="main-content">
         <header class="content-header">
             <h1>Social Media</h1>
-            <p class="content-subtitle">Zentrale KI-gestützte Content-Produktion für Instagram, Facebook &amp; Newsletter</p>
+            <p class="content-subtitle">Zentrale KI-gestützte Content-Produktion für Instagram &amp; Facebook</p>
             <?php if ($stravaUrl): ?>
             <ul class="quick-links" style="margin-top:0.75rem;padding:0;">
                 <li style="border:none;padding:0;"><a href="<?= htmlspecialchars($stravaUrl) ?>" target="_blank" rel="noopener" class="btn-brand btn-brand-strava">Strava öffnen</a></li>
@@ -572,37 +567,9 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
             </details>
         </div>
 
-        <!-- Modul 4: Newsletter -->
+        <!-- Modul 4: Veröffentlichen -->
         <div class="so-card">
-            <h2>4 · Newsletter</h2>
-            <p class="so-notice">
-                Fakten eingeben → KI erzeugt einen fertigen HTML-Newsletter + 3 Betreffzeilen (nutzt den KI-Anbieter aus Modul 1).
-                Danach kopieren und im Newsletter-Tool (Brevo) einfügen.
-            </p>
-            <div class="so-field" style="margin-top:0.75rem">
-                <label for="so-nl-fakten">Fakten / Inhalte für diese Ausgabe</label>
-                <textarea id="so-nl-fakten" placeholder="z. B. Anmeldung gestartet, neue Strecke, Sponsoren-News, Termine, Danksagungen …" style="min-height:110px"></textarea>
-            </div>
-            <div class="so-actions">
-                <button class="btn btn-primary" id="so-nl-generate">Newsletter generieren</button>
-                <span class="so-spinner" id="so-nl-spinner" style="display:none">⏳ KI läuft …</span>
-            </div>
-            <div id="so-nl-error"></div>
-            <div id="so-nl-result" style="display:none;margin-top:1rem">
-                <label style="display:block;font-size:0.85rem;color:var(--text-light);margin-bottom:0.35rem">Betreffzeilen-Vorschläge</label>
-                <ul class="so-subjects" id="so-nl-subjects"></ul>
-                <label style="display:block;font-size:0.85rem;color:var(--text-light);margin:1rem 0 0.35rem">Vorschau</label>
-                <iframe class="so-nl-preview" id="so-nl-preview" title="Newsletter-Vorschau"></iframe>
-                <div class="so-actions">
-                    <button class="btn btn-secondary" id="so-nl-copy-html">HTML kopieren</button>
-                    <span id="so-nl-copied" class="so-saved">Kopiert</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modul 5: Veröffentlichen -->
-        <div class="so-card">
-            <h2>5 · Veröffentlichen</h2>
+            <h2>4 · Veröffentlichen</h2>
             <p class="so-notice" style="margin-bottom:0.9rem">
                 Ein <strong>Social-Post = Bild + Text</strong>: das <strong>Bild</strong> lädst du in Modul 3 als PNG herunter
                 (Format wählbar), den <strong>Text</strong> hier. Kopieren ist praktisch zum direkten Einfügen in die
@@ -1140,69 +1107,6 @@ document.getElementById('so-save-rr').addEventListener('click', (e) => {
         document.getElementById('so-rr-msg'), e.currentTarget);
 });
 
-// Newsletter generieren
-document.getElementById('so-nl-generate').addEventListener('click', async (e) => {
-    const btn     = e.currentTarget;
-    const spinner = document.getElementById('so-nl-spinner');
-    const errEl   = document.getElementById('so-nl-error');
-    const provider = document.getElementById('so-provider').value;
-    const fakten  = document.getElementById('so-nl-fakten').value;
-
-    errEl.style.display = 'none';
-    if (!fakten.trim()) {
-        errEl.textContent = 'Bitte zuerst Fakten/Inhalte eingeben.';
-        errEl.style.display = 'block';
-        return;
-    }
-    btn.disabled = true;
-    spinner.style.display = 'inline';
-    try {
-        const r = await fetch('api/newsletter_generate.php', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: new URLSearchParams({csrf_token: csrf, provider, fakten}),
-        });
-        const d = await r.json();
-        if (d.error) {
-            errEl.textContent = d.error;
-            errEl.style.display = 'block';
-        } else {
-            const subs = document.getElementById('so-nl-subjects');
-            subs.innerHTML = '';
-            (d.subjects || []).forEach(s => {
-                const li = document.createElement('li');
-                const span = document.createElement('span');
-                span.textContent = s;
-                span.style.flex = '1 1 auto';
-                const cp = document.createElement('button');
-                cp.className = 'btn btn-small btn-secondary';
-                cp.textContent = 'Kopieren';
-                cp.addEventListener('click', () => navigator.clipboard.writeText(s));
-                li.appendChild(span); li.appendChild(cp);
-                subs.appendChild(li);
-            });
-            document.getElementById('so-nl-preview').srcdoc = d.html || '';
-            document.getElementById('so-nl-result').dataset.html = d.html || '';
-            document.getElementById('so-nl-result').style.display = 'block';
-        }
-    } catch (err) {
-        errEl.textContent = 'Netzwerkfehler.';
-        errEl.style.display = 'block';
-    } finally {
-        btn.disabled = false;
-        spinner.style.display = 'none';
-    }
-});
-
-document.getElementById('so-nl-copy-html').addEventListener('click', () => {
-    const html = document.getElementById('so-nl-result').dataset.html || '';
-    if (!html) return;
-    navigator.clipboard.writeText(html).then(() => {
-        const m = document.getElementById('so-nl-copied');
-        m.style.display = 'inline';
-        setTimeout(() => { m.style.display = 'none'; }, 2000);
-    });
-});
 
 // Modul 5: Auto-Posting an IG/FB über Make.com (mit Fallback auf manuell)
 function showDispatchMsg(text, ok) {
