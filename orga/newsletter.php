@@ -43,6 +43,8 @@ $brevoReady = brevoConfigured();
             border-radius: var(--radius); box-shadow: var(--shadow-card);
             padding: 1.5rem; margin-bottom: 1.25rem; max-width: 780px;
         }
+        /* Ergebnis-Karte breiter — trägt die Code+Vorschau-Split-Ansicht. */
+        #nl-result { max-width: 1100px; }
         .nl-card h2 { font-size: 1rem; margin: 0 0 1rem; }
         .nl-field { margin-bottom: 1rem; }
         .nl-field label { display: block; font-size: 0.85rem; color: var(--text-light); margin-bottom: 0.35rem; }
@@ -61,8 +63,18 @@ $brevoReady = brevoConfigured();
         .nl-subjects li { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0; }
         .nl-subjects label { flex: 1 1 auto; font-size: 0.95rem; color: var(--text); cursor: pointer; }
         .nl-preview {
-            width: 100%; height: 460px; border: 1px solid var(--border);
+            width: 100%; height: 480px; border: 1px solid var(--border);
             border-radius: var(--radius); background: var(--white);
+        }
+        /* Split-View wie bei den Brief-Vorlagen: Code links, Live-Vorschau rechts. */
+        .nl-split { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; align-items: start; }
+        @media (max-width: 900px) { .nl-split { grid-template-columns: 1fr; } }
+        .nl-split h3 { font-size: 0.85rem; margin: 0 0 0.5rem; color: var(--text-light); font-weight: 600; }
+        .nl-code {
+            width: 100%; height: 480px; box-sizing: border-box;
+            font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.78rem; line-height: 1.45;
+            border: 1px solid var(--border); border-radius: var(--radius); padding: 0.6rem;
+            background: var(--bg); color: var(--text); resize: vertical; white-space: pre; overflow: auto; tab-size: 2;
         }
         .nl-hint {
             font-size: 0.82rem; color: var(--text-light);
@@ -111,8 +123,16 @@ $brevoReady = brevoConfigured();
             </div>
 
             <div class="nl-field">
-                <label>Vorschau</label>
-                <iframe class="nl-preview" id="nl-preview" title="Newsletter-Vorschau"></iframe>
+                <div class="nl-split">
+                    <div>
+                        <h3>HTML-Code</h3>
+                        <textarea class="nl-code" id="nl-code" readonly spellcheck="false" aria-label="Newsletter-HTML-Code"></textarea>
+                    </div>
+                    <div>
+                        <h3>Live-Vorschau</h3>
+                        <iframe class="nl-preview" id="nl-preview" title="Newsletter-Vorschau"></iframe>
+                    </div>
+                </div>
             </div>
 
             <div class="nl-actions" style="margin-bottom:1rem">
@@ -204,6 +224,7 @@ function renderResult(d) {
     const result = document.getElementById('nl-result');
     result.dataset.html = d.html || '';
     document.getElementById('nl-preview').srcdoc = d.html || '';
+    document.getElementById('nl-code').value = d.html || '';
     // Push-Meldung aus einem früheren Lauf zurücksetzen.
     const pushMsg = document.getElementById('nl-push-msg');
     pushMsg.className = 'nl-msg';
