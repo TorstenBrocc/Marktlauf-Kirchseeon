@@ -33,12 +33,14 @@ function sponsorTypRang(?string $typ): int
  * Logo-Zeile, obwohl es sachlich ein Banner war (TT, 2026-08-10). Eine Position ohne `gruppe`
  * bleibt ein eigener Posten — der Standardfall ist „nicht zusammenfassen".
  *
- * @return array<string, array{prefix:string, join:string}>
+ * @return array<string, array{prefix:string, join:string, join_letzter:string}>
  */
 function sponsorLeistungGruppen(): array
 {
+    // Aufzählung: Kommas zwischen allen, "&" vor dem letzten — "Logo auf Website, Urkunde &
+    // Startnummer". Das Verbindungswort steht nur einmal im Präfix, nicht vor jedem Ort.
     return [
-        'logo' => ['prefix' => 'Logo auf', 'join' => ', auf'],
+        'logo' => ['prefix' => 'Logo auf', 'join' => ', ', 'join_letzter' => ' & '],
     ];
 }
 
@@ -64,7 +66,11 @@ function sponsorLeistungenKatalog(bool $inklusiveInaktive = false): array
         //                              Banner-Thema und wurde deshalb falsch zusammengefasst.
         ['key' => 'logo_website',     'label' => 'Logo auf Website',            'min' => 'bronze', 'typ' => 'haken',
          'gruppe' => 'logo', 'kurz' => 'Website'],
-        ['key' => 'urkunde',          'label' => 'Urkunde',                     'min' => 'bronze', 'typ' => 'haken'],
+        // Logo-Platzierung, keine eigenständige Leistung (TT, 2026-08-10): das Sponsorlogo
+        // erscheint auf den Urkunden. Label deshalb "Logo auf Urkunde", damit Matrix und
+        // Rechnung dasselbe sagen.
+        ['key' => 'urkunde',          'label' => 'Logo auf Urkunde',            'min' => 'bronze', 'typ' => 'haken',
+         'gruppe' => 'logo', 'kurz' => 'Urkunde'],
         ['key' => 'dankesschreiben',  'label' => 'Dankesschreiben',             'min' => 'bronze', 'typ' => 'haken'],
         ['key' => 'logo_startnummer', 'label' => 'Logo auf Startnummer',        'min' => 'silber', 'typ' => 'haken',
          'gruppe' => 'logo', 'kurz' => 'Startnummer'],
