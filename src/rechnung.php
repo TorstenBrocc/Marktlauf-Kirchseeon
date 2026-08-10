@@ -73,7 +73,7 @@ function sponsoringPaketeDefaults(): array
         'gold' => ['name' => 'Gold', 'investition' => '1.000 €',
             'highlights' => 'Banner zentral im Start-/Zielbereich, eigener Stand inkl. Fläche, 5 Startplätze, Moderations-Erwähnungen'],
         'silber' => ['name' => 'Silber', 'investition' => '500 €',
-            'highlights' => 'Logo auf Startnummer & Streckenbanner, Namensnennung Presse, Logo auf Lauf-Shirt, 3 Startplätze'],
+            'highlights' => 'Logo auf Startnummer, Namensnennung Presse, 3 Startplätze'],
         'bronze' => ['name' => 'Bronze', 'investition' => '250 €',
             'highlights' => 'Logo auf Website, Urkunde, Dankesschreiben, 1 Startplatz'],
     ];
@@ -146,20 +146,36 @@ function rechnungBetraegeAusBetrag(float $betrag, bool $istBrutto, ?float $ustSa
  * gesetzte Haken — eine abgewählte Leistung erscheint nicht auf der Rechnung, eine zusätzlich
  * vereinbarte schon. Ohne Zeile gilt der Paket-Default.
  *
- * Alle „Logo auf …"-Positionen werden zu einem Posten zusammengefasst
- * („Logo auf Website, auf Startnummer, auf Streckenbanner") und stehen vorn.
+ * Zusammengefasst wird nur, was im Katalog eine gemeinsame `gruppe` trägt (siehe
+ * `sponsorLeistungGruppen()`) — etwa die Logo-Platzierungen zu „Logo auf Website, auf
+ * Startnummer". Positionen ohne Gruppe bleiben eigene Posten; aus dem Label wird nichts
+ * abgeleitet. Eine Gruppe steht an der Stelle ihres ersten Mitglieds in der Katalogreihenfolge.
  *
  * @param array<string,array{vereinbart:bool,freitext:string}> $state Matrix-Zustand des Sponsors
  * @return array<int,string>
  */
 function rechnungLeistungsposten(?string $typ, array $state = []): array
 {
-    $logoOrte = [];
-    $posten   = [];
+    $gruppen  = sponsorLeistungGruppen();
+    $posten   = [];        // Position im Ergebnis => Text
+    $sammler  = [];        // Gruppe => Liste der Kurznamen
+    $gruppePos = [];       // Gruppe => Position, an der sie ausgegeben wird
+
     foreach (sponsorLeistungenKatalog() as $pos) {
         $key  = $pos['key'];
         $gilt = isset($state[$key]) ? $state[$key]['vereinbart'] : sponsorLeistungGilt($pos, $typ);
         if (!$gilt) {
+            continue;
+        }
+
+        $gruppe = $pos['gruppe'] ?? '';
+        if ($gruppe !== '' && isset($gruppen[$gruppe])) {
+            if (!isset($sammler[$gruppe])) {
+                $sammler[$gruppe]   = [];
+                $gruppePos[$gruppe] = count($posten);
+                $posten[]           = ''; // Platzhalter, wird unten gefüllt
+            }
+            $sammler[$gruppe][] = $pos['kurz'] ?? $pos['label'];
             continue;
         }
 
@@ -175,16 +191,14 @@ function rechnungLeistungsposten(?string $typ, array $state = []): array
 
         // Freitexte der Matrix bleiben bewusst außen vor: bei den Startplätzen steht dort der
         // RaceResult-Gutscheincode, der nichts auf einer Rechnung zu suchen hat.
-        if (str_starts_with($pos['label'], 'Logo auf ')) {
-            $logoOrte[] = substr($pos['label'], strlen('Logo auf '));
-            continue;
-        }
         $posten[] = $pos['label'];
     }
 
-    if ($logoOrte !== []) {
-        // "auf <Ort>" bleibt je Platzierung zusammen; umgebrochen wird nur an den Kommas.
-        array_unshift($posten, "Logo auf\u{00A0}" . implode(", auf\u{00A0}", $logoOrte));
+    // Gruppen zusammensetzen; geschützte Leerzeichen halten "auf <Ort>" beim Umbruch zusammen.
+    foreach ($sammler as $gruppe => $teile) {
+        $g    = $gruppen[$gruppe];
+        $join = rtrim($g['join']) . "\u{00A0}";
+        $posten[$gruppePos[$gruppe]] = rtrim($g['prefix']) . "\u{00A0}" . implode($join, $teile);
     }
     return $posten;
 }

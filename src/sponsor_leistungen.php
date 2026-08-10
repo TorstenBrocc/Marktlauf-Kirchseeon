@@ -27,28 +27,65 @@ function sponsorTypRang(?string $typ): int
 }
 
 /**
- * Leistungs-Katalog (Reihenfolge = Spaltenreihenfolge der Matrix).
- * typ: 'haken' | 'haken_text' | 'startplaetze'
- * @return array<int, array{key:string,label:string,min:string,typ:string,menge?:array<string,int>}>
+ * Positionen, die auf der Rechnung zu einem Posten zusammengefasst werden. Die Zugehörigkeit
+ * steht als `gruppe` an der Katalog-Position — sie wird NICHT aus dem Label geraten. Vorher
+ * galt „alles, was mit 'Logo auf' beginnt", und damit landete das Streckenbanner in der
+ * Logo-Zeile, obwohl es sachlich ein Banner war (TT, 2026-08-10). Eine Position ohne `gruppe`
+ * bleibt ein eigener Posten — der Standardfall ist „nicht zusammenfassen".
+ *
+ * @return array<string, array{prefix:string, join:string}>
  */
-function sponsorLeistungenKatalog(): array
+function sponsorLeistungGruppen(): array
 {
     return [
-        // Startertüten-Branding war hier eine eigene Position und ist auf Wunsch von TT
-        // (2026-08-10) ersatzlos entfallen — es wird nicht mehr als Leistung zugesagt.
-        ['key' => 'logo_website',        'label' => 'Logo auf Website',           'min' => 'bronze', 'typ' => 'haken'],
-        ['key' => 'urkunde',             'label' => 'Urkunde',                    'min' => 'bronze', 'typ' => 'haken'],
-        ['key' => 'dankesschreiben',     'label' => 'Dankesschreiben',            'min' => 'bronze', 'typ' => 'haken'],
-        ['key' => 'logo_startnummer',    'label' => 'Logo auf Startnummer',       'min' => 'silber', 'typ' => 'haken'],
-        ['key' => 'logo_streckenbanner', 'label' => 'Logo auf Streckenbanner',    'min' => 'silber', 'typ' => 'haken'],
-        ['key' => 'presse',              'label' => 'Namensnennung Presse',       'min' => 'silber', 'typ' => 'haken'],
-        ['key' => 'logo_shirt',          'label' => 'Logo auf Lauf-Shirt',        'min' => 'silber', 'typ' => 'haken'],
-        ['key' => 'startplaetze',        'label' => 'Startplätze',                'min' => 'bronze', 'typ' => 'startplaetze',
-         'menge' => ['bronze' => 1, 'silber' => 3, 'gold' => 5]],
-        ['key' => 'banner',              'label' => 'Banner Start-/Zielbereich',  'min' => 'gold',   'typ' => 'haken_text'],
-        ['key' => 'stand',               'label' => 'eigener Stand inkl. Fläche', 'min' => 'gold',   'typ' => 'haken'],
-        ['key' => 'moderation',          'label' => 'Moderations-Erwähnung',      'min' => 'gold',   'typ' => 'haken'],
+        'logo' => ['prefix' => 'Logo auf', 'join' => ', auf'],
     ];
+}
+
+/**
+ * Leistungs-Katalog (Reihenfolge = Spaltenreihenfolge der Matrix).
+ * typ: 'haken' | 'haken_text' | 'startplaetze'
+ *
+ * Optionale Felder:
+ *   gruppe – Zusammenfassung auf der Rechnung (siehe sponsorLeistungGruppen())
+ *   kurz   – Bezeichnung innerhalb der Gruppe („Website" in „Logo auf Website, auf Startnummer")
+ *   aktiv  – false = in dieser Saison nicht angeboten: erscheint weder in der Matrix noch auf
+ *            der Rechnung, bleibt aber dokumentiert. Wieder anbieten = auf true setzen.
+ *
+ * @param bool $inklusiveInaktive true = auch nicht angebotene Positionen zurückgeben
+ * @return array<int, array{key:string,label:string,min:string,typ:string,menge?:array<string,int>,gruppe?:string,kurz?:string,aktiv?:bool}>
+ */
+function sponsorLeistungenKatalog(bool $inklusiveInaktive = false): array
+{
+    $katalog = [
+        // Entfallene Positionen (nicht wieder aufnehmen, ohne mit TT zu sprechen):
+        //   Startertüten-Branding    – 2026-08-10 ersatzlos gestrichen.
+        //   Logo auf Streckenbanner  – 2026-08-10 gestrichen; war zudem kein Logo-, sondern ein
+        //                              Banner-Thema und wurde deshalb falsch zusammengefasst.
+        ['key' => 'logo_website',     'label' => 'Logo auf Website',            'min' => 'bronze', 'typ' => 'haken',
+         'gruppe' => 'logo', 'kurz' => 'Website'],
+        ['key' => 'urkunde',          'label' => 'Urkunde',                     'min' => 'bronze', 'typ' => 'haken'],
+        ['key' => 'dankesschreiben',  'label' => 'Dankesschreiben',             'min' => 'bronze', 'typ' => 'haken'],
+        ['key' => 'logo_startnummer', 'label' => 'Logo auf Startnummer',        'min' => 'silber', 'typ' => 'haken',
+         'gruppe' => 'logo', 'kurz' => 'Startnummer'],
+        ['key' => 'presse',           'label' => 'Namensnennung Presse',        'min' => 'silber', 'typ' => 'haken'],
+        // 2026 nicht angeboten (kein Lauf-Shirt). Für ein Folgejahr genügt aktiv => true.
+        ['key' => 'logo_shirt',       'label' => 'Logo auf Lauf-Shirt',         'min' => 'silber', 'typ' => 'haken',
+         'gruppe' => 'logo', 'kurz' => 'Lauf-Shirt', 'aktiv' => false],
+        ['key' => 'startplaetze',     'label' => 'Startplätze',                 'min' => 'bronze', 'typ' => 'startplaetze',
+         'menge' => ['bronze' => 1, 'silber' => 3, 'gold' => 5]],
+        ['key' => 'banner',           'label' => 'Banner im Start-/Zielbereich', 'min' => 'gold',  'typ' => 'haken_text'],
+        ['key' => 'stand',            'label' => 'eigener Stand inkl. Fläche',  'min' => 'gold',   'typ' => 'haken'],
+        ['key' => 'moderation',       'label' => 'Moderations-Erwähnung',       'min' => 'gold',   'typ' => 'haken'],
+    ];
+
+    if ($inklusiveInaktive) {
+        return $katalog;
+    }
+    return array_values(array_filter(
+        $katalog,
+        static fn (array $p): bool => ($p['aktiv'] ?? true) !== false
+    ));
 }
 
 /** Gilt eine Position laut Typ (kumulativ)? */
