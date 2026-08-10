@@ -117,7 +117,8 @@ $paketLabel = static function (?string $p): string {
                 Rechnungs-<strong>Nummer</strong> ein (nur die laufende Zahl, das Jahr <?= date('Y') ?>
                 ergänzt das System automatisch). Nach der Nummernvergabe kann die Rechnung unter
                 <strong>Nummeriert</strong> an den Sponsor gesendet werden — der Kassier steht
-                dabei in Kopie. Beim Erzeugen wird der
+                dabei in Kopie. Den Text dieser Mail pflegst du unter
+                <a href="rechnungsmail.php">Rechnungs-Begleitmail</a>. Beim Erzeugen wird der
                 Sponsor automatisch auf Status „Abgerechnet" gesetzt. Solange eine Rechnung
                 <strong>nicht versendet</strong> ist, lässt sie sich <strong>verwerfen</strong> — eine
                 schon vergebene Nummer wird dabei wieder frei.

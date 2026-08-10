@@ -12,9 +12,18 @@
  * dieselben Partials, aber nicht diese Vorlage.
  *
  * Vor dem Include zu setzen:
- *   $slug   string  Vorlagen-Slug (erstanschreiben|folgejahr|frei|bedingungen)
+ *   $slug   string  Vorlagen-Slug (erstanschreiben|folgejahr|frei|bedingungen|rechnung)
  *   $titel  string  Überschrift + <title>
  *   $navKey string  Schlüssel des Sidebar-Eintrags
+ *
+ * Optional — für Vorlagen, deren Versand nicht hier stattfindet (Rechnungs-Begleitmail: sie geht
+ * je Rechnung von der Seite „(Ab-)Rechnungen" raus, mit festen Anhängen und einem Empfänger aus
+ * den Sponsor-Adressen). Statt eine zweite Compose-Oberfläche zu pflegen, werden die drei
+ * versandbezogenen Blöcke abgeschaltet:
+ *   $mitEmpfaenger bool   Empfänger-Kopf + Vorschau-Auswahl (Default true)
+ *   $mitAnhaenge   bool   Anhang-Kachel (Default true)
+ *   $mitVersand    bool   Versand-Karte (Default true)
+ *   $hinweisHtml   string Erklärkasten oben, wo der Versand stattdessen läuft
  *
  * Spec: intern/sponsoren-anschreiben-seiten-spec.md
  */
@@ -37,6 +46,13 @@ $flashError   = $_SESSION['flash_error'] ?? '';
 // Anhang-Abwahl zurück — danach sind wieder alle Anhänge dabei.
 $anhangAbwahlReset = ($_SESSION['anhang_abwahl_reset'] ?? '') === $slug;
 unset($_SESSION['flash_success'], $_SESSION['flash_error'], $_SESSION['anhang_abwahl_reset']);
+
+$mitEmpfaenger = $mitEmpfaenger ?? true;
+$mitAnhaenge   = $mitAnhaenge   ?? true;
+$mitVersand    = $mitVersand    ?? true;
+$hinweisHtml   = $hinweisHtml   ?? '';
+// Wird normalerweise von _empfaenger_kopf.php gefüllt; ohne diesen Block bleibt sie leer.
+$versandfaehig = [];
 
 $pdo         = getDbConnection();
 $vorlage     = sponsorBriefLoad($pdo, $slug, (int) $user['id']);
@@ -98,7 +114,13 @@ if ($isUserScoped && $vorlage['draft'] && $vorlage['draft_ts'] !== '') {
                 <div class="alert alert-error"><?= htmlspecialchars($flashError) ?></div>
             <?php endif; ?>
 
-            <?php $modus = 'bulk'; require __DIR__ . '/_empfaenger_kopf.php'; ?>
+            <?php if ($hinweisHtml !== ''): ?>
+                <div class="brief-card" style="border-left:3px solid var(--primary)">
+                    <?= $hinweisHtml ?>
+                </div>
+            <?php endif; ?>
+
+            <?php if ($mitEmpfaenger): $modus = 'bulk'; require __DIR__ . '/_empfaenger_kopf.php'; endif; ?>
 
             <form method="post" action="api/sponsor_brief_save.php" id="brief-form">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
@@ -157,8 +179,9 @@ if ($isUserScoped && $vorlage['draft'] && $vorlage['draft_ts'] !== '') {
                 </div>
             </form>
 
-            <?php require __DIR__ . '/_anhang_kachel.php'; ?>
+            <?php if ($mitAnhaenge) { require __DIR__ . '/_anhang_kachel.php'; } ?>
 
+            <?php if ($mitVersand): ?>
             <div class="brief-card versand-card">
                 <h3 style="font-size:0.95rem;margin:0 0 0.75rem">Versand</h3>
                 <p id="versand-unsaved" class="versand-warn" hidden>
@@ -178,6 +201,7 @@ if ($isUserScoped && $vorlage['draft'] && $vorlage['draft_ts'] !== '') {
                     </div>
                 </form>
             </div>
+            <?php endif; ?>
 
         </main>
     </div>
@@ -218,8 +242,10 @@ if ($isUserScoped && $vorlage['draft'] && $vorlage['draft_ts'] !== '') {
             markDirty();
         }
         function markDirty() {
-            const dirty = (ta.value !== savedText) || (betreff.value !== savedBetreff);
-            document.getElementById('versand-unsaved').hidden = !dirty;
+            // Die Warnung hängt an der Versand-Karte; ohne Versand auf dieser Seite fehlt sie.
+            const warn = document.getElementById('versand-unsaved');
+            if (!warn) { return; }
+            warn.hidden = !((ta.value !== savedText) || (betreff.value !== savedBetreff));
         }
         ta.addEventListener('input', schedule);
         betreff.addEventListener('input', markDirty);

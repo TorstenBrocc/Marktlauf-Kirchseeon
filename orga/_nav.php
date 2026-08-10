@@ -223,6 +223,14 @@ return [
         'tile'    => false, // Sonderfall Altfälle — Sidebar genügt
     ],
     [
+        'key'     => 'rechnungsmail',
+        'label'   => 'Rechnungs-Begleitmail',
+        'group'   => 'SPONSOREN',
+        'section' => 'SPONSOREN-ANSCHREIBEN',
+        'href'    => 'rechnungsmail.php',
+        'tile'    => false, // reine Vorlagenpflege, kein Arbeitsvorrat — Versand läuft über (Ab-)Rechnungen
+    ],
+    [
         'key'     => 'anschreiben_einstellungen',
         'label'   => 'Einstellungen (Anschreiben)',
         'group'   => 'SPONSOREN',

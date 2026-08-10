@@ -57,7 +57,7 @@ function sponsorBriefSeite(string $slug): string {
         'frei'         => 'freier_brief.php',
         'bestaetigung' => 'bestaetigungen.php',
         'bedingungen'  => 'bedingungen.php',
-        'rechnung'     => 'rechnungen.php',
+        'rechnung'     => 'rechnungsmail.php',
         default        => 'erstanschreiben.php',
     };
 }
