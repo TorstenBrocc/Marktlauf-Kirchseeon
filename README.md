@@ -35,8 +35,10 @@ nur für das Orga-Team:
 
 - **Helfer-Verwaltung** (`helfer.php`, `schichten.php`) — Registrierung,
   Bestätigung, Schichtplanung/-zuteilung.
-- **Sponsor-Mini-CRM** (`sponsoren.php`, `sponsor_form.php`,
-  `sponsor_briefe.php`) — Kontakte, Notizen, Import/Export, Anschreiben.
+- **Sponsor-Mini-CRM** (`sponsoren.php`, `sponsor_form.php`) — Kontakte, Notizen,
+  Import/Export. Anschreiben liegen daneben als eigene Seite je Briefvorlage
+  (`erstanschreiben.php`, `folgeanschreiben.php`, `bestaetigungen.php`,
+  `freier_brief.php`, `bedingungen.php`, `anschreiben_einstellungen.php`).
 - **Aufgaben** (`_sidebar.php`-Widget, Aufgaben-CRUD) mit Erinnerungen.
 - **Dateiablage** (`dateien.php`) — getrennte Bereiche für intern und Helfer
   (`helfer/zugang.php`).
