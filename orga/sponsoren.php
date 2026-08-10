@@ -199,25 +199,32 @@ try {
         /* Filter+Stats links, Merkfeld rechts (gleich hohe Spalten) */
         .filter-merk-row {
             display: flex;
-            gap: 1.5rem;
+            gap: 1.25rem;
             align-items: stretch;
             flex-wrap: wrap;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.25rem;
         }
+        /* Linke Spalte trägt Aktionsleiste + Filter + Stats und füllt die freie Breite;
+           das Merkfeld rechts wird per JS auf ihre Höhe gezogen. So bleibt neben dem
+           Notizfeld kein toter Raum stehen. */
         .filter-col {
             display: flex;
             flex-direction: column;
-            gap: 1.25rem;
-            flex: 0 0 auto;
+            gap: 0.85rem;
+            flex: 1 1 26rem;
+            min-width: 0;
+        }
+        .filter-col .action-bar {
+            margin-bottom: 0;
         }
         .filter-col .stats {
             margin-bottom: 0;
         }
         .merkfeld-card {
             display: flex;
-            flex: 1 1 320px;
-            min-width: 280px;
-            max-width: 480px;
+            flex: 0 1 22rem;
+            min-width: 16rem;
+            max-width: 26rem;
             margin-left: auto;
         }
         .merkfeld-card textarea {
@@ -230,14 +237,16 @@ try {
             border: 1px solid var(--border);
             border-radius: 6px;
             resize: none;
-            overflow: hidden;
+            /* Neben der linken Spalte auf deren Höhe gedeckelt — längerer Text scrollt im
+               Feld, statt die Zeile aufzublähen und links ein Loch zu hinterlassen. */
+            overflow-y: auto;
         }
         .merkfeld-card.locked textarea {
             background: #f6f6f4;
             color: var(--text);
             cursor: default;
         }
-        @media (max-width: 640px) {
+        @media (max-width: 860px) {
             .merkfeld-card {
                 flex-basis: 100%;
                 min-width: 0;
@@ -619,35 +628,26 @@ try {
                 </div>
             <?php endif; ?>
 
-            <?php $exportQuery = http_build_query(array_filter(['status' => $filterStatus, 'paket' => $filterPaket])); ?>
-            <div class="action-bar">
-                <form method="post" action="api/sponsor_import.php" enctype="multipart/form-data"
-                      onsubmit="return confirm('CSV jetzt importieren? Dubletten (Firma + E-Mail) werden übersprungen.');">
-                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                    <label for="csv_datei">CSV-Import</label>
-                    <input type="file" id="csv_datei" name="csv_datei" accept=".csv,text/csv" required>
-                    <button type="submit" class="btn btn-small btn-secondary">Importieren</button>
-                </form>
-                <div class="action-bar-sep"></div>
-                <a href="api/sponsor_export.php<?= $exportQuery ? '?' . $exportQuery : '' ?>" class="btn btn-small btn-secondary">
-                    CSV-Export<?= ($filterStatus || $filterPaket) ? ' (gefiltert)' : '' ?>
-                </a>
-                <a href="api/sponsor_vcard_export.php<?= $exportQuery ? '?' . $exportQuery : '' ?>" class="btn btn-small btn-secondary"
-                   title="Ansprechpartner als vCard (.vcf) für die Handy-Kontakte">
-                    vCard-Export<?= ($filterStatus || $filterPaket) ? ' (gefiltert)' : '' ?>
-                </a>
-                <div class="action-bar-sep"></div>
-                <!-- Anschreiben werden nicht mehr von hier verschickt: jede Vorlage hat ihre
-                     eigene Seite (Empfänger + Brief + Anhänge + Versand an einem Ort).
-                     Diese Liste ist wieder reine Stammdatenpflege.
-                     Spec: intern/sponsoren-anschreiben-seiten-spec.md -->
-                <a href="erstanschreiben.php" class="btn btn-small btn-secondary">Erstanschreiben →</a>
-                <a href="folgeanschreiben.php" class="btn btn-small btn-secondary">Folgeanschreiben →</a>
-                <a href="bestaetigungen.php" class="btn btn-small btn-secondary">Bestätigung →</a>
-            </div>
-
             <div class="filter-merk-row">
                 <div class="filter-col">
+                <?php $exportQuery = http_build_query(array_filter(['status' => $filterStatus, 'paket' => $filterPaket])); ?>
+                <div class="action-bar">
+                    <form method="post" action="api/sponsor_import.php" enctype="multipart/form-data"
+                          onsubmit="return confirm('CSV jetzt importieren? Dubletten (Firma + E-Mail) werden übersprungen.');">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                        <label for="csv_datei">CSV-Import</label>
+                        <input type="file" id="csv_datei" name="csv_datei" accept=".csv,text/csv" required>
+                        <button type="submit" class="btn btn-small btn-secondary">Importieren</button>
+                    </form>
+                    <div class="action-bar-sep"></div>
+                    <a href="api/sponsor_export.php<?= $exportQuery ? '?' . $exportQuery : '' ?>" class="btn btn-small btn-secondary">
+                        CSV-Export<?= ($filterStatus || $filterPaket) ? ' (gefiltert)' : '' ?>
+                    </a>
+                    <a href="api/sponsor_vcard_export.php<?= $exportQuery ? '?' . $exportQuery : '' ?>" class="btn btn-small btn-secondary"
+                       title="Ansprechpartner als vCard (.vcf) für die Handy-Kontakte">
+                        vCard-Export<?= ($filterStatus || $filterPaket) ? ' (gefiltert)' : '' ?>
+                    </a>
+                </div>
                 <form method="get" class="filter-bar">
                     <div class="form-group">
                         <label>Status</label>
@@ -921,12 +921,16 @@ try {
         const csrf = ta.dataset.csrf;
         let locked = false;
 
-        // Höhe: mind. so hoch wie das Umfeld (Filter+Stats), wächst mit dem Inhalt
+        // Höhe: nebeneinander genau so hoch wie die linke Spalte (Aktionsleiste + Filter +
+        // Stats), damit neben dem Feld kein toter Raum steht. Längerer Text scrollt im Feld,
+        // statt die Zeile aufzublähen. Untergrenze, damit es bei kurzer linker Spalte nicht
+        // zum Schlitz zusammenfällt. Gestapelt (mobil) wächst es wie bisher mit dem Inhalt.
+        const MIN_HOEHE = 9 * 16; // 9rem — vier, fünf Zeilen bleiben immer lesbar
         function autosize() {
             ta.style.height = 'auto';
             let h = ta.scrollHeight;
-            if (leftCol && window.matchMedia('(min-width: 641px)').matches) {
-                h = Math.max(h, leftCol.offsetHeight);
+            if (leftCol && window.matchMedia('(min-width: 861px)').matches) {
+                h = Math.max(leftCol.offsetHeight, MIN_HOEHE);
             }
             ta.style.height = h + 'px';
         }
