@@ -81,7 +81,7 @@ $typLabel = static fn (?string $p): string => match ($p) {
             <p class="lm-intro">
                 Welche Leistungen sind je Sponsor <strong>vereinbart und zu erbringen</strong>? Der Haken ist
                 aus dem Paket vorbelegt (kumulativ) und pro Sponsor abwählbar (Haken weg = fällt weg). Textfelder
-                für Details (Banner-/Startertüten-Inhalt, Gutscheincode). Der Haken bedeutet „vereinbart", nicht „erledigt".
+                für Details (Banner-Inhalt, Gutscheincode). Der Haken bedeutet „vereinbart", nicht „erledigt".
             </p>
 
             <?php if (!$sponsoren): ?>

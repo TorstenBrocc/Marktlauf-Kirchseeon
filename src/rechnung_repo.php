@@ -12,12 +12,12 @@ declare(strict_types=1);
 require_once __DIR__ . '/rechnung.php';
 
 /**
- * Baut aus einer Sponsor-Zeile den Rechnungs-Snapshot. $pakete ist die vollständige
- * Paket-Definition (aus sponsoringPakete()) — nicht nur das gebuchte Paket, weil der
- * Leistungstext die kleineren Stufen mit ausschreibt. Leistung + Betrag kommen aus dem Paket,
- * sofern nicht pro Sponsor überschrieben. Wirft InvalidArgumentException bei fehlenden Pflichtdaten.
+ * Baut aus einer Sponsor-Zeile den Rechnungs-Snapshot. $pakete liefert den Paketnamen,
+ * $leistungState den Zustand der Leistungs-Matrix (leer = Paket-Defaults gelten). Betrag kommt
+ * aus dem Betrag-Feld des Sponsors, der Leistungstext aus dem Katalog — beides überschreibbar
+ * pro Sponsor. Wirft InvalidArgumentException bei fehlenden Pflichtdaten.
  */
-function rechnungSnapshotVonSponsor(array $sponsor, array $pakete = [], bool $istBrutto = false): array
+function rechnungSnapshotVonSponsor(array $sponsor, array $pakete = [], bool $istBrutto = false, array $leistungState = []): array
 {
     $paketKey = trim((string) ($sponsor['paket'] ?? ''));
     $paketDef = $pakete[$paketKey] ?? [];
@@ -53,7 +53,7 @@ function rechnungSnapshotVonSponsor(array $sponsor, array $pakete = [], bool $is
     }
     $leistung = trim((string) ($sponsor['rechnung_leistung'] ?? ''));
     if ($leistung === '') {
-        $leistung = paketLeistung($pakete, $paketKey, $zeitraum);
+        $leistung = paketLeistung($pakete, $paketKey, $zeitraum, $leistungState);
     }
 
     return [
@@ -85,9 +85,11 @@ function rechnungEntwurfErstellen(PDO $pdo, int $sponsorId, ?int $userId): array
     }
 
     $pakete = sponsoringPakete($pdo);
+    // Leistungs-Matrix des Sponsors: abgewählte Positionen dürfen nicht auf die Rechnung.
+    $leistungState = sponsorLeistungenState($pdo, $sponsorId);
     // Paketpreise sind immer netto; nur der Pro-Sponsor-Haken schaltet diese Rechnung auf brutto.
     $istBrutto = ((int) ($sponsor['rechnung_betrag_brutto'] ?? 0) === 1);
-    $snap      = rechnungSnapshotVonSponsor($sponsor, $pakete, $istBrutto);
+    $snap      = rechnungSnapshotVonSponsor($sponsor, $pakete, $istBrutto, $leistungState);
 
     $ins = $pdo->prepare('
         INSERT INTO sponsor_rechnungen

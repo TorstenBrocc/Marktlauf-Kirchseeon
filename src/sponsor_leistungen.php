@@ -34,8 +34,9 @@ function sponsorTypRang(?string $typ): int
 function sponsorLeistungenKatalog(): array
 {
     return [
+        // Startertüten-Branding war hier eine eigene Position und ist auf Wunsch von TT
+        // (2026-08-10) ersatzlos entfallen — es wird nicht mehr als Leistung zugesagt.
         ['key' => 'logo_website',        'label' => 'Logo auf Website',           'min' => 'bronze', 'typ' => 'haken'],
-        ['key' => 'startertueten',       'label' => 'Startertüten-Branding',      'min' => 'bronze', 'typ' => 'haken_text'],
         ['key' => 'urkunde',             'label' => 'Urkunde',                    'min' => 'bronze', 'typ' => 'haken'],
         ['key' => 'dankesschreiben',     'label' => 'Dankesschreiben',            'min' => 'bronze', 'typ' => 'haken'],
         ['key' => 'logo_startnummer',    'label' => 'Logo auf Startnummer',       'min' => 'silber', 'typ' => 'haken'],

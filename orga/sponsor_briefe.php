@@ -59,7 +59,7 @@ $paketeDefaults = [
     ['key'=>'silber','name'=>'Silber','investition'=>'500 €',
      'highlights'=>'Logo auf Startnummer & Streckenbanner, Namensnennung Presse, Logo auf Lauf-Shirt, 3 Startplätze'],
     ['key'=>'bronze','name'=>'Bronze','investition'=>'250 €',
-     'highlights'=>'Logo auf Website, Startetüten-Branding, Urkunde, Dankesschreiben, 1 Startplatz'],
+     'highlights'=>'Logo auf Website, Urkunde, Dankesschreiben, 1 Startplatz'],
 ];
 $paketeMap = [];
 if (!empty($briefSettings['sponsoring_pakete'])) {

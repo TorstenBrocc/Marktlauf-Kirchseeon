@@ -75,7 +75,7 @@ function sponsoringPaketeDefaults(): array
         'silber' => ['name' => 'Silber', 'investition' => '500 €',
             'highlights' => 'Logo auf Startnummer & Streckenbanner, Namensnennung Presse, Logo auf Lauf-Shirt, 3 Startplätze'],
         'bronze' => ['name' => 'Bronze', 'investition' => '250 €',
-            'highlights' => 'Logo auf Website, Startetüten-Branding, Urkunde, Dankesschreiben, 1 Startplatz'],
+            'highlights' => 'Logo auf Website, Urkunde, Dankesschreiben, 1 Startplatz'],
     ];
 }
 
@@ -136,70 +136,77 @@ function rechnungBetraegeAusBetrag(float $betrag, bool $istBrutto, ?float $ustSa
 }
 
 /**
- * Einzelposten eines Pakets, kumulativ über alle enthaltenen Stufen: Silber = Bronze + Silber,
- * Gold = Bronze + Silber + Gold, Hauptsponsor = alles. Genau so sind die Paket-Highlights
- * gepflegt — die höheren Stufen beginnen dort mit "+" ("zusätzlich zum kleineren Paket"), was in
- * der Brief-Tabelle passt, auf der Rechnung aber allein stand. Das "+" fällt hier weg.
+ * Leistungsposten für die Rechnung — aus dem Leistungskatalog (`sponsorLeistungenKatalog()`),
+ * nicht aus den Paket-Freitexten. Der Katalog ist die einzige Stelle, die weiß, was ein Paket
+ * wirklich enthält: die Stufen sind kumulativ (Silber = Bronze + Silber, Gold = Bronze + Silber
+ * + Gold, Hauptsponsor = alles), und die Startplätze summieren sich nicht, sondern haben je
+ * Stufe eine eigene Stückzahl.
  *
- * Einzige Ausnahme von der Summierung sind die Startplätze: sie stapeln sich nicht, es gilt die
- * Stückzahl der höchsten Stufe, die eine nennt (Silber 3 statt 1+3). Der Posten wandert dabei
- * ans Ende der Liste.
+ * Maßgeblich ist die Leistungs-Matrix des Sponsors: existiert dort eine Zeile, gewinnt der
+ * gesetzte Haken — eine abgewählte Leistung erscheint nicht auf der Rechnung, eine zusätzlich
+ * vereinbarte schon. Ohne Zeile gilt der Paket-Default.
  *
- * @param array<string,array{name?:string,highlights?:string}> $pakete alle Pakete (sponsoringPakete())
- * @return array<int,string> Posten in Reihenfolge Bronze → gebuchtes Paket
+ * Alle „Logo auf …"-Positionen werden zu einem Posten zusammengefasst
+ * („Logo auf Website, auf Startnummer, auf Streckenbanner") und stehen vorn.
+ *
+ * @param array<string,array{vereinbart:bool,freitext:string}> $state Matrix-Zustand des Sponsors
+ * @return array<int,string>
  */
-function paketLeistungsposten(array $pakete, ?string $paketKey): array
+function rechnungLeistungsposten(?string $typ, array $state = []): array
 {
-    $zielRang = sponsorTypRang($paketKey);
-    if ($zielRang <= 0) {
-        return [];
+    $logoOrte = [];
+    $posten   = [];
+    foreach (sponsorLeistungenKatalog() as $pos) {
+        $key  = $pos['key'];
+        $gilt = isset($state[$key]) ? $state[$key]['vereinbart'] : sponsorLeistungGilt($pos, $typ);
+        if (!$gilt) {
+            continue;
+        }
+
+        if ($key === 'startplaetze') {
+            $anzahl = sponsorStartplaetzeMenge($pos, $typ);
+            // null = individuelle Menge (Hauptsponsor) -> ohne Zahl nennen, nichts erfinden.
+            // Geschütztes Leerzeichen, damit die Zahl nicht allein am Zeilenende stehen bleibt.
+            $posten[] = $anzahl === null
+                ? 'Startplätze'
+                : $anzahl . "\u{00A0}" . ($anzahl === 1 ? 'Startplatz' : 'Startplätze');
+            continue;
+        }
+
+        // Freitexte der Matrix bleiben bewusst außen vor: bei den Startplätzen steht dort der
+        // RaceResult-Gutscheincode, der nichts auf einer Rechnung zu suchen hat.
+        if (str_starts_with($pos['label'], 'Logo auf ')) {
+            $logoOrte[] = substr($pos['label'], strlen('Logo auf '));
+            continue;
+        }
+        $posten[] = $pos['label'];
     }
 
-    $posten     = [];
-    $startplatz = null;
-    $gesehen    = [];
-    foreach (['bronze', 'silber', 'gold', 'hauptsponsor'] as $stufe) {
-        if (sponsorTypRang($stufe) > $zielRang) {
-            break;
-        }
-        // Führendes "+" der kumulativen Schreibweise entfernen, dann an Kommas zerlegen.
-        $high = ltrim(trim((string) ($pakete[$stufe]['highlights'] ?? '')), '+ ');
-        foreach (explode(',', $high) as $seg) {
-            $seg = trim($seg);
-            if ($seg === '') {
-                continue;
-            }
-            if (preg_match('/startpl(atz|ätze)/iu', $seg) === 1) {
-                $startplatz = $seg; // höhere Stufe ersetzt die niedrigere, statt zu addieren
-                continue;
-            }
-            $key = mb_strtolower($seg);
-            if (isset($gesehen[$key])) {
-                continue; // dieselbe Leistung in zwei Stufen nur einmal nennen
-            }
-            $gesehen[$key] = true;
-            $posten[]      = $seg;
-        }
-    }
-    if ($startplatz !== null) {
-        $posten[] = $startplatz;
+    if ($logoOrte !== []) {
+        // "auf <Ort>" bleibt je Platzierung zusammen; umgebrochen wird nur an den Kommas.
+        array_unshift($posten, "Logo auf\u{00A0}" . implode(", auf\u{00A0}", $logoOrte));
     }
     return $posten;
 }
 
 /**
  * Konkreter Leistungstext für die Rechnung (§14: nicht bloß "Sponsoring") — das gebuchte Paket
- * vollständig ausgeschrieben, inklusive der Leistungen der kleineren Stufen.
+ * vollständig ausgeschrieben, so wie es in der Leistungs-Matrix steht. Posten sind mit " · "
+ * getrennt, damit die Kommas innerhalb der Logo-Aufzählung erhalten bleiben. Vor dem Trennpunkt
+ * steht ein geschütztes Leerzeichen, damit er beim Umbruch am Zeilenende hängt statt am Anfang
+ * der nächsten Zeile zu landen.
  */
-function paketLeistung(array $pakete, ?string $paketKey, string $zeitraum): string
+function paketLeistung(array $pakete, ?string $paketKey, string $zeitraum, array $state = []): string
 {
-    $z      = trim($zeitraum) !== '' ? $zeitraum : leistungszeitraumDefault();
-    $name   = trim((string) ($pakete[$paketKey ?? '']['name'] ?? '')) ?: 'Sponsoring';
-    $posten = paketLeistungsposten($pakete, $paketKey);
+    $z    = trim($zeitraum) !== '' ? $zeitraum : leistungszeitraumDefault();
+    $name = trim((string) ($pakete[$paketKey ?? '']['name'] ?? ''));
+    // Ohne Paketnamen (z. B. Sachsponsor) bleibt es bei "Sponsoring" — nicht "Sponsoring-Sponsoring".
+    $bezeichnung = $name !== '' ? "$name-Sponsoring" : 'Sponsoring';
+    $posten      = rechnungLeistungsposten($paketKey, $state);
     if ($posten === []) {
-        return "$name-Sponsoring $z gemäß unserer Vereinbarung.";
+        return "$bezeichnung $z gemäß unserer Vereinbarung.";
     }
-    return "$name-Sponsoring $z: " . implode(', ', $posten) . '.';
+    return "$bezeichnung $z: " . implode("\u{00A0}· ", $posten) . '.';
 }
 
 /**
