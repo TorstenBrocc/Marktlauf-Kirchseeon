@@ -139,6 +139,20 @@ return [
         },
     ],
     [
+        'key'     => 'bestaetigungen',
+        'label'   => 'Bestätigungen',
+        'section' => 'SPONSOREN-HANDLING',
+        'href'    => 'bestaetigungen.php',
+        'kpi'   => static function (PDO $pdo): array {
+            $offen = (int) $pdo->query("SELECT COUNT(*) FROM sponsors WHERE status = 'zugesagt'")->fetchColumn();
+            return [
+                'value'  => (string) $offen,
+                'label'  => 'Zusagen ohne Bestätigung',
+                'signal' => $offen > 0 ? 'attention' : 'ok',
+            ];
+        },
+    ],
+    [
         'key'     => 'rechnungen',
         'label'   => 'Rechnungen',
         'section' => 'SPONSOREN-HANDLING',

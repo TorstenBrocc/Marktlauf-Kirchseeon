@@ -104,6 +104,34 @@ function sponsorStartplaetzeAnzahl(?string $typ): ?int
 }
 
 /**
+ * Sind für diesen Sponsor überhaupt Startplätze vereinbart?
+ *
+ * Nicht dasselbe wie „hat eine Stückzahl": der Hauptsponsor bekommt Startplätze, aber in
+ * individueller Menge (`sponsorStartplaetzeAnzahl` liefert dort null). Umgekehrt kann die Position
+ * in der Matrix pro Sponsor abgewählt sein — dann gilt sie nicht, egal was das Paket sagt.
+ * Genau diese Frage entscheidet, ob beim Bestätigungs-Versand ein fehlender Gutscheincode
+ * überhaupt ein Problem ist.
+ */
+function sponsorStartplaetzeVereinbart(PDO $pdo, int $sponsorId, ?string $typ): bool
+{
+    $pos = null;
+    foreach (sponsorLeistungenKatalog() as $p) {
+        if ($p['key'] === 'startplaetze') {
+            $pos = $p;
+            break;
+        }
+    }
+    if ($pos === null) {
+        return false;
+    }
+    $state = $sponsorId > 0 ? sponsorLeistungenState($pdo, $sponsorId) : [];
+    // Zeile vorhanden → der gesetzte Haken gewinnt; sonst der Paket-Default.
+    return isset($state['startplaetze'])
+        ? $state['startplaetze']['vereinbart']
+        : sponsorLeistungGilt($pos, $typ);
+}
+
+/**
  * Gutscheincode eines Sponsors — der Freitext der Position „Startplätze" aus der Leistungs-Matrix.
  * Leerstring, wenn kein Sponsor gewählt ist oder noch kein Code hinterlegt wurde; die weiche
  * Prüfung beim Bestätigungs-Versand (G3) hängt genau an diesem Leerstring.

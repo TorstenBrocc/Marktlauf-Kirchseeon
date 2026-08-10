@@ -98,6 +98,8 @@ try {
                 $markGesendet->execute(['id' => $job['id']]);
                 sponsorMarkGesendet($pdo, (int) $job['sponsor_id'], $job['anschreiben_typ']);
                 if ($job['anschreiben_typ'] === 'bestaetigung') {
+                    // Lebenszyklus: zugesagt → bestätigt (stuft abgerechnet/bezahlt nicht zurück).
+                    sponsorMarkBestaetigt($pdo, (int) $job['sponsor_id']);
                     try {
                         archiveSponsorBestaetigung($pdo, (int) $job['sponsor_id'], (int) ($job['angefordert_von'] ?? 0));
                     } catch (Throwable $e) {

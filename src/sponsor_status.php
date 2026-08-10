@@ -47,6 +47,21 @@ function sponsorStatusAmpel(string $status): string {
  * Bestandssponsor (zugesagt/bezahlt) wird durch ein erneutes Anschreiben
  * nicht zurückgestuft.
  */
+/**
+ * Nach erfolgreichem Bestätigungs-Versand den Status auf 'bestaetigt' heben.
+ * Semantik wie sponsorMarkGesendet: nur der Vor-Zustand 'zugesagt' wird gehoben — ein bereits
+ * abgerechneter oder bezahlter Sponsor wird durch eine erneut versandte Bestätigung NICHT
+ * zurückgestuft.
+ */
+function sponsorMarkBestaetigt(PDO $pdo, int $sponsorId): void {
+    $stmt = $pdo->prepare("
+        UPDATE sponsors
+        SET status = 'bestaetigt'
+        WHERE id = :id AND status = 'zugesagt'
+    ");
+    $stmt->execute(['id' => $sponsorId]);
+}
+
 function sponsorMarkGesendet(PDO $pdo, int $sponsorId, string $typ): void {
     $stmt = $pdo->prepare("
         UPDATE sponsors

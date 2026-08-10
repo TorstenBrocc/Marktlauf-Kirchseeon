@@ -18,15 +18,22 @@ require_once __DIR__ . '/../../src/channels/mail.php';
 require_once __DIR__ . '/../../src/sponsor_status.php';
 require_once __DIR__ . '/../../src/sponsor_beleg.php';
 
+// Rücksprungziel: die Bestätigungs-Seite schickt ihre Nutzer zu sich zurück statt in die
+// Sponsoren-Liste. Feste Whitelist — kein offener Redirect aus dem Request. Muss vor der
+// ersten Weiterleitung stehen (Methoden- und CSRF-Guard nutzen es bereits).
+$redirectTo = in_array($_POST['redirect_to'] ?? '', ['bestaetigungen.php'], true)
+    ? '../' . $_POST['redirect_to']
+    : '../sponsoren.php';
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: ../sponsoren.php');
+    header('Location: ' . $redirectTo);
     exit;
 }
 
 $csrfToken = $_POST['csrf_token'] ?? '';
 if (!verifyCsrfToken($csrfToken)) {
     $_SESSION['flash_error'] = 'Ungültige Anfrage.';
-    header('Location: ../sponsoren.php');
+    header('Location: ' . $redirectTo);
     exit;
 }
 
@@ -66,7 +73,7 @@ $ids = array_values(array_unique(array_filter($ids, static fn ($i) => $i > 0)));
 
 if (empty($ids)) {
     $_SESSION['flash_error'] = 'Keine Sponsoren ausgewählt.';
-    header('Location: ../sponsoren.php');
+    header('Location: ' . $redirectTo);
     exit;
 }
 
@@ -139,7 +146,7 @@ try {
 
     if (empty($recipients)) {
         $_SESSION['flash_error'] = 'Kein versandfähiger Empfänger.' . $hinweis;
-        header('Location: ../sponsoren.php');
+        header('Location: ' . $redirectTo);
         exit;
     }
 
@@ -159,6 +166,8 @@ try {
             // Reset-Signal: eine Bestätigung ging raus → Browser setzt die Anhang-Abwahl zurück (alle wieder dran).
             if ($typ === 'bestaetigung') {
                 $_SESSION['bestaetigung_versand_done'] = true;
+                // Lebenszyklus: zugesagt → bestätigt (stuft abgerechnet/bezahlt nicht zurück).
+                sponsorMarkBestaetigt($pdo, (int) $r['sponsor_id']);
             }
 
             // Bestätigung: Beleg-PDF im Sponsor-Ordner ablegen (Mail bleibt einmalig).
@@ -175,7 +184,7 @@ try {
         } else {
             $_SESSION['flash_error'] = 'Versand fehlgeschlagen (siehe Log).' . $hinweis;
         }
-        header('Location: ../sponsoren.php');
+        header('Location: ' . $redirectTo);
         exit;
     }
 
@@ -218,11 +227,11 @@ try {
         $_SESSION['flash_success'] = $queued . ' Anschreiben in die Sende-Queue gestellt. '
             . 'Versand starten: <code>MARKTLAUF_CLI=1 php bin/sponsor_versand.php</code> per SSH.' . $hinweis;
     }
-    header('Location: ../sponsoren.php');
+    header('Location: ' . $redirectTo);
     exit;
 } catch (PDOException $e) {
     logError('Sponsor-Versand DB error: ' . $e->getMessage());
     $_SESSION['flash_error'] = 'Datenbankfehler beim Versand.';
-    header('Location: ../sponsoren.php');
+    header('Location: ' . $redirectTo);
     exit;
 }
