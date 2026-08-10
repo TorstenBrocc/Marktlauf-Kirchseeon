@@ -16,9 +16,9 @@ $csrfToken = generateCsrfToken();
 $flashSuccess = $_SESSION['flash_success'] ?? '';
 $flashError = $_SESSION['flash_error'] ?? '';
 $importReport = $_SESSION['import_report'] ?? [];
-// Das Reset-Signal der Anhang-Abwahl wertet jetzt die Bestätigungsseite aus (dort steht
-// die Anhang-Kachel); hier wird es nur noch mit aufgeräumt, falls es liegen geblieben ist.
-unset($_SESSION['flash_success'], $_SESSION['flash_error'], $_SESSION['import_report'], $_SESSION['bestaetigung_versand_done']);
+// Das Reset-Signal der Anhang-Abwahl werten die Anschreiben-Seiten aus (dort steht die
+// Anhang-Kachel); hier wird es nur noch mit aufgeräumt, falls es liegen geblieben ist.
+unset($_SESSION['flash_success'], $_SESSION['flash_error'], $_SESSION['import_report'], $_SESSION['anhang_abwahl_reset']);
 
 $filterStatus = $_GET['status'] ?? '';
 $filterPaket = $_GET['paket'] ?? '';

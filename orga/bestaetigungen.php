@@ -31,8 +31,8 @@ $flashSuccess = $_SESSION['flash_success'] ?? '';
 $flashError = $_SESSION['flash_error'] ?? '';
 // Reset-Signal: nach erfolgreichem Versand setzt der Browser die Anhang-Abwahl zurück,
 // damit beim nächsten Sponsor wieder alle Anhänge dabei sind.
-$bestaetigungVersandDone = !empty($_SESSION['bestaetigung_versand_done']);
-unset($_SESSION['flash_success'], $_SESSION['flash_error'], $_SESSION['bestaetigung_versand_done']);
+$anhangAbwahlReset = ($_SESSION['anhang_abwahl_reset'] ?? '') === 'bestaetigung';
+unset($_SESSION['flash_success'], $_SESSION['flash_error'], $_SESSION['anhang_abwahl_reset']);
 
 $pdo = getDbConnection();
 
@@ -371,10 +371,10 @@ $typLabel = static fn (?string $p): string => match ($p) {
     })();
     <?php endif; ?>
 
-    <?php if ($bestaetigungVersandDone): ?>
+    <?php if ($anhangAbwahlReset): ?>
     // Eine Bestätigung ist rausgegangen → Abwahl leeren, damit der nächste Sponsor wieder
     // alle Anhänge bekommt.
-    try { localStorage.removeItem('mkl_anhang_abwahl'); } catch (e) {}
+    try { localStorage.removeItem('mkl_anhang_abwahl_bestaetigung'); } catch (e) {}
     <?php endif; ?>
 
     (function() {

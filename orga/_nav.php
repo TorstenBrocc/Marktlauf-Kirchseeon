@@ -224,7 +224,7 @@ return [
     ],
     [
         'key'     => 'anschreiben_einstellungen',
-        'label'   => 'Anschreiben-Einstellungen',
+        'label'   => 'Einstellungen (Anschreiben)',
         'group'   => 'SPONSOREN',
         'section' => 'SPONSOREN-ANSCHREIBEN',
         'href'    => 'anschreiben_einstellungen.php',

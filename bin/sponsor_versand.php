@@ -55,7 +55,8 @@ try {
     }
 
     $stmt = $pdo->query("
-        SELECT id, sponsor_id, email, anrede, vorname, nachname, firma, paket, anschreiben_typ, angefordert_von
+        SELECT id, sponsor_id, email, anrede, vorname, nachname, firma, paket, anschreiben_typ,
+               exclude_plakat_fids, exclude_asset_fids, angefordert_von
         FROM sponsor_versand_queue
         WHERE status = 'offen'
         ORDER BY id ASC
@@ -77,6 +78,17 @@ try {
     $markGesendet = $pdo->prepare("UPDATE sponsor_versand_queue SET status = 'gesendet', gesendet_am = NOW(), fehler_text = NULL WHERE id = :id");
     $markFehler = $pdo->prepare("UPDATE sponsor_versand_queue SET status = 'fehler', fehler_text = :fehler WHERE id = :id");
 
+    // Anhang-Abwahl je Job: beim Einstellen in die Queue mitgeschrieben (Migration 056).
+    // Vorher gingen hier feste leere Listen rein — die Abwahl war ab dem zweiten Empfänger
+    // wirkungslos, ohne dass es jemand sah.
+    $excludeAusJob = static function (?string $json): array {
+        if ($json === null || trim($json) === '') {
+            return [];
+        }
+        $arr = json_decode($json, true);
+        return is_array($arr) ? array_values(array_map('strval', $arr)) : [];
+    };
+
     foreach ($jobs as $job) {
         $i++;
         try {
@@ -89,8 +101,8 @@ try {
                 $job['anschreiben_typ'],
                 (string) ($job['paket'] ?? ''),
                 (int) ($job['angefordert_von'] ?? 0),
-                [],
-                [],
+                $excludeAusJob($job['exclude_asset_fids'] ?? null),
+                $excludeAusJob($job['exclude_plakat_fids'] ?? null),
                 (int) $job['sponsor_id']
             );
 

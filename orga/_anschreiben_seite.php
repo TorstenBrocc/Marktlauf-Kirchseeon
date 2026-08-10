@@ -33,7 +33,10 @@ $csrfToken = generateCsrfToken();
 
 $flashSuccess = $_SESSION['flash_success'] ?? '';
 $flashError   = $_SESSION['flash_error'] ?? '';
-unset($_SESSION['flash_success'], $_SESSION['flash_error']);
+// Reset-Signal: ist ein Versand dieser Vorlage rausgegangen, setzt der Browser die
+// Anhang-Abwahl zurück — danach sind wieder alle Anhänge dabei.
+$anhangAbwahlReset = ($_SESSION['anhang_abwahl_reset'] ?? '') === $slug;
+unset($_SESSION['flash_success'], $_SESSION['flash_error'], $_SESSION['anhang_abwahl_reset']);
 
 $pdo         = getDbConnection();
 $vorlage     = sponsorBriefLoad($pdo, $slug, (int) $user['id']);
@@ -295,9 +298,28 @@ if ($isUserScoped && $vorlage['draft'] && $vorlage['draft_ts'] !== '') {
                     return false;
                 }
             }
-            return confirm(gewaehlt + ' Empfänger anschreiben?\n\nAb 2 Empfängern läuft der Versand über die Warteschlange (15 Sek. Abstand je Mail).');
+            if (!confirm(gewaehlt + ' Empfänger anschreiben?\n\nAb 2 Empfängern läuft der Versand über die Warteschlange (15 Sek. Abstand je Mail).')) {
+                return false;
+            }
+            // Abwahl aus der Anhang-Kachel mitschicken: ohne diese Felder wären die
+            // Checkboxen wirkungslos und es ginge doch jeder Anhang raus.
+            var vf = document.getElementById('versand-form');
+            vf.querySelectorAll('input[name="exclude_asset_fids[]"], input[name="exclude_plakat_fids[]"]')
+                .forEach(function(el) { el.remove(); });
+            document.querySelectorAll('.anhang-abwahl:not(:checked)').forEach(function(cb) {
+                var hid = document.createElement('input');
+                hid.type = 'hidden';
+                hid.name = (cb.dataset.group === 'asset' ? 'exclude_asset_fids[]' : 'exclude_plakat_fids[]');
+                hid.value = cb.value;
+                vf.appendChild(hid);
+            });
+            return true;
         };
     })();
+
+    <?php if ($anhangAbwahlReset): ?>
+    try { localStorage.removeItem('mkl_anhang_abwahl_' + <?= json_encode($slug) ?>); } catch (e) {}
+    <?php endif; ?>
 
     (function() {
         const burger = document.getElementById('burger-btn');

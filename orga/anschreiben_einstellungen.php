@@ -74,7 +74,7 @@ $phZeile = static function (string $ph, string $beschreibung) use ($phQuellen): 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
-    <title>Anschreiben-Einstellungen | ATSV Kirchseeon Marktlauf</title>
+    <title>Einstellungen (Anschreiben) | ATSV Kirchseeon Marktlauf</title>
     <link rel="stylesheet" href="css/orga.css?v=<?= @filemtime(__DIR__ . '/css/orga.css') ?>">
     <link rel="icon" type="image/svg+xml" href="../assets/images/logo-final.svg">
     <style>
@@ -109,7 +109,7 @@ $phZeile = static function (string $ph, string $beschreibung) use ($phQuellen): 
 
         <main class="main-content">
             <header class="content-header">
-                <h1>Anschreiben-Einstellungen</h1>
+                <h1>Einstellungen (Anschreiben)</h1>
             </header>
 
             <?php if ($flashSuccess): ?>
