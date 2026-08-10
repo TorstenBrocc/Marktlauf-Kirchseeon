@@ -195,28 +195,27 @@ class RechnungPdf extends FPDF
         }
 
         // ===== 4 · h1 =====
-        // 76 statt 82: die Leerzeile zwischen „Rechnung" und der Anrede entsteht durch das
-        // Höherziehen der Überschrift — der Weißraum darüber war reichlich, und der Textkörper
-        // darunter bleibt damit unverändert an seinem Platz (eine Seite, kein Umbruch).
-        $this->SetXY($L, 76);
+        // Zurück auf 82 (TT wollte auch über der Überschrift eine Freizeile); die Leerzeile
+        // darunter bleibt, indem der Textkörper mitwandert: Anrede 101, Satz 113, Tabelle 124.
+        $this->SetXY($L, 82);
         $this->SetFont('mont', '', 23);
         $this->SetTextColor(...$this->green2);
         $this->Cell(0, 10, $this->t('Rechnung'), 0, 1, 'L');
 
         // ===== 5 · Anschreiben =====
-        $this->SetXY($L, 95);
+        $this->SetXY($L, 101);
         $this->SetFont('pop', '', 10.5);
         $this->SetTextColor(...$this->body);
         $this->Cell(0, 6, $this->t('Sehr geehrte Damen und Herren,'), 0, 1, 'L');
         // Leerzeile zwischen Anrede und Satz; der Satz endet damit eine Zeilenhöhe
         // über dem Tabellenkopf (ty = 118) — bewusst enger als zuvor.
-        $this->SetXY($L, 107);
+        $this->SetXY($L, 113);
         $this->MultiCell($R - $L, 6, $this->t(
             'für Ihr Sponsoring berechnen wir gemäß unserer Vereinbarung die folgende Leistung:'
         ), 0, 'L');
 
         // ===== 6 · Positionstabelle =====
-        $ty = 118.0;
+        $ty = 124.0;
         $this->SetXY($L, $ty);
         $this->SetFont('mont', '', 7.5);
         $this->SetTextColor(...$this->muted);

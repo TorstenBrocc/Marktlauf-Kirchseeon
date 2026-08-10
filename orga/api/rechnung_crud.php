@@ -2,7 +2,7 @@
 /**
  * Sponsoring-Rechnungen — Aktionen (POST + CSRF).
  *   action=generate       : aus ausgewählten Sponsoren Rechnungsentwürfe erzeugen
- *                           + Anstoß-Mail an den Kassier (Nummernvergabe im Dashboard).
+ *                           (ohne Mail — der Kassier steht beim Sponsor-Versand in Kopie).
  *   action=assign_number  : fortlaufende Nummer einer Rechnung vergeben.
  *   action=discard        : Rechnung verwerfen (nur solange nicht versendet); Nummer wird frei.
  * Muster: sponsor_notiz.php / sponsor_versand.php.
@@ -15,7 +15,6 @@ require_once __DIR__ . '/../../src/db.php';
 require_once __DIR__ . '/../../src/logger.php';
 require_once __DIR__ . '/../../src/rechnung.php';
 require_once __DIR__ . '/../../src/rechnung_repo.php';
-require_once __DIR__ . '/../../src/channels/mail.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: ../rechnungen.php');
@@ -124,18 +123,10 @@ if ($action === 'generate') {
         }
     }
 
-    // Anstoß-Mail an den Kassier (best effort; Entwürfe bleiben auch ohne Mail bestehen)
-    $mailHinweis = '';
-    if ($erstellt !== []) {
-        try {
-            $mailHinweis = rechnungKassierMailSenden($erstellt);
-        } catch (Throwable $e) {
-            logError('Kassier-Mail: ' . $e->getMessage());
-            $mailHinweis = ' Die Benachrichtigung an den Kassier konnte nicht gesendet werden (im Dashboard sichtbar).';
-        }
-    }
-
-    $msg = count($erstellt) . ' Rechnungsentwurf/-entwürfe erstellt.' . $mailHinweis;
+    // Bewusst KEINE Mail an den Kassier an dieser Stelle (Änderung 2026-08-10): der Kassier
+    // erfährt vom Vorgang erst beim tatsächlichen Versand an den Sponsor, wo er in Kopie steht.
+    // Die Nummernvergabe passiert ohnehin im Dashboard.
+    $msg = count($erstellt) . ' Rechnungsentwurf/-entwürfe erstellt.';
     if ($uebersprungen !== []) {
         $_SESSION['flash_error'] = 'Übersprungen: ' . implode(' · ', $uebersprungen);
     }
@@ -147,45 +138,3 @@ if ($action === 'generate') {
 $_SESSION['flash_error'] = 'Unbekannte Aktion.';
 header('Location: ../rechnungen.php');
 exit;
-
-/**
- * Sendet eine formale Benachrichtigung an den Kassier: es steht eine Abrechnung zur
- * Nummernvergabe bereit. Kein Anhang — die Nummer wird im Dashboard vergeben.
- * Rückgabe: kurzer Zusatzhinweis für die Flash-Meldung.
- */
-function rechnungKassierMailSenden(array $erstellt): string
-{
-    $s   = rechnungStammdaten();
-    $cfg = getConfig();
-    $to  = $s['kassier_email'];
-    $dashboardUrl = rtrim($cfg['app']['url'] ?? '', '/') . '/orga/rechnungen.php';
-    $anzahl = count($erstellt);
-
-    $subject = $anzahl === 1
-        ? 'Sponsoring-Abrechnung: Rechnungsnummer vergeben'
-        : 'Sponsoring-Abrechnungen: Rechnungsnummern vergeben';
-
-    $zeilen = [];
-    $zeilen[] = 'Hallo,';
-    $zeilen[] = '';
-    $zeilen[] = $anzahl === 1
-        ? 'es steht eine neue Sponsoring-Abrechnung zur Nummernvergabe bereit:'
-        : 'es stehen ' . $anzahl . ' neue Sponsoring-Abrechnungen zur Nummernvergabe bereit:';
-    $zeilen[] = '';
-    foreach ($erstellt as $e) {
-        $zeilen[] = '  - ' . $e['firma'];
-    }
-    $zeilen[] = '';
-    $zeilen[] = 'Bitte im Orga-Dashboard die jeweils aktuelle Rechnungsnummer vergeben:';
-    $zeilen[] = $dashboardUrl;
-    $zeilen[] = '';
-    $zeilen[] = 'Viele Grüße';
-    $zeilen[] = $s['verein'] . ' – ' . $s['abteilung'];
-    $textBody = implode("\n", $zeilen);
-
-    $ok = sendMail($to, $subject, $textBody, '', []);
-
-    return $ok
-        ? ' Der Kassier wurde per Mail informiert.'
-        : ' Die Benachrichtigung an den Kassier konnte nicht gesendet werden (im Dashboard sichtbar).';
-}

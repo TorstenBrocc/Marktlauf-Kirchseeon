@@ -49,7 +49,12 @@ class SmtpMailer
      *                                                                   Ein fehlgeschlagenes BCC-RCPT bricht den Hauptversand NICHT ab.
      * @param array<array{path:string,name:string,mime:string}> $attachments Dateianhänge; jeder Eintrag: path=abs. Pfad, name=Dateiname, mime=MIME-Type.
      */
-    public function send(string $to, string $subject, string $textBody, string $htmlBody = '', array $bcc = [], array $attachments = []): bool
+    /**
+     * $cc landet zusätzlich im sichtbaren Cc-Header (SMTP-seitig ist es wie Bcc ein RCPT TO;
+     * den Unterschied macht allein der Header). Gebraucht für „Kassier in Kopie" bei Rechnungen:
+     * der Empfänger soll sehen, dass die Buchhaltung mitliest.
+     */
+    public function send(string $to, string $subject, string $textBody, string $htmlBody = '', array $bcc = [], array $attachments = [], array $cc = []): bool
     {
         $this->lastError = null;
         $this->bccReport = [];
@@ -67,6 +72,19 @@ class SmtpMailer
             $this->authenticate();
             $this->mailFrom();
             $this->rcptTo($to);
+            $ccAkzeptiert = [];
+            foreach ($cc as $ccAddr) {
+                $ccAddr = trim((string) $ccAddr);
+                if ($ccAddr === '' || strcasecmp($ccAddr, $to) === 0) {
+                    continue; // leer oder identisch mit To -> keine Doppelzustellung
+                }
+                if ($this->rcptToOptional($ccAddr)) {
+                    $ccAkzeptiert[] = $ccAddr;
+                } else {
+                    // Nicht abbrechen: die Mail an den Empfänger ist wichtiger als die Kopie.
+                    $this->bccReport[$ccAddr] = 'CC REJECTED: ' . ($this->lastError ?? '?');
+                }
+            }
             foreach ($bcc as $bccAddr) {
                 $bccAddr = trim((string) $bccAddr);
                 if ($bccAddr === '' || strcasecmp($bccAddr, $to) === 0) {
@@ -75,7 +93,9 @@ class SmtpMailer
                 $accepted = $this->rcptToOptional($bccAddr);
                 $this->bccReport[$bccAddr] = $accepted ? 'accepted (250)' : ('REJECTED: ' . ($this->lastError ?? '?'));
             }
-            $this->data($to, $subject, $textBody, $htmlBody, $attachments);
+            // Nur tatsächlich angenommene CC-Adressen in den Header — kein Versprechen im
+            // Dokument, das der Server abgelehnt hat.
+            $this->data($to, $subject, $textBody, $htmlBody, $attachments, $ccAkzeptiert);
             $this->quit();
             return true;
         } catch (Exception $e) {
@@ -155,12 +175,12 @@ class SmtpMailer
         }
     }
 
-    private function data(string $to, string $subject, string $textBody, string $htmlBody, array $attachments = []): void
+    private function data(string $to, string $subject, string $textBody, string $htmlBody, array $attachments = [], array $cc = []): void
     {
         $this->sendCommand('DATA');
         $this->expectCode(354);
 
-        $message = $this->buildMessage($to, $subject, $textBody, $htmlBody, $attachments);
+        $message = $this->buildMessage($to, $subject, $textBody, $htmlBody, $attachments, $cc);
         $this->sendCommand($message . "\r\n.");
         $this->expectCode(250);
     }
@@ -209,7 +229,7 @@ class SmtpMailer
         return $response;
     }
 
-    private function buildMessage(string $to, string $subject, string $textBody, string $htmlBody, array $attachments = []): string
+    private function buildMessage(string $to, string $subject, string $textBody, string $htmlBody, array $attachments = [], array $cc = []): string
     {
         $date = date('r');
         $messageId = '<' . bin2hex(random_bytes(16)) . '@' . parse_url($this->host, PHP_URL_HOST) . '>';
@@ -227,10 +247,15 @@ class SmtpMailer
             "Date: $date",
             "From: $from",
             "To: $to",
+        ];
+        if ($cc !== []) {
+            $headers[] = 'Cc: ' . implode(', ', $cc);
+        }
+        $headers = array_merge($headers, [
             "Subject: $encodedSubject",
             "Message-ID: $messageId",
             'MIME-Version: 1.0',
-        ];
+        ]);
 
         $validAttachments = array_filter($attachments, static fn ($a) => is_file($a['path'] ?? ''));
 

@@ -3,7 +3,7 @@
  * Sponsoring-Rechnung an den Sponsor senden (POST + CSRF).
  * Ablauf: finales PDF rendern → Pflicht-Ablage in Google Drive
  * (Orga/<Jahr>/Finanzen/Sponsoren-Abrechnungen; fehlt der Ordner → Abbruch mit
- * Ansage, KEIN Versand) → Mail an den Sponsor (info@, BCC kassier@) → Protokoll.
+ * Ansage, KEIN Versand) → Mail an den Sponsor (info@, CC kassier@) → Protokoll.
  */
 
 declare(strict_types=1);
@@ -102,7 +102,7 @@ try {
     exit;
 }
 
-// --- Mail an den Sponsor (HTML-Layout wie die Anschreiben), BCC an Kassier ---
+// --- Mail an den Sponsor (HTML-Layout wie die Anschreiben), CC an Kassier ---
 $vorlage = sponsorBriefLoad($pdo, 'rechnung', 0);
 $ctx     = rechnungMailContext($row);
 $subject = sponsorBriefBetreff($vorlage['betreff'], $ctx);
@@ -122,11 +122,14 @@ $attachments = [[
 // orga/rechnungen.php entfernen.
 $attachments = array_merge($attachments, sponsorBedingungenAnhang($pdo));
 // --- Ende Altfall-Retrofit ---
+// Kassier sichtbar in Kopie (nicht blind): der Sponsor soll sehen, dass die Buchhaltung
+// mitliest, und der Kassier erfährt vom Versand genau hier — seit 2026-08-10 gibt es keine
+// separate Anstoß-Mail beim Erzeugen des Entwurfs mehr.
 $kassier = rechnungStammdaten()['kassier_email'];
 
 $ok = false;
 try {
-    $ok = sendMail($empfaenger, $subject, $text, $html, $attachments, [$kassier]);
+    $ok = sendMail($empfaenger, $subject, $text, $html, $attachments, [], [$kassier]);
 } catch (Throwable $e) {
     logError('Rechnung Mailversand: ' . $e->getMessage());
 }
@@ -139,7 +142,7 @@ rechnungVersandLog(
 );
 
 $_SESSION['flash_success'] = $ok
-    ? 'Rechnung ' . $nummer . ' an ' . $empfaenger . ' gesendet (BCC an Kassier) und in Google Drive abgelegt.'
+    ? 'Rechnung ' . $nummer . ' an ' . $empfaenger . ' gesendet (Kassier in Kopie) und in Google Drive abgelegt.'
     : '';
 if (!$ok) {
     $_SESSION['flash_error'] = 'Die Rechnung liegt in Google Drive, aber der Mailversand ist fehlgeschlagen. Bitte erneut senden.';

@@ -49,8 +49,11 @@ function sponsorLeistungGruppen(): array
  * typ: 'haken' | 'haken_text' | 'startplaetze'
  *
  * Optionale Felder:
- *   gruppe – Zusammenfassung auf der Rechnung (siehe sponsorLeistungGruppen())
- *   kurz   – Bezeichnung innerhalb der Gruppe („Website" in „Logo auf Website, auf Startnummer")
+ *   gruppe      – Zusammenfassung auf der Rechnung (siehe sponsorLeistungGruppen())
+ *   kurz        – Bezeichnung innerhalb der Gruppe („Website" in „Logo auf Website & Urkunde")
+ *   gruppe_rang – Reihenfolge innerhalb der Gruppe. Bewusst getrennt von der Katalogreihenfolge:
+ *                 die Matrix-Spalten stehen nach Stufe, die Aufzählung auf der Rechnung folgt
+ *                 der Lesbarkeit („Website, Startnummer & Urkunde", TT 2026-08-10)
  *   aktiv  – false = in dieser Saison nicht angeboten: erscheint weder in der Matrix noch auf
  *            der Rechnung, bleibt aber dokumentiert. Wieder anbieten = auf true setzen.
  *
@@ -65,19 +68,19 @@ function sponsorLeistungenKatalog(bool $inklusiveInaktive = false): array
         //   Logo auf Streckenbanner  – 2026-08-10 gestrichen; war zudem kein Logo-, sondern ein
         //                              Banner-Thema und wurde deshalb falsch zusammengefasst.
         ['key' => 'logo_website',     'label' => 'Logo auf Website',            'min' => 'bronze', 'typ' => 'haken',
-         'gruppe' => 'logo', 'kurz' => 'Website'],
+         'gruppe' => 'logo', 'kurz' => 'Website', 'gruppe_rang' => 1],
         // Logo-Platzierung, keine eigenständige Leistung (TT, 2026-08-10): das Sponsorlogo
         // erscheint auf den Urkunden. Label deshalb "Logo auf Urkunde", damit Matrix und
         // Rechnung dasselbe sagen.
         ['key' => 'urkunde',          'label' => 'Logo auf Urkunde',            'min' => 'bronze', 'typ' => 'haken',
-         'gruppe' => 'logo', 'kurz' => 'Urkunde'],
+         'gruppe' => 'logo', 'kurz' => 'Urkunde', 'gruppe_rang' => 4],
         ['key' => 'dankesschreiben',  'label' => 'Dankesschreiben',             'min' => 'bronze', 'typ' => 'haken'],
         ['key' => 'logo_startnummer', 'label' => 'Logo auf Startnummer',        'min' => 'silber', 'typ' => 'haken',
-         'gruppe' => 'logo', 'kurz' => 'Startnummer'],
+         'gruppe' => 'logo', 'kurz' => 'Startnummer', 'gruppe_rang' => 2],
         ['key' => 'presse',           'label' => 'Namensnennung Presse',        'min' => 'silber', 'typ' => 'haken'],
         // 2026 nicht angeboten (kein Lauf-Shirt). Für ein Folgejahr genügt aktiv => true.
         ['key' => 'logo_shirt',       'label' => 'Logo auf Lauf-Shirt',         'min' => 'silber', 'typ' => 'haken',
-         'gruppe' => 'logo', 'kurz' => 'Lauf-Shirt', 'aktiv' => false],
+         'gruppe' => 'logo', 'kurz' => 'Lauf-Shirt', 'gruppe_rang' => 3, 'aktiv' => false],
         ['key' => 'startplaetze',     'label' => 'Startplätze',                 'min' => 'bronze', 'typ' => 'startplaetze',
          'menge' => ['bronze' => 1, 'silber' => 3, 'gold' => 5]],
         ['key' => 'banner',           'label' => 'Banner im Start-/Zielbereich', 'min' => 'gold',  'typ' => 'haken_text'],
