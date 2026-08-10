@@ -50,9 +50,10 @@ if (!in_array($typ, ['erstanschreiben', 'folgejahr', 'frei', 'bestaetigung', 'be
     $typ = 'erstanschreiben';
 }
 
-// Bestätigung: vom Versender abgewählte Anhang-Dateien (Opt-out). Die Abwahl lebt
-// browser-seitig (localStorage) und gilt bis zum nächsten Versand; sie wird als
-// exclude_*_fids[] mitgeschickt. Greift nur im Einzelversand (immer 1 Sponsor bei der Bestätigung).
+// Vom Versender abgewählte Anhang-Dateien (Opt-out). Die Abwahl lebt browser-seitig
+// (localStorage, je Vorlage) und gilt bis zum nächsten Versand; sie wird als
+// exclude_*_fids[] mitgeschickt. Gilt für jede Vorlage mit abwählbaren Anhängen und —
+// seit Migration 056 — auch im Mehrfachversand über die Queue.
 $readExcludeFids = static function (string $key): array {
     if (!isset($_POST[$key]) || !is_array($_POST[$key])) {
         return [];
@@ -62,8 +63,8 @@ $readExcludeFids = static function (string $key): array {
         $_POST[$key]
     ), static fn ($v) => $v !== ''));
 };
-$excludeAssetFids  = $typ === 'bestaetigung' ? $readExcludeFids('exclude_asset_fids')  : [];
-$excludePlakatFids = $typ === 'bestaetigung' ? $readExcludeFids('exclude_plakat_fids') : [];
+$excludeAssetFids  = $readExcludeFids('exclude_asset_fids');
+$excludePlakatFids = $readExcludeFids('exclude_plakat_fids');
 
 // IDs einsammeln (Einzel-Button: sponsor_id, Mehrfach-Auswahl: sponsor_ids[])
 $ids = [];
@@ -169,9 +170,10 @@ try {
         if ($ok) {
             sponsorMarkGesendet($pdo, $r['sponsor_id'], $typ);
             $_SESSION['flash_success'] = 'Anschreiben gesendet an ' . htmlspecialchars($r['firma']) . '.' . $hinweis;
-            // Reset-Signal: eine Bestätigung ging raus → Browser setzt die Anhang-Abwahl zurück (alle wieder dran).
+            // Reset-Signal: ein Versand ist raus → die Seite dieser Vorlage setzt ihre
+            // Anhang-Abwahl zurück (danach sind wieder alle Anhänge dabei).
+            $_SESSION['anhang_abwahl_reset'] = $typ;
             if ($typ === 'bestaetigung') {
-                $_SESSION['bestaetigung_versand_done'] = true;
                 // Lebenszyklus: zugesagt → bestätigt (stuft abgerechnet/bezahlt nicht zurück).
                 sponsorMarkBestaetigt($pdo, (int) $r['sponsor_id']);
             }
@@ -195,10 +197,17 @@ try {
     }
 
     // --- Mehrfachauswahl: in Sende-Queue stellen ---
+    // Die Anhang-Abwahl reist mit: der CLI-Worker liest sie aus der Queue, sonst wäre sie
+    // ab dem zweiten Empfänger wirkungslos (Migration 056).
     $insert = $pdo->prepare('
-        INSERT INTO sponsor_versand_queue (sponsor_id, email, anrede, nachname, vorname, firma, paket, anschreiben_typ, angefordert_von)
-        VALUES (:sponsor_id, :email, :anrede, :nachname, :vorname, :firma, :paket, :typ, :von)
+        INSERT INTO sponsor_versand_queue
+            (sponsor_id, email, anrede, nachname, vorname, firma, paket, anschreiben_typ,
+             exclude_plakat_fids, exclude_asset_fids, angefordert_von)
+        VALUES (:sponsor_id, :email, :anrede, :nachname, :vorname, :firma, :paket, :typ,
+                :ex_plakat, :ex_asset, :von)
     ');
+    $exPlakatJson = $excludePlakatFids !== [] ? json_encode($excludePlakatFids) : null;
+    $exAssetJson  = $excludeAssetFids  !== [] ? json_encode($excludeAssetFids)  : null;
     $queued = 0;
     foreach ($recipients as $r) {
         $insert->execute([
@@ -210,14 +219,16 @@ try {
             'firma'      => $r['firma'],
             'paket'      => $r['paket'] ?: null,
             'typ'        => $typ,
+            'ex_plakat'  => $exPlakatJson,
+            'ex_asset'   => $exAssetJson,
             'von'        => $user['id'] ?? null,
         ]);
         $queued++;
     }
 
-    // Reset-Signal auch im Queue-Fall (Bestätigung mit mehreren Kontakten): ein Versand wurde ausgelöst.
-    if ($typ === 'bestaetigung' && $queued > 0) {
-        $_SESSION['bestaetigung_versand_done'] = true;
+    // Reset-Signal auch im Queue-Fall: ein Versand wurde ausgelöst.
+    if ($queued > 0) {
+        $_SESSION['anhang_abwahl_reset'] = $typ;
     }
 
     $scriptPath = realpath(__DIR__ . '/../../bin/sponsor_versand.php');

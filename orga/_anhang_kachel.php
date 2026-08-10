@@ -11,7 +11,8 @@
  *   $pdo        PDO     offene Verbindung
  *   $slug       string  Vorlagen-Slug (bestimmt über sponsorAnhangPlan(), was gezeigt wird)
  *   $csrfToken  string  für das Upload-Formular
- *   $anhangAbwahl bool  optional: Abwahl-Checkboxen anbieten (default: nur bei 'bestaetigung')
+ *   $anhangAbwahl bool  optional: Abwahl-Checkboxen unterdrücken (default: an, wo der
+ *                       Anhang-Plan die Gruppe nicht als 'fest' führt)
  *   $anhangRedirect string optional: Ziel nach dem Upload (default: aktuelle Seite)
  *
  * Gibt nichts aus, wenn an der Vorlage keine Anhänge hängen.
@@ -26,7 +27,10 @@ if ($anhangGruppen === []) {
     return;
 }
 
-$anhangAbwahl   = $anhangAbwahl   ?? ($slug === 'bestaetigung');
+// Abwählbar ist, was der Plan nicht als 'fest' führt — das gilt für jede Vorlage, nicht
+// nur für die Bestätigung. Der Versand wertet die Abwahl inzwischen überall aus
+// (Einzelversand direkt, Mehrfachversand über die Queue, Migration 056).
+$anhangAbwahl   = $anhangAbwahl   ?? true;
 $anhangRedirect = $anhangRedirect ?? basename($_SERVER['PHP_SELF'] ?? '');
 
 // Upload-Ziel: nur der Plakate-Ordner nimmt Uploads direkt von hier entgegen.
@@ -115,11 +119,12 @@ foreach (sponsorAnhangPlan($slug) as $g) {
 
 <?php if ($anhangAbwahl): ?>
 <script>
-// Anhang-Abwahl: browser-seitig, pro Person, bis zum nächsten Versand. Gespeichert werden nur
-// die ABGEWÄHLTEN Drive-IDs je Gruppe; die Versandseite liest denselben Schlüssel und leert ihn
-// nach erfolgreichem Versand (dann sind wieder alle Anhänge dabei).
+// Anhang-Abwahl: browser-seitig, pro Person und pro Vorlage, bis zum nächsten Versand.
+// Gespeichert werden nur die ABGEWÄHLTEN Drive-IDs je Gruppe. Der Schlüssel trägt den Slug,
+// damit eine Abwahl im Freien Brief nicht still die Bestätigung mitverändert; nach
+// erfolgreichem Versand leert die Seite ihn wieder (dann sind alle Anhänge zurück).
 (function() {
-    var KEY = 'mkl_anhang_abwahl';
+    var KEY = 'mkl_anhang_abwahl_' + <?= json_encode($slug) ?>;
     function load() {
         try { var s = JSON.parse(localStorage.getItem(KEY) || '{}'); return { plakat: s.plakat || [], asset: s.asset || [] }; }
         catch (e) { return { plakat: [], asset: [] }; }

@@ -266,11 +266,12 @@ function sendSponsorAnschreiben(
     // ihre Liste zeichnet. Damit kann die Kachel nichts anderes behaupten als hier passiert.
     // Die Sponsoring-Bedingungen sind Haus-Konvention: das Dokument liegt im Drive-Ordner
     // (vom Team gepflegt), das System hängt es an, es wird nicht systemseitig erzeugt.
-    // Abwahl (Opt-out je Datei) greift nur bei der Bestätigung und nur für 'fest' => false.
+    // Abwahl (Opt-out je Datei) greift überall dort, wo der Plan die Gruppe nicht als 'fest'
+    // führt — also bei den Plakaten (Freier Brief, Bestätigung) und den Bestätigungs-Assets.
     $attachments = [];
     foreach (sponsorAnhangPlan($typ) as $gruppe) {
         $exclude = [];
-        if (!$gruppe['fest'] && $typ === 'bestaetigung') {
+        if (!$gruppe['fest']) {
             $exclude = $gruppe['id'] === 'asset' ? $excludeAssetFids : $excludePlakatFids;
         }
         $attachments = array_merge($attachments, match ($gruppe['quelle']) {
