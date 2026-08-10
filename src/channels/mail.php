@@ -33,10 +33,10 @@ function mailBccAddress(): string {
 /**
  * @param array<array{path:string,name:string,mime:string}> $attachments Dateianhänge.
  */
-function sendMail(string $to, string $subject, string $textBody, string $htmlBody = '', array $attachments = [], array $extraBcc = []): bool {
+function sendMail(string $to, string $subject, string $textBody, string $htmlBody = '', array $attachments = [], array $extraBcc = [], array $cc = []): bool {
     $bccAddr = mailBccAddress();
     $bcc = ($bccAddr !== '' && strcasecmp($bccAddr, $to) !== 0) ? [$bccAddr] : [];
-    // Zusätzliche BCC-Empfänger (z. B. kassier@ bei Rechnungen) — dedupliziert, nie an $to.
+    // Zusätzliche BCC-Empfänger — dedupliziert, nie an $to.
     foreach ($extraBcc as $addr) {
         $addr = trim((string) $addr);
         if ($addr !== '' && strcasecmp($addr, $to) !== 0
@@ -44,11 +44,24 @@ function sendMail(string $to, string $subject, string $textBody, string $htmlBod
             $bcc[] = $addr;
         }
     }
+    // Sichtbare Kopie (z. B. kassier@ bei Rechnungen): nie an $to, nie doppelt zu einem BCC.
+    $ccListe = [];
+    foreach ($cc as $addr) {
+        $addr = trim((string) $addr);
+        if ($addr === '' || strcasecmp($addr, $to) === 0) {
+            continue;
+        }
+        if (in_array(strtolower($addr), array_map('strtolower', $bcc), true)
+            || in_array(strtolower($addr), array_map('strtolower', $ccListe), true)) {
+            continue;
+        }
+        $ccListe[] = $addr;
+    }
 
     $mailer = getSmtpMailer();
 
     if ($mailer !== null) {
-        $result = $mailer->send($to, $subject, $textBody, $htmlBody, $bcc, $attachments);
+        $result = $mailer->send($to, $subject, $textBody, $htmlBody, $bcc, $attachments, $ccListe);
         if (!$result) {
             logError('SMTP error: ' . $mailer->getLastError());
         }
@@ -69,6 +82,9 @@ function sendMail(string $to, string $subject, string $textBody, string $htmlBod
         'X-Mailer'     => 'PHP/' . phpversion(),
     ];
 
+    if (!empty($ccListe)) {
+        $headers['Cc'] = implode(', ', $ccListe);
+    }
     if (!empty($bcc)) {
         $headers['Bcc'] = $bcc[0];
     }

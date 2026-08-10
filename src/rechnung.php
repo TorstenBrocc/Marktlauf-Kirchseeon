@@ -175,7 +175,10 @@ function rechnungLeistungsposten(?string $typ, array $state = []): array
                 $gruppePos[$gruppe] = count($posten);
                 $posten[]           = ''; // Platzhalter, wird unten gefüllt
             }
-            $sammler[$gruppe][] = $pos['kurz'] ?? $pos['label'];
+            $sammler[$gruppe][] = [
+                'rang' => $pos['gruppe_rang'] ?? PHP_INT_MAX,
+                'text' => $pos['kurz'] ?? $pos['label'],
+            ];
             continue;
         }
 
@@ -198,7 +201,10 @@ function rechnungLeistungsposten(?string $typ, array $state = []): array
     // halten das Präfix am ersten Ort und das "&" an seinem Vorgänger, damit beim Umbruch keine
     // Zeile mit "auf" oder "&" endet bzw. beginnt.
     foreach ($sammler as $gruppe => $teile) {
-        $g       = $gruppen[$gruppe];
+        $g = $gruppen[$gruppe];
+        // Reihenfolge innerhalb der Gruppe aus `gruppe_rang`, nicht aus der Katalogreihenfolge.
+        usort($teile, static fn (array $a, array $b): int => $a['rang'] <=> $b['rang']);
+        $teile   = array_column($teile, 'text');
         $letzter = array_pop($teile);
         $liste   = $teile === []
             ? $letzter
