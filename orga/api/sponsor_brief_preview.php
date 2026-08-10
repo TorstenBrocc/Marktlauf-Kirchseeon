@@ -28,8 +28,17 @@ $md = (string) ($_POST['koerper_md'] ?? '');
 $pdo = getDbConnection();
 $previewUser = getCurrentUserFromGuard();
 $slug = (string) ($_POST['slug'] ?? '');
-$ctx = $slug === 'rechnung'
-    ? rechnungMailBeispielContext()
-    : sponsorBriefBeispielContext($pdo, (int) ($previewUser['id'] ?? 0));
+// Optionales sponsor_id: die Bestätigungs-Seite stellt sponsor-bezogen zusammen und will die
+// Vorschau mit den ECHTEN Daten des gewählten Sponsors sehen (Anrede, Firma, Paket, Startplätze,
+// Gutscheincode) statt mit „Musterfrau". Ohne den Parameter bleibt alles wie bisher.
+$sponsorId = (int) ($_POST['sponsor_id'] ?? 0);
+if ($slug === 'rechnung') {
+    $ctx = rechnungMailBeispielContext();
+} elseif ($sponsorId > 0) {
+    $ctx = sponsorBriefKontextFuerSponsor($pdo, $sponsorId, (int) ($previewUser['id'] ?? 0))
+        ?? sponsorBriefBeispielContext($pdo, (int) ($previewUser['id'] ?? 0));
+} else {
+    $ctx = sponsorBriefBeispielContext($pdo, (int) ($previewUser['id'] ?? 0));
+}
 
 echo sponsorBriefRenderHtml($md, $ctx);

@@ -687,6 +687,37 @@ function sponsorBriefContext(PDO $pdo, int $userId, string $anrede, string $vorn
     ];
 }
 
+/**
+ * Platzhalter-Kontext für einen konkreten Sponsor — repräsentativer Ansprechpartner
+ * (der erste „im Anschreiben"), Firma, Paket. null, wenn es den Sponsor nicht gibt.
+ *
+ * EINE Quelle für Live-Vorschau, Beleg-PDF und die Bestätigungs-Seite: läuft die Auswahl des
+ * Ansprechpartners hier auseinander, zeigt die Vorschau eine andere Anrede als die echte Mail.
+ */
+function sponsorBriefKontextFuerSponsor(PDO $pdo, int $sponsorId, int $userId = 0): ?array {
+    if ($sponsorId <= 0) {
+        return null;
+    }
+    $s = $pdo->prepare('SELECT firma, paket FROM sponsors WHERE id = :id');
+    $s->execute(['id' => $sponsorId]);
+    $sp = $s->fetch();
+    if (!$sp) {
+        return null;
+    }
+    $ap = $pdo->prepare(
+        "SELECT anrede, vorname, nachname FROM sponsor_ansprechpartner
+          WHERE sponsor_id = :id AND im_anschreiben = 1 ORDER BY id LIMIT 1"
+    );
+    $ap->execute(['id' => $sponsorId]);
+    $k = $ap->fetch() ?: ['anrede' => '', 'vorname' => '', 'nachname' => ''];
+
+    return sponsorBriefContext(
+        $pdo, $userId,
+        (string) $k['anrede'], (string) $k['vorname'], (string) $k['nachname'],
+        (string) $sp['firma'], (string) ($sp['paket'] ?? ''), $sponsorId
+    );
+}
+
 /** Beispiel-Kontext für die Editor-Vorschau (keine echten Empfängerdaten nötig). */
 function sponsorBriefBeispielContext(PDO $pdo, int $userId = 0): array {
     return sponsorBriefContext($pdo, $userId, 'Frau', 'Erika', 'Musterfrau', 'Muster GmbH', 'gold');

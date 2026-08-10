@@ -36,21 +36,17 @@ function archiveSponsorBestaetigung(PDO $pdo, int $sponsorId, int $userId = 0): 
     }
     $firma = (string) $sp['firma'];
 
-    // Repräsentativer Ansprechpartner für die Personalisierung (erster im Anschreiben).
-    $ap = $pdo->prepare(
-        "SELECT anrede, vorname, nachname FROM sponsor_ansprechpartner
-          WHERE sponsor_id = :id AND im_anschreiben = 1 ORDER BY id LIMIT 1"
-    );
-    $ap->execute(['id' => $sponsorId]);
-    $k = $ap->fetch() ?: ['anrede' => '', 'vorname' => '', 'nachname' => ''];
-
     if ($userId === 0) {
         $userId = (int) ($_SESSION['user_id'] ?? 0);
     }
-    $paket = (string) ($sp['paket'] ?? '');
 
     $vorlage  = sponsorBriefLoad($pdo, 'bestaetigung', $userId);
-    $ctx      = sponsorBriefContext($pdo, $userId, (string) $k['anrede'], (string) $k['vorname'], (string) $k['nachname'], $firma, $paket, $sponsorId);
+    // Repräsentativer Ansprechpartner + Sponsor-Platzhalter kommen aus der gemeinsamen Quelle,
+    // damit Beleg-PDF, Live-Vorschau und Mail denselben Empfänger und dieselben Werte sehen.
+    $ctx      = sponsorBriefKontextFuerSponsor($pdo, $sponsorId, $userId);
+    if ($ctx === null) {
+        throw new RuntimeException('Sponsor nicht gefunden.');
+    }
     $subject  = sponsorBriefBetreff($vorlage['betreff'], $ctx);
     $textBody = sponsorBriefRenderText($vorlage['koerper_md'], $ctx);
 
