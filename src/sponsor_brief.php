@@ -138,8 +138,6 @@ vielen Dank für Ihre Unterstützung des Marktlaufs Kirchseeon. Anbei erhalten S
 
 Über einen Ausgleich auf die auf der Rechnung genannte Bankverbindung innerhalb von 14 Tagen freuen wir uns.
 
-Es gelten unsere beiliegenden Sponsoring-Bedingungen; mit Begleichung der Rechnung gelten diese als vereinbart.
-
 Mit sportlichen Grüßen
 ATSV Kirchseeon e.V. – Abteilung Marktlauf
 MD;

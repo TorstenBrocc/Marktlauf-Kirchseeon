@@ -74,7 +74,7 @@ $kopfLink = static function (array $params) use ($seite, $zielgruppe): string {
                     </option>
                 <?php endforeach; ?>
             </select>
-            <span class="empf-zahl"><strong id="empf-count"><?= $anzahlOffen ?></strong> Empfänger</span>
+            <span class="empf-zahl"><strong id="empf-count">0</strong> von <?= $anzahlOffen ?> ausgewählt</span>
         <?php else: ?>
             <label for="empf-suche" class="empf-label">Empfänger</label>
             <input type="search" id="empf-suche" class="empf-select" placeholder="Firma suchen…"
@@ -112,8 +112,11 @@ $kopfLink = static function (array $params) use ($seite, $zielgruppe): string {
                     <li class="empf-item<?= (int) $k['id'] === $sponsorId ? ' aktiv' : '' ?>"
                         data-firma="<?= htmlspecialchars(mb_strtolower((string) $k['firma'])) ?>">
                         <?php if ($modus === 'bulk'): ?>
+                            <!-- Nie vorausgewählt (TT, 2026-08-11): ein versehentlicher Klick auf
+                                 „Ausgewählte anschreiben" darf nicht die ganze Zielgruppe anschreiben.
+                                 Auswählen ist eine bewusste Handlung, „Alle" steht als Knopf bereit. -->
                             <input type="checkbox" class="empf-check" name="sponsor_ids[]" form="versand-form"
-                                   value="<?= (int) $k['id'] ?>" <?= $sperre === '' ? 'checked' : 'disabled' ?>>
+                                   value="<?= (int) $k['id'] ?>" <?= $sperre === '' ? '' : 'disabled' ?>>
                         <?php endif; ?>
                         <span class="firma"><?= htmlspecialchars((string) $k['firma']) ?></span>
                         <span class="empf-tag"><?= htmlspecialchars(sponsorStatusLabel((string) $k['status'])) ?></span>
