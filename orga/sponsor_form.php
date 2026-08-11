@@ -500,6 +500,24 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                     <div class="form-card">
                         <h2>Ansprechpartner</h2>
 
+                        <div class="form-group">
+                            <label for="ansprache">Ansprache in Anschreiben</label>
+                            <select id="ansprache" name="ansprache">
+                                <option value="sie"<?= (($sponsor['ansprache'] ?? 'sie') !== 'du') ? ' selected' : '' ?>>Sie (Standard)</option>
+                                <option value="du"<?= (($sponsor['ansprache'] ?? 'sie') === 'du') ? ' selected' : '' ?>>Du</option>
+                            </select>
+                            <p style="font-size:0.78rem;color:var(--text-light);margin:0.35rem 0 0;line-height:1.5">
+                                Steuert die <strong>Anredezeile</strong> aller Anschreiben an diesen Sponsor:
+                                „Sehr geehrte Frau Jost," bzw. bei Du „Hallo Anja," (Vorname des
+                                Ansprechpartners; ohne Vornamen „Hallo zusammen,").
+                                <strong>Der übrige Text bleibt in Sie-Form</strong> — er ist so geschrieben
+                                („erhalten Sie", „Ihre Unterstützung"). Wo geduzt werden soll, braucht die
+                                Vorlage eine eigene Du-Fassung; sag Bescheid, für welche.
+                                Die <strong>Rechnung selbst siezt immer</strong> (Geschäftsdokument, geht oft
+                                an die Buchhaltung).
+                            </p>
+                        </div>
+
                         <div id="ap-container">
                             <?php if (empty($ansprechpartner)): ?>
                             <div class="ap-row" data-ap-row>
