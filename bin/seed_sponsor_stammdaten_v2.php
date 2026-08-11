@@ -111,11 +111,17 @@ function applyUpdate(PDO $pdo, int $id, array $set, array $params): void
 /** Ansprechpartner anlegen, wenn weder E-Mail noch (bei leerer Mail) Telefon vorhanden. */
 function ensureAp(PDO $pdo, int $sponsorId, array $ap): void
 {
-    $st = $pdo->prepare('SELECT email, telefon FROM sponsor_ansprechpartner WHERE sponsor_id = :sid');
+    $st = $pdo->prepare('SELECT id, email, telefon FROM sponsor_ansprechpartner WHERE sponsor_id = :sid');
     $st->execute(['sid' => $sponsorId]);
     foreach ($st->fetchAll() as $e) {
         if ($ap['email'] !== '' && mb_strtolower(trim((string) $e['email'])) === mb_strtolower($ap['email'])) {
-            return; // E-Mail schon da
+            // E-Mail schon da — fehlendes Telefon nachtragen, vorhandenes nie ueberschreiben
+            if (($ap['telefon'] ?? '') !== '' && trim((string) $e['telefon']) === '') {
+                $pdo->prepare('UPDATE sponsor_ansprechpartner SET telefon = :t WHERE id = :id')
+                    ->execute(['t' => $ap['telefon'], 'id' => $e['id']]);
+                echo "AP  #{$sponsorId}: Telefon nachgetragen ({$ap['telefon']})\n";
+            }
+            return;
         }
         if ($ap['email'] === '' && $ap['telefon'] !== '' && trim((string) $e['telefon']) === $ap['telefon']) {
             return; // reine Telefon-Zeile schon da
