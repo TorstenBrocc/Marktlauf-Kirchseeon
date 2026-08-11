@@ -283,6 +283,31 @@ function rechnungDateiname(string $nummer, string $firma): string
 }
 
 /**
+ * Name des Rechnungs-PDFs **im Mailanhang**: `Rechnung_Gold-Sponsoring Marktlauf Kirchseeon 2026.pdf`
+ * (Muster TT, 2026-08-11). Bewusst anders als der Ablagename: der Sponsor kennt seinen Firmennamen,
+ * ihn interessiert, *was* abgerechnet wird — die Ablage sortiert dagegen nach Jahr und Nummer.
+ *
+ * Der Paketname kommt aus dem Leistungstext des Snapshots („Silber-Sponsoring Marktlauf 2026: …"),
+ * weil die Rechnung kein eigenes Paket-Feld führt. Ohne erkennbares Paket (Sachsponsor) bleibt es
+ * bei „Sponsoring". Das Jahr kommt aus der Rechnungsnummer, nicht aus dem Leistungstext.
+ *
+ * Leerzeichen sind hier in Ordnung: Anhangsnamen werden MIME-kodiert und in Anführungszeichen
+ * gesetzt (`SmtpMailer::buildMixedBody`).
+ */
+function rechnungAnhangName(string $leistung, int $jahr): string
+{
+    $pos   = strpos($leistung, ':');
+    $titel = trim($pos !== false ? substr($leistung, 0, $pos) : $leistung);
+
+    $bezeichnung = 'Sponsoring';
+    if (preg_match('/^(.+?)-Sponsoring\b/u', $titel, $m) === 1) {
+        $bezeichnung = trim($m[1]) . '-Sponsoring';
+    }
+
+    return 'Rechnung_' . $bezeichnung . ' Marktlauf Kirchseeon ' . $jahr . '.pdf';
+}
+
+/**
  * Prüft das Format der fortlaufenden Rechnungsnummer: NN-JJJJ
  * (1–4 Ziffern, Bindestrich, vierstelliges Jahr), z. B. "5-2026" oder "05-2026".
  */

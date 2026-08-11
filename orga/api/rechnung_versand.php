@@ -110,9 +110,11 @@ $subject = sponsorBriefBetreff($vorlage['betreff'], $ctx);
 $html    = sponsorBriefRenderHtml($vorlage['koerper_md'], $ctx);
 $text    = sponsorBriefRenderText($vorlage['koerper_md'], $ctx);
 
+// Anhangsname nennt die Leistung, nicht die Firma (rechnungAnhangName) — der Sponsor sieht,
+// was abgerechnet wird. Der Ablagename in Drive folgt dagegen dem Sortier-Muster.
 $attachments = [[
     'path' => $tmp,
-    'name' => 'Rechnung_' . $nummer . '.pdf',
+    'name' => rechnungAnhangName((string) ($row['leistung'] ?? ''), $jahr),
     'mime' => 'application/pdf',
 ]];
 // Kein Bedingungen-Anhang an der Rechnung (Altfall-Retrofit zurückgebaut 2026-08-11): die
