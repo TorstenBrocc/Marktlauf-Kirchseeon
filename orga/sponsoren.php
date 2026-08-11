@@ -147,7 +147,9 @@ try {
 $countStmt = $pdo->query('SELECT COUNT(*) FROM sponsors');
 $totalCount = (int) $countStmt->fetchColumn();
 
-$summeStmt = $pdo->query('SELECT SUM(summe) FROM sponsors WHERE status IN ("zugesagt", "bestaetigt", "bezahlt")');
+// Zugesagtes Geld = alles ab der Zusage: bestätigt und abgerechnet gehören dazu, sonst fiele ein
+// Sponsor zwischen Rechnungsstellung und Zahlungseingang aus der Summe heraus.
+$summeStmt = $pdo->query('SELECT SUM(summe) FROM sponsors WHERE status IN ("zugesagt", "bestaetigt", "abgerechnet", "bezahlt")');
 $gesamtSumme = (float) $summeStmt->fetchColumn();
 
 $merkfeld = '';

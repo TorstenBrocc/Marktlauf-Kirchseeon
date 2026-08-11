@@ -49,18 +49,37 @@ $typLabel = static fn (?string $p): string => match ($p) {
         .lm-table { border-collapse: collapse; background: var(--white); font-size: 0.8rem; }
         .lm-table th, .lm-table td { border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); padding: 0.4rem 0.5rem; text-align: center; vertical-align: middle; }
         .lm-table thead th { background: var(--bg); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-light); font-weight: 600; white-space: nowrap; position: sticky; top: 0; z-index: 2; }
-        .lm-firma { text-align: left; white-space: nowrap; font-weight: 600; position: sticky; left: 0; background: var(--white); z-index: 1; }
-        .lm-table thead .lm-firma { z-index: 3; background: var(--bg); }
-        .lm-table tr:hover .lm-firma { background: #fafafa; }
-        .lm-typ { text-align: left; color: var(--text-light); white-space: nowrap; }
-        .lm-col { min-width: 84px; }
+        /* Firma/Typ linksbündig: die Regel braucht td/th mit, sonst gewinnt das zentrierende
+           `.lm-table td` (Spezifität 0,1,1 schlägt eine einzelne Klasse). */
+        .lm-table th.lm-firma, .lm-table td.lm-firma {
+            text-align: left; font-weight: 600; position: sticky; left: 0;
+            background: var(--white); z-index: 1;
+            /* Umbruch statt nowrap: lange Firmennamen brechen nach ~25 Zeichen um, statt die
+               Tabelle in die Breite zu ziehen. */
+            white-space: normal; max-width: 25ch; overflow-wrap: break-word; hyphens: auto;
+        }
+        .lm-table thead th.lm-firma { z-index: 3; background: var(--bg); white-space: normal; }
+        .lm-table tr:hover td.lm-firma { background: #fafafa; }
+        .lm-table th.lm-typ, .lm-table td.lm-typ {
+            text-align: left; color: var(--text-light);
+            white-space: normal; max-width: 9ch; overflow-wrap: break-word; hyphens: auto;
+        }
+        /* Reine Haken-Spalten: so schmal wie der senkrechte Kopf es zulässt. */
+        .lm-col { min-width: 34px; }
+        /* Nur 30 % des früheren Zellrahmens (war 0.4rem/0.5rem) — die Haken sollen eng sitzen. */
+        .lm-table th.lm-col, .lm-table td.lm-col { padding: 0.12rem 0.15rem; }
+        /* Spalten mit Schreibfeld brauchen Platz für Haken + Feld nebeneinander. */
+        .lm-col--text { min-width: 118px; }
         .lm-col .lm-vert { writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; max-height: 130px; }
-        .lm-check { width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer; }
+        /* Haken, Stückzahl und Schreibfeld in EINER Zeile — das Feld steht hinter dem Haken. */
+        .lm-cell { display: flex; align-items: center; justify-content: center; gap: 0.2rem; }
+        .lm-check { width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer; flex-shrink: 0; margin: 0; }
         .lm-check.dim { opacity: 0.35; }
-        .lm-text { width: 92px; padding: 0.2rem 0.3rem; border: 1px solid var(--border); border-radius: 3px; font-size: 0.72rem; margin-top: 0.2rem; }
+        .lm-text { width: 92px; padding: 0.2rem 0.3rem; border: 1px solid var(--border); border-radius: 3px; font-size: 0.72rem; }
+        .lm-cell .lm-text { width: 76px; flex: 0 1 auto; min-width: 0; }
         .lm-notiz-col { min-width: 200px; }
         .lm-notiz { width: 190px; }
-        .lm-qty { display: inline-block; font-weight: 600; margin-left: 0.25rem; }
+        .lm-qty { font-weight: 600; flex-shrink: 0; }
         .lm-cell-save { outline: 2px solid var(--primary); outline-offset: 1px; }
         .lm-ref { background: var(--white); border-radius: 8px; box-shadow: var(--shadow-card); padding: 1rem 1.25rem; }
         .lm-ref h3 { font-size: 0.95rem; margin: 0 0 0.5rem; }
@@ -94,7 +113,7 @@ $typLabel = static fn (?string $p): string => match ($p) {
                                 <th class="lm-firma">Firma</th>
                                 <th class="lm-typ">Typ</th>
                                 <?php foreach ($katalog as $pos): ?>
-                                    <th class="lm-col"><div class="lm-vert"><?= htmlspecialchars($pos['label']) ?></div></th>
+                                    <th class="lm-col<?= in_array($pos['typ'], ['startplaetze', 'haken_text'], true) ? ' lm-col--text' : '' ?>"><div class="lm-vert"><?= htmlspecialchars($pos['label']) ?></div></th>
                                 <?php endforeach; ?>
                                 <th class="lm-notiz-col">Notiz</th>
                             </tr>
@@ -117,7 +136,9 @@ $typLabel = static fn (?string $p): string => match ($p) {
                                             $checked  = $row ? $row['vereinbart'] : $gilt;
                                             $freitext = $row['freitext'] ?? '';
                                         ?>
-                                        <td>
+                                        <?php $hatText = in_array($pos['typ'], ['startplaetze', 'haken_text'], true); ?>
+                                        <td class="lm-col<?= $hatText ? ' lm-col--text' : '' ?>">
+                                            <div class="lm-cell">
                                             <input type="checkbox" class="lm-check<?= $gilt ? '' : ' dim' ?>"
                                                    data-sponsor="<?= $sid ?>" data-position="<?= htmlspecialchars($key) ?>"
                                                    <?= $checked ? 'checked' : '' ?>
@@ -125,16 +146,15 @@ $typLabel = static fn (?string $p): string => match ($p) {
                                             <?php if ($pos['typ'] === 'startplaetze'): ?>
                                                 <?php $menge = sponsorStartplaetzeMenge($pos, $typ); ?>
                                                 <span class="lm-qty"><?= $gilt ? ($menge !== null ? (int) $menge : 'indiv.') : '' ?></span>
-                                                <br>
                                                 <input type="text" class="lm-text" data-sponsor="<?= $sid ?>"
                                                        data-position="<?= htmlspecialchars($key) ?>" data-field="freitext"
                                                        value="<?= htmlspecialchars($freitext) ?>" placeholder="Gutschein-Code">
                                             <?php elseif ($pos['typ'] === 'haken_text'): ?>
-                                                <br>
                                                 <input type="text" class="lm-text" data-sponsor="<?= $sid ?>"
                                                        data-position="<?= htmlspecialchars($key) ?>" data-field="freitext"
                                                        value="<?= htmlspecialchars($freitext) ?>" placeholder="Details">
                                             <?php endif; ?>
+                                            </div>
                                         </td>
                                     <?php endforeach; ?>
                                     <td class="lm-notiz-col">
