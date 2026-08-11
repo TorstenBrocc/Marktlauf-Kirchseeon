@@ -362,7 +362,9 @@ body {
 }
 
 /* Abschnitts-Überschriften in CI-Grün. --primary-dark statt --primary: das helle
-   Markengrün erreicht auf Weiß bei dieser Schriftgröße keinen AA-Kontrast (3.9:1). */
+   Markengrün erreicht auf Weiß bei dieser Schriftgröße keinen AA-Kontrast (3.9:1).
+   Greift effektiv nur noch für Unter-Abschnitte (.nav-section-sub) — Abschnitte ohne
+   Gruppe werden unten aufs Eltern-Niveau gehoben. */
 .nav-section {
     padding: 0.9rem 1.25rem 0.4rem;
     font-size: 0.7rem;
@@ -372,15 +374,16 @@ body {
     color: var(--primary-dark);
 }
 
-/* Gruppen-Überschrift (Ebene über .nav-section): kräftiger, damit die darunter
-   liegenden Abschnitte klar als ihre Unterpunkte lesbar sind. */
-.nav-group {
+/* Eltern-Ebene: Gruppen-Überschrift (SPONSOREN) und alle Abschnitte OHNE Gruppe
+   (HELFER-ORGA, KOMMUNIKATION, …) teilen dasselbe Niveau — kräftig, rein schwarz. */
+.nav-group,
+.nav-section:not(.nav-section-sub) {
     padding: 1.1rem 1.25rem 0.2rem;
     font-size: 0.78rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: var(--primary-dark);
+    color: #000;
 }
 
 /* Abschnitts-Überschrift innerhalb einer Gruppe: eingerückt und etwas enger am
