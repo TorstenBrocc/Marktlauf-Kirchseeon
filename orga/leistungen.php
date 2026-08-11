@@ -40,7 +40,7 @@ $typLabel = static fn (?string $p): string => match ($p) {
 usort($sponsoren, static fn (array $a, array $b): int
     => sponsorTypRang($b['paket'] ?? null) <=> sponsorTypRang($a['paket'] ?? null));
 
-$spaltenGesamt = count($katalog) + 3; // Firma + Typ + Katalog-Spalten + Notiz
+$spaltenGesamt = count($katalog) + 2; // Firma + Katalog-Spalten + Notiz
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -73,10 +73,6 @@ $spaltenGesamt = count($katalog) + 3; // Firma + Typ + Katalog-Spalten + Notiz
         }
         .lm-table thead th.lm-firma { z-index: 3; background: var(--bg); white-space: normal; }
         .lm-table tr:hover td.lm-firma { background: #fafafa; }
-        .lm-table th.lm-typ, .lm-table td.lm-typ {
-            text-align: left; color: var(--text-light);
-            white-space: normal; max-width: 9ch; overflow-wrap: break-word; hyphens: auto;
-        }
         /* Zwischenüberschrift je Sponsoring-Paket. Zellenauswahl mit `tr` davor, sonst gewinnt
            wieder das zentrierende `.lm-table td`. */
         .lm-table tr.lm-group td {
@@ -143,7 +139,6 @@ $spaltenGesamt = count($katalog) + 3; // Firma + Typ + Katalog-Spalten + Notiz
                         <thead>
                             <tr>
                                 <th class="lm-firma">Firma</th>
-                                <th class="lm-typ">Typ</th>
                                 <?php foreach ($katalog as $pos): ?>
                                     <th class="lm-col<?= in_array($pos['typ'], ['startplaetze', 'haken_text'], true) ? ' lm-col--text' : '' ?>"><div class="lm-vert"><?= htmlspecialchars($pos['label']) ?></div></th>
                                 <?php endforeach; ?>
@@ -167,7 +162,6 @@ $spaltenGesamt = count($katalog) + 3; // Firma + Typ + Katalog-Spalten + Notiz
                                 <?php endif; ?>
                                 <tr>
                                     <td class="lm-firma"><a href="sponsor_form.php?id=<?= $sid ?>"><?= htmlspecialchars($s['firma']) ?></a></td>
-                                    <td class="lm-typ"><?= htmlspecialchars($typLabel($typ)) ?></td>
                                     <?php foreach ($katalog as $pos): ?>
                                         <?php
                                             $key      = $pos['key'];
