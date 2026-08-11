@@ -56,7 +56,12 @@ $typLabel = static fn (?string $p): string => match ($p) {
             background: var(--white); z-index: 1;
             /* Umbruch statt nowrap: lange Firmennamen brechen nach ~25 Zeichen um, statt die
                Tabelle in die Breite zu ziehen. */
-            white-space: normal; max-width: 25ch; overflow-wrap: break-word; hyphens: auto;
+            /* Umbruch statt nowrap. Untergrenze 12ch, damit die Spalte beim Schrumpfen nicht zu
+               einem Buchstabenturm zerfällt; Obergrenze 25ch, damit lange Namen die Tabelle nicht
+               breitziehen. `ch` = Breite der Ziffer „0" — bei proportionaler Schrift eine
+               Näherung, 12ch fasst real eher 14–15 Kleinbuchstaben. */
+            white-space: normal; min-width: 12ch; max-width: 25ch;
+            overflow-wrap: break-word; hyphens: auto;
         }
         .lm-table thead th.lm-firma { z-index: 3; background: var(--bg); white-space: normal; }
         .lm-table tr:hover td.lm-firma { background: #fafafa; }
@@ -70,7 +75,15 @@ $typLabel = static fn (?string $p): string => match ($p) {
         .lm-table th.lm-col, .lm-table td.lm-col { padding: 0.12rem 0.15rem; }
         /* Spalten mit Schreibfeld brauchen Platz für Haken + Feld nebeneinander. */
         .lm-col--text { min-width: 118px; }
-        .lm-col .lm-vert { writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; max-height: 130px; }
+        /* Senkrechte Spaltenköpfe. `nowrap` + `max-height` hat lange Titel oben abgeschnitten
+           („Banner im Start-/Zie…"). Jetzt feste Textlänge (in vertikaler Schreibrichtung ist das
+           `height`) und Umbruch erlaubt: zu lange Titel laufen in eine zweite Zeile statt aus dem
+           Kopf heraus. Feste statt maximaler Höhe = einheitlich hohes Kopfband. */
+        .lm-col .lm-vert {
+            writing-mode: vertical-rl; transform: rotate(180deg);
+            white-space: normal; height: 150px; line-height: 1.15;
+            overflow-wrap: break-word; hyphens: auto; margin: 0 auto;
+        }
         /* Haken, Stückzahl und Schreibfeld in EINER Zeile — das Feld steht hinter dem Haken. */
         .lm-cell { display: flex; align-items: center; justify-content: center; gap: 0.2rem; }
         .lm-check { width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer; flex-shrink: 0; margin: 0; }
@@ -136,23 +149,41 @@ $typLabel = static fn (?string $p): string => match ($p) {
                                             $checked  = $row ? $row['vereinbart'] : $gilt;
                                             $freitext = $row['freitext'] ?? '';
                                         ?>
-                                        <?php $hatText = in_array($pos['typ'], ['startplaetze', 'haken_text'], true); ?>
+                                        <?php
+                                            $hatText = in_array($pos['typ'], ['startplaetze', 'haken_text'], true);
+                                            // Haken einmal bauen — bei den Startplätzen steht er hinten
+                                            // (Stückzahl → Code → Haken), sonst vorn.
+                                            $checkbox = sprintf(
+                                                '<input type="checkbox" class="lm-check%s" data-sponsor="%d" data-position="%s"%s title="%s">',
+                                                $gilt ? '' : ' dim',
+                                                $sid,
+                                                htmlspecialchars($key),
+                                                $checked ? ' checked' : '',
+                                                $gilt ? 'laut Paket enthalten' : 'nicht im Paket – als Extra ankreuzbar'
+                                            );
+                                            $textfeld = static fn (string $ph): string => sprintf(
+                                                '<input type="text" class="lm-text" data-sponsor="%d" data-position="%s" data-field="freitext" value="%s" placeholder="%s">',
+                                                $sid,
+                                                htmlspecialchars($key),
+                                                htmlspecialchars($freitext),
+                                                $ph
+                                            );
+                                        ?>
                                         <td class="lm-col<?= $hatText ? ' lm-col--text' : '' ?>">
                                             <div class="lm-cell">
-                                            <input type="checkbox" class="lm-check<?= $gilt ? '' : ' dim' ?>"
-                                                   data-sponsor="<?= $sid ?>" data-position="<?= htmlspecialchars($key) ?>"
-                                                   <?= $checked ? 'checked' : '' ?>
-                                                   title="<?= $gilt ? 'laut Paket enthalten' : 'nicht im Paket – als Extra ankreuzbar' ?>">
                                             <?php if ($pos['typ'] === 'startplaetze'): ?>
-                                                <?php $menge = sponsorStartplaetzeMenge($pos, $typ); ?>
-                                                <span class="lm-qty"><?= $gilt ? ($menge !== null ? (int) $menge : 'indiv.') : '' ?></span>
-                                                <input type="text" class="lm-text" data-sponsor="<?= $sid ?>"
-                                                       data-position="<?= htmlspecialchars($key) ?>" data-field="freitext"
-                                                       value="<?= htmlspecialchars($freitext) ?>" placeholder="Gutschein-Code">
+                                                <?php
+                                                    $menge = sponsorStartplaetzeMenge($pos, $typ);
+                                                    $qty = $gilt ? ($menge !== null ? (string) (int) $menge : 'indiv.') : '';
+                                                ?>
+                                                <?php if ($qty !== ''): ?><span class="lm-qty"><?= htmlspecialchars($qty) ?></span><?php endif; ?>
+                                                <?= $textfeld('Gutschein-Code') ?>
+                                                <?= $checkbox ?>
                                             <?php elseif ($pos['typ'] === 'haken_text'): ?>
-                                                <input type="text" class="lm-text" data-sponsor="<?= $sid ?>"
-                                                       data-position="<?= htmlspecialchars($key) ?>" data-field="freitext"
-                                                       value="<?= htmlspecialchars($freitext) ?>" placeholder="Details">
+                                                <?= $checkbox ?>
+                                                <?= $textfeld('Details') ?>
+                                            <?php else: ?>
+                                                <?= $checkbox ?>
                                             <?php endif; ?>
                                             </div>
                                         </td>
