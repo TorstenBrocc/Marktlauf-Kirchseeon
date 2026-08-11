@@ -453,16 +453,56 @@ function sponsorBriefLoad(PDO $pdo, string $slug, int $userId = 0): array {
 
 /* ---- Platzhalter-Kontext (aus Empfängerdaten) ---------------------------- */
 
-/** Persönliche Anrede mit kaskadierendem Fallback. */
-function sponsorAnrede(string $anrede, string $nachname, string $firma = ''): string {
+/**
+ * Ansprache-Form eines Sponsors: 'du' oder 'sie' (Default). Feature-Detection auf die Spalte,
+ * damit der Code auch vor Migration 057 läuft; ohne Sponsor gilt immer 'sie'.
+ */
+function sponsorAnspracheForm(PDO $pdo, int $sponsorId): string
+{
+    if ($sponsorId <= 0) {
+        return 'sie';
+    }
+    try {
+        if (!$pdo->query("SHOW COLUMNS FROM sponsors LIKE 'ansprache'")->fetch()) {
+            return 'sie';
+        }
+        $stmt = $pdo->prepare('SELECT ansprache FROM sponsors WHERE id = :id');
+        $stmt->execute(['id' => $sponsorId]);
+        return ((string) $stmt->fetchColumn()) === 'du' ? 'du' : 'sie';
+    } catch (PDOException $e) {
+        return 'sie';
+    }
+}
+
+/**
+ * Persönliche Anrede mit kaskadierendem Fallback.
+ *
+ * $ansprache = 'du' (Feld `sponsors.ansprache`) schaltet auf die Du-Form: dort trägt der Vorname,
+ * nicht „Herr/Frau + Nachname". Ohne Vornamen bleibt nur die kollektive Form — bei „du" wäre
+ * „Hallo Müller," unhöflich, deshalb „Hallo zusammen,".
+ *
+ * ⚠️ Umgestellt wird nur diese Zeile. Die Vorlagentexte selbst sind in Sie-Form geschrieben
+ * („erhalten Sie", „Ihre Unterstützung"); ein Du-Text braucht eine eigene Fassung, weil sich
+ * mit der Anrede auch die Verbformen ändern. Siehe sponsoring-anrede-spec.
+ */
+function sponsorAnrede(string $anrede, string $nachname, string $firma = '', string $vorname = '', string $ansprache = 'sie'): string {
     $nachname = trim($nachname);
+    $vorname  = trim($vorname);
+    $firma    = trim($firma);
+
+    if ($ansprache === 'du') {
+        if ($vorname !== '') {
+            return "Hallo {$vorname},";
+        }
+        return 'Hallo zusammen,';
+    }
+
     if ($nachname !== '' && $anrede === 'Frau') {
         return "Sehr geehrte Frau {$nachname},";
     }
     if ($nachname !== '' && $anrede === 'Herr') {
         return "Sehr geehrter Herr {$nachname},";
     }
-    $firma = trim($firma);
     if ($firma !== '') {
         return "Sehr geehrte Damen und Herren der {$firma},";
     }
@@ -673,6 +713,9 @@ function sponsorBriefPaketTextListe(PDO $pdo): string {
  * @return array{inline:array<string,string>, blocksHtml:array<string,string>, blocksText:array<string,string>}
  */
 function sponsorBriefContext(PDO $pdo, int $userId, string $anrede, string $vorname, string $nachname, string $firma, string $paket, int $sponsorId = 0): array {
+    // Du/Sie kommt aus dem Sponsor selbst — nicht als Parameter durch alle Versandwege geschleift,
+    // sonst zeigt die Vorschau irgendwann etwas anderes als die echte Mail.
+    $ansprache = sponsorAnspracheForm($pdo, $sponsorId);
     $firmaText  = trim($firma) !== '' ? trim($firma) : 'Ihr Unternehmen';
     $sig        = sponsorSignatur($pdo, $userId);
     // Freie Startplätze: Stückzahl aus dem Paket (Katalog), Code aus der Leistungs-Matrix.
@@ -712,7 +755,7 @@ function sponsorBriefContext(PDO $pdo, int $userId, string $anrede, string $vorn
 
     return [
         'inline' => [
-            '{{anrede}}'      => sponsorAnrede($anrede, $nachname, $firma),
+            '{{anrede}}'      => sponsorAnrede($anrede, $nachname, $firma, $vorname, $ansprache),
             '{{vorname}}'     => trim($vorname),
             '{{firma}}'       => $firmaText,
             '{{paket_text}}'  => sponsorLevelText($paket),
