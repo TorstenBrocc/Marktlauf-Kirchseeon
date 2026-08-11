@@ -33,6 +33,14 @@ $typLabel = static fn (?string $p): string => match ($p) {
     'hauptsponsor' => 'Hauptsponsor', 'gold' => 'Gold', 'silber' => 'Silber',
     'bronze' => 'Bronze', 'sachsponsor' => 'Sachsponsor', default => '–',
 };
+
+// Nach Paket gruppieren: Hauptsponsor → Gold → Silber → Bronze → Sachsponsor. Die Reihenfolge
+// kommt aus `sponsorTypRang()` (absteigend) — keine zweite Rangliste, die auseinanderlaufen kann.
+// Innerhalb einer Gruppe bleibt die alphabetische Sortierung aus dem SQL erhalten (stabiler Sort).
+usort($sponsoren, static fn (array $a, array $b): int
+    => sponsorTypRang($b['paket'] ?? null) <=> sponsorTypRang($a['paket'] ?? null));
+
+$spaltenGesamt = count($katalog) + 3; // Firma + Typ + Katalog-Spalten + Notiz
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -69,6 +77,17 @@ $typLabel = static fn (?string $p): string => match ($p) {
             text-align: left; color: var(--text-light);
             white-space: normal; max-width: 9ch; overflow-wrap: break-word; hyphens: auto;
         }
+        /* Zwischenüberschrift je Sponsoring-Paket. Zellenauswahl mit `tr` davor, sonst gewinnt
+           wieder das zentrierende `.lm-table td`. */
+        .lm-table tr.lm-group td {
+            background: var(--bg); text-align: left; padding: 0.35rem 0.5rem;
+            font-weight: 700; font-size: 0.72rem; text-transform: uppercase;
+            letter-spacing: 0.05em; color: var(--text);
+            border-top: 2px solid var(--primary);
+        }
+        /* Die Zelle ist so breit wie die ganze Tabelle — ohne sticky wäre der Titel beim
+           seitlichen Scrollen weg. */
+        .lm-table tr.lm-group td span { position: sticky; left: 0.5rem; display: inline-block; }
         /* Reine Haken-Spalten: so schmal wie der senkrechte Kopf es zulässt. */
         .lm-col { min-width: 34px; }
         /* Nur 30 % des früheren Zellrahmens (war 0.4rem/0.5rem) — die Haken sollen eng sitzen. */
@@ -132,12 +151,20 @@ $typLabel = static fn (?string $p): string => match ($p) {
                             </tr>
                         </thead>
                         <tbody>
+                            <?php $letzterTyp = null; ?>
                             <?php foreach ($sponsoren as $s): ?>
                                 <?php
                                     $sid = (int) $s['id'];
                                     $typ = (string) $s['paket'];
                                     $state = sponsorLeistungenState($pdo, $sid);
                                 ?>
+                                <?php if ($typ !== $letzterTyp): $letzterTyp = $typ; ?>
+                                    <tr class="lm-group">
+                                        <td colspan="<?= $spaltenGesamt ?>">
+                                            <span><?= htmlspecialchars($typLabel($typ)) ?></span>
+                                        </td>
+                                    </tr>
+                                <?php endif; ?>
                                 <tr>
                                     <td class="lm-firma"><a href="sponsor_form.php?id=<?= $sid ?>"><?= htmlspecialchars($s['firma']) ?></a></td>
                                     <td class="lm-typ"><?= htmlspecialchars($typLabel($typ)) ?></td>
