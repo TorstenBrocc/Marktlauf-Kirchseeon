@@ -86,9 +86,10 @@ $pdfBytes = rechnungPdfErzeugen($snapshot, $nummer);
 $tmp = tempnam(sys_get_temp_dir(), 'rech') . '.pdf';
 file_put_contents($tmp, $pdfBytes);
 
-// Dateiname: Jahr zuerst, dann Sponsor
-$firmaSafe = preg_replace('/[^A-Za-z0-9_-]+/', '-', (string) $row['empfaenger_firma']);
-$driveName = $jahr . '_' . trim($firmaSafe, '-') . '_Rechnung_' . $nummer . '.pdf';
+// Dateiname zentral aus rechnungDateiname(): `2026-03_Bestattungsdienst_Pietas.pdf`.
+// Dieselbe Funktion benennt den Download, damit eine von Hand abgelegte Datei genauso heißt
+// wie eine vom System abgelegte.
+$driveName = rechnungDateiname($nummer, (string) $row['empfaenger_firma']);
 
 try {
     $driveFileId = driveUploadToFolder($ordnerId, $tmp, $driveName, 'application/pdf');
