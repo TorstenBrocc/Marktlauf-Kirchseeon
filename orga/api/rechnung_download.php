@@ -35,8 +35,9 @@ $nummer   = (string) ($row['rechnungsnummer'] ?? '');
 $snapshot = rechnungSnapshotAusRow($row);
 $bytes    = rechnungPdfErzeugen($snapshot, $nummer);
 
-$firmaSafe = preg_replace('/[^A-Za-z0-9_-]+/', '_', (string) ($row['empfaenger_firma'] ?? 'Rechnung'));
-$name = 'Rechnung_' . ($nummer !== '' ? $nummer : 'Entwurf') . '_' . $firmaSafe . '.pdf';
+// Gleicher Name wie in der Drive-Ablage (rechnungDateiname): wer das PDF herunterlädt und selbst
+// ablegt, bekommt genau die Datei, die das System auch angelegt hätte.
+$name = rechnungDateiname($nummer, (string) ($row['empfaenger_firma'] ?? ''));
 
 header('Content-Type: application/pdf');
 header('Content-Disposition: inline; filename="' . $name . '"');

@@ -253,6 +253,36 @@ function rechnungBetraegeFuerSponsor(array $sponsor, array $paketDef, ?float $us
 }
 
 /**
+ * Dateiname eines Rechnungs-PDFs: `<Jahr>-<NN>_<Firma>.pdf`, z. B.
+ * `2026-03_Bestattungsdienst_Pietas.pdf` (Muster von TT, 2026-08-11). Jahr zuerst, damit die
+ * Ablage chronologisch sortiert; die laufende Nummer direkt dahinter hält Rechnungen eines Jahres
+ * in der Reihenfolge ihrer Vergabe.
+ *
+ * Umlaute werden umgeschrieben (ö→oe), nicht ersetzt — sonst würde aus „Hörmann" ein „H_rmann".
+ * Die laufende Nummer wird **nicht** aufgefüllt: im Dateinamen steht genau die vergebene Nummer,
+ * damit Datei und Rechnung nicht auseinandergehen (aus „5-2026" wird also `2026-5_…`).
+ *
+ * Ohne Nummer (Entwurf) tritt „Entwurf" an die Stelle von Jahr und Nummer.
+ */
+function rechnungDateiname(string $nummer, string $firma): string
+{
+    $nummer = trim($nummer);
+    if ($nummer !== '' && preg_match('/^(\d{1,4})-(\d{4})$/', $nummer, $m) === 1) {
+        $praefix = $m[2] . '-' . $m[1];
+    } else {
+        $praefix = 'Entwurf';
+    }
+
+    $firma = strtr(trim($firma), [
+        'ä' => 'ae', 'ö' => 'oe', 'ü' => 'ue', 'Ä' => 'Ae', 'Ö' => 'Oe', 'Ü' => 'Ue', 'ß' => 'ss',
+    ]);
+    $firma = preg_replace('/[^A-Za-z0-9]+/', '_', $firma) ?? '';
+    $firma = trim($firma, '_');
+
+    return $praefix . ($firma !== '' ? '_' . $firma : '') . '.pdf';
+}
+
+/**
  * Prüft das Format der fortlaufenden Rechnungsnummer: NN-JJJJ
  * (1–4 Ziffern, Bindestrich, vierstelliges Jahr), z. B. "5-2026" oder "05-2026".
  */
