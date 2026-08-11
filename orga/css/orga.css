@@ -361,23 +361,26 @@ body {
     cursor: default;
 }
 
+/* Abschnitts-Überschriften in CI-Grün. --primary-dark statt --primary: das helle
+   Markengrün erreicht auf Weiß bei dieser Schriftgröße keinen AA-Kontrast (3.9:1). */
 .nav-section {
     padding: 0.9rem 1.25rem 0.4rem;
     font-size: 0.7rem;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: var(--text-light);
+    color: var(--primary-dark);
 }
 
-/* Gruppen-Überschrift (Ebene über .nav-section): kräftiger und dunkler, damit die
-   darunter liegenden Abschnitte klar als ihre Unterpunkte lesbar sind. */
+/* Gruppen-Überschrift (Ebene über .nav-section): kräftiger, damit die darunter
+   liegenden Abschnitte klar als ihre Unterpunkte lesbar sind. */
 .nav-group {
     padding: 1.1rem 1.25rem 0.2rem;
     font-size: 0.78rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: var(--text);
+    color: var(--primary-dark);
 }
 
 /* Abschnitts-Überschrift innerhalb einer Gruppe: eingerückt und etwas enger am
