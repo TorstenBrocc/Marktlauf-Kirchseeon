@@ -114,14 +114,11 @@ $attachments = [[
     'name' => 'Rechnung_' . $nummer . '.pdf',
     'mime' => 'application/pdf',
 ]];
-// --- ALTFALL-RETROFIT (2026) — nach den 4 Bestandssponsoren rückbaubar ---
-// Bedingungen (aus dem Drive-Ordner „_assets Sponsoren") an die Rechnung + Klausel „mit Begleichung
-// als vereinbart" (rechnung-Vorlage), weil diese Sponsoren ihre Bestätigung noch OHNE Bedingungen
-// erhalten haben. Für Neu-Sponsoren gehen die Bedingungen ohnehin bei Erstanschreiben/Bestätigung
-// mit. Rückbau: diesen Block + die Klausel in sponsorBriefDefaults()['rechnung'] + den Hinweis in
-// orga/rechnungen.php entfernen.
-$attachments = array_merge($attachments, sponsorBedingungenAnhang($pdo));
-// --- Ende Altfall-Retrofit ---
+// Kein Bedingungen-Anhang an der Rechnung (Altfall-Retrofit zurückgebaut 2026-08-11): die
+// Sponsoring-Bedingungen gehen beim Vertragsschluss mit — Erstanschreiben, Folgeanschreiben,
+// Bestätigung. An der Rechnung wären sie zu spät, weil AGB bei Vertragsschluss einbezogen werden
+// (§ 305 Abs. 2 BGB) und nachgeschoben nicht mehr binden. Die Bestandssponsoren, für die der
+// Retrofit gedacht war, haben ihre Bedingungen am 09.08.2026 nachgereicht bekommen.
 // Kassier sichtbar in Kopie (nicht blind): der Sponsor soll sehen, dass die Buchhaltung
 // mitliest, und der Kassier erfährt vom Versand genau hier — seit 2026-08-10 gibt es keine
 // separate Anstoß-Mail beim Erzeugen des Entwurfs mehr.

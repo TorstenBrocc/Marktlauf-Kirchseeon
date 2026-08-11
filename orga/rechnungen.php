@@ -298,7 +298,6 @@ $paketLabel = static function (?string $p): string {
                                                         <?php endforeach; ?>
                                                     </select>
                                                     <button type="submit" class="btn btn-small btn-primary"><?= $schonGesendet ? 'Erneut senden' : 'An Sponsor senden' ?></button>
-                                                    <span class="rech-hint" title="wird der Rechnungsmail automatisch angehängt">📎 inkl. Sponsoring-Bedingungen</span>
                                                 </form>
                                             <?php else: ?>
                                                 <span class="rech-hint">Keine E-Mail-Adresse hinterlegt — bitte beim Sponsor ergänzen.</span>
@@ -339,7 +338,7 @@ $paketLabel = static function (?string $p): string {
         var msg = (schonGesendet
             ? 'Diese Rechnung wurde bereits gesendet. ERNEUT senden'
             : 'Rechnung senden')
-            + ' an ' + to + '?\n\nAngehängt: Rechnung + Sponsoring-Bedingungen. Das Rechnungs-PDF wird zusätzlich in Google Drive abgelegt.';
+            + ' an ' + to + '?\n\nAngehängt: das Rechnungs-PDF, das zusätzlich in Google Drive abgelegt wird. Der Kassier steht in Kopie.';
         return window.confirm(msg);
     }
     (function() {

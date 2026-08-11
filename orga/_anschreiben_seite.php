@@ -120,7 +120,21 @@ if ($isUserScoped && $vorlage['draft'] && $vorlage['draft_ts'] !== '') {
                 </div>
             <?php endif; ?>
 
-            <?php if ($mitEmpfaenger): $modus = 'bulk'; require __DIR__ . '/_empfaenger_kopf.php'; endif; ?>
+            <?php
+            // Der Empfänger-Block wird HIER ausgewertet, aber erst unten in der Versand-Karte
+            // ausgegeben (TT, 2026-08-11: Zielgruppe gehört unter die Anhänge, direkt an den
+            // Sende-Knopf). Die Auswertung muss oben bleiben, weil die Vorschau $versandfaehig
+            // für ihre Empfänger-Auswahl braucht — deshalb Ausgabe puffern statt Include
+            // verschieben. Der Partial selbst bleibt unangetastet und wird von der Bestätigung
+            // im Einzel-Modus weiter oben auf der Seite genutzt.
+            $empfBlockHtml = '';
+            if ($mitEmpfaenger) {
+                $modus = 'bulk';
+                ob_start();
+                require __DIR__ . '/_empfaenger_kopf.php';
+                $empfBlockHtml = ob_get_clean();
+            }
+            ?>
 
             <form method="post" action="api/sponsor_brief_save.php" id="brief-form">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
@@ -183,7 +197,8 @@ if ($isUserScoped && $vorlage['draft'] && $vorlage['draft_ts'] !== '') {
 
             <?php if ($mitVersand): ?>
             <div class="brief-card versand-card">
-                <h3 style="font-size:0.95rem;margin:0 0 0.75rem">Versand</h3>
+                <h3 style="font-size:0.95rem;margin:0 0 0.75rem">Empfänger &amp; Versand</h3>
+                <?= $empfBlockHtml ?>
                 <p id="versand-unsaved" class="versand-warn" hidden>
                     ⚠️ Du hast ungespeicherte Änderungen am Text. Der Versand nimmt den
                     <strong>gespeicherten</strong> Stand — bitte zuerst speichern.
