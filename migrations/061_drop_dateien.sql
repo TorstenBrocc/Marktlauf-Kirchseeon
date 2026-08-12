@@ -1,4 +1,18 @@
--- 042_drop_dateien.sql
+-- 061_drop_dateien.sql
+--
+-- UMNUMMERIERT 2026-08-12 (vorher 042, gefahren am 2026-08-07): die Nummer 042 war doppelt
+-- vergeben — parallel entstand 042_sponsor_logo_rotation.sql. Verschoben wurde bewusst DIESE
+-- Datei: ihr `DROP TABLE IF EXISTS` wäre auch bei einem versehentlichen erneuten Lauf folgenlos,
+-- während das `ALTER TABLE ADD COLUMN` der anderen an bereits existierenden Spalten scheitern
+-- würde. Keine spätere Migration greift auf `dateien` zu, die neue Position ist also auch für
+-- frische Installationen unkritisch.
+--
+-- Wie bei 060: `migrate.php` führt Buch über den DATEINAMEN, eine Umbenennung gilt deshalb als
+-- neue, offene Migration. Nach dem Umbenennen wurde auf Prod einmalig
+-- `php bin/migrate.php baseline` gefahren (trägt den neuen Namen ein, ohne ihn auszuführen) —
+-- vorher geprüft, dass genau diese eine Migration offen war. Die Zeile mit dem alten Dateinamen
+-- bleibt als Historie stehen.
+--
 -- Rückbau des stillgelegten Datei-Index (gdrive-storage-spec.md §2.5): der Datei-Baum
 -- liest live aus Google Drive; kein Code nutzt `dateien` mehr (driveReconcile + die
 -- Helfer-Fallbacks in zugang.php/file_download.php + die Kategorie-API wurden entfernt).
