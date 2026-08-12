@@ -133,6 +133,13 @@ return [
         'href'    => 'leistungen.php',
     ],
     [
+        'key'     => 'pakete',
+        'label'   => 'Sponsoring-Pakete',
+        'group'   => 'SPONSOREN',
+        'section' => 'DATEN',
+        'href'    => 'pakete.php',
+    ],
+    [
         'key'     => 'rechnungen',
         'label'   => '(Ab-)Rechnungen',
         'group'   => 'SPONSOREN',

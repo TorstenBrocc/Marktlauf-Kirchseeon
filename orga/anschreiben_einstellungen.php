@@ -33,21 +33,13 @@ $pdo = getDbConnection();
 
 $briefSettings = [];
 try {
-    $stmt = $pdo->query("SELECT `key`, `value` FROM einstellungen WHERE `key` IN ('sponsor_brief_event_datum','sponsor_brief_antwort_bis','sponsoring_pakete')");
+    // `sponsoring_pakete` wird hier NICHT mehr geladen — die Pakete kommen über sponsorBriefPakete().
+    $stmt = $pdo->query("SELECT `key`, `value` FROM einstellungen WHERE `key` IN ('sponsor_brief_event_datum','sponsor_brief_antwort_bis')");
     while ($row = $stmt->fetch()) { $briefSettings[$row['key']] = $row['value']; }
 } catch (PDOException $e) {}
 
 $briefEventDatum = $briefSettings['sponsor_brief_event_datum'] ?? '';
 $briefAntwortBis = $briefSettings['sponsor_brief_antwort_bis'] ?? '';
-
-$paketeDefaults = sponsorBriefPaketeDefault();
-$paketeMap = [];
-if (!empty($briefSettings['sponsoring_pakete'])) {
-    $decoded = json_decode($briefSettings['sponsoring_pakete'], true);
-    if (is_array($decoded)) {
-        foreach ($decoded as $p) { if (isset($p['key'])) $paketeMap[$p['key']] = $p; }
-    }
-}
 
 // Beide Platzhalter-Sätze: der allgemeine (alle Anschreiben) und der der Rechnungs-Begleitmail.
 $phAllgemein = sponsorBriefPlatzhalterHilfe();
@@ -147,41 +139,11 @@ $phZeile = static function (string $ph, string $beschreibung) use ($phQuellen): 
                         Sponsoring-Pakete <code style="font-size:0.8rem">{{paket_tabelle}}</code>
                     </h2>
                     <p class="einst-intro">
-                        Diese Tabelle wird als <code>{{paket_tabelle}}</code> in den Brief gesetzt.
-                    </p>
-                    <table class="paket-tabelle">
-                        <thead>
-                            <tr>
-                                <th style="width:110px">Paket</th>
-                                <th style="width:140px">Investition</th>
-                                <th>Highlights</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        <?php foreach ($paketeDefaults as $pd):
-                            $pVals = $paketeMap[$pd['key']] ?? $pd; ?>
-                            <tr>
-                                <td style="font-weight:500;white-space:nowrap"><?= htmlspecialchars($pd['name']) ?></td>
-                                <td>
-                                    <input type="text" name="paket_<?= htmlspecialchars($pd['key']) ?>_investition"
-                                           value="<?= htmlspecialchars((string) ($pVals['investition'] ?? $pd['investition'])) ?>"
-                                           maxlength="60">
-                                </td>
-                                <td>
-                                    <input type="text" name="paket_<?= htmlspecialchars($pd['key']) ?>_highlights"
-                                           value="<?= htmlspecialchars((string) ($pVals['highlights'] ?? $pd['highlights'])) ?>"
-                                           maxlength="255">
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                        </tbody>
-                    </table>
-
-                    <p class="einst-intro" style="margin:0.25rem 0 1rem">
-                        <strong>ℹ&#xFE0E; Hinweis:</strong> Alle Paketpreise verstehen sich <strong>netto</strong>;
-                        auf der Rechnung kommen 19&nbsp;% USt oben drauf (z.&nbsp;B. Gold 1.000&nbsp;€ →
-                        1.190&nbsp;€ brutto). Braucht ein einzelner Sponsor eine Brutto-Abrechnung, gibt es
-                        dafür einen Haken in der Sponsor-Maske (Karte „Rechnung / Leistung").
+                        Preise und Leistungen der Pakete werden seit 2026-08-12 an einer Stelle
+                        gepflegt: <a href="pakete.php">Sponsoring-Pakete</a>. Von dort speist sich
+                        <code>{{paket_tabelle}}</code> im Brief — und dieselben Daten treiben die
+                        Leistungs-Matrix und die Abrechnung. Zwei Pflegeorte für dieselbe Zahl gibt
+                        es hier bewusst nicht mehr.
                     </p>
 
                     <div class="brief-actions" style="margin-top:0">

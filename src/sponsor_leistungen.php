@@ -62,7 +62,86 @@ function sponsorLeistungGruppen(): array
  */
 function sponsorLeistungenKatalog(bool $inklusiveInaktive = false): array
 {
-    $katalog = [
+    $katalog = sponsorLeistungenKatalogAusDb() ?? sponsorLeistungenKatalogFallback();
+
+    if ($inklusiveInaktive) {
+        return $katalog;
+    }
+    return array_values(array_filter(
+        $katalog,
+        static fn (array $p): bool => ($p['aktiv'] ?? true) !== false
+    ));
+}
+
+/**
+ * Katalog aus der Tabelle `leistungs_katalog` (Migration 059) — die editierbare Quelle.
+ * null = Tabelle fehlt oder ist leer; dann greift der Code-Fallback, damit nichts bricht,
+ * solange die Migration noch nicht gefahren ist.
+ *
+ * Ergebnis wird pro Request gecacht: die Matrix ruft den Katalog je Sponsorzeile auf.
+ *
+ * @return array<int, array<string, mixed>>|null
+ */
+function sponsorLeistungenKatalogAusDb(): ?array
+{
+    static $cache = false;
+    if ($cache !== false) {
+        return $cache;
+    }
+    $cache = null;
+    try {
+        $stmt = getDbConnection()->query(
+            'SELECT `key`, label, min_stufe, typ, gruppe, kurz, gruppe_rang,
+                    menge_bronze, menge_silber, menge_gold, aktiv
+               FROM leistungs_katalog ORDER BY sortierung, `key`'
+        );
+        $zeilen = $stmt ? $stmt->fetchAll() : [];
+        if (!$zeilen) {
+            return $cache;
+        }
+        $out = [];
+        foreach ($zeilen as $r) {
+            $pos = [
+                'key'   => (string) $r['key'],
+                'label' => (string) $r['label'],
+                'min'   => (string) $r['min_stufe'],
+                'typ'   => (string) $r['typ'],
+                'aktiv' => (int) $r['aktiv'] === 1,
+            ];
+            if ($r['gruppe'] !== null && $r['gruppe'] !== '') {
+                $pos['gruppe']      = (string) $r['gruppe'];
+                $pos['kurz']        = (string) ($r['kurz'] ?? $r['label']);
+                $pos['gruppe_rang'] = (int) ($r['gruppe_rang'] ?? 0);
+            }
+            // Nur gesetzte Mengen übernehmen — eine fehlende Menge heißt "individuell".
+            $menge = [];
+            foreach (['bronze', 'silber', 'gold'] as $stufe) {
+                if ($r['menge_' . $stufe] !== null) {
+                    $menge[$stufe] = (int) $r['menge_' . $stufe];
+                }
+            }
+            if ($menge !== []) {
+                $pos['menge'] = $menge;
+            }
+            $out[] = $pos;
+        }
+        $cache = $out;
+    } catch (Throwable $e) {
+        // Bewusst Throwable, nicht PDOException: getDbConnection() wirft eine RuntimeException,
+        // wenn die Config fehlt. Mit dem engeren catch lief hier ein Fatal statt des Fallbacks.
+        // Katalog-Lesen darf keine Seite umbringen — im Zweifel gilt der Code-Stand.
+    }
+    return $cache;
+}
+
+/**
+ * Code-Fallback des Katalogs — Stand 2026-08-12, identisch zum Seed in Migration 059.
+ * Greift nur, solange `leistungs_katalog` fehlt oder leer ist. Gepflegt wird ab jetzt in der DB
+ * über `orga/pakete.php`; diese Liste ist die Notversorgung, kein zweiter Pflegeort.
+ */
+function sponsorLeistungenKatalogFallback(): array
+{
+    return [
         // Entfallene Positionen (nicht wieder aufnehmen, ohne mit TT zu sprechen):
         //   Startertüten-Branding    – 2026-08-10 ersatzlos gestrichen.
         //   Logo auf Streckenbanner  – 2026-08-10 gestrichen; war zudem kein Logo-, sondern ein
@@ -87,14 +166,6 @@ function sponsorLeistungenKatalog(bool $inklusiveInaktive = false): array
         ['key' => 'stand',            'label' => 'eigener Stand inkl. Fläche',  'min' => 'gold',   'typ' => 'haken'],
         ['key' => 'moderation',       'label' => 'Moderations-Erwähnung',       'min' => 'gold',   'typ' => 'haken'],
     ];
-
-    if ($inklusiveInaktive) {
-        return $katalog;
-    }
-    return array_values(array_filter(
-        $katalog,
-        static fn (array $p): bool => ($p['aktiv'] ?? true) !== false
-    ));
 }
 
 /** Gilt eine Position laut Typ (kumulativ)? */
@@ -108,6 +179,71 @@ function sponsorLeistungGilt(array $position, ?string $typ): bool
 function sponsorStartplaetzeMenge(array $position, ?string $typ): ?int
 {
     return $position['menge'][$typ] ?? null;
+}
+
+/**
+ * Highlights-Text eines Pakets — erzeugt aus dem Katalog, nicht von Hand gepflegt.
+ *
+ * Löst das Problem, das am 2026-08-11 sichtbar wurde: „Bronze bekommt 1 Startplatz" musste an drei
+ * Prosa-Stellen von Hand nachgezogen werden, während der Katalog es längst wusste. Jetzt hat die
+ * Katalog-Zeile die Wahrheit, der Brieftext folgt.
+ *
+ * Zusammenfassung wie auf der Rechnung: Positionen mit `gruppe` werden zu einem Posten gebündelt
+ * („Logo auf Website, Startnummer & Urkunde"), Startplätze bekommen ihre Stückzahl vorangestellt.
+ */
+function sponsorPaketHighlights(string $paketKey): string
+{
+    // Sachsponsor hat keinen Leistungsumfang; Hauptsponsor ist individuell — dessen Text
+    // ("Zentraler Partner des Events …") ist eine Positionierung, keine Katalog-Liste, und
+    // bleibt deshalb frei pflegbar. Beide fallen auf den gespeicherten Text zurück.
+    if (in_array($paketKey, ['sachsponsor', 'hauptsponsor'], true)) {
+        return '';
+    }
+    // Delta statt kumulativ: aufgeführt wird, was diese Stufe GEGENÜBER der darunter bringt —
+    // so lasen die handgeschriebenen Texte, und die Pakettabelle im Brief bleibt lesbar.
+    // Eine Position zählt auch dann, wenn nur ihre Stückzahl steigt (Startplätze 1 → 3 → 5).
+    $stufen    = ['bronze', 'silber', 'gold', 'hauptsponsor'];
+    $index     = array_search($paketKey, $stufen, true);
+    $darunter  = ($index === false || $index === 0) ? null : $stufen[$index - 1];
+
+    $gruppen  = sponsorLeistungGruppen();
+    $einzeln  = [];
+    $gebuendelt = [];
+
+    foreach (sponsorLeistungenKatalog() as $pos) {
+        if (!sponsorLeistungGilt($pos, $paketKey)) {
+            continue;
+        }
+        if ($darunter !== null && sponsorLeistungGilt($pos, $darunter)
+            && sponsorStartplaetzeMenge($pos, $paketKey) === sponsorStartplaetzeMenge($pos, $darunter)) {
+            continue; // bringt gegenüber der Stufe darunter nichts Neues
+        }
+        $gruppe = $pos['gruppe'] ?? null;
+        if ($gruppe !== null && isset($gruppen[$gruppe])) {
+            $gebuendelt[$gruppe][] = ['rang' => $pos['gruppe_rang'] ?? 0, 'text' => $pos['kurz'] ?? $pos['label']];
+            continue;
+        }
+        if ($pos['typ'] === 'startplaetze') {
+            $menge = sponsorStartplaetzeMenge($pos, $paketKey);
+            $einzeln[] = $menge !== null
+                ? $menge . ' ' . ($menge === 1 ? 'Startplatz' : 'Startplätze')
+                : 'Startplätze nach Absprache';
+            continue;
+        }
+        $einzeln[] = $pos['label'];
+    }
+
+    $teile = [];
+    foreach ($gebuendelt as $name => $posten) {
+        usort($posten, static fn (array $a, array $b): int => $a['rang'] <=> $b['rang']);
+        $namen = array_column($posten, 'text');
+        $cfg   = $gruppen[$name];
+        $letzt = array_pop($namen);
+        $teile[] = $cfg['prefix'] . ' '
+            . ($namen === [] ? $letzt : implode($cfg['join'], $namen) . $cfg['join_letzter'] . $letzt);
+    }
+
+    return implode(', ', array_merge($teile, $einzeln));
 }
 
 /** Gültige Katalog-Schlüssel (für Whitelist in der API). */

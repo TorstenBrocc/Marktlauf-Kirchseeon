@@ -21,6 +21,8 @@ declare(strict_types=1);
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/logger.php';
 require_once __DIR__ . '/sponsor_leistungen.php';
+// Paket-Definition (Preise + Highlights) kommt aus EINER Quelle: sponsoringPakete().
+require_once __DIR__ . '/rechnung.php';
 
 // Optionaler Markdown-Parser (MIT, gepinnt 1.7.4). Fehlt die Datei, greift der
 // projekteigene Mini-Konverter weiter unten – das Feature bleibt funktionsfähig.
@@ -637,35 +639,27 @@ function sponsorSignatur(PDO $pdo, int $userId): array {
     ];
 }
 
-/** @return array<int,array{key:string,name:string,investition:string,highlights:string}> */
-function sponsorBriefPaketeDefault(): array {
-    return [
-        ['key'=>'hauptsponsor','name'=>'Hauptsponsor','investition'=>'auf Anfrage',
-         'highlights'=>'Zentraler Partner des Events, maximale Sichtbarkeit auf allen Kanälen'],
-        ['key'=>'gold','name'=>'Gold','investition'=>'1.000 €',
-         'highlights'=>'Banner zentral im Start-/Zielbereich, eigener Stand inkl. Fläche, 5 Startplätze, Moderations-Erwähnungen'],
-        ['key'=>'silber','name'=>'Silber','investition'=>'500 €',
-         'highlights'=>'Logo auf Startnummer, Namensnennung Presse, 3 Startplätze'],
-        ['key'=>'bronze','name'=>'Bronze','investition'=>'250 €',
-         'highlights'=>'Logo auf Website, Urkunde, Dankesschreiben, 1 Startplatz'],
-    ];
-}
-
-function sponsorBriefPaketeAusDb(PDO $pdo): array {
-    try {
-        $stmt = $pdo->prepare("SELECT `value` FROM einstellungen WHERE `key` = 'sponsoring_pakete'");
-        $stmt->execute();
-        $json = $stmt->fetchColumn();
-        if ($json) {
-            $data = json_decode((string) $json, true);
-            if (is_array($data) && count($data) > 0) return $data;
-        }
-    } catch (PDOException $e) {}
-    return sponsorBriefPaketeDefault();
+/**
+ * Pakete für die Brief-Darstellung — als Liste in Katalogreihenfolge.
+ *
+ * Hier standen bis 2026-08-12 ein ZWEITER Satz Paket-Defaults und ein zweiter DB-Leser mit
+ * abweichender Merge-Semantik: Der Brief übernahm die DB-Zeilen komplett, die Rechnung merged sie
+ * über die Defaults. Bei leeren DB-Werten zeigten Brief und Rechnung damit Unterschiedliches.
+ * Einzige Quelle ist jetzt `sponsoringPakete()` (`src/rechnung.php`); diese Funktion dreht deren
+ * Map nur noch in die Liste, die Tabellen- und Textausgabe erwarten.
+ *
+ * @return array<int,array{key:string,name:string,investition:string,highlights:string}>
+ */
+function sponsorBriefPakete(PDO $pdo): array {
+    $liste = [];
+    foreach (sponsoringPakete($pdo) as $key => $paket) {
+        $liste[] = ['key' => (string) $key] + $paket;
+    }
+    return $liste;
 }
 
 function sponsorBriefPaketTabelleHtml(PDO $pdo): string {
-    $pakete = sponsorBriefPaketeAusDb($pdo);
+    $pakete = sponsorBriefPakete($pdo);
     $rows = '';
     foreach ($pakete as $i => $p) {
         $bg = $i % 2 !== 0 ? ' style="background-color: #fafafa;"' : '';
@@ -693,7 +687,7 @@ function sponsorBriefPaketTabelleHtml(PDO $pdo): string {
 function sponsorBriefPaketTextListe(PDO $pdo): string {
     // Ebenfalls ohne Überschrift — die kommt als "### …" aus der Vorlage und
     // landet über sponsorMdToText auch im Text-Teil. Sonst stünde sie doppelt.
-    $pakete = sponsorBriefPaketeAusDb($pdo);
+    $pakete = sponsorBriefPakete($pdo);
     $lines = '';
     foreach ($pakete as $p) {
         $lines .= '- ' . ($p['name'] ?? '') . ' (' . ($p['investition'] ?? '') . '): ' . ($p['highlights'] ?? '') . "\n";
