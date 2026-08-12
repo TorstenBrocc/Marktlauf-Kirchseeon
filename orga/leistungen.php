@@ -98,6 +98,11 @@ $spaltenGesamt = count($katalog) + 2; // Firma + Katalog-Spalten + Notiz
             writing-mode: vertical-rl; transform: rotate(180deg);
             white-space: normal; height: 150px; line-height: 1.15;
             overflow-wrap: break-word; hyphens: auto; margin: 0 auto;
+            /* Linksbündig im Sinne der Leserichtung: `start` ist im Vertikalsatz oben, durch die
+               180°-Drehung landet es sichtbar UNTEN — alle Titel beginnen also auf einer Linie
+               direkt über den Daten und franst nach oben aus. Ohne die Regel erbt der Kopf das
+               zentrierende `text-align` von `.lm-table th`. */
+            text-align: start;
         }
         /* Haken, Stückzahl und Schreibfeld in EINER Zeile — das Feld steht hinter dem Haken. */
         .lm-cell { display: flex; align-items: center; justify-content: center; gap: 0.2rem; }
