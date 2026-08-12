@@ -63,21 +63,13 @@ $trelloHinweis     = mb_substr(trim($_POST['trello_hinweis'] ?? ''), 0, 2000);
 $onedriveHinweis   = mb_substr(trim($_POST['onedrive_hinweis'] ?? ''), 0, 2000);
 $stravaHinweis     = mb_substr(trim($_POST['strava_hinweis'] ?? ''), 0, 2000);
 
-$briefEventDatum = trim($_POST['sponsor_brief_event_datum'] ?? '');
-$briefAntwortBis = trim($_POST['sponsor_brief_antwort_bis'] ?? '');
-
-$paketeKeys  = ['hauptsponsor', 'gold', 'silber', 'bronze'];
-$paketeNames = ['hauptsponsor' => 'Hauptsponsor', 'gold' => 'Gold', 'silber' => 'Silber', 'bronze' => 'Bronze'];
-$sponsoringPakete = [];
-foreach ($paketeKeys as $k) {
-    $sponsoringPakete[] = [
-        'key'         => $k,
-        'name'        => $paketeNames[$k],
-        'investition' => trim($_POST["paket_{$k}_investition"] ?? ''),
-        'highlights'  => trim($_POST["paket_{$k}_highlights"]  ?? ''),
-    ];
-}
-$sponsoringPaketeJson = json_encode($sponsoringPakete, JSON_UNESCAPED_UNICODE);
+// ACHTUNG, hier lag ein Datenverlust: Dieser Endpoint hat früher zusätzlich
+// `sponsor_brief_event_datum`, `sponsor_brief_antwort_bis` und `sponsoring_pakete` geschrieben —
+// aus POST-Feldern, die `orga/einstellungen.php` gar nicht rendert. Jedes Speichern der
+// allgemeinen Einstellungen hat die drei Werte damit auf leer gesetzt: Paketpreise und
+// -Highlights weg, {{event_datum}} und {{antwort_bis}} leer im Sponsorenbrief.
+// Diese drei Keys gehören zur Anschreiben-Seite und werden ausschließlich von
+// `api/sponsor_brief_settings_save.php` geschrieben. Ein Endpoint je Datensatz.
 
 if ($veranstaltungsname !== '' && mb_strlen($veranstaltungsname) > 200) {
     $_SESSION['flash_error'] = 'Veranstaltungsname zu lang (max. 200 Zeichen).';
@@ -147,9 +139,6 @@ try {
         'trello_hinweis'            => $trelloHinweis ?: null,
         'onedrive_hinweis'          => $onedriveHinweis ?: null,
         'strava_hinweis'            => $stravaHinweis ?: null,
-        'sponsor_brief_event_datum' => $briefEventDatum ?: null,
-        'sponsor_brief_antwort_bis' => $briefAntwortBis ?: null,
-        'sponsoring_pakete'         => $sponsoringPaketeJson,
         'drive_root_orga_id'        => $driveRootOrga ?: null,
         'drive_root_helfer_id'      => $driveRootHelfer ?: null,
     ];

@@ -94,9 +94,20 @@ function sponsoringPakete(?PDO $pdo = null): array
                 $decoded = json_decode((string) $json, true);
                 if (is_array($decoded)) {
                     foreach ($decoded as $p) {
-                        if (!empty($p['key'])) {
-                            $pakete[$p['key']] = array_merge($pakete[$p['key']] ?? [], $p);
+                        if (empty($p['key'])) {
+                            continue;
                         }
+                        // LEERE Werte überschreiben den Default NICHT. Grund: bis 2026-08-12 hat
+                        // `einstellungen_update.php` diese Einstellung bei jedem Speichern der
+                        // allgemeinen Einstellungen mit leeren Strings überbügelt. Wer das erwischt
+                        // hat, bekam eine Pakettabelle ohne Preise in den Sponsorenbrief. Der
+                        // Schreiber ist repariert; diese Zeile heilt bereits geleerte Datensätze,
+                        // ohne dass jemand sie von Hand nachtragen muss.
+                        $gesetzt = array_filter(
+                            $p,
+                            static fn ($v): bool => $v !== null && trim((string) $v) !== ''
+                        );
+                        $pakete[$p['key']] = array_merge($pakete[$p['key']] ?? [], $gesetzt);
                     }
                 }
             }
@@ -104,6 +115,18 @@ function sponsoringPakete(?PDO $pdo = null): array
             // Einstellung/Tabelle nicht verfügbar -> Defaults
         }
     }
+
+    // Highlights kommen aus dem Leistungs-Katalog, nicht aus Freitext: sonst muss jede Änderung
+    // am Leistungsumfang doppelt gepflegt werden (der Fall „Bronze bekommt 1 Startplatz",
+    // 2026-08-11). Liefert der Katalog nichts — Hauptsponsor (individuell) und Sachsponsor —
+    // bleibt der gespeicherte Text stehen.
+    foreach ($pakete as $key => $paket) {
+        $erzeugt = sponsorPaketHighlights((string) $key);
+        if ($erzeugt !== '') {
+            $pakete[$key]['highlights'] = $erzeugt;
+        }
+    }
+
     return $pakete;
 }
 
@@ -114,11 +137,14 @@ function sponsoringPakete(?PDO $pdo = null): array
  */
 function paketBetrag(?string $investition): ?float
 {
-    $digits = preg_replace('/[^0-9]/', '', (string) $investition);
-    if ($digits === '' || $digits === null) {
-        return null;
+    // Vorher wurden schlicht ALLE Nicht-Ziffern gestrippt — aus "250,50 €" wurde damit 25050 €.
+    // Jetzt deutsche Schreibweise: Punkt = Tausendertrenner, Komma = Dezimaltrenner.
+    $roh = preg_replace('/[^0-9.,]/', '', (string) $investition);
+    if ($roh === '' || $roh === null) {
+        return null; // "auf Anfrage" o. Ä. — kein abrechenbarer Preis
     }
-    return (float) $digits;
+    $zahl = str_replace(',', '.', str_replace('.', '', $roh));
+    return is_numeric($zahl) ? (float) $zahl : null;
 }
 
 /**

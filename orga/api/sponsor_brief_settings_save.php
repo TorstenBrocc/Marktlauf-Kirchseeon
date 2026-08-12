@@ -37,17 +37,10 @@ if ($briefAntwortBis !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $briefAntwor
     exit;
 }
 
-$paketeKeys  = ['hauptsponsor', 'gold', 'silber', 'bronze'];
-$paketeNames = ['hauptsponsor' => 'Hauptsponsor', 'gold' => 'Gold', 'silber' => 'Silber', 'bronze' => 'Bronze'];
-$pakete = [];
-foreach ($paketeKeys as $k) {
-    $pakete[] = [
-        'key'         => $k,
-        'name'        => $paketeNames[$k],
-        'investition' => trim($_POST["paket_{$k}_investition"] ?? ''),
-        'highlights'  => trim($_POST["paket_{$k}_highlights"]  ?? ''),
-    ];
-}
+// `sponsoring_pakete` wird hier NICHT mehr geschrieben: Preise und Leistungen werden seit
+// 2026-08-12 auf `orga/pakete.php` gepflegt (api/paket_crud.php). Würde dieser Endpoint die
+// Pakete weiter aus POST zusammenbauen, leerte jedes Speichern der Termine die Paketdaten —
+// exakt der Datenverlust, der zuvor in `einstellungen_update.php` steckte.
 
 try {
     $pdo  = getDbConnection();
@@ -58,7 +51,6 @@ try {
     foreach ([
         'sponsor_brief_event_datum' => $briefEventDatum ?: null,
         'sponsor_brief_antwort_bis' => $briefAntwortBis ?: null,
-        'sponsoring_pakete'         => json_encode($pakete, JSON_UNESCAPED_UNICODE),
     ] as $key => $value) {
         $stmt->execute(['key' => $key, 'value' => $value, 'value2' => $value]);
     }
