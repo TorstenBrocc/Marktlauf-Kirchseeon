@@ -354,14 +354,6 @@ return [
         'tile'  => false, // Admin-Werkzeug — bleibt Sidebar-only, keine Kachel
     ],
     [
-        'key'     => 'ci',
-        'label'   => 'CI & Design',
-        'section' => 'ADMIN',
-        'href'    => 'ci.php',
-        // Für alle Orga sichtbar (kein admin-Flag), bleibt Dashboard-Kachel; steht in
-        // der Sidebar aber optisch im ADMIN-Abschnitt. Kein KPI → Absprung-Link.
-    ],
-    [
         'key'     => 'design_system',
         'label'   => 'Design-System',
         'section' => 'ADMIN',
