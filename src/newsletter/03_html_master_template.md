@@ -44,7 +44,7 @@ Hero-Grün mit Volltonfallback, Orange nur als CTA. Abmeldelink + Pflicht-Postan
 
     <!-- Hero: Grünfläche mit Verlauf (Volltonfarbe als Fallback) -->
     <tr>
-      <td class="pad" bgcolor="{{token:--color-primary}}" style="background-color:{{token:--color-primary}}; background-image:linear-gradient(128deg,{{token:--hero-gradient-start}} 0%,{{token:--hero-gradient-mid}} 55%,#86c93c 100%); padding:34px 40px 30px 40px;">
+      <td class="pad" bgcolor="{{token:--color-primary}}" style="background-color:{{token:--color-primary}}; background-image:linear-gradient(128deg,{{token:--hero-gradient-start}} 0%,{{token:--hero-gradient-mid}} 55%,{{token:--hero-gradient-end}} 100%); padding:34px 40px 30px 40px;">
         <p style="margin:0 0 12px 0; font-family:'Segoe UI',Tahoma,Arial,sans-serif; font-size:12px; font-weight:bold; letter-spacing:2px; text-transform:uppercase; color:#f4fbe6; mso-line-height-rule:exactly; line-height:16px;">Marktlauf Kirchseeon</p>
         <h1 class="h1" style="margin:0; font-family:'Trebuchet MS',Verdana,Arial,sans-serif; font-size:34px; font-weight:bold; color:#ffffff; mso-line-height-rule:exactly; line-height:38px;">{{TITLE}}</h1>
       </td>
