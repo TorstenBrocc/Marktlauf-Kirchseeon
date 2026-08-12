@@ -12,6 +12,7 @@ require_once __DIR__ . '/_auth.php';
 require_once __DIR__ . '/../../src/db.php';
 require_once __DIR__ . '/../../src/logger.php';
 require_once __DIR__ . '/../../src/llm_client.php';
+require_once __DIR__ . '/../../src/newsletter/blocks.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -31,13 +32,6 @@ if ($provider !== null && !in_array($provider, ['gemini', 'mistral'], true)) {
     $provider = null;
 }
 
-$fakten = trim($_POST['fakten'] ?? '');
-if ($fakten === '') {
-    http_response_code(422);
-    echo json_encode(['error' => 'Bitte zuerst Fakten/Inhalte für den Newsletter eingeben.']);
-    exit;
-}
-
 $refDir   = __DIR__ . '/../../src/newsletter/';
 $identity = @file_get_contents($refDir . '01_identity.md') ?: '';
 $style    = @file_get_contents($refDir . '02_style.md') ?: '';
@@ -53,15 +47,42 @@ $template = preg_replace_callback('/\{\{token:(--[\w-]+)\}\}/', static function 
     return $tokenMap[$m[1]] ?? $m[0];
 }, $template);
 
-// --- Body (HTML-Fragment) ---
-$bodyPrompt = "Du schreibst den Inhalt eines Vereins-Newsletters.\n\n"
-    . "IDENTITÄT:\n" . $identity . "\n\nSTIL:\n" . $style . "\n\n"
-    . "Erzeuge NUR den HTML-Body (Fließtext) aus den Fakten: erlaubt sind <p>, <h2>, "
-    . "<ul>/<li>, <a href>, <strong>. KEIN <html>/<head>/<body>, keine Inline-Styles, "
-    . "keine Code-Fences, keine Erklärung. Nur die genannten Fakten verwenden.";
-$bodyHtml = trim(llmGenerate($bodyPrompt, $fakten, $provider));
-// evtl. Code-Fences entfernen, falls das Modell sie doch setzt
-$bodyHtml = preg_replace('/^```[a-z]*\s*|\s*```$/i', '', $bodyHtml);
+// --- Body: Baukasten-Blöcke (bevorzugt) ODER freier Fakten-Text (Fallback) ---
+// `blocks` = JSON-Array [{type, fakten}, …] in Ausgabe-Reihenfolge (Baukasten-UI).
+// Betreffzeilen werden in beiden Modi aus $fakten erzeugt.
+$blocksJson = trim((string) ($_POST['blocks'] ?? ''));
+$blocks     = $blocksJson !== '' ? json_decode($blocksJson, true) : null;
+
+if (is_array($blocks) && $blocks !== []) {
+    // Baukasten-Modus: je aktivem Block ein LLM-Call (src/newsletter/blocks.php).
+    $normBlocks = array_map(static fn ($b): array => [
+        'type'   => (string) ($b['type'] ?? ''),
+        'fakten' => (string) ($b['fakten'] ?? ''),
+    ], $blocks);
+    $bodyHtml = newsletterAssembleBlocks($normBlocks, $provider);
+    $fakten   = trim(implode("\n", array_column($normBlocks, 'fakten')));
+    if ($fakten === '') {
+        http_response_code(422);
+        echo json_encode(['error' => 'Bitte in mindestens einem Block Fakten/Inhalte eingeben.']);
+        exit;
+    }
+} else {
+    // Freitext-Modus (rückwärtskompatibel).
+    $fakten = trim($_POST['fakten'] ?? '');
+    if ($fakten === '') {
+        http_response_code(422);
+        echo json_encode(['error' => 'Bitte zuerst Fakten/Inhalte für den Newsletter eingeben.']);
+        exit;
+    }
+    $bodyPrompt = "Du schreibst den Inhalt eines Vereins-Newsletters.\n\n"
+        . "IDENTITÄT:\n" . $identity . "\n\nSTIL:\n" . $style . "\n\n"
+        . "Erzeuge NUR den HTML-Body (Fließtext) aus den Fakten: erlaubt sind <p>, <h2>, "
+        . "<ul>/<li>, <a href>, <strong>. KEIN <html>/<head>/<body>, keine Inline-Styles, "
+        . "keine Code-Fences, keine Erklärung. Nur die genannten Fakten verwenden.";
+    $bodyHtml = trim(llmGenerate($bodyPrompt, $fakten, $provider));
+    // evtl. Code-Fences entfernen, falls das Modell sie doch setzt
+    $bodyHtml = preg_replace('/^```[a-z]*\s*|\s*```$/i', '', $bodyHtml);
+}
 
 // --- Betreffzeilen ---
 $subjectPrompt = "Du bist Newsletter-Redakteur für den ATSV Kirchseeon (Marktlauf Kirchseeon).\n"

@@ -2,7 +2,7 @@
 /**
  * Newsletter — eigene Dashboard-Seite (aus dem Social-Orchestrator herausgelöst).
  *
- * Ablauf: Fakten eingeben → KI erzeugt HTML-Newsletter + 3 Betreffzeilen
+ * Ablauf: Bausteine (Intro/News/Termine/…) wählen + füllen → KI erzeugt je Block den Inhalt + 3 Betreffzeilen
  * (api/newsletter_generate.php, gemeinsamer llm_client, Marken-Farben aus den
  * Design-Tokens) → Vorschau + Betreff wählen → als Brevo-Kampagnen-ENTWURF anlegen
  * (api/newsletter_push.php). Kein Versand aus dem Dashboard; Prüfen/Senden in Brevo.
@@ -18,6 +18,7 @@ require_once __DIR__ . '/api/_auth.php';
 require_once __DIR__ . '/../src/db.php';
 require_once __DIR__ . '/../src/llm_client.php';
 require_once __DIR__ . '/../src/brevo_client.php';
+require_once __DIR__ . '/../src/newsletter/blocks.php';
 
 $user    = getCurrentUserFromGuard();
 $isAdmin = isAdminFromGuard();
@@ -25,7 +26,8 @@ $csrf    = generateCsrfToken();
 
 $pdo        = getDbConnection();
 $provider   = llmActiveProvider($pdo);
-$brevoReady = brevoConfigured();
+$brevoReady   = brevoConfigured();
+$blockCatalog = newsletterBlockCatalog();
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -54,6 +56,15 @@ $brevoReady = brevoConfigured();
             border: 1px solid var(--border); border-radius: var(--radius); background: var(--white); color: var(--text);
         }
         .nl-field textarea { min-height: 120px; resize: vertical; }
+        /* Baukasten: Palette + Block-Karten */
+        .nl-palette { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+        .nl-block { border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); padding: 0.75rem; margin-bottom: 0.75rem; }
+        .nl-block-head { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.5rem; }
+        .nl-block-title { font-weight: 600; font-size: 0.9rem; flex: 1 1 auto; }
+        .nl-block-head button { border: 1px solid var(--border); background: var(--white); color: var(--text); border-radius: var(--radius); cursor: pointer; font-size: 0.9rem; line-height: 1; padding: 0.25rem 0.5rem; }
+        .nl-block-head button:hover { border-color: var(--primary); }
+        .nl-block textarea { min-height: 70px; }
+        .nl-empty { font-size: 0.85rem; color: var(--text-light); margin: 0 0 1rem; }
         .nl-actions { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.5rem; }
         .nl-spinner { font-size: 0.85rem; color: var(--text-light); }
         .nl-msg { font-size: 0.85rem; margin-top: 0.6rem; display: none; }
@@ -89,7 +100,7 @@ $brevoReady = brevoConfigured();
     <main class="main-content">
         <header class="content-header">
             <h1>Newsletter</h1>
-            <p class="content-subtitle">Fakten eingeben → KI erzeugt einen fertigen HTML-Newsletter + Betreffzeilen → als Entwurf nach Brevo.</p>
+            <p class="content-subtitle">Bausteine wählen &amp; mit Fakten füllen → KI erzeugt je Block den Inhalt → Vorschau → als Entwurf nach Brevo.</p>
         </header>
 
         <!-- Schritt 1: Erzeugen -->
@@ -103,8 +114,14 @@ $brevoReady = brevoConfigured();
                 </select>
             </div>
             <div class="nl-field">
-                <label for="nl-fakten">Fakten / Inhalte für diese Ausgabe</label>
-                <textarea id="nl-fakten" placeholder="z. B. Anmeldung gestartet, neue Strecke, Sponsoren-News, Termine, Danksagungen …"></textarea>
+                <label>Bausteine — hinzufügen, mit Fakten füllen, per ▲▼ ordnen</label>
+                <div class="nl-palette" id="nl-palette">
+                    <?php foreach ($blockCatalog as $key => $b): ?>
+                        <button type="button" class="btn btn-secondary btn-small" data-add="<?= htmlspecialchars($key) ?>">+ <?= htmlspecialchars($b['label']) ?></button>
+                    <?php endforeach; ?>
+                </div>
+                <div id="nl-blocks"></div>
+                <p class="nl-empty" id="nl-blocks-empty">Noch keine Bausteine — oben einen hinzufügen (z. B. Intro).</p>
             </div>
             <div class="nl-actions">
                 <button class="btn btn-primary" id="nl-generate">Newsletter generieren</button>
@@ -163,6 +180,59 @@ $brevoReady = brevoConfigured();
 
 <script>
 const csrf = <?= json_encode($csrf, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+const BLOCK_CATALOG = <?= json_encode($blockCatalog, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+
+// --- Baukasten: Bausteine verwalten ---
+const blocksEl = document.getElementById('nl-blocks');
+
+function refreshBlocksEmpty() {
+    document.getElementById('nl-blocks-empty').style.display = blocksEl.children.length ? 'none' : 'block';
+}
+
+function addBlock(type) {
+    const meta = BLOCK_CATALOG[type];
+    if (!meta) return;
+    const card = document.createElement('div');
+    card.className = 'nl-block';
+    card.dataset.type = type;
+    card.innerHTML =
+        '<div class="nl-block-head">' +
+            '<span class="nl-block-title"></span>' +
+            '<button type="button" data-act="up" title="nach oben" aria-label="nach oben">▲</button>' +
+            '<button type="button" data-act="down" title="nach unten" aria-label="nach unten">▼</button>' +
+            '<button type="button" data-act="del" title="entfernen" aria-label="entfernen">✕</button>' +
+        '</div>' +
+        '<textarea aria-label="Fakten"></textarea>';
+    card.querySelector('.nl-block-title').textContent = meta.label;
+    card.querySelector('textarea').placeholder = meta.hint || '';
+    blocksEl.appendChild(card);
+    refreshBlocksEmpty();
+}
+
+blocksEl.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-act]');
+    if (!btn) return;
+    const card = btn.closest('.nl-block');
+    const act = btn.dataset.act;
+    if (act === 'del') { card.remove(); refreshBlocksEmpty(); }
+    else if (act === 'up' && card.previousElementSibling) { card.parentNode.insertBefore(card, card.previousElementSibling); }
+    else if (act === 'down' && card.nextElementSibling) { card.parentNode.insertBefore(card.nextElementSibling, card); }
+});
+
+document.getElementById('nl-palette').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-add]');
+    if (btn) addBlock(btn.dataset.add);
+});
+
+function collectBlocks() {
+    return [...blocksEl.querySelectorAll('.nl-block')].map((card) => ({
+        type: card.dataset.type,
+        fakten: card.querySelector('textarea').value,
+    }));
+}
+
+// Ein Start-Baustein zur Orientierung.
+addBlock('intro');
 
 // --- Schritt 1: generieren ---
 document.getElementById('nl-generate').addEventListener('click', async (e) => {
@@ -170,12 +240,12 @@ document.getElementById('nl-generate').addEventListener('click', async (e) => {
     const spinner  = document.getElementById('nl-gen-spinner');
     const errEl    = document.getElementById('nl-gen-error');
     const provider = document.getElementById('nl-provider').value;
-    const fakten   = document.getElementById('nl-fakten').value;
+    const blocks   = collectBlocks();
 
     errEl.className = 'nl-msg error';
     errEl.style.display = 'none';
-    if (!fakten.trim()) {
-        errEl.textContent = 'Bitte zuerst Fakten/Inhalte eingeben.';
+    if (!blocks.some((b) => b.fakten.trim())) {
+        errEl.textContent = 'Bitte mindestens einen Baustein mit Fakten füllen.';
         errEl.style.display = 'block';
         return;
     }
@@ -185,7 +255,7 @@ document.getElementById('nl-generate').addEventListener('click', async (e) => {
         const r = await fetch('api/newsletter_generate.php', {
             method: 'POST',
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: new URLSearchParams({csrf_token: csrf, provider, fakten}),
+            body: new URLSearchParams({csrf_token: csrf, provider, blocks: JSON.stringify(blocks)}),
         });
         const d = await r.json();
         if (d.error) {
