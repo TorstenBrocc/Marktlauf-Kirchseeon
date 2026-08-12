@@ -43,17 +43,29 @@ foreach ($tokens as $t) {
 $snippetDir   = __DIR__ . '/../design-system/snippets';
 $snippetItems = [
     ['preview' => 'live-ticker.html',         'copy' => 'live-ticker.snippet.html',      'name' => 'Live-Ticker',          'sub' => 'Meldeband über dem Header (3 Meldungstypen)'],
-    ['preview' => 'newsletter-mail.html',      'copy' => 'newsletter-master.snippet.html', 'name' => 'Newsletter-Master',    'sub' => 'HTML-Grundgerüst für Mailings'],
+    // Newsletter-Master: Code aus der EINEN kanonischen Quelle (kein Snippet-Duplikat mehr),
+    // {{token:--x}} serverseitig zu E-Mail-Hex aufgelöst — identisch zu dem, was der Generator liefert.
+    ['preview' => 'newsletter-mail.html',      'canonical' => __DIR__ . '/../src/newsletter/03_html_master_template.md', 'name' => 'Newsletter-Master',    'sub' => 'HTML-Grundgerüst für Mailings (kanonische Quelle)'],
     ['preview' => 'newsletter-beispiel.html',  'copy' => 'newsletter-beispiel.html',       'name' => 'Newsletter-Beispiel',  'sub' => 'Ausgefülltes Beispiel-Mailing'],
     ['preview' => 'raceresult-infotext.html',  'copy' => 'raceresult-infotext.html',       'name' => 'RaceResult Info-Text', 'sub' => 'HTML-Block für das INFO-Feld'],
 ];
-// Nur real vorhandene Snippets zeigen; Kopier-Inhalt serverseitig laden.
-$snippetItems = array_values(array_filter(array_map(static function (array $s) use ($snippetDir): ?array {
+// Nur real vorhandene Snippets zeigen; Kopier-Inhalt serverseitig laden. Der Newsletter-Master
+// kommt aus der kanonischen Vorlage (Anti-Drift), die übrigen aus dem Snippet-Ordner.
+$snippetItems = array_values(array_filter(array_map(static function (array $s) use ($snippetDir, $map): ?array {
     if (!is_file($snippetDir . '/' . $s['preview'])) {
         return null;
     }
-    $raw = @file_get_contents($snippetDir . '/' . $s['copy']);
-    $s['code'] = $raw !== false ? $raw : '';
+    if (isset($s['canonical'])) {
+        $raw = @file_get_contents($s['canonical']);
+        // {{token:--x}} -> Hex (wie orga/api/newsletter_generate.php); {{TITLE}}/{{CONTENT}}
+        // bleiben als sichtbare Platzhalter stehen (echte Vorlagen-Referenz).
+        $s['code'] = $raw !== false
+            ? preg_replace_callback('/\{\{token:(--[\w-]+)\}\}/', static fn (array $m): string => $map[$m[1]] ?? $m[0], $raw)
+            : '';
+    } else {
+        $raw = @file_get_contents($snippetDir . '/' . $s['copy']);
+        $s['code'] = $raw !== false ? $raw : '';
+    }
     return $s;
 }, $snippetItems)));
 
