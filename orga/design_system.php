@@ -221,6 +221,77 @@ function ds_render_grid(array $items, array $map): string
     return $html . '</div>';
 }
 
+/**
+ * Fachliche Gruppe eines Farb-Tokens — portiert aus der abgelösten ci.php (ci_group),
+ * erweitert um die Dashboard-UI-Tokens aus orga.css (--text*, --bg, --border, --error*,
+ * --success*). Prüfreihenfolge bewusst: Hero/Kooperation ZUERST, damit z. B.
+ * --color-accent-yellow nicht von der Primär-/Akzent-Regel eingefangen wird.
+ */
+function ds_color_group(string $name): string
+{
+    if (str_starts_with($name, '--hero')) return 'Hero & Kooperation';
+    if (in_array($name, [
+        '--color-accent-yellow', '--color-deep-green', '--color-marktlauf-green',
+        '--color-teal', '--color-cream', '--color-ink',
+    ], true)) {
+        return 'Hero & Kooperation';
+    }
+    if (preg_match('/^--(color-primary|primary|color-accent|accent)/', $name)) {
+        return 'Primär & Marke';
+    }
+    if (str_starts_with($name, '--gray') || $name === '--white'
+        || str_starts_with($name, '--text') || $name === '--bg' || $name === '--border') {
+        return 'Graustufen & UI';
+    }
+    if (str_starts_with($name, '--success') || str_starts_with($name, '--error')) {
+        return 'Status';
+    }
+    return 'Weitere Farben';
+}
+
+/**
+ * Farb-Tokens gruppiert rendern: je Gruppe ein Untertitel (+ Kurznote) und ein eigenes
+ * Grid, in fester fachlicher Reihenfolge. Ersetzt die flache Liste, damit die DS-Seite die
+ * Farben so ordentlich zeigt wie zuvor ci.php.
+ */
+function ds_render_color_groups(array $items, array $map): string
+{
+    if ($items === []) {
+        return '<p class="ds-empty">Keine Farb-Tokens gefunden.</p>';
+    }
+    $order = ['Primär & Marke', 'Hero & Kooperation', 'Graustufen & UI', 'Status', 'Weitere Farben'];
+    $note  = [
+        'Primär & Marke'     => 'Marke',
+        'Hero & Kooperation' => 'nur in Hero-Flächen',
+        'Graustufen & UI'    => 'Flächen · Text · Ränder',
+        'Status'             => 'Rückmeldungen',
+    ];
+    $buckets = [];
+    foreach ($items as $t) {
+        $buckets[ds_color_group($t['name'])][] = $t;
+    }
+    $render = static function (string $group, array $rows) use ($note, $map): string {
+        $sub = isset($note[$group])
+            ? ' <span class="ds-color-note">· ' . htmlspecialchars($note[$group]) . '</span>'
+            : '';
+        return '<h3 class="ds-color-group">' . htmlspecialchars($group) . $sub . '</h3>'
+             . ds_render_grid($rows, $map);
+    };
+    $html = '';
+    foreach ($order as $group) {
+        if (!empty($buckets[$group])) {
+            $html .= $render($group, $buckets[$group]);
+        }
+    }
+    // Sicherheitsnetz: unerwartete Gruppen dennoch zeigen (nie ein Token verschlucken).
+    foreach ($buckets as $group => $rows) {
+        if (!in_array($group, $order, true)) {
+            $html .= $render($group, $rows);
+        }
+    }
+    return $html;
+}
+
 /** Inline-Formatierung eines bereits zeilenweise zerlegten Fragments (nach dem Escapen). */
 function ds_md_inline(string $text): string
 {
@@ -368,6 +439,10 @@ function ds_render_markdown(string $md, int $headingOffset = 0): string
         .ds-section > .ds-lead { color: var(--text-light); font-size: 0.85rem; margin: 0 0 1.25rem; max-width: 60ch; line-height: 1.5; }
 
         .ds-grid { display: grid; gap: 0.85rem; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+        /* Untertitel je Farb-Gruppe (Ordnung aus der abgelösten ci.php). */
+        .ds-color-group { font-size: 0.9rem; margin: 1.4rem 0 0.6rem; padding-bottom: 0.3rem; border-bottom: 2px solid var(--primary); }
+        .ds-color-group:first-of-type { margin-top: 0.2rem; }
+        .ds-color-note { font-weight: 400; color: var(--text-light); }
         .ds-tile {
             background: var(--white); border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow-card);
             overflow: hidden; padding: 0; font: inherit; color: inherit; text-align: left; cursor: pointer;
@@ -548,8 +623,8 @@ function ds_render_markdown(string $md, int $headingOffset = 0): string
                     <!-- Farben -->
                     <section class="ds-section" id="ds-colors" data-section="colors">
                         <h2>Farben</h2>
-                        <p class="ds-lead">Alle Farb-Tokens beider Quellen. Doppelt geführte Marken-Werte werden am Herkunfts-Badge sichtbar.</p>
-                        <?= ds_render_grid($sections['colors'], $map) ?>
+                        <p class="ds-lead">Farb-Tokens beider Quellen, fachlich gruppiert (Primär &amp; Marke · Hero &amp; Kooperation · Graustufen &amp; UI · Status). Doppelt geführte Marken-Werte werden am Herkunfts-Badge sichtbar.</p>
+                        <?= ds_render_color_groups($sections['colors'], $map) ?>
                     </section>
 
                     <!-- Abstände & Maße -->
