@@ -12,6 +12,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/_auth.php';
 require_once __DIR__ . '/../../src/db.php';
 require_once __DIR__ . '/../../src/logger.php';
+require_once __DIR__ . '/../../src/social_anlaesse.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -29,9 +30,8 @@ if (!verifyCsrfToken($_POST['csrf_token'] ?? '')) {
     socialPromptJson(false, 'Ungültige Anfrage.');
 }
 
-$validAnlass = ['renntag', 'ankuendigung', 'countdown', 'sponsoren_dank', 'helfer', 'allgemein'];
 $anlass = $_POST['anlass'] ?? '';
-if (!in_array($anlass, $validAnlass, true)) {
+if (!isset(socialAnlaesse()[$anlass])) {
     http_response_code(422);
     socialPromptJson(false, 'Unbekannter Anlass.');
 }

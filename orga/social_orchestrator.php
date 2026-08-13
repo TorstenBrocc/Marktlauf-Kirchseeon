@@ -1,7 +1,8 @@
 <?php
 /**
- * Social-Media-Orchestrator: KI-Nachbericht aus Raceresult-Ergebnissen.
- * Phase 1: Mock-Daten, manueller Dispatch (Copy/Download).
+ * Social-Media-Orchestrator: KI-gestuetzte Content-Produktion fuer IG/FB.
+ * Ablauf: Datenquelle (RaceResult, optional) -> 1 Inhalt -> 2 Grafik -> 3 Veroeffentlichen
+ * (Auto-Posting via Make.com, manueller Weg als Fallback).
  */
 
 declare(strict_types=1);
@@ -10,6 +11,7 @@ require_once __DIR__ . '/api/_auth.php';
 require_once __DIR__ . '/../src/db.php';
 require_once __DIR__ . '/../src/llm_client.php';
 require_once __DIR__ . '/../src/raceresult_client.php';
+require_once __DIR__ . '/../src/social_anlaesse.php';
 
 $user    = getCurrentUserFromGuard();
 $isAdmin = isAdminFromGuard();
@@ -74,6 +76,12 @@ try {
     // Tabelle/Spalten existieren evtl. noch nicht
 }
 $raceresultConfigured = $raceresultApiUrl !== '';
+
+// Anlass-Katalog (eine Quelle fuer Maske + APIs) nach Optgroup gruppieren
+$anlassGruppen = [];
+foreach (socialAnlaesse() as $anlassKey => $anlassDef) {
+    $anlassGruppen[$anlassDef['gruppe']][$anlassKey] = $anlassDef['ui'];
+}
 
 // Repo-Assets (Logos/Marken) für die Grafik — rekursiver Scan über assets/images.
 // Statische Dateien → Vorschau lädt zuverlässig (kein Auth-Endpoint). SVG bewusst
@@ -173,7 +181,7 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
         @media (max-width: 860px) { .so-grid2 { grid-template-columns: 1fr; } }
         .so-save-row { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
         .so-saved { display: none; color: #16a34a; font-size: 0.8rem; }
-        /* Einklappbares RaceResult-Modul */
+        /* Einklappbarer RaceResult-Block (Datenquelle) */
         .so-collapse { border: 1px solid var(--border); border-radius: 8px; background: var(--white); box-shadow: var(--shadow-card); padding: 0.75rem 1.25rem; margin-bottom: 1.25rem; }
         .so-collapse > summary { cursor: pointer; font-size: 1rem; font-weight: 600; padding: 0.4rem 0; list-style: revert; }
         .so-collapse[open] > summary { margin-bottom: 0.75rem; border-bottom: 1px solid var(--border); }
@@ -189,7 +197,7 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
         /* Facebook-blauer Meta-Business-Button */
         .so-mba-btn { background: #1877F2; color: #fff; }
         .so-mba-btn:hover { background: #1461c9; color: #fff; }
-        /* Eingabe-Layout Modul 1: Anlass + Hashtags links, Fakten rechts auf gleicher Höhe */
+        /* Eingabe-Layout Schritt 1: Anlass + Hashtags links, Fakten rechts auf gleicher Höhe */
         .so-input-grid {
             display: grid; grid-template-columns: 1fr 1fr; gap: 0 1rem;
             grid-template-areas: "anlass fakten" "hashtags fakten";
@@ -205,7 +213,7 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
         .so-guide-tools { display: flex; gap: 0.75rem; align-items: stretch; flex-wrap: wrap; margin-bottom: 1rem; }
         .so-guide-tools .so-merk-card { flex: 1 1 240px; }
         .so-guide-tools .so-merk-card textarea { width: 100%; }
-        /* Grafik-Steuerung Modul 3 */
+        /* Grafik-Steuerung Schritt 2 */
         .so-card-controls {
             display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 0.75rem 1rem; margin-top: 0.75rem;
@@ -285,7 +293,30 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
             <?php endif; ?>
         </header>
 
-        <!-- Modul 1: Inhalt generieren (allgemein) -->
+        <!-- Datenquelle Renntag (RaceResult) — speist Schritt 1 (Texte) und Schritt 2 (Grafik) -->
+        <details class="so-collapse" <?= $raceresultConfigured ? '' : 'open' ?>>
+            <summary>Datenquelle Renntag · RaceResult
+                <?php if ($raceresultConfigured): ?><span class="so-badge-ok">Link hinterlegt</span><?php else: ?><span class="so-badge-off">kein Link</span><?php endif; ?>
+            </summary>
+            <p class="so-notice" style="margin-bottom:0.9rem">
+                <strong>Wofür:</strong> optionale Datenquelle für den Anlass „Renntag-Nachbericht" (Schritt 1).
+                Ist ein SimpleAPI-Link hinterlegt, liest das Dashboard daraus beim Generieren die Ergebnisse
+                (Sieger:innen, Zeiten, Teilnehmerzahlen) und füttert damit die KI-Texte <em>und</em> die
+                Ergebnis-Grafik (Schritt 2). Die Daten werden dabei <strong>nur live gelesen, nicht gespeichert</strong>.
+                Ohne Link oder solange das Event (Testmodus) keine Daten liefert, werden automatisch Beispiel-Daten verwendet.
+                <br><em>„Link hinterlegt" bedeutet nur: eine URL ist gespeichert — nicht, dass sie bereits Daten liefert (das lässt sich erst mit echten Renndaten prüfen).</em>
+            </p>
+            <div class="so-field" style="margin-bottom:0">
+                <label for="so-rr-url">RaceResult SimpleAPI-Link — in RaceResult unter „Zugriffsrechte/Freigabe → Freigabe (SimpleAPI)", Typ „Liste" anlegen und den erzeugten Link hier einfügen</label>
+                <div class="so-save-row">
+                    <input type="url" id="so-rr-url" value="<?= htmlspecialchars($raceresultApiUrl) ?>" placeholder="https://my.raceresult.com/377952/RRPublish/data/list?..." style="flex:1 1 320px">
+                    <button class="btn btn-small btn-secondary" id="so-save-rr">Speichern</button>
+                    <span class="so-saved" id="so-rr-msg">Gespeichert</span>
+                </div>
+            </div>
+        </details>
+
+        <!-- Schritt 1: Inhalt generieren (allgemein) -->
         <div class="so-card">
             <h2>1 · Inhalt generieren</h2>
             <div class="so-provider-row">
@@ -301,30 +332,13 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                 <div class="so-field" id="so-anlass-field">
                     <label for="so-anlass">Anlass / Thema</label>
                     <select id="so-anlass">
-                        <optgroup label="Standard">
-                            <option value="allgemein">Allgemeiner Beitrag</option>
-                            <option value="ankuendigung">Ankündigung des Events</option>
-                            <option value="countdown">Countdown / Vorfreude</option>
-                            <option value="sponsoren_dank">Dank an Sponsoren &amp; Partner</option>
-                            <option value="helfer">Helfer-Aufruf / -Dank</option>
-                            <option value="renntag">Renntag-Nachbericht (nutzt RaceResult-Daten)</option>
+                        <?php foreach ($anlassGruppen as $gruppe => $eintraege): ?>
+                        <optgroup label="<?= htmlspecialchars($gruppe) ?>">
+                            <?php foreach ($eintraege as $anlassKey => $anlassUi): ?>
+                            <option value="<?= htmlspecialchars($anlassKey) ?>"><?= htmlspecialchars($anlassUi) ?></option>
+                            <?php endforeach; ?>
                         </optgroup>
-                        <optgroup label="Contentplan 2026">
-                            <option value="save_the_date">Save the Date</option>
-                            <option value="warum_mitlaufen">Warum mitlaufen? (5 Gründe)</option>
-                            <option value="strecke">Strecke entdecken</option>
-                            <option value="nachhaltigkeit">Nachhaltig laufen</option>
-                            <option value="anmeldung_offen">Anmeldung geöffnet</option>
-                            <option value="helfer_gesucht">Helfer gesucht</option>
-                            <option value="sponsorenvorstellung">Sponsorenvorstellung</option>
-                            <option value="countdown_30">30-Tage-Countdown</option>
-                            <option value="trainingstipp">Trainingstipp</option>
-                            <option value="energie_umwelttag">Energie- &amp; Umwelttag</option>
-                            <option value="countdown_7">7-Tage-Countdown</option>
-                            <option value="morgen">Morgen geht's los</option>
-                            <option value="eventtag">Eventtag (live)</option>
-                            <option value="danke">Danke / Rückblick</option>
-                        </optgroup>
+                        <?php endforeach; ?>
                     </select>
                 </div>
                 <div class="so-field" id="so-hashtags-field">
@@ -382,29 +396,6 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
             </div>
         </div>
 
-        <!-- Modul 2: Zusatzquelle Renntag (RaceResult) -->
-        <details class="so-collapse" <?= $raceresultConfigured ? '' : 'open' ?>>
-            <summary>2 · Zusatzquelle Renntag · RaceResult
-                <?php if ($raceresultConfigured): ?><span class="so-badge-ok">Link hinterlegt</span><?php else: ?><span class="so-badge-off">kein Link</span><?php endif; ?>
-            </summary>
-            <p class="so-notice" style="margin-bottom:0.9rem">
-                <strong>Wofür:</strong> optionale Datenquelle für den Anlass „Renntag-Nachbericht" (Modul 1).
-                Ist ein SimpleAPI-Link hinterlegt, liest das Dashboard daraus beim Generieren die Ergebnisse
-                (Sieger:innen, Zeiten, Teilnehmerzahlen) und füttert damit die KI-Texte <em>und</em> die
-                Ergebnis-Grafik (Modul 3). Die Daten werden dabei <strong>nur live gelesen, nicht gespeichert</strong>.
-                Ohne Link oder solange das Event (Testmodus) keine Daten liefert, werden automatisch Beispiel-Daten verwendet.
-                <br><em>„Link hinterlegt" bedeutet nur: eine URL ist gespeichert — nicht, dass sie bereits Daten liefert (das lässt sich erst mit echten Renndaten prüfen).</em>
-            </p>
-            <div class="so-field" style="margin-bottom:0">
-                <label for="so-rr-url">RaceResult SimpleAPI-Link — in RaceResult unter „Zugriffsrechte/Freigabe → Freigabe (SimpleAPI)", Typ „Liste" anlegen und den erzeugten Link hier einfügen</label>
-                <div class="so-save-row">
-                    <input type="url" id="so-rr-url" value="<?= htmlspecialchars($raceresultApiUrl) ?>" placeholder="https://my.raceresult.com/377952/RRPublish/data/list?..." style="flex:1 1 320px">
-                    <button class="btn btn-small btn-secondary" id="so-save-rr">Speichern</button>
-                    <span class="so-saved" id="so-rr-msg">Gespeichert</span>
-                </div>
-            </div>
-        </details>
-
         <!-- Share-Card: versteckter Render-Div (off-layout, aber im DOM). Höhe unbegrenzt,
              damit höhere Formate (Portrait/Story) nicht abgeschnitten werden. -->
         <div style="position:absolute;left:-9999px;top:0;width:1080px;overflow:visible" aria-hidden="true">
@@ -454,9 +445,9 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
             </div>
         </div>
 
-        <!-- Modul 3: Grafik & Formate -->
+        <!-- Schritt 2: Grafik & Formate -->
         <div class="so-card">
-            <h2>3 · Grafik &amp; Formate</h2>
+            <h2>2 · Grafik &amp; Formate</h2>
             <p style="margin:0 0 0.7rem"><a href="poster_generator.php" class="btn btn-small btn-primary">📣 Kampagnen-Poster „Anmeldung geöffnet" erstellen →</a>
                 <a href="../docs/poster-generator.md" target="_blank" rel="noopener" style="margin-left:0.6rem;font-size:0.85rem">ℹ️ Doku</a></p>
             <p class="so-notice">
@@ -549,8 +540,8 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
 
                     <h3>2 · Posten via Meta Business Suite</h3>
                     <ul>
-                        <li>Grafik herunterladen (Modul 3) → oben „Meta Business Account öffnen" → „Beiträge &amp; Reels" → Beitrag erstellen.</li>
-                        <li>Kanäle Instagram + Facebook anhaken → Grafik als Foto hochladen → Caption (Social-Post aus Modul 1) einfügen → Vorschau → veröffentlichen oder terminieren.</li>
+                        <li>Grafik herunterladen (Schritt 2) → oben „Meta Business Account öffnen" → „Beiträge &amp; Reels" → Beitrag erstellen.</li>
+                        <li>Kanäle Instagram + Facebook anhaken → Grafik als Foto hochladen → Caption (Social-Post aus Schritt 1) einfügen → Vorschau → veröffentlichen oder terminieren.</li>
                         <li>Für eine <strong>Story</strong>: im Composer „Story" wählen → Story-Grafik hochladen.</li>
                     </ul>
 
@@ -563,17 +554,17 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
 
                     <h3>4 · Renntag-Daten (RaceResult)</h3>
                     <ul>
-                        <li>Beim Anlass „Renntag-Nachbericht" zieht das Dashboard die Ergebnisse aus dem in Modul 2 hinterlegten RaceResult-Link und nutzt sie für Text + Ergebnis-Grafik. Ohne Link/Daten werden Beispiel-Daten verwendet.</li>
+                        <li>Beim Anlass „Renntag-Nachbericht" zieht das Dashboard die Ergebnisse aus dem oben hinterlegten RaceResult-Link (Datenquelle) und nutzt sie für Text + Ergebnis-Grafik. Ohne Link/Daten werden Beispiel-Daten verwendet.</li>
                     </ul>
                 </div>
             </details>
         </div>
 
-        <!-- Modul 4: Veröffentlichen -->
+        <!-- Schritt 3: Veröffentlichen -->
         <div class="so-card">
-            <h2>4 · Veröffentlichen</h2>
+            <h2>3 · Veröffentlichen</h2>
             <p class="so-notice" style="margin-bottom:0.9rem">
-                Ein <strong>Social-Post = Bild + Text</strong>: das <strong>Bild</strong> lädst du in Modul 3 als PNG herunter
+                Ein <strong>Social-Post = Bild + Text</strong>: das <strong>Bild</strong> lädst du in Schritt 2 als PNG herunter
                 (Format wählbar), den <strong>Text</strong> hier. Kopieren ist praktisch zum direkten Einfügen in die
                 Meta Business Suite, Download als Datei zum Aufheben/Weitergeben.
             </p>
@@ -589,13 +580,13 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                 <div class="so-save-row">
                     <button class="btn btn-small btn-secondary" id="so-copy-social">Text kopieren</button>
                     <button class="btn btn-small btn-secondary" id="so-dl-social">Als .txt herunterladen</button>
-                    <span style="font-size:0.8rem;color:var(--text-light)">Bild → Modul 3 (PNG)</span>
+                    <span style="font-size:0.8rem;color:var(--text-light)">Bild → Schritt 2 (PNG)</span>
                 </div>
             </div>
             <div class="so-dispatch" style="margin-top:1.1rem;border-top:1px solid var(--border);padding-top:0.9rem">
                 <h3 style="margin:0 0 0.5rem;font-size:1rem">Automatisch posten (Make.com)</h3>
                 <p class="so-notice" style="margin:0 0 0.6rem">
-                    Sendet den <strong>Social-Text</strong> oben + die zuletzt in <strong>Modul 3</strong> erzeugte
+                    Sendet den <strong>Social-Text</strong> oben + die zuletzt in <strong>Schritt 2</strong> erzeugte
                     <strong>Grafik</strong> über Make.com an die gewählten Kanäle. Ist kein Auto-Posting eingerichtet
                     oder klappt der Versand nicht, erscheint hier der Hinweis zum manuellen Posten — die Buttons oben
                     bleiben dafür bestehen.
@@ -772,7 +763,7 @@ function copyText(id) {
 document.getElementById('so-copy-article').addEventListener('click', () => copyText('so-article'));
 document.getElementById('so-copy-social').addEventListener('click',  () => copyText('so-social'));
 
-// Text-Downloads (Body-Text als .txt); das Bild kommt als PNG aus Modul 3
+// Text-Downloads (Body-Text als .txt); das Bild kommt als PNG aus Schritt 2
 function downloadText(filename, id) {
     const val = document.getElementById(id).value || '';
     if (!val.trim()) return;
@@ -803,7 +794,7 @@ function fillShareCard(data) {
     document.getElementById('sc-highlight').textContent = data.highlight || '';
 }
 
-let lastCardDataUrl = null; // wird beim Rendern in Modul 3 gesetzt, für Auto-Posting (Modul 5)
+let lastCardDataUrl = null; // wird beim Rendern in Schritt 2 gesetzt, für Auto-Posting (Schritt 3)
 
 const CARD_FORMATS = {
     square:   { w: 1080, h: 1080, label: 'Quadratisch 1080×1080' },
@@ -952,7 +943,7 @@ document.getElementById('so-clear-photo').addEventListener('click', () => {
     renderLogoChips();
 })();
 
-// QR-Code auf der Grafik erzeugen (aus optionaler URL in Modul 3)
+// QR-Code auf der Grafik erzeugen (aus optionaler URL in Schritt 2)
 function applyQr() {
     const urlVal = (document.getElementById('so-qr-url').value || '').trim();
     const wrap   = document.getElementById('sc-qr');
@@ -1111,7 +1102,7 @@ document.getElementById('so-save-rr').addEventListener('click', (e) => {
 });
 
 
-// Modul 5: Auto-Posting an IG/FB über Make.com (mit Fallback auf manuell)
+// Schritt 3: Auto-Posting an IG/FB über Make.com (mit Fallback auf manuell)
 function showDispatchMsg(text, ok) {
     const msg = document.getElementById('so-dispatch-msg');
     msg.textContent = text;
@@ -1127,9 +1118,9 @@ document.getElementById('so-dispatch-btn').addEventListener('click', async (e) =
     if (document.getElementById('so-ch-fb').checked) channels.push('facebook');
 
     document.getElementById('so-dispatch-msg').style.display = 'none';
-    if (!text)            { showDispatchMsg('Bitte zuerst einen Social-Text generieren/eingeben (Modul 2).', false); return; }
+    if (!text)            { showDispatchMsg('Bitte zuerst einen Social-Text generieren/eingeben (Schritt 1).', false); return; }
     if (!channels.length) { showDispatchMsg('Bitte mindestens einen Kanal (Instagram/Facebook) wählen.', false); return; }
-    if (channels.includes('instagram') && !lastCardDataUrl) { showDispatchMsg('Instagram braucht ein Bild — bitte in Modul 3 eine Grafik erzeugen (oder Instagram abwählen).', false); return; }
+    if (channels.includes('instagram') && !lastCardDataUrl) { showDispatchMsg('Instagram braucht ein Bild — bitte in Schritt 2 eine Grafik erzeugen (oder Instagram abwählen).', false); return; }
 
     btn.disabled = true;
     spinner.style.display = 'inline';
