@@ -507,12 +507,13 @@ try {
         .status-angefragt-row { background: rgba(43, 125, 233, 0.12); }
         .branche-heading-row td {
             background: var(--bg);
-            font-weight: 600;
-            font-size: 0.9rem;
-            padding: 0.5rem 0.75rem;
-            border-top: 2px solid var(--border);
+            font-weight: 700;
+            font-size: 1.2rem;
+            padding: 0.85rem 0.75rem 0.55rem;
+            border-top: 3px solid var(--primary);
+            letter-spacing: 0.01em;
         }
-        .branche-heading-count { color: var(--text-light); font-weight: 400; }
+        .branche-heading-count { color: var(--text-light); font-weight: 400; font-size: 0.85rem; }
         .kein-kontakt-row {
             background: #f9f9f9;
         }
@@ -737,11 +738,11 @@ try {
             </div>
 
             <?php
-            $groupByBranche = (($_GET['gruppe'] ?? '') === 'branche');
-            $qsFlat = $_GET; unset($qsFlat['gruppe']);
-            $qsGroup = $qsFlat; $qsGroup['gruppe'] = 'branche';
-            $urlFlat = '?' . http_build_query($qsFlat);
+            $groupByBranche = (($_GET['gruppe'] ?? 'branche') !== 'liste'); // Standard: nach Branche gruppiert
+            $qsGroup = $_GET; unset($qsGroup['gruppe']);
+            $qsFlat = $_GET; $qsFlat['gruppe'] = 'liste';
             $urlGroup = '?' . http_build_query($qsGroup);
+            $urlFlat = '?' . http_build_query($qsFlat);
             ?>
             <div class="ansicht-toggle" style="margin-bottom:0.75rem;display:inline-flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;font-size:0.85rem">
                 <a href="<?= htmlspecialchars($urlFlat) ?>" style="padding:0.4rem 0.85rem;text-decoration:none;<?= !$groupByBranche ? 'background:var(--primary);color:#fff' : 'color:var(--text)' ?>">Liste</a>
