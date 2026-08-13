@@ -312,81 +312,107 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
         .btn-danger:hover {
             background: #b71c1c;
         }
-        .ap-row {
-            display: grid;
-            /* Two rows so fields get real width and nothing spills out of the card */
-            grid-template-columns: 100px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
-            grid-template-areas:
-                "anrede  vorname nachname funktion"
-                "telefon email   anschr   remove";
-            gap: 0.5rem 0.75rem;
-            align-items: end;
-            margin-bottom: 0.75rem;
-            padding-bottom: 0.75rem;
+        /* Ansprechpartner: ruhige Textzeilen, Doppelklick zum Bearbeiten, Autosave in die DB */
+        .ap-item {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.5rem 1rem;
+            padding: 0.6rem 0;
             border-bottom: 1px solid var(--border);
         }
-        /* Map the eight children (order fixed in markup) onto the named areas */
-        .ap-row > :nth-child(1) { grid-area: anrede; }
-        .ap-row > :nth-child(2) { grid-area: vorname; }
-        .ap-row > :nth-child(3) { grid-area: nachname; }
-        .ap-row > :nth-child(4) { grid-area: funktion; }
-        .ap-row > :nth-child(5) { grid-area: telefon; }
-        .ap-row > :nth-child(6) { grid-area: email; }
-        .ap-row > :nth-child(7) { grid-area: anschr; }
-        .ap-row > :nth-child(8) { grid-area: remove; }
-        .ap-row .ap-remove { justify-self: end; }
-        .ap-anschreiben {
-            display: flex;
-            align-items: center;
-            gap: 0.35rem;
-            padding-bottom: 0.6rem;
-        }
-        .ap-anschreiben input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-        }
-        .ap-row:last-of-type {
+        .ap-item:last-of-type {
             border-bottom: none;
         }
-        .ap-row > div {
+        .ap-item-main {
+            flex: 1 1 320px;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.15rem;
+        }
+        .ap-line {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 0.35rem;
             min-width: 0;
         }
-        .ap-row input, .ap-row select {
-            width: 100%;
-            box-sizing: border-box;
-            min-width: 0;
-            padding: 0.5rem;
-            border: 1px solid var(--border);
+        .ap-line-name { font-weight: 600; }
+        .ap-line-contact { font-size: 0.85rem; color: var(--text-light); }
+        .ap-sep { color: var(--border); }
+        /* Editable value: click-to-edit affordance, wraps instead of clipping */
+        .ap-edit {
             border-radius: 4px;
-            font-size: 0.875rem;
+            padding: 0.05rem 0.25rem;
+            cursor: text;
+            max-width: 100%;
+            overflow-wrap: anywhere;
         }
-        .ap-row label {
+        .ap-edit:hover {
+            background: var(--bg);
+            box-shadow: inset 0 0 0 1px var(--border);
+        }
+        .ap-edit:focus {
+            outline: 2px solid var(--primary);
+            outline-offset: 1px;
+        }
+        .ap-edit.ap-empty {
+            color: var(--text-light);
+            font-style: italic;
+            font-weight: 400;
+        }
+        .ap-inline-input {
+            font: inherit;
+            padding: 0.15rem 0.3rem;
+            border: 1px solid var(--primary);
+            border-radius: 4px;
+            box-sizing: border-box;
+            max-width: 100%;
+        }
+        .ap-anschreiben-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-size: 0.85rem;
+            color: var(--text-light);
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .ap-anschreiben-toggle input[type="checkbox"] {
+            width: 17px;
+            height: 17px;
+        }
+        .ap-status {
             font-size: 0.75rem;
             color: var(--text-light);
-            margin-bottom: 0.25rem;
-            display: block;
+            min-width: 5.5rem;
+            text-align: right;
         }
+        .ap-status.ok { color: var(--primary); }
+        .ap-status.err { color: var(--error); }
         .ap-remove {
             background: var(--error-bg);
             color: var(--error);
             border: none;
             border-radius: 4px;
-            width: 32px;
-            height: 32px;
+            width: 30px;
+            height: 30px;
             cursor: pointer;
             font-size: 1rem;
-            margin-bottom: 0.25rem;
+            flex: 0 0 auto;
         }
         .ap-remove:hover {
             background: var(--error);
             color: white;
         }
-        .ap-remove:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
+        .ap-hint {
+            color: var(--text-light);
+            font-size: 0.9rem;
+            padding: 0.5rem 0;
         }
         .btn-add-ap {
-            margin-top: 0.5rem;
+            margin-top: 0.75rem;
             padding: 0.5rem 1rem;
             font-size: 0.875rem;
             background: var(--bg);
@@ -409,16 +435,6 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
         }
         .kein-kontakt-details.visible {
             display: block;
-        }
-        @media (max-width: 900px) {
-            .ap-row {
-                grid-template-columns: 1fr 1fr;
-                grid-template-areas:
-                    "anrede   vorname"
-                    "nachname funktion"
-                    "telefon  email"
-                    "anschr   remove";
-            }
         }
     </style>
 </head>
@@ -541,91 +557,60 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                             </p>
                         </div>
 
-                        <div id="ap-container">
-                            <?php if (empty($ansprechpartner)): ?>
-                            <div class="ap-row" data-ap-row>
-                                <div>
-                                    <label>Anrede</label>
-                                    <select name="ap_anrede[]">
-                                        <option value="">–</option>
-                                        <option value="Herr">Herr</option>
-                                        <option value="Frau">Frau</option>
-                                        <option value="Divers">Divers</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label>Vorname</label>
-                                    <input type="text" name="ap_vorname[]">
-                                </div>
-                                <div>
-                                    <label>Nachname</label>
-                                    <input type="text" name="ap_nachname[]">
-                                </div>
-                                <div>
-                                    <label>Funktion</label>
-                                    <input type="text" name="ap_funktion[]">
-                                </div>
-                                <div>
-                                    <label>Telefon</label>
-                                    <input type="tel" name="ap_telefon[]">
-                                </div>
-                                <div>
-                                    <label>E-Mail</label>
-                                    <input type="email" name="ap_email[]">
-                                </div>
-                                <div class="ap-anschreiben">
-                                    <input type="hidden" name="ap_im_anschreiben[]" value="1">
-                                    <input type="checkbox" checked title="Ins Anschreiben aufnehmen"
-                                           onchange="this.previousElementSibling.value = this.checked ? '1' : '0'">
-                                    <label style="margin:0;">Anschreiben</label>
-                                </div>
-                                <button type="button" class="ap-remove" onclick="removeApRow(this)" disabled title="Löschen">×</button>
-                            </div>
-                            <?php else: ?>
-                                <?php foreach ($ansprechpartner as $i => $ap): ?>
-                                <div class="ap-row" data-ap-row>
-                                    <div>
-                                        <label>Anrede</label>
-                                        <select name="ap_anrede[]">
-                                            <option value="">–</option>
-                                            <option value="Herr" <?= $ap['anrede'] === 'Herr' ? 'selected' : '' ?>>Herr</option>
-                                            <option value="Frau" <?= $ap['anrede'] === 'Frau' ? 'selected' : '' ?>>Frau</option>
-                                            <option value="Divers" <?= $ap['anrede'] === 'Divers' ? 'selected' : '' ?>>Divers</option>
-                                        </select>
+                        <?php
+                        /**
+                         * Render one inline-editable value span for an Ansprechpartner.
+                         * The raw value lives in data-value; the autosave endpoint reads it.
+                         */
+                        function apEditSpan(string $field, string $value, string $placeholder, string $extraClass = ''): string {
+                            $empty = ($value === '');
+                            $cls = 'ap-edit' . ($extraClass !== '' ? ' ' . $extraClass : '') . ($empty ? ' ap-empty' : '');
+                            $display = $empty ? $placeholder : $value;
+                            return '<span class="' . $cls . '" data-field="' . htmlspecialchars($field) . '"'
+                                . ' data-value="' . htmlspecialchars($value) . '"'
+                                . ' data-placeholder="' . htmlspecialchars($placeholder) . '"'
+                                . ' tabindex="0" title="Doppelklick zum Bearbeiten">' . htmlspecialchars($display) . '</span>';
+                        }
+                        ?>
+                        <?php if (!$isEdit): ?>
+                        <p class="ap-hint">
+                            Ansprechpartner kannst du hinzufügen, sobald der Sponsor angelegt ist —
+                            <strong>bitte erst oben „Speichern"</strong>. Danach landest du direkt wieder
+                            in dieser Maske und pflegst die Kontakte per Doppelklick (jede Änderung wird
+                            sofort gespeichert).
+                        </p>
+                        <?php else: ?>
+                        <div id="ap-container"
+                             data-sponsor-id="<?= (int) $sponsorId ?>"
+                             data-csrf="<?= htmlspecialchars($csrfToken) ?>">
+                            <?php foreach ($ansprechpartner as $ap): ?>
+                                <?php $imAnschreiben = (int) ($ap['im_anschreiben'] ?? 1) === 1; ?>
+                                <div class="ap-item" data-ap-id="<?= (int) $ap['id'] ?>">
+                                    <div class="ap-item-main">
+                                        <div class="ap-line ap-line-name">
+                                            <?= apEditSpan('anrede', (string) ($ap['anrede'] ?? ''), 'Anrede', 'ap-anrede') ?>
+                                            <?= apEditSpan('vorname', (string) ($ap['vorname'] ?? ''), 'Vorname') ?>
+                                            <?= apEditSpan('nachname', (string) ($ap['nachname'] ?? ''), 'Nachname') ?>
+                                            <span class="ap-sep">·</span>
+                                            <?= apEditSpan('funktion', (string) ($ap['funktion'] ?? ''), 'Funktion') ?>
+                                        </div>
+                                        <div class="ap-line ap-line-contact">
+                                            <?= apEditSpan('telefon', (string) ($ap['telefon'] ?? ''), 'Telefon') ?>
+                                            <span class="ap-sep">·</span>
+                                            <?= apEditSpan('email', (string) ($ap['email'] ?? ''), 'E-Mail') ?>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <label>Vorname</label>
-                                        <input type="text" name="ap_vorname[]" value="<?= htmlspecialchars($ap['vorname']) ?>">
-                                    </div>
-                                    <div>
-                                        <label>Nachname</label>
-                                        <input type="text" name="ap_nachname[]" value="<?= htmlspecialchars($ap['nachname']) ?>">
-                                    </div>
-                                    <div>
-                                        <label>Funktion</label>
-                                        <input type="text" name="ap_funktion[]" value="<?= htmlspecialchars($ap['funktion']) ?>">
-                                    </div>
-                                    <div>
-                                        <label>Telefon</label>
-                                        <input type="tel" name="ap_telefon[]" value="<?= htmlspecialchars($ap['telefon'] ?? '') ?>">
-                                    </div>
-                                    <div>
-                                        <label>E-Mail</label>
-                                        <input type="email" name="ap_email[]" value="<?= htmlspecialchars($ap['email']) ?>">
-                                    </div>
-                                    <?php $imAnschreiben = (int) ($ap['im_anschreiben'] ?? 1) === 1; ?>
-                                    <div class="ap-anschreiben">
-                                        <input type="hidden" name="ap_im_anschreiben[]" value="<?= $imAnschreiben ? '1' : '0' ?>">
-                                        <input type="checkbox" <?= $imAnschreiben ? 'checked' : '' ?> title="Ins Anschreiben aufnehmen"
-                                               onchange="this.previousElementSibling.value = this.checked ? '1' : '0'">
-                                        <label style="margin:0;">Anschreiben</label>
-                                    </div>
-                                    <button type="button" class="ap-remove" onclick="removeApRow(this)" <?= count($ansprechpartner) <= 1 ? 'disabled' : '' ?> title="Löschen">×</button>
+                                    <label class="ap-anschreiben-toggle" title="Ins Anschreiben aufnehmen">
+                                        <input type="checkbox" data-field="im_anschreiben" <?= $imAnschreiben ? 'checked' : '' ?>>
+                                        <span>Anschreiben</span>
+                                    </label>
+                                    <span class="ap-status" aria-live="polite"></span>
+                                    <button type="button" class="ap-remove" title="Ansprechpartner löschen">×</button>
                                 </div>
-                                <?php endforeach; ?>
-                            <?php endif; ?>
+                            <?php endforeach; ?>
                         </div>
-                        <button type="button" class="btn-add-ap" onclick="addApRow()">+ Weiteren Ansprechpartner hinzufügen</button>
+                        <button type="button" class="btn-add-ap" onclick="addApRow()">+ Ansprechpartner hinzufügen</button>
+                        <?php endif; ?>
                     </div>
 
                     <div class="form-card">
@@ -1037,65 +1022,208 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
     </div>
 
     <script>
-    function addApRow() {
+    // ---- Ansprechpartner: Inline-Edit mit Autosave -------------------------
+    (function () {
         var container = document.getElementById('ap-container');
-        var template = `
-            <div class="ap-row" data-ap-row>
-                <div>
-                    <label>Anrede</label>
-                    <select name="ap_anrede[]">
-                        <option value="">–</option>
-                        <option value="Herr">Herr</option>
-                        <option value="Frau">Frau</option>
-                        <option value="Divers">Divers</option>
-                    </select>
-                </div>
-                <div>
-                    <label>Vorname</label>
-                    <input type="text" name="ap_vorname[]">
-                </div>
-                <div>
-                    <label>Nachname</label>
-                    <input type="text" name="ap_nachname[]">
-                </div>
-                <div>
-                    <label>Funktion</label>
-                    <input type="text" name="ap_funktion[]">
-                </div>
-                <div>
-                    <label>Telefon</label>
-                    <input type="tel" name="ap_telefon[]">
-                </div>
-                <div>
-                    <label>E-Mail</label>
-                    <input type="email" name="ap_email[]">
-                </div>
-                <div class="ap-anschreiben">
-                    <input type="hidden" name="ap_im_anschreiben[]" value="1">
-                    <input type="checkbox" checked title="Ins Anschreiben aufnehmen"
-                           onchange="this.previousElementSibling.value = this.checked ? '1' : '0'">
-                    <label style="margin:0;">Anschreiben</label>
-                </div>
-                <button type="button" class="ap-remove" onclick="removeApRow(this)" title="Löschen">×</button>
-            </div>
-        `;
-        container.insertAdjacentHTML('beforeend', template);
-        updateRemoveButtons();
-    }
+        if (!container) return; // Anlegen-Modus: kein Container, nichts zu tun
 
-    function removeApRow(btn) {
-        var row = btn.closest('[data-ap-row]');
-        row.remove();
-        updateRemoveButtons();
-    }
+        var SPONSOR_ID = container.dataset.sponsorId;
+        var CSRF = container.dataset.csrf;
+        var TEXT_FIELDS = ['vorname', 'nachname', 'funktion', 'telefon', 'email'];
+        var ANREDE_OPTIONS = ['', 'Herr', 'Frau', 'Divers'];
 
-    function updateRemoveButtons() {
-        var rows = document.querySelectorAll('[data-ap-row]');
-        rows.forEach(function(row) {
-            var btn = row.querySelector('.ap-remove');
-            btn.disabled = rows.length <= 1;
+        function setStatus(item, text, kind) {
+            var el = item.querySelector('.ap-status');
+            if (!el) return;
+            el.textContent = text || '';
+            el.className = 'ap-status' + (kind ? ' ' + kind : '');
+        }
+
+        function valueOf(item, field) {
+            var el = item.querySelector('.ap-edit[data-field="' + field + '"]');
+            return el ? (el.dataset.value || '') : '';
+        }
+
+        function rowIsEmpty(item) {
+            var vals = item.querySelectorAll('.ap-edit');
+            for (var i = 0; i < vals.length; i++) {
+                if ((vals[i].dataset.value || '').trim() !== '') return false;
+            }
+            return true;
+        }
+
+        function saveRow(item) {
+            // Neue, noch komplett leere Zeile nicht anlegen
+            if ((item.dataset.apId || '0') === '0' && rowIsEmpty(item)) return;
+
+            // Pro Zeile nur ein Request gleichzeitig — sonst könnte eine neue Zeile
+            // (id noch 0) doppelt eingefügt werden. Trailing-Save nach Abschluss.
+            if (item._apSaving) { item._apDirty = true; return; }
+            item._apSaving = true;
+            item._apDirty = false;
+
+            var body = new URLSearchParams();
+            body.set('action', 'save');
+            body.set('csrf_token', CSRF);
+            body.set('sponsor_id', SPONSOR_ID);
+            body.set('ap_id', item.dataset.apId || '0');
+            body.set('anrede', valueOf(item, 'anrede'));
+            TEXT_FIELDS.forEach(function (f) { body.set(f, valueOf(item, f)); });
+            var chk = item.querySelector('input[data-field="im_anschreiben"]');
+            body.set('im_anschreiben', chk && chk.checked ? '1' : '0');
+
+            setStatus(item, 'speichert…');
+            fetch('api/ansprechpartner_save.php', {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'fetch' },
+                body: body
+            }).then(function (r) { return r.json(); }).then(function (d) {
+                if (d && d.ok) {
+                    if (d.id) item.dataset.apId = d.id;
+                    setStatus(item, 'gespeichert', 'ok');
+                } else {
+                    setStatus(item, (d && d.message) || 'Fehler', 'err');
+                }
+            }).catch(function () {
+                setStatus(item, 'Netzwerkfehler', 'err');
+            }).finally(function () {
+                item._apSaving = false;
+                // Während des Requests kam eine weitere Änderung: jetzt nachziehen
+                // (id ist inzwischen gesetzt → wird ein Update, kein zweiter Insert).
+                if (item._apDirty) saveRow(item);
+            });
+        }
+
+        function applyValue(span, val) {
+            span.dataset.value = val;
+            span.textContent = val !== '' ? val : (span.dataset.placeholder || '');
+            span.classList.toggle('ap-empty', val === '');
+        }
+
+        function startEdit(span) {
+            if (span.querySelector('input, select')) return; // schon im Edit
+            var field = span.dataset.field;
+            var current = span.dataset.value || '';
+            var editor;
+            if (field === 'anrede') {
+                editor = document.createElement('select');
+                ANREDE_OPTIONS.forEach(function (o) {
+                    var opt = document.createElement('option');
+                    opt.value = o;
+                    opt.textContent = (o === '' ? '–' : o);
+                    if (o === current) opt.selected = true;
+                    editor.appendChild(opt);
+                });
+            } else {
+                editor = document.createElement('input');
+                editor.type = (field === 'email' ? 'email' : (field === 'telefon' ? 'tel' : 'text'));
+                editor.value = current;
+            }
+            editor.className = 'ap-inline-input';
+            span.textContent = '';
+            span.classList.remove('ap-empty');
+            span.appendChild(editor);
+            editor.focus();
+            if (editor.select) editor.select();
+
+            var closed = false;
+            function commit() {
+                if (closed) return;
+                closed = true;
+                var val = (editor.value || '').trim();
+                applyValue(span, val);
+                if (val !== current) saveRow(span.closest('.ap-item'));
+            }
+            function cancel() {
+                if (closed) return;
+                closed = true;
+                applyValue(span, current);
+            }
+            editor.addEventListener('blur', commit);
+            editor.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') { e.preventDefault(); editor.blur(); }
+                else if (e.key === 'Escape') { e.preventDefault(); cancel(); }
+            });
+            if (field === 'anrede') {
+                editor.addEventListener('change', function () { editor.blur(); });
+            }
+        }
+
+        // Bearbeiten per Doppelklick, Enter/F2 (Tastatur)
+        container.addEventListener('dblclick', function (e) {
+            var span = e.target.closest('.ap-edit');
+            if (span && container.contains(span)) startEdit(span);
         });
-    }
+        container.addEventListener('keydown', function (e) {
+            if (e.key !== 'Enter' && e.key !== 'F2') return;
+            var span = e.target.closest('.ap-edit');
+            if (span && !span.querySelector('input, select')) { e.preventDefault(); startEdit(span); }
+        });
+        // Anschreiben-Häkchen speichert sofort
+        container.addEventListener('change', function (e) {
+            if (e.target.matches('input[data-field="im_anschreiben"]')) {
+                saveRow(e.target.closest('.ap-item'));
+            }
+        });
+        // Löschen (mit Bestätigung)
+        container.addEventListener('click', function (e) {
+            var btn = e.target.closest('.ap-remove');
+            if (!btn) return;
+            var item = btn.closest('.ap-item');
+            if (!confirm('Diesen Ansprechpartner löschen?')) return;
+            var apId = item.dataset.apId || '0';
+            if (apId === '0') { item.remove(); return; } // war nie gespeichert
+            var body = new URLSearchParams();
+            body.set('action', 'delete');
+            body.set('csrf_token', CSRF);
+            body.set('sponsor_id', SPONSOR_ID);
+            body.set('ap_id', apId);
+            fetch('api/ansprechpartner_save.php', {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'fetch' },
+                body: body
+            }).then(function (r) { return r.json(); }).then(function (d) {
+                if (d && d.ok) { item.remove(); }
+                else { setStatus(item, (d && d.message) || 'Löschen fehlgeschlagen', 'err'); }
+            }).catch(function () { setStatus(item, 'Netzwerkfehler', 'err'); });
+        });
+
+        function span(field, placeholder, extra) {
+            var cls = 'ap-edit' + (extra ? ' ' + extra : '') + ' ap-empty';
+            return '<span class="' + cls + '" data-field="' + field + '" data-value="" data-placeholder="' +
+                placeholder + '" tabindex="0" title="Doppelklick zum Bearbeiten">' + placeholder + '</span>';
+        }
+
+        // Neue Zeile: leeres ap-item einfügen (Autosave beim ersten gefüllten Feld)
+        window.addApRow = function () {
+            var item = document.createElement('div');
+            item.className = 'ap-item';
+            item.dataset.apId = '0';
+            item.innerHTML =
+                '<div class="ap-item-main">' +
+                    '<div class="ap-line ap-line-name">' +
+                        span('anrede', 'Anrede', 'ap-anrede') +
+                        span('vorname', 'Vorname') +
+                        span('nachname', 'Nachname') +
+                        '<span class="ap-sep">·</span>' +
+                        span('funktion', 'Funktion') +
+                    '</div>' +
+                    '<div class="ap-line ap-line-contact">' +
+                        span('telefon', 'Telefon') +
+                        '<span class="ap-sep">·</span>' +
+                        span('email', 'E-Mail') +
+                    '</div>' +
+                '</div>' +
+                '<label class="ap-anschreiben-toggle" title="Ins Anschreiben aufnehmen">' +
+                    '<input type="checkbox" data-field="im_anschreiben" checked><span>Anschreiben</span>' +
+                '</label>' +
+                '<span class="ap-status" aria-live="polite"></span>' +
+                '<button type="button" class="ap-remove" title="Ansprechpartner löschen">×</button>';
+            container.appendChild(item);
+            var first = item.querySelector('.ap-edit[data-field="vorname"]');
+            if (first) startEdit(first);
+        };
+    })();
 
     function toggleKeinKontaktDetails() {
         var checkbox = document.getElementById('kein_kontakt');
@@ -1106,10 +1234,6 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
             details.classList.remove('visible');
         }
     }
-
-    document.addEventListener('DOMContentLoaded', function() {
-        updateRemoveButtons();
-    });
 
     function toggleBranchenDropdown() {
         var trigger = document.getElementById('branche-trigger');
