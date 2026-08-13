@@ -260,7 +260,7 @@ $rest = static function (array $liste): int {
             <?php if ($todos['gesamt'] === 0 && empty($todos['sponsor_aufgaben'])): ?>
                 <div class="todo-leer">
                     <strong>Nichts offen.</strong>
-                    <p class="todo-intro">Keine fälligen Wiedervorlagen, keine offenen Bestätigungen, nichts Unangeschriebenes und kein unbeantwortetes Anschreiben.</p>
+                    <p class="todo-intro">Keine fälligen Wiedervorlagen, keine offenen Bestätigungen, nichts Unangeschriebenes, keine offenen Bedingungen und kein unbeantwortetes Anschreiben.</p>
                 </div>
             <?php endif; ?>
 
@@ -286,6 +286,30 @@ $rest = static function (array $liste): int {
                 </ul>
                 <?php if ($rest($todos['bestaetigung']) > 0): ?>
                     <p class="todo-mehr">… und <?= $rest($todos['bestaetigung']) ?> weitere — <a href="bestaetigungen.php">alle öffnen</a></p>
+                <?php endif; ?>
+            </section>
+            <?php endif; ?>
+
+            <?php if (!empty($todos['bedingungen'])): ?>
+            <section class="todo-gruppe">
+                <h2>Bedingungen nicht bestätigt <span class="todo-anzahl"><?= count($todos['bedingungen']) ?></span></h2>
+                <p class="todo-was">Bestätigung ist raus, die Sponsoring-Bedingungen sind aber noch nicht gegengezeichnet. Erfassen in der Einzelmaske (wann, auf welchem Weg, Beleg im Ordner).</p>
+                <ul class="todo-liste">
+                    <?php foreach (array_slice($todos['bedingungen'], 0, TODO_LISTE_MAX) as $t): ?>
+                    <li>
+                            <span class="todo-name"><a href="sponsor_form.php?id=<?= (int) $t['id'] ?>"><?= htmlspecialchars($t['firma']) ?></a></span>
+                        <span class="todo-meta">
+                            <?= $prio($t['prioritaet']) ?>
+                            <span class="todo-alter"><?= htmlspecialchars(sponsorStatusLabel((string) $t['status'])) ?></span>
+                            <?= $alter((int) $t['tage'], 'heute', 'seit %d Tagen offen') ?>
+                        </span>
+                        <?= $kontakt($t['telefon'], $t['email']) ?>
+                        <?= $notiz($t['notizen']) ?>
+                    </li>
+                    <?php endforeach; ?>
+                </ul>
+                <?php if ($rest($todos['bedingungen']) > 0): ?>
+                    <p class="todo-mehr">… und <?= $rest($todos['bedingungen']) ?> weitere</p>
                 <?php endif; ?>
             </section>
             <?php endif; ?>
@@ -375,6 +399,26 @@ $rest = static function (array $liste): int {
                 <?php if ($rest($todos['ohne_reaktion']) > 0): ?>
                     <p class="todo-mehr">… und <?= $rest($todos['ohne_reaktion']) ?> weitere, nach Priorität und Wartezeit sortiert — <a href="sponsoren.php?status=angefragt">alle Angeschriebenen öffnen</a></p>
                 <?php endif; ?>
+            </section>
+            <?php endif; ?>
+
+            <?php if (!empty($todos['bedingungen_beleg'])): ?>
+            <section class="todo-gruppe ist-nachrichtlich">
+                <h2>Bedingungen bestätigt — Beleg fehlt <span class="todo-anzahl"><?= count($todos['bedingungen_beleg']) ?></span></h2>
+                <p class="todo-was">Inhaltlich erledigt, nur die Rückmeldung liegt nicht im Sponsor-Ordner. Zählt deshalb nicht in die Gesamtzahl.</p>
+                <ul class="todo-liste">
+                    <?php foreach (array_slice($todos['bedingungen_beleg'], 0, TODO_LISTE_MAX) as $t): ?>
+                    <li>
+                            <span class="todo-name"><a href="sponsor_form.php?id=<?= (int) $t['id'] ?>"><?= htmlspecialchars($t['firma']) ?></a></span>
+                        <span class="todo-meta">
+                            <span class="todo-alter">bestätigt am <?= htmlspecialchars(date('d.m.Y', strtotime((string) $t['bestaetigt_am']))) ?></span>
+                            <?php $weg = sponsorBedingungenWegLabel((string) ($t['bedingungen_weg'] ?? '')); ?>
+                            <?php if ($weg !== ''): ?><span class="todo-alter"><?= htmlspecialchars($weg) ?></span><?php endif; ?>
+                        </span>
+                        <span class="todo-kontakt"></span>
+                    </li>
+                    <?php endforeach; ?>
+                </ul>
             </section>
             <?php endif; ?>
 
