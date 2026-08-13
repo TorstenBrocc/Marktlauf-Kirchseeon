@@ -117,7 +117,10 @@ function todosOhneReaktion(PDO $pdo): array
           AND s.kein_kontakt = 0
           AND s.gesendet_am IS NOT NULL
           AND DATEDIFF(CURDATE(), DATE(s.gesendet_am)) >= :tage
-          AND (s.wiedervorlage IS NULL OR s.wiedervorlage > CURDATE())
+          -- Wer eine Wiedervorlage hat, ist nicht liegengeblieben, sondern terminiert:
+          -- ein Termin in der Zukunft ist bereits geplant, ein fälliger steht schon in
+          -- der Wiedervorlage-Gruppe. Beides gehört nicht zusätzlich hierher.
+          AND s.wiedervorlage IS NULL
         ORDER BY s.gesendet_am ASC, s.firma ASC
     ");
     $stmt->execute(['tage' => TODO_KEINE_REAKTION_TAGE]);
