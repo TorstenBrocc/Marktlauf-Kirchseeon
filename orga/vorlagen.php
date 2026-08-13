@@ -14,16 +14,62 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/api/_auth.php';
 require_once __DIR__ . '/../src/db.php';
+require_once __DIR__ . '/../src/social_anlaesse.php';
+require_once __DIR__ . '/../src/raceresult_client.php';
 
 $user    = getCurrentUserFromGuard();
 $isAdmin = isAdminFromGuard();
 $csrfToken = generateCsrfToken();
+$pdo     = getDbConnection();
 
 // Assets (deploybar, ueber Prod-URL geladen). Wortmarke + Wappen sind gruen -> weisse Leiste.
 $logoWortmarke = '../assets/images/marktlauf-wordmark.png';
 $logoAtsv      = '../assets/images/ATSV_Logo-750x968.png';
 $logoGemeinde  = '../assets/images/Wort-u-Bildmarke-Gemeinde.png';
 $runner        = '../assets/images/laeufer.png';
+
+// Post-Kontext (?post=&fahrplan=): Grafik wird nach dem Rendern am Post gespeichert
+$postKontext = null;
+$postId      = (int) ($_GET['post'] ?? 0);
+$fahrplanId  = (int) ($_GET['fahrplan'] ?? 0);
+if ($postId > 0) {
+    $stmt = $pdo->prepare('SELECT id, anlass_key FROM post_race_contents WHERE id = :id');
+    $stmt->execute(['id' => $postId]);
+    if ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $def = socialAnlaesse()[$row['anlass_key']] ?? null;
+        $postKontext = [
+            'id'         => (int) $row['id'],
+            'anlass_key' => (string) $row['anlass_key'],
+            'ui'         => $def ? $def['ui'] : (string) $row['anlass_key'],
+        ];
+    }
+}
+
+// Renntag-Vorlage: Vorbefuellung aus RaceResult (Fallback Mock, wie Orchestrator)
+$rr = raceResultData($pdo);
+$rennen10 = null;
+foreach ($rr['rennen'] ?? [] as $r) {
+    if (isset($r['kategorie']) && str_contains((string) $r['kategorie'], '10')) { $rennen10 = $r; break; }
+}
+$vorlageDefault = ($postKontext && $postKontext['anlass_key'] === 'renntag') ? 'renntag' : 'anmeldung';
+
+// Repo-Logos fuer tauschbare Logo-Slots der Renntag-Vorlage (Scan wie Orchestrator)
+$repoAssets = [];
+$assetsRoot = realpath(__DIR__ . '/../assets/images');
+if ($assetsRoot !== false && is_dir($assetsRoot)) {
+    $rii = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($assetsRoot, FilesystemIterator::SKIP_DOTS)
+    );
+    foreach ($rii as $file) {
+        if (!$file->isFile()) { continue; }
+        if (!in_array(strtolower($file->getExtension()), ['png', 'jpg', 'jpeg', 'webp'], true)) { continue; }
+        $rel = ltrim(str_replace($assetsRoot, '', $file->getPathname()), '/\\');
+        $rel = str_replace('\\', '/', $rel);
+        $url = '../assets/images/' . implode('/', array_map('rawurlencode', explode('/', $rel)));
+        $repoAssets[] = ['label' => $rel, 'url' => $url];
+    }
+    usort($repoAssets, static fn ($a, $b) => strcasecmp($a['label'], $b['label']));
+}
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -124,7 +170,58 @@ $runner        = '../assets/images/laeufer.png';
             box-shadow: 0 12px 30px rgba(0,0,0,.20); width: 300px; z-index: 3; }
         .poster .qr .qh { font-family: 'Fredoka', 'Trebuchet MS', Verdana, sans-serif; font-weight: 700; font-size: 26px; color: #1f7a3a; line-height: 1.05; margin-bottom: 14px; }
         .poster .qr img { width: 220px; height: 220px; display: block; margin: 0 auto; }
+
+        /* ============================================================
+           Vorlage "Renntag-Ergebnis" — CI-Port der Share-Card (Poppins/
+           Fredoka, Gold, Hero-Verlauf; Farben aus den DS-Tokens)
+           ============================================================ */
+        .sc-card {
+            width: 1080px; height: 1350px;
+            background: var(--color-primary-dark, #007230);
+            display: flex; flex-direction: column; justify-content: space-between;
+            padding: 80px; box-sizing: border-box;
+            font-family: 'Poppins', -apple-system, sans-serif;
+            color: #ffffff; position: relative; overflow: hidden;
+        }
+        .sc-card .sc-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+        .sc-card .sc-overlay { position: absolute; inset: 0; z-index: 1; }
+        .sc-card > *:not(.sc-bg):not(.sc-overlay) { position: relative; z-index: 2; }
+        .sc-card .sc-logos { display: flex; flex-wrap: wrap; gap: 40px; align-items: center; margin-bottom: 24px; }
+        .sc-card .sc-logos img { height: 96px; width: auto; max-width: 340px; object-fit: contain; }
+        .sc-card .sc-event { display: flex; align-items: center; gap: 14px; font-size: 24px; font-weight: 600;
+            letter-spacing: 0.16em; text-transform: uppercase; color: #fff8dd; margin-bottom: 20px; }
+        .sc-card .sc-event::before { content: ''; width: 44px; height: 4px; border-radius: 2px;
+            background: var(--color-accent-yellow, #f4b81e); flex-shrink: 0; }
+        .sc-card .sc-headline { font-family: 'Fredoka', 'Trebuchet MS', sans-serif; font-size: 84px;
+            font-weight: 700; line-height: 0.95; letter-spacing: -0.01em;
+            text-shadow: 0 8px 28px rgba(20,60,30,0.3); }
+        .sc-card .sc-metrics { display: flex; flex-direction: column; gap: 36px; }
+        .sc-card .sc-metric-row { display: flex; gap: 60px; }
+        .sc-card .sc-metric { display: flex; flex-direction: column; }
+        .sc-card .sc-metric-label { font-size: 21px; font-weight: 600; letter-spacing: 0.12em;
+            text-transform: uppercase; opacity: 0.8; margin-bottom: 8px; }
+        .sc-card .sc-metric-value { font-family: 'Fredoka', 'Trebuchet MS', sans-serif; font-size: 52px;
+            font-weight: 700; line-height: 1; color: var(--color-accent-yellow, #f4b81e); }
+        .sc-card .sc-metric-sub { font-size: 26px; font-weight: 500; opacity: 0.9; margin-top: 6px; }
+        .sc-card .sc-highlight { font-size: 26px; font-weight: 500; background: rgba(255,255,255,0.18);
+            border: 1.5px solid rgba(255,255,255,0.55); border-radius: 16px; padding: 24px 32px; line-height: 1.4; }
+        .sc-card .sc-footer { display: flex; justify-content: space-between; align-items: flex-end; gap: 40px; }
+        .sc-card .sc-footer-text { display: flex; flex-direction: column; gap: 6px; }
+        .sc-card .sc-url { font-size: 22px; font-weight: 500; opacity: 0.75; }
+        .sc-card .sc-wordmark { font-family: 'Fredoka', 'Trebuchet MS', sans-serif; font-size: 34px;
+            font-weight: 600; letter-spacing: 0.5px; }
+        .sc-card .sc-qr { display: flex; flex-direction: column; align-items: center; gap: 10px; flex: 0 0 auto; }
+        .sc-card .sc-qr img { width: 200px; height: 200px; background: #fff; padding: 14px; border-radius: 16px; box-sizing: border-box; display: block; }
+        .sc-card .sc-qr-label { font-family: 'Fredoka', 'Trebuchet MS', sans-serif; font-size: 24px; font-weight: 600; text-align: center; }
+        .vt-chips { display: flex; gap: 0.4rem; flex-wrap: wrap; margin: 0.5rem 0; }
+        .vt-chip { display: inline-flex; align-items: center; gap: 0.35rem; background: var(--bg);
+            border: 1px solid var(--border); border-radius: 12px; padding: 0.15rem 0.2rem 0.15rem 0.6rem; font-size: 0.78rem; }
+        .vt-chip button { border: none; background: none; cursor: pointer; color: #b91c1c; font-size: 0.9rem; line-height: 1; padding: 0 0.3rem; }
+        .vt-kontext { background: #eef7f0; border: 1px solid #bfe3c8; border-radius: 8px;
+            padding: 0.6rem 0.9rem; font-size: 0.88rem; margin-bottom: 1rem; }
+        .vt-kontext a { color: var(--primary-dark); }
     </style>
+    <link rel="stylesheet" href="../design-system/tokens/colors.css?v=<?= @filemtime(__DIR__ . '/../design-system/tokens/colors.css') ?>">
 </head>
 <body>
 <?php $activeNav = 'vorlagen'; require __DIR__ . '/_sidebar.php'; ?>
@@ -134,9 +231,17 @@ $runner        = '../assets/images/laeufer.png';
                 <h1>Grafik-Vorlagen</h1>
             </header>
 
+            <?php if ($postKontext): ?>
+            <div class="vt-kontext">
+                Grafik für Post: <strong><?= htmlspecialchars($postKontext['ui']) ?></strong> —
+                nach dem Erzeugen unten „Für Post übernehmen" klicken.
+                <a href="social_post.php?fahrplan=<?= (int) $fahrplanId ?>">← zurück zum Post</a>
+            </div>
+            <?php endif; ?>
             <p class="vt-hint" style="margin-bottom:1rem;max-width:760px;">
                 Fertige Vorlage befuellen &amp; als Bild exportieren &mdash; ohne Design-Kenntnisse.
-                Erste Vorlage: <strong>&bdquo;Anmeldung geoeffnet&ldquo;</strong> (Instagram Portrait 1080&times;1350).
+                Vorlagen: <strong>&bdquo;Anmeldung geoeffnet&ldquo;</strong> (Portrait 1080&times;1350) und
+                <strong>&bdquo;Renntag-Ergebnis&ldquo;</strong> (Formate waehlbar).
                 Fuer freie Plakate bleibt der <a href="poster_generator.php">Plakat-Generator</a>.
             </p>
 
@@ -144,6 +249,14 @@ $runner        = '../assets/images/laeufer.png';
                 <!-- ============ Steuerung ============ -->
                 <div class="vt-panel">
                     <h2>1 &middot; Vorlage befuellen</h2>
+
+                    <div class="vt-field">
+                        <label for="vt-vorlage">Vorlage</label>
+                        <select id="vt-vorlage">
+                            <option value="anmeldung" <?= $vorlageDefault === 'anmeldung' ? 'selected' : '' ?>>Anmeldung geöffnet (Portrait)</option>
+                            <option value="renntag" <?= $vorlageDefault === 'renntag' ? 'selected' : '' ?>>Renntag-Ergebnis (Formate wählbar)</option>
+                        </select>
+                    </div>
 
                     <div class="vt-field">
                         <label>Hintergrund</label>
@@ -174,6 +287,7 @@ $runner        = '../assets/images/laeufer.png';
                         </div>
                     </div>
 
+                    <div id="vt-felder-anmeldung">
                     <h3>Kopf</h3>
                     <div class="vt-field">
                         <label for="vt-headline">Schlagzeile</label>
@@ -212,6 +326,53 @@ $runner        = '../assets/images/laeufer.png';
                         <label for="vt-ort">Ort</label>
                         <input type="text" id="vt-ort" maxlength="60" value="JEK, Westring 6, Kirchseeon">
                     </div>
+                    </div><!-- /vt-felder-anmeldung -->
+
+                    <div id="vt-felder-renntag" style="display:none">
+                    <h3>Format</h3>
+                    <div class="vt-field">
+                        <select id="vt-rt-format">
+                            <option value="portrait">Portrait 1080×1350 (Feed)</option>
+                            <option value="grid34">Instagram-Grid 1080×1440 (3:4)</option>
+                            <option value="square">Quadratisch 1080×1080</option>
+                            <option value="story">Story 1080×1920</option>
+                        </select>
+                    </div>
+                    <h3>Kopf</h3>
+                    <div class="vt-field">
+                        <label for="vt-rt-event">Kopfzeile (Event · Datum)</label>
+                        <input type="text" id="vt-rt-event" maxlength="70" value="<?= htmlspecialchars(($rr['event']['name'] ?? 'Marktlauf Kirchseeon') . ' · ' . ($rr['event']['datum'] ?? '')) ?>">
+                    </div>
+                    <div class="vt-field">
+                        <label for="vt-rt-headline">Schlagzeile</label>
+                        <input type="text" id="vt-rt-headline" maxlength="40" value="Danke &amp; Glückwunsch!">
+                    </div>
+                    <h3>Ergebnisse (aus RaceResult vorbefuellt)</h3>
+                    <div class="vt-field vt-two">
+                        <input type="text" id="vt-rt-s10" maxlength="40" value="<?= htmlspecialchars($rennen10['sieger']['name'] ?? '') ?>" aria-label="Sieger 10 km">
+                        <input type="text" id="vt-rt-s10z" maxlength="20" value="<?= htmlspecialchars($rennen10['sieger']['zeit'] ?? '') ?>" aria-label="Zeit Sieger">
+                    </div>
+                    <div class="vt-field vt-two">
+                        <input type="text" id="vt-rt-si10" maxlength="40" value="<?= htmlspecialchars($rennen10['siegerin']['name'] ?? '') ?>" aria-label="Siegerin 10 km">
+                        <input type="text" id="vt-rt-si10z" maxlength="20" value="<?= htmlspecialchars($rennen10['siegerin']['zeit'] ?? '') ?>" aria-label="Zeit Siegerin">
+                    </div>
+                    <div class="vt-field vt-two">
+                        <input type="text" id="vt-rt-tn" maxlength="10" value="<?= htmlspecialchars((string) ($rr['gesamt']['teilnehmer'] ?? '')) ?>" aria-label="Teilnehmer">
+                        <input type="text" id="vt-rt-finisher" maxlength="10" value="<?= htmlspecialchars((string) ($rr['gesamt']['finisher'] ?? '')) ?>" aria-label="Finisher">
+                    </div>
+                    <span class="vt-hint">Links Sieger/Teilnehmer, rechts Zeit/Finisher.</span>
+                    <div class="vt-field" style="margin-top:0.85rem">
+                        <label for="vt-rt-highlight">Highlight (optional)</label>
+                        <input type="text" id="vt-rt-highlight" maxlength="120" value="<?= htmlspecialchars((string) ($rr['highlight'] ?? '')) ?>">
+                    </div>
+                    <h3>Logos (tauschbar)</h3>
+                    <div class="vt-row">
+                        <button type="button" class="btn btn-secondary" id="vt-logo-add">Logo hinzufügen</button>
+                        <button type="button" class="btn btn-secondary" id="vt-logo-reset">nur ATSV</button>
+                    </div>
+                    <div class="vt-chips" id="vt-logo-chips"></div>
+                    <div class="vt-photo-picker" id="vt-logo-picker"></div>
+                    </div><!-- /vt-felder-renntag -->
 
                     <h3>QR-Code (optional)</h3>
                     <div class="vt-field">
@@ -227,6 +388,9 @@ $runner        = '../assets/images/laeufer.png';
                     <div class="vt-actions">
                         <button type="button" class="btn btn-primary" id="vt-render">Grafik erzeugen</button>
                         <button type="button" class="btn btn-secondary" id="vt-download" style="display:none;">PNG herunterladen</button>
+                        <?php if ($postKontext): ?>
+                        <button type="button" class="btn btn-primary" id="vt-uebernehmen" style="display:none;">Für Post übernehmen</button>
+                        <?php endif; ?>
                     </div>
                     <div class="vt-error" id="vt-error"></div>
                 </div>
@@ -285,6 +449,54 @@ $runner        = '../assets/images/laeufer.png';
                     </div>
                 </div>
             </div>
+
+            <!-- Off-screen Render-Buehne: Vorlage "Renntag-Ergebnis" -->
+            <div class="vt-stage" aria-hidden="true">
+                <div class="sc-card" id="vt-card2">
+                    <img class="sc-bg" id="rt-bg" alt="" style="display:none">
+                    <div class="sc-overlay" id="rt-overlay"></div>
+                    <div>
+                        <div class="sc-logos" id="rt-logos"></div>
+                        <div class="sc-event" id="rt-event"></div>
+                        <div class="sc-headline" id="rt-headline"></div>
+                    </div>
+                    <div class="sc-metrics">
+                        <div class="sc-metric-row">
+                            <div class="sc-metric">
+                                <span class="sc-metric-label">Sieger 10 km</span>
+                                <span class="sc-metric-value" id="rt-s10">–</span>
+                                <span class="sc-metric-sub" id="rt-s10z"></span>
+                            </div>
+                            <div class="sc-metric">
+                                <span class="sc-metric-label">Siegerin 10 km</span>
+                                <span class="sc-metric-value" id="rt-si10">–</span>
+                                <span class="sc-metric-sub" id="rt-si10z"></span>
+                            </div>
+                        </div>
+                        <div class="sc-metric-row">
+                            <div class="sc-metric">
+                                <span class="sc-metric-label">Teilnehmer</span>
+                                <span class="sc-metric-value" id="rt-tn">–</span>
+                            </div>
+                            <div class="sc-metric">
+                                <span class="sc-metric-label">Finisher</span>
+                                <span class="sc-metric-value" id="rt-finisher">–</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="sc-highlight" id="rt-highlight"></div>
+                    <div class="sc-footer">
+                        <div class="sc-footer-text">
+                            <span class="sc-wordmark">ATSV Kirchseeon</span>
+                            <span class="sc-url">atsv-kirchseeon-marktlauf.de</span>
+                        </div>
+                        <div class="sc-qr" id="rt-qr" style="display:none">
+                            <img id="rt-qr-img" alt="">
+                            <span class="sc-qr-label" id="rt-qr-label"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
     <script src="../assets/js/snapdom.js"></script>
@@ -292,9 +504,50 @@ $runner        = '../assets/images/laeufer.png';
     <script>
     (function() {
         const $ = id => document.getElementById(id);
-        const card = $('vt-card');
+        const card  = $('vt-card');
+        const card2 = $('vt-card2');
         let lastDataUrl = null;
         let selectedPhotoUrl = '';
+
+        const csrf        = <?= json_encode($csrfToken) ?>;
+        const postKontext = <?= json_encode($postKontext) ?>;
+        const fahrplanId  = <?= (int) $fahrplanId ?>;
+        const repoAssets  = <?= json_encode($repoAssets, JSON_UNESCAPED_UNICODE) ?>;
+        const DEFAULT_LOGO = '<?= htmlspecialchars($logoAtsv) ?>';
+        const RT_FORMATS = {
+            portrait: { w: 1080, h: 1350, label: 'Portrait 1080×1350' },
+            grid34:   { w: 1080, h: 1440, label: 'Instagram-Grid 1080×1440' },
+            square:   { w: 1080, h: 1080, label: 'Quadratisch 1080×1080' },
+            story:    { w: 1080, h: 1920, label: 'Story 1080×1920' },
+        };
+        let selectedLogos = [{ url: DEFAULT_LOGO, label: 'ATSV-Logo' }];
+
+        function aktiveVorlage() { return $('vt-vorlage').value; }
+        function vorlageWechsel() {
+            const rt = aktiveVorlage() === 'renntag';
+            $('vt-felder-anmeldung').style.display = rt ? 'none' : 'block';
+            $('vt-felder-renntag').style.display   = rt ? 'block' : 'none';
+        }
+        $('vt-vorlage').addEventListener('change', vorlageWechsel);
+        vorlageWechsel();
+
+        // Farben aus den DS-Tokens (colors.css) — eine Quelle, kein Drift
+        function cssVar(name, fallback) {
+            const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+            return v || fallback;
+        }
+        function hexToRgba(hex, a) {
+            const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex.trim());
+            if (!m) return 'rgba(0,86,42,' + a + ')';
+            return 'rgba(' + parseInt(m[1],16) + ',' + parseInt(m[2],16) + ',' + parseInt(m[3],16) + ',' + a + ')';
+        }
+        function heroOverlay() {
+            const gold = cssVar('--color-accent-yellow', '#f4b81e');
+            const teal = cssVar('--color-teal', '#0e6f88');
+            return 'radial-gradient(620px 620px at 108% -8%, ' + hexToRgba(gold, 0.55) + ', ' + hexToRgba(gold, 0) + ' 68%), '
+                 + 'radial-gradient(640px 640px at -10% 112%, ' + hexToRgba(teal, 0.55) + ', ' + hexToRgba(teal, 0) + ' 66%), '
+                 + cssVar('--gradient-hero', 'linear-gradient(128deg, #12a877 0%, #5cbd45 50%, #bcd531 100%)');
+        }
 
         document.querySelectorAll('input[name="bgmode"]').forEach(r => {
             r.addEventListener('change', () => { $('vt-photo-block').style.display = $('bg-photo').checked ? 'block' : 'none'; });
@@ -350,10 +603,10 @@ $runner        = '../assets/images/laeufer.png';
             if (usePhoto) { $('vt-bg').src = selectedPhotoUrl; } else { $('vt-bg').removeAttribute('src'); }
         }
 
-        // --- QR erzeugen (self-hosted qrcode.js) ---
-        function applyQr() {
+        // --- QR erzeugen (self-hosted qrcode.js) — je Vorlage eigenes Ziel ---
+        function applyQr(wrapId, imgId, labelId, anzeige) {
             const url = $('vt-qr-url').value.trim();
-            const wrap = $('c-qr'), img = $('c-qr-img');
+            const wrap = $(wrapId), img = $(imgId);
             if (!url || typeof qrcode !== 'function') { wrap.style.display = 'none'; return; }
             try {
                 const qr = qrcode(0, 'M'); qr.addData(url); qr.make();
@@ -364,9 +617,82 @@ $runner        = '../assets/images/laeufer.png';
                 ctx.fillStyle = '#000';
                 for (let r = 0; r < count; r++) for (let c = 0; c < count; c++) if (qr.isDark(r, c)) ctx.fillRect((c + quiet) * cell, (r + quiet) * cell, cell, cell);
                 img.src = cv.toDataURL('image/png');
-                $('c-qr-label').textContent = $('vt-qr-label').value.trim() || 'Jetzt scannen & anmelden!';
-                wrap.style.display = 'block';
+                $(labelId).textContent = $('vt-qr-label').value.trim() || 'Jetzt scannen & anmelden!';
+                wrap.style.display = anzeige;
             } catch (e) { wrap.style.display = 'none'; }
+        }
+
+        // --- Logo-Slots der Renntag-Vorlage (tauschbar, Repo-Assets) ---
+        function renderLogoChips() {
+            const box = $('vt-logo-chips');
+            box.innerHTML = '';
+            selectedLogos.forEach((l, i) => {
+                const c = document.createElement('span'); c.className = 'vt-chip';
+                const t = document.createElement('span'); t.textContent = l.label; c.appendChild(t);
+                const x = document.createElement('button'); x.type = 'button'; x.textContent = '✕';
+                x.addEventListener('click', () => { selectedLogos.splice(i, 1); renderLogoChips(); });
+                c.appendChild(x);
+                box.appendChild(c);
+            });
+        }
+        $('vt-logo-add').addEventListener('click', () => {
+            const panel = $('vt-logo-picker');
+            if (panel.style.display === 'flex') { panel.style.display = 'none'; return; }
+            panel.innerHTML = ''; panel.style.display = 'flex';
+            repoAssets.forEach(asset => {
+                const t = document.createElement('div'); t.className = 'vt-thumb';
+                const im = document.createElement('img'); im.src = asset.url; im.alt = '';
+                const nm = document.createElement('span'); nm.textContent = asset.label;
+                t.appendChild(im); t.appendChild(nm);
+                t.addEventListener('click', () => {
+                    if (!selectedLogos.some(l => l.url === asset.url)) {
+                        selectedLogos.push({ url: asset.url, label: asset.label });
+                        renderLogoChips();
+                    }
+                });
+                panel.appendChild(t);
+            });
+        });
+        $('vt-logo-reset').addEventListener('click', () => {
+            selectedLogos = [{ url: DEFAULT_LOGO, label: 'ATSV-Logo' }];
+            renderLogoChips();
+        });
+        renderLogoChips();
+
+        // --- Renntag-Karte aus den Eingaben befuellen ---
+        function fillCard2(fmt) {
+            card2.style.width  = fmt.w + 'px';
+            card2.style.height = fmt.h + 'px';
+            $('rt-event').textContent    = $('vt-rt-event').value.trim();
+            $('rt-headline').textContent = $('vt-rt-headline').value.trim();
+            $('rt-s10').textContent      = $('vt-rt-s10').value.trim() || '–';
+            $('rt-s10z').textContent     = $('vt-rt-s10z').value.trim();
+            $('rt-si10').textContent     = $('vt-rt-si10').value.trim() || '–';
+            $('rt-si10z').textContent    = $('vt-rt-si10z').value.trim();
+            $('rt-tn').textContent       = $('vt-rt-tn').value.trim() || '–';
+            $('rt-finisher').textContent = $('vt-rt-finisher').value.trim() || '–';
+            const hl = $('vt-rt-highlight').value.trim();
+            $('rt-highlight').textContent = hl;
+            $('rt-highlight').style.display = hl ? 'block' : 'none';
+
+            const box = $('rt-logos');
+            box.innerHTML = '';
+            selectedLogos.forEach(l => {
+                const im = document.createElement('img'); im.src = l.url; im.alt = '';
+                box.appendChild(im);
+            });
+
+            const usePhoto = $('bg-photo').checked && selectedPhotoUrl;
+            const dark = cssVar('--color-primary-dark', '#007230');
+            if (usePhoto) {
+                $('rt-bg').src = selectedPhotoUrl;
+                $('rt-bg').style.display = 'block';
+                $('rt-overlay').style.background = 'linear-gradient(160deg, rgba(0,0,0,0.28) 0%, ' + hexToRgba(dark, 0.78) + ' 100%)';
+            } else {
+                $('rt-bg').removeAttribute('src');
+                $('rt-bg').style.display = 'none';
+                $('rt-overlay').style.background = heroOverlay();
+            }
         }
 
         function waitImg(img) {
@@ -381,8 +707,9 @@ $runner        = '../assets/images/laeufer.png';
             const btn = $('vt-render'), err = $('vt-error');
             btn.disabled = true; btn.textContent = '⏳ Rendert …'; err.style.display = 'none';
 
-            fillCard();
-            applyQr();
+            const renntag = aktiveVorlage() === 'renntag';
+            const fmt = renntag ? (RT_FORMATS[$('vt-rt-format').value] || RT_FORMATS.portrait)
+                                : { w: 1080, h: 1350, label: 'Portrait 1080×1350' };
 
             try {
                 await Promise.all([
@@ -392,22 +719,40 @@ $runner        = '../assets/images/laeufer.png';
                 ]);
                 await document.fonts.ready;
 
-                await Promise.all([
-                    waitImg($('vt-mark')), waitImg($('vt-atsv')), waitImg($('vt-gemeinde')),
-                    card.classList.contains('has-photo') ? waitImg($('vt-bg')) : waitImg($('vt-runner')),
-                    waitImg($('c-qr-img')),
-                ]);
+                let ziel;
+                if (renntag) {
+                    fillCard2(fmt);
+                    applyQr('rt-qr', 'rt-qr-img', 'rt-qr-label', 'flex');
+                    const logoImgs = Array.from(document.querySelectorAll('#rt-logos img'));
+                    await Promise.all([
+                        ...logoImgs.map(waitImg),
+                        card2.querySelector('.sc-bg').style.display === 'block' ? waitImg($('rt-bg')) : Promise.resolve(),
+                        waitImg($('rt-qr-img')),
+                    ]);
+                    ziel = card2;
+                } else {
+                    fillCard();
+                    applyQr('c-qr', 'c-qr-img', 'c-qr-label', 'block');
+                    await Promise.all([
+                        waitImg($('vt-mark')), waitImg($('vt-atsv')), waitImg($('vt-gemeinde')),
+                        card.classList.contains('has-photo') ? waitImg($('vt-bg')) : waitImg($('vt-runner')),
+                        waitImg($('c-qr-img')),
+                    ]);
+                    ziel = card;
+                }
 
-                const canvas = await snapdom.toCanvas(card, {
-                    width: 1080, height: 1350, scale: 1, dpr: 1,
-                    backgroundColor: '#1f7a3a', embedFonts: true,
+                const canvas = await snapdom.toCanvas(ziel, {
+                    width: fmt.w, height: fmt.h, scale: 1, dpr: 1,
+                    backgroundColor: renntag ? cssVar('--color-primary-dark', '#007230') : '#1f7a3a',
+                    embedFonts: true,
                 });
                 lastDataUrl = canvas.toDataURL('image/png');
                 $('vt-card-img').src = lastDataUrl;
                 $('vt-card-img').style.display = 'block';
                 $('vt-preview-empty').style.display = 'none';
-                $('vt-caption').textContent = 'Vorschau (Portrait 1080×1350):';
+                $('vt-caption').textContent = 'Vorschau (' + fmt.label + '):';
                 $('vt-download').style.display = 'inline-block';
+                if (postKontext) { $('vt-uebernehmen').style.display = 'inline-block'; }
             } catch (e) {
                 err.textContent = 'Render-Fehler: ' + (e && e.message ? e.message : e);
                 err.style.display = 'block';
@@ -420,9 +765,37 @@ $runner        = '../assets/images/laeufer.png';
             if (!lastDataUrl) return;
             const a = document.createElement('a');
             a.href = lastDataUrl;
-            a.download = 'marktlauf2026-anmeldung-portrait.png';
+            a.download = 'marktlauf2026-' + (aktiveVorlage() === 'renntag' ? 'renntag-' + $('vt-rt-format').value : 'anmeldung-portrait') + '.png';
             a.click();
         });
+
+        // --- Grafik am Post speichern und zurueck zum Post-Detail ---
+        if (postKontext) {
+            $('vt-uebernehmen').addEventListener('click', async () => {
+                if (!lastDataUrl) return;
+                const btn = $('vt-uebernehmen'), err = $('vt-error');
+                btn.disabled = true; btn.textContent = '⏳ Speichert …'; err.style.display = 'none';
+                try {
+                    const body = new URLSearchParams();
+                    body.set('csrf_token', csrf);
+                    body.set('post_id', postKontext.id);
+                    body.set('image_base64', lastDataUrl);
+                    const r = await fetch('api/post_bild.php', { method: 'POST', body });
+                    const d = await r.json();
+                    if (d.ok) {
+                        window.location.href = 'social_post.php?fahrplan=' + fahrplanId;
+                        return;
+                    }
+                    err.textContent = '⚠️ ' + (d.message || 'Speichern fehlgeschlagen.');
+                    err.style.display = 'block';
+                } catch (e) {
+                    err.textContent = '⚠️ Netzwerkfehler.';
+                    err.style.display = 'block';
+                } finally {
+                    btn.disabled = false; btn.textContent = 'Für Post übernehmen';
+                }
+            });
+        }
     })();
 
     (function() {
