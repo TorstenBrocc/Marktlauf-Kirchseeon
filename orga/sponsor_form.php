@@ -528,6 +528,11 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
         .status-select.ampel-gelb  { border-left-color: #f4b400; }
         .status-select.ampel-gruen { border-left-color: var(--primary); }
         .status-select.ampel-rot   { border-left-color: var(--error); }
+        /* Sponsoring-Kachel nach Status tönen (Farben wie die Übersichtszeilen) */
+        .sponsoring-card.tint-zugesagt    { background: rgba(76, 175, 80, 0.12); }
+        .sponsoring-card.tint-abgelehnt   { background: rgba(211, 47, 47, 0.12); }
+        .sponsoring-card.tint-in_klaerung { background: rgba(244, 180, 0, 0.16); }
+        .sponsoring-card.tint-angefragt   { background: rgba(43, 125, 233, 0.12); }
     </style>
 </head>
 <body>
@@ -767,7 +772,7 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                         <?php endif; ?>
                     </div>
 
-                    <div class="form-card">
+                    <div class="form-card sponsoring-card <?= in_array($sponsor['status'] ?? '', ['zugesagt', 'abgelehnt', 'in_klaerung', 'angefragt'], true) ? 'tint-' . $sponsor['status'] : '' ?>">
                         <h2>Sponsoring</h2>
 
                         <div class="form-row">
@@ -1598,8 +1603,14 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
         if (paketSel) paketSel.addEventListener('change', function () {
             swap(paketSel, paketClasses, 'paket-' + (paketSel.value || 'none'));
         });
+        var tintClasses = ['tint-zugesagt', 'tint-abgelehnt', 'tint-in_klaerung', 'tint-angefragt'];
+        var tintStatuses = ['zugesagt', 'abgelehnt', 'in_klaerung', 'angefragt'];
+        var sponsoringCard = document.querySelector('.sponsoring-card');
         if (statusSel) statusSel.addEventListener('change', function () {
             swap(statusSel, ampelClasses, 'ampel-' + (STATUS_AMPEL[statusSel.value] || 'grau'));
+            if (sponsoringCard) {
+                swap(sponsoringCard, tintClasses, tintStatuses.indexOf(statusSel.value) >= 0 ? 'tint-' + statusSel.value : null);
+            }
         });
     })();
 
