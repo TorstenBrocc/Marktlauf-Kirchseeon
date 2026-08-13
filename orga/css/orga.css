@@ -8,7 +8,7 @@
 
 :root {
     --primary: #009640;
-    --primary-dark: #007a34;
+    --primary-dark: #007230;
     --accent: #ff6b35;
     --text: #333;
     --text-light: #666;
@@ -29,6 +29,41 @@
     --shadow-lg: 0 15px 25px -3px rgba(0, 0, 0, 0.15);
     /* Kachel-Schatten etwas deutlicher als --shadow-md */
     --shadow-card: 0 10px 22px -4px rgba(0, 0, 0, 0.2);
+    /* ---- P1 Token-Ebene (Scope §8): geschlossene Skalen. Werte benennen den
+       gemessenen Ist-Zustand der Seiten; das Ummappen der Seiten folgt in P2. ---- */
+    /* Abgetöntes Link-Grün — Ziel-Look-Vorlage (intern/CLAUDE.md §UI-Kachel-Pattern) */
+    --link: #007230;
+    /* Signal-Skala: Text- + Flächenfarbe je Stufe (ok / warnung / kritisch).
+       --success/--error bleiben als Alt-Aliase bis zur Seiten-Migration (P2). */
+    --signal-ok: #065f46;
+    --signal-ok-bg: #d1fae5;
+    --signal-warn: #856404;
+    --signal-warn-bg: #fff3cd;
+    --signal-crit: #b91c1c;
+    --signal-crit-bg: #fdecea;
+    /* Abstands-Skala */
+    --sp-1: 0.25rem;
+    --sp-2: 0.5rem;
+    --sp-3: 0.75rem;
+    --sp-4: 1rem;
+    --sp-5: 1.25rem;
+    --sp-6: 1.5rem;
+    /* Typo-Skala (Admin-Dichte; xs = Tabellen-Kopf in Kapitälchen) */
+    --fs-xs: 0.72rem;
+    --fs-sm: 0.8rem;
+    --fs-md: 0.85rem;
+    --fs-base: 0.9rem;
+    --fs-lg: 0.95rem;
+    --fs-xl: 1rem;
+    /* Radius-Stufen — Namen deckungsgleich mit design-system/tokens.php;
+       --radius (5px) bleibt als Alt-Alias bis P2. */
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 8px;
+    --radius-xl: 12px;
+    --radius-pill: 999px;
+    /* Control-Höhe — eine Quelle für gleich hohe Buttons/Inputs/Selects */
+    --control-h: calc(var(--fs-base) * 1.5 + 2 * var(--control-pad-y) + 2px);
 }
 
 * {
@@ -1038,3 +1073,17 @@ a.card-tile:hover {
 .plakat-item .anhang-abwahl { flex-shrink: 0; accent-color: var(--primary); width: 1rem; height: 1rem; cursor: pointer; margin: 0; }
 .plakat-hinweis { font-size: 0.8rem; color: var(--text); background: rgba(255,193,7,0.15); border: 1px solid rgba(255,193,7,0.55); border-radius: 6px; padding: 0.5rem 0.75rem; margin: 0.9rem 0 0.5rem; line-height: 1.5; }
 .plakat-upload-form { margin-top: 0.75rem; display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+
+/* ============================================================
+   Helfer-Draht-Bauvorlage (Ziel-Look, intern/CLAUDE.md §UI-Kachel-Pattern)
+   Kanon = orga/helfer_verzeichnis.php; zentral statt je Seite dupliziert.
+   Weiße Karte + Tabelle mit grauer Kapitälchen-Kopfzeile, dünne Trennlinien,
+   Links im abgetönten Grün (--link). Seiten-Eigenheiten bleiben lokal.
+   ============================================================ */
+.hd-card { background: var(--white); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); padding: 1.25rem; margin-bottom: 1.25rem; }
+.hd-card h2 { font-size: var(--fs-xl); margin: 0 0 0.9rem; }
+.hd-table { width: 100%; border-collapse: collapse; }
+.hd-table th, .hd-table td { padding: 0.5rem 0.6rem; text-align: left; border-bottom: 1px solid var(--border); font-size: var(--fs-base); vertical-align: top; }
+.hd-table th { background: var(--bg); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-light); font-weight: 700; }
+.hd-table a { color: var(--link); text-decoration: none; }
+.hd-table a:hover { text-decoration: underline; }

@@ -86,43 +86,39 @@ $rest = static function (array $liste): int {
     <link rel="stylesheet" href="css/orga.css?v=<?= @filemtime(__DIR__ . '/css/orga.css') ?>">
     <link rel="icon" type="image/svg+xml" href="../assets/images/logo-final.svg">
     <style>
-        /* Helfer-Draht-Look (Bau-Vorlage, intern/CLAUDE.md §UI): weiße Karte + echte
-           Tabelle mit grauer Kopfzeile. Grün abgetönt (#007230), nicht das grelle #009640.
-           Rot bleibt echten Fehlern vorbehalten (Versand-Queue). */
+        /* Basis .hd-card/.hd-table kommt zentral aus css/orga.css (Bauvorlage,
+           Links in var(--link)) — hier nur Seiten-Eigenheiten. Rot bleibt echten
+           Fehlern vorbehalten (Versand-Queue). */
         .todo-kopf { display: flex; align-items: baseline; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
-        .todo-summe { background: #007230; color: #fff; border-radius: 999px; padding: 0.15rem 0.7rem; font-size: 0.85rem; font-weight: 700; }
+        .todo-summe { background: var(--link); color: #fff; border-radius: var(--radius-pill); padding: 0.15rem 0.7rem; font-size: 0.85rem; font-weight: 700; }
         .todo-intro { color: var(--text-light); font-size: 0.85rem; margin: 0; }
 
-        .hd-card { background: var(--white); border-radius: 8px; box-shadow: var(--shadow-card); padding: 1.25rem 1.35rem; margin-bottom: 1.25rem; }
+        .hd-card { padding: 1.25rem 1.35rem; }
         .hd-card > h2 { font-size: 2rem; font-weight: 700; margin: 0 0 0.4rem; display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; color: var(--text); }
         .hd-card.ist-fehler > h2 { color: var(--error); }
         .hd-card.ist-nachrichtlich > h2 { color: var(--text-light); }
-        .hd-count { font-size: 0.72rem; font-weight: 700; color: var(--text-light); background: var(--bg); border-radius: 999px; padding: 0.05rem 0.55rem; }
+        .hd-count { font-size: 0.72rem; font-weight: 700; color: var(--text-light); background: var(--bg); border-radius: var(--radius-pill); padding: 0.05rem 0.55rem; }
         .hd-card.ist-fehler .hd-count { color: var(--error); }
         .hd-sub { font-size: 0.78rem; color: var(--text-light); margin: 0 0 0.8rem; }
-        .hd-sub a { color: #007230; }
+        .hd-sub a { color: var(--link); }
 
-        .hd-table { width: 100%; border-collapse: collapse; }
-        .hd-table th, .hd-table td { padding: 0.5rem 0.6rem; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.88rem; vertical-align: top; }
-        .hd-table th { background: var(--bg); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-light); font-weight: 700; }
         .hd-table tr:last-child td { border-bottom: none; }
-        .hd-table a { color: #007230; text-decoration: none; overflow-wrap: anywhere; }
-        .hd-table a:hover { text-decoration: underline; }
+        .hd-table a { overflow-wrap: anywhere; }
         .hd-firma { font-weight: 600; overflow-wrap: anywhere; }
         .hd-firma a { color: inherit; }
-        .hd-firma a:hover { color: #007230; }
+        .hd-firma a:hover { color: var(--link); }
         .hd-info { color: var(--text-light); font-style: italic; overflow-wrap: anywhere; }
         .hd-status { color: var(--text-light); }
         .hd-kontakt { white-space: nowrap; }
         .hd-aktion { white-space: nowrap; }
-        .hd-haken { background: none; border: 1px solid var(--border); border-radius: 999px; padding: 0.1rem 0.6rem; font: inherit; font-size: 0.78rem; color: #007230; cursor: pointer; }
-        .hd-haken:hover { border-color: #007230; background: var(--success-bg); }
-        .hd-dringend { color: #007230; font-weight: 700; }
+        .hd-haken { background: none; border: 1px solid var(--border); border-radius: var(--radius-pill); padding: 0.1rem 0.6rem; font: inherit; font-size: 0.78rem; color: var(--link); cursor: pointer; }
+        .hd-haken:hover { border-color: var(--link); background: var(--success-bg); }
+        .hd-dringend { color: var(--link); font-weight: 700; }
         .hd-tag { color: var(--text); }
-        .hd-prio { font-size: 0.66rem; font-weight: 700; text-transform: uppercase; color: #007230; border: 1px solid #007230; border-radius: 999px; padding: 0 0.35rem; white-space: nowrap; }
+        .hd-prio { font-size: 0.66rem; font-weight: 700; text-transform: uppercase; color: var(--link); border: 1px solid var(--link); border-radius: var(--radius-pill); padding: 0 0.35rem; white-space: nowrap; }
         .hd-mehr { font-size: 0.78rem; color: var(--text-light); margin: 0.7rem 0 0; }
-        .hd-mehr a { color: #007230; }
-        .todo-leer { background: var(--success-bg); border-left: 4px solid #007230; border-radius: 8px; padding: 1.25rem 1.5rem; }
+        .hd-mehr a { color: var(--link); }
+        .todo-leer { background: var(--success-bg); border-left: 4px solid var(--link); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; }
 
         /* Handy: Tabelle stapeln (kein horizontales Scrollen — vertikal ist die Leserichtung). */
         @media (max-width: 700px) {
