@@ -303,13 +303,27 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
         }
         .ap-row {
             display: grid;
-            grid-template-columns: 100px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) 90px 40px;
-            gap: 0.5rem;
+            /* Two rows so fields get real width and nothing spills out of the card */
+            grid-template-columns: 100px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+            grid-template-areas:
+                "anrede  vorname nachname funktion"
+                "telefon email   anschr   remove";
+            gap: 0.5rem 0.75rem;
             align-items: end;
             margin-bottom: 0.75rem;
             padding-bottom: 0.75rem;
             border-bottom: 1px solid var(--border);
         }
+        /* Map the eight children (order fixed in markup) onto the named areas */
+        .ap-row > :nth-child(1) { grid-area: anrede; }
+        .ap-row > :nth-child(2) { grid-area: vorname; }
+        .ap-row > :nth-child(3) { grid-area: nachname; }
+        .ap-row > :nth-child(4) { grid-area: funktion; }
+        .ap-row > :nth-child(5) { grid-area: telefon; }
+        .ap-row > :nth-child(6) { grid-area: email; }
+        .ap-row > :nth-child(7) { grid-area: anschr; }
+        .ap-row > :nth-child(8) { grid-area: remove; }
+        .ap-row .ap-remove { justify-self: end; }
         .ap-anschreiben {
             display: flex;
             align-items: center;
@@ -388,13 +402,11 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
         @media (max-width: 900px) {
             .ap-row {
                 grid-template-columns: 1fr 1fr;
-            }
-            .ap-row > div:nth-child(6) {
-                grid-column: 1 / -1;
-            }
-            .ap-row > button {
-                grid-column: 2;
-                justify-self: end;
+                grid-template-areas:
+                    "anrede   vorname"
+                    "nachname funktion"
+                    "telefon  email"
+                    "anschr   remove";
             }
         }
     </style>
