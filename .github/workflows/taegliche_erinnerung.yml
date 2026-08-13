@@ -19,17 +19,14 @@ name: Tägliche Erinnerungen
 # Hinweis: geplante Workflows starten unter Last evtl. verzögert und werden nach
 # 60 Tagen Repo-Inaktivität deaktiviert (wie beim Uptime-Check).
 
-# ZEITPLAN BEWUSST DEAKTIVIERT (TT, 2026-08-13): Erst will TT die Mail selbst sehen,
-# bevor sie an das gesamte Orga-Team geht. Bis dahin läuft der Workflow ausschließlich
-# manuell über den Actions-Tab. Zum Scharfschalten den schedule-Block unten wieder
-# einkommentieren — vorher aber die offene Frage klären, wer welche Erinnerung ab
-# welchem Zeitpunkt über welchen Kanal bekommt (intern/offene-todos-spec.md).
-#
-# on:
-#   schedule:
-#     - cron: '0 6 * * *'   # 06:00 UTC = 08:00 MESZ / 07:00 MEZ
+# Zeitplan aktiv seit 2026-08-13 (Freigabe TT nach Sichtprobe der Mail).
+# Der Digest entscheidet selbst, was er verschickt: freitags der volle Überblick,
+# an den anderen Tagen nur neu Dazugekommenes — ist nichts neu, geht keine Mail raus.
+# Der Wochentag steht als TODO_WOCHENTAG_VOLL in src/offene_todos.php.
 on:
-  workflow_dispatch:       # nur manuell im Actions-Tab auslösbar
+  schedule:
+    - cron: '0 6 * * *'   # 06:00 UTC = 08:00 MESZ / 07:00 MEZ — „früh"
+  workflow_dispatch:       # zusätzlich manuell im Actions-Tab auslösbar
 
 # Nur ein Lauf gleichzeitig — ein verzögerter Lauf soll den nächsten nicht überholen.
 concurrency:
