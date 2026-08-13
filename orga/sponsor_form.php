@@ -515,6 +515,22 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
         }
         .fe-inline-textarea { width: 100%; min-height: 4rem; }
         .fe-status { font-size: 0.72rem; margin-left: 0.15rem; }
+        /* Branche als Mehrfach-Chips (inline) */
+        .branche-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; }
+        .branche-chips .chip {
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            background: var(--bg); border: 1px solid var(--border); border-radius: 14px;
+            padding: 0.15rem 0.5rem; font-size: 0.85rem;
+        }
+        .branche-chips .chip-x {
+            border: none; background: none; cursor: pointer; color: var(--text-light);
+            font-size: 1rem; line-height: 1; padding: 0;
+        }
+        .branche-chips .chip-x:hover { color: var(--error); }
+        .branche-chips .chip-add {
+            font: inherit; font-size: 0.85rem; padding: 0.2rem 0.45rem;
+            border: 1px dashed var(--border); border-radius: 6px; background: transparent; cursor: pointer;
+        }
         /* Typ/Status wie in der Stammdatenübersicht einfärben (paket = Fläche, status = Ampel-Rand) */
         .paket-select.paket-hauptsponsor { background: linear-gradient(135deg, #ff6b35, #f7931e); color: #fff; }
         .paket-select.paket-gold { background: #ffd700; color: #333; }
@@ -615,15 +631,33 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                         </div>
                         <?php endif; ?>
 
+                        <?php
+                        $selectedBranchen = [];
+                        if (!empty($sponsor['branche'])) {
+                            $dec = json_decode($sponsor['branche'], true);
+                            $selectedBranchen = is_array($dec) ? $dec : [$sponsor['branche']];
+                        }
+                        ?>
+                        <?php if ($isEdit): ?>
+                        <div class="fe-field full">
+                            <span class="fe-label">Branche</span>
+                            <div class="branche-chips" id="branche-chips" data-all="<?= htmlspecialchars(json_encode(array_values($branchen)), ENT_QUOTES) ?>">
+                                <?php foreach ($selectedBranchen as $b): ?>
+                                    <span class="chip" data-value="<?= htmlspecialchars($b) ?>"><?= htmlspecialchars($b) ?><button type="button" class="chip-x" title="Entfernen">×</button><input type="hidden" name="branche[]" value="<?= htmlspecialchars($b) ?>"></span>
+                                <?php endforeach; ?>
+                                <select class="chip-add" aria-label="Branche hinzufügen">
+                                    <option value="">+ Branche</option>
+                                    <?php foreach ($branchen as $b): ?>
+                                        <?php if (in_array($b, $selectedBranchen, true)) { continue; } ?>
+                                        <option value="<?= htmlspecialchars($b) ?>"><?= htmlspecialchars($b) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <span class="fe-status" aria-live="polite"></span>
+                            </div>
+                        </div>
+                        <?php else: ?>
                         <div class="form-group">
                             <label>Branche <span style="font-weight:400;color:var(--text-light)">(Mehrfachauswahl)</span></label>
-                            <?php
-                            $selectedBranchen = [];
-                            if (!empty($sponsor['branche'])) {
-                                $dec = json_decode($sponsor['branche'], true);
-                                $selectedBranchen = is_array($dec) ? $dec : [$sponsor['branche']];
-                            }
-                            ?>
                             <div class="multiselect" id="branche-multiselect">
                                 <button type="button" class="multiselect-trigger" id="branche-trigger"
                                         onclick="toggleBranchenDropdown()" aria-haspopup="listbox" aria-expanded="false">
@@ -643,6 +677,7 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                                 </div>
                             </div>
                         </div>
+                        <?php endif; ?>
                     </div>
 
                     <div class="form-card">
@@ -1717,6 +1752,80 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
             if (e.key !== 'Enter' && e.key !== 'F2') return;
             var span = e.target.closest('.fe');
             if (span && !span.querySelector('input, textarea')) { e.preventDefault(); startEdit(span); }
+        });
+    })();
+
+    // ---- Einzelmaske: Branche als Mehrfach-Chips ----------------------------
+    (function () {
+        var box = document.getElementById('branche-chips');
+        if (!box) return; // nur im Bearbeiten-Modus vorhanden
+        var form = document.getElementById('sponsor-form');
+        var idField = form && form.querySelector('input[name="sponsor_id"]');
+        if (!idField) return;
+        var SPONSOR_ID = idField.value;
+        var CSRF = (form.querySelector('input[name="csrf_token"]') || {}).value || '';
+        var addSel = box.querySelector('.chip-add');
+        var statusEl = box.querySelector('.fe-status');
+        var timer;
+
+        function currentValues() {
+            return Array.prototype.map.call(box.querySelectorAll('.chip'), function (c) { return c.dataset.value; });
+        }
+        function setStatus(text, color, fade) {
+            if (!statusEl) return;
+            statusEl.textContent = text; statusEl.style.color = color;
+            if (timer) { clearTimeout(timer); timer = null; }
+            if (fade) timer = setTimeout(function () { statusEl.textContent = ''; }, 2000);
+        }
+        function rebuildAddOptions() {
+            var sel = currentValues();
+            var all = [];
+            try { all = JSON.parse(box.dataset.all || '[]'); } catch (e) { all = []; }
+            addSel.innerHTML = '';
+            var first = document.createElement('option'); first.value = ''; first.textContent = '+ Branche';
+            addSel.appendChild(first);
+            all.forEach(function (b) {
+                if (sel.indexOf(b) >= 0) return;
+                var o = document.createElement('option'); o.value = b; o.textContent = b; addSel.appendChild(o);
+            });
+        }
+        function makeChip(val) {
+            var chip = document.createElement('span');
+            chip.className = 'chip';
+            chip.dataset.value = val;
+            chip.appendChild(document.createTextNode(val));
+            var x = document.createElement('button');
+            x.type = 'button'; x.className = 'chip-x'; x.title = 'Entfernen'; x.textContent = '×';
+            var hid = document.createElement('input');
+            hid.type = 'hidden'; hid.name = 'branche[]'; hid.value = val;
+            chip.appendChild(x); chip.appendChild(hid);
+            return chip;
+        }
+        function save() {
+            var body = new URLSearchParams();
+            body.set('action', 'field_update');
+            body.set('csrf_token', CSRF);
+            body.set('sponsor_id', SPONSOR_ID);
+            body.set('field', 'branche');
+            currentValues().forEach(function (v) { body.append('value[]', v); });
+            setStatus('speichert…', 'var(--text-light)', false);
+            fetch('api/sponsor_crud.php', { method: 'POST', headers: { 'X-Requested-With': 'fetch' }, body: body })
+                .then(function (r) { return r.json(); })
+                .then(function (d) { setStatus(d && d.ok ? 'gespeichert' : ((d && d.message) || 'Fehler'), d && d.ok ? '#007230' : '#c0392b', d && d.ok); })
+                .catch(function () { setStatus('Netzwerkfehler', '#c0392b', false); });
+        }
+        box.addEventListener('click', function (e) {
+            var x = e.target.closest('.chip-x');
+            if (!x) return;
+            x.closest('.chip').remove();
+            rebuildAddOptions(); save();
+        });
+        addSel.addEventListener('change', function () {
+            var v = addSel.value;
+            if (!v) return;
+            if (currentValues().indexOf(v) < 0) { box.insertBefore(makeChip(v), addSel); }
+            addSel.value = '';
+            rebuildAddOptions(); save();
         });
     })();
 
