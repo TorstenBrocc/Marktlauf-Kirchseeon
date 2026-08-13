@@ -40,9 +40,11 @@ if (!in_array($filter, ['offen', 'meine', 'erledigt', 'alle'], true)) {
 }
 
 $eintraege = $pdo->query(
-    'SELECT f.*, u.name AS zustaendig_name
+    'SELECT f.*, u.name AS zustaendig_name,
+            p.llm_text_social AS post_social, p.geprueft_am AS post_geprueft, p.status AS post_status
        FROM social_fahrplan f
   LEFT JOIN users u ON u.id = f.zustaendig_user_id
+  LEFT JOIN post_race_contents p ON p.id = f.post_id
    ORDER BY (f.zieldatum IS NULL), f.zieldatum, f.id'
 )->fetchAll(PDO::FETCH_ASSOC);
 
@@ -203,6 +205,12 @@ foreach ($eintraege as $e) {
                     } else {
                         $badge = ['offen', 'offen'];
                     }
+                    // Post-Zustand anhaengen (ab Schnitt 2 verknuepft)
+                    if ($e['status'] !== 'erledigt' && $e['post_id']) {
+                        if ($e['post_status'] === 'approved') { $badge[1] .= ' · freigegeben'; }
+                        elseif ($e['post_geprueft'])          { $badge[1] .= ' · geprüft'; }
+                        elseif (trim((string) $e['post_social']) !== '') { $badge[1] .= ' · Entwurf'; }
+                    }
                 ?>
                 <tr>
                     <td><?= $e['zieldatum'] ? htmlspecialchars(date('d.m.Y', strtotime($e['zieldatum']))) : '—' ?></td>
@@ -215,7 +223,7 @@ foreach ($eintraege as $e) {
                     <td><?= $e['zustaendig_name'] ? htmlspecialchars($e['zustaendig_name']) : '<span style="color:var(--text-light)">—</span>' ?></td>
                     <td><span class="fp-badge <?= $badge[0] ?>"><?= $badge[1] ?></span></td>
                     <td class="fp-actions">
-                        <a href="social_orchestrator.php?anlass=<?= rawurlencode($e['anlass_key']) ?>">öffnen</a>
+                        <a href="social_post.php?fahrplan=<?= (int) $e['id'] ?>">öffnen</a>
                         <button type="button" class="fp-edit"
                             data-id="<?= (int) $e['id'] ?>"
                             data-anlass="<?= htmlspecialchars($e['anlass_key']) ?>"

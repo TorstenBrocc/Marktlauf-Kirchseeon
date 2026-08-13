@@ -18,11 +18,13 @@ function socialAnlaesse(): array
     return [
         // Standard
         'allgemein' => [
+            'presse' => true,
             'gruppe' => 'Standard',
             'ui'     => 'Allgemeiner Beitrag',
             'prompt' => 'Allgemeiner Vereins-/Event-Beitrag',
         ],
         'ankuendigung' => [
+            'presse' => true,
             'gruppe' => 'Standard',
             'ui'     => 'Ankündigung des Events',
             'prompt' => 'Ankündigung des Events (Vorschau, Aufruf zur Anmeldung)',
@@ -43,6 +45,7 @@ function socialAnlaesse(): array
             'prompt' => 'Helfer-Aufruf / Dank an Helfer',
         ],
         'renntag' => [
+            'presse' => true,
             'gruppe' => 'Standard',
             'ui'     => 'Renntag-Nachbericht (nutzt RaceResult-Daten)',
             'prompt' => 'Nachbericht zum Renntag (Ergebnisdaten siehe unten)',
@@ -94,6 +97,7 @@ function socialAnlaesse(): array
             'prompt' => 'Trainingstipp für die Vorbereitung auf den Lauf',
         ],
         'energie_umwelttag' => [
+            'presse' => true,
             'gruppe' => 'Contentplan 2026',
             'ui'     => 'Energie- & Umwelttag',
             'prompt' => 'Energie- & Umwelttag — Hinweis auf den Aktionstag rund um das Event',
@@ -114,6 +118,7 @@ function socialAnlaesse(): array
             'prompt' => 'Eventtag — Live-Beitrag vom Renntag selbst',
         ],
         'danke' => [
+            'presse' => true,
             'gruppe' => 'Contentplan 2026',
             'ui'     => 'Danke / Rückblick',
             'prompt' => 'Danke & Rückblick nach dem Event',
