@@ -248,46 +248,6 @@ if ($action === 'kein_kontakt_remove' && !$isAdmin) {
     exit;
 }
 
-function saveAnsprechpartner(PDO $pdo, int $sponsorId, array $post): void {
-    $pdo->prepare('DELETE FROM sponsor_ansprechpartner WHERE sponsor_id = :id')->execute(['id' => $sponsorId]);
-
-    $anreden = $post['ap_anrede'] ?? [];
-    $vornamen = $post['ap_vorname'] ?? [];
-    $nachnamen = $post['ap_nachname'] ?? [];
-    $funktionen = $post['ap_funktion'] ?? [];
-    $telefone = $post['ap_telefon'] ?? [];
-    $emails = $post['ap_email'] ?? [];
-    $imAnschreiben = $post['ap_im_anschreiben'] ?? [];
-
-    if (!is_array($anreden)) return;
-
-    $stmt = $pdo->prepare('
-        INSERT INTO sponsor_ansprechpartner (sponsor_id, anrede, vorname, nachname, funktion, telefon, email, im_anschreiben)
-        VALUES (:sponsor_id, :anrede, :vorname, :nachname, :funktion, :telefon, :email, :im_anschreiben)
-    ');
-
-    for ($i = 0; $i < count($anreden); $i++) {
-        $vorname = trim($vornamen[$i] ?? '');
-        $nachname = trim($nachnamen[$i] ?? '');
-        $email = trim($emails[$i] ?? '');
-
-        if ($vorname === '' && $nachname === '' && $email === '') {
-            continue;
-        }
-
-        $stmt->execute([
-            'sponsor_id'     => $sponsorId,
-            'anrede'         => $anreden[$i] ?? '',
-            'vorname'        => $vorname,
-            'nachname'       => $nachname,
-            'funktion'       => trim($funktionen[$i] ?? ''),
-            'telefon'        => trim($telefone[$i] ?? ''),
-            'email'          => $email,
-            'im_anschreiben' => ($imAnschreiben[$i] ?? '1') === '0' ? 0 : 1,
-        ]);
-    }
-}
-
 try {
     $pdo = getDbConnection();
 
@@ -347,16 +307,12 @@ try {
 
             $newSponsorId = (int) $pdo->lastInsertId();
 
-            try {
-                saveAnsprechpartner($pdo, $newSponsorId, $_POST);
-            } catch (PDOException $e) {
-                // Table may not exist yet
-            }
-
             sponsorApplyRotation($pdo, $newSponsorId, $firma);
 
-            $_SESSION['flash_success'] = 'Sponsor angelegt.';
-            header('Location: ../sponsoren.php');
+            // Weiter in die Bearbeiten-Maske: Ansprechpartner werden dort per Autosave
+            // gepflegt (brauchen die frisch vergebene Sponsor-id).
+            $_SESSION['flash_success'] = 'Sponsor angelegt. Ansprechpartner kannst du jetzt hinzufügen.';
+            header('Location: ../sponsor_form.php?id=' . $newSponsorId);
             exit;
 
         case 'update':
@@ -476,12 +432,6 @@ try {
                 'bedingungen_beleg'  => isset($_POST['bedingungen_beleg']) ? 1 : 0,
                 'id'                 => $sponsorId,
             ]);
-
-            try {
-                saveAnsprechpartner($pdo, $sponsorId, $_POST);
-            } catch (PDOException $e) {
-                // Table may not exist yet
-            }
 
             sponsorApplyRotation($pdo, $sponsorId, $firma);
 
