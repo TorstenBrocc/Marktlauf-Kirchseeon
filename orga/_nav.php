@@ -298,6 +298,24 @@ return [
         },
     ],
     [
+        'key'     => 'social_fahrplan',
+        'label'   => 'Social-Fahrplan',
+        'section' => 'KOMMUNIKATION',
+        'href'    => 'social_fahrplan.php',
+        'kpi'     => static function (PDO $pdo): array {
+            $offen = (int) $pdo->query("SELECT COUNT(*) FROM social_fahrplan WHERE status = 'offen'")->fetchColumn();
+            $ueberfaellig = (int) $pdo->query(
+                "SELECT COUNT(*) FROM social_fahrplan
+                  WHERE status = 'offen' AND zieldatum IS NOT NULL AND zieldatum < CURDATE()"
+            )->fetchColumn();
+            return [
+                'value'  => (string) $offen,
+                'label'  => $ueberfaellig > 0 ? "offen · {$ueberfaellig} überfällig" : 'offen',
+                'signal' => $ueberfaellig > 0 ? 'attention' : 'ok',
+            ];
+        },
+    ],
+    [
         'key'     => 'social_media',
         'label'   => 'Social-Media',
         'section' => 'KOMMUNIKATION',
