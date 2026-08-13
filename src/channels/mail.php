@@ -12,6 +12,7 @@ require_once __DIR__ . '/../sponsor_brief.php';
 require_once __DIR__ . '/../sponsor_anhaenge.php';
 require_once __DIR__ . '/../verein_brief.php';
 require_once __DIR__ . '/../google_drive.php';
+require_once __DIR__ . '/../offene_todos.php';  // todoTelefonHref() für den ToDo-Digest
 
 /**
  * BCC-Adresse für ausgehende Mails: bei JEDEM Versand bekommt info@ eine
@@ -550,7 +551,7 @@ function sendOffeneTodosDigest(string $to, string $name, int $gesamt, array $gru
 
             $tel = trim((string) ($z['telefon'] ?? ''));
             $telZelle = $tel === '' ? '' :
-                '<a href="tel:' . $e(preg_replace('/\s+/', '', $tel) ?? $tel) . '"'
+                '<a href="tel:' . $e(todoTelefonHref($tel)) . '"'
                 . ' style="color:#009640;text-decoration:none;white-space:nowrap">' . $e($tel) . '</a>';
 
             $html .= '<tr>'
