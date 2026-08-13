@@ -50,6 +50,13 @@ if (empty($channels)) {
     echo json_encode(['error' => 'Bitte mindestens einen Kanal (Instagram/Facebook) wählen.']);
     exit;
 }
+// Instagram ist bildpflichtig (Make-Modul "Create a photo post") — ohne Bild würde der
+// Post auf der Make-Seite still fehlschlagen. Lieber hier klar blocken.
+if (in_array('instagram', $channels, true) && trim($imageB64) === '') {
+    http_response_code(422);
+    echo json_encode(['error' => 'Instagram benötigt ein Bild. Bitte in Modul 3 eine Grafik erzeugen oder Instagram abwählen.']);
+    exit;
+}
 
 $imageUrl = '';
 

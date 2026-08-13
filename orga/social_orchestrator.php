@@ -1126,6 +1126,7 @@ document.getElementById('so-dispatch-btn').addEventListener('click', async (e) =
     document.getElementById('so-dispatch-msg').style.display = 'none';
     if (!text)            { showDispatchMsg('Bitte zuerst einen Social-Text generieren/eingeben (Modul 2).', false); return; }
     if (!channels.length) { showDispatchMsg('Bitte mindestens einen Kanal (Instagram/Facebook) wählen.', false); return; }
+    if (channels.includes('instagram') && !lastCardDataUrl) { showDispatchMsg('Instagram braucht ein Bild — bitte in Modul 3 eine Grafik erzeugen (oder Instagram abwählen).', false); return; }
 
     btn.disabled = true;
     spinner.style.display = 'inline';
