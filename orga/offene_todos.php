@@ -27,6 +27,16 @@ $csrfToken = generateCsrfToken();
 $pdo = getDbConnection();
 $todos = offeneTodosAlle($pdo);
 
+// Auswahllisten fürs Schnellanlegen in „Aufgaben am Sponsor".
+$sponsorenListe = [];
+$orgaUsers = [];
+try {
+    $sponsorenListe = $pdo->query('SELECT id, firma FROM sponsors ORDER BY firma')->fetchAll();
+    $orgaUsers = orgaUserListe($pdo);
+} catch (PDOException $e) {
+    logError('ToDo-Seite: Auswahllisten nicht ladbar: ' . $e->getMessage());
+}
+
 $flashSuccess = $_SESSION['flash_success'] ?? '';
 $flashError = $_SESSION['flash_error'] ?? '';
 unset($_SESSION['flash_success'], $_SESSION['flash_error']);
@@ -113,6 +123,16 @@ $rest = static function (array $liste): int {
         .hd-aktion { white-space: nowrap; }
         .hd-haken { background: none; border: 1px solid var(--border); border-radius: var(--radius-pill); padding: 0.1rem 0.6rem; font: inherit; font-size: 0.78rem; color: var(--link); cursor: pointer; }
         .hd-haken:hover { border-color: var(--link); background: var(--success-bg); }
+
+        /* Schnellanlegen: eine Zeile, auf dem Handy gestapelt. Sponsor + Aufgabe tragen
+           die Zeile, Frist und Wer bleiben schmal — sie sind freiwillig. */
+        .todo-neu { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: flex-end; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+        .todo-neu-feld { display: flex; flex-direction: column; gap: 0.2rem; flex: 1 1 10rem; min-width: 0; }
+        .todo-neu-breit { flex: 2 1 16rem; }
+        .todo-neu label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-light); font-weight: 700; }
+        .todo-neu-opt { text-transform: none; letter-spacing: 0; font-weight: 400; font-style: italic; }
+        .todo-neu input, .todo-neu select { width: 100%; padding: 0.35rem 0.5rem; border: 1px solid var(--border); border-radius: var(--radius-sm); font: inherit; font-size: 0.88rem; background: var(--white); color: var(--text); }
+        .hd-haken-add { padding: 0.4rem 0.9rem; font-weight: 700; }
         .hd-dringend { color: var(--link); font-weight: 700; }
         .hd-tag { color: var(--text); }
         .hd-prio { font-size: 0.66rem; font-weight: 700; text-transform: uppercase; color: var(--link); border: 1px solid var(--link); border-radius: var(--radius-pill); padding: 0 0.35rem; white-space: nowrap; }
@@ -300,23 +320,36 @@ $rest = static function (array $liste): int {
             </section>
             <?php endif; ?>
 
-            <?php if (!empty($todos['sponsor_aufgaben'])): ?>
+            <?php /* Immer sichtbar, auch wenn leer — sonst gäbe es keinen Ort zum Anlegen. */ ?>
             <section class="hd-card ist-nachrichtlich">
                 <h2>Aufgaben am Sponsor <span class="hd-count"><?= count($todos['sponsor_aufgaben']) ?></span></h2>
-                <p class="hd-sub">Ohne Termin — diese Aufgaben haben kein Fälligkeitsdatum, deshalb nur nachrichtlich und nicht in der Gesamtzahl.</p>
+                <p class="hd-sub">Frist und Verantwortliche sind freiwillig — ohne Frist bleibt eine Aufgabe nachrichtlich und zählt nicht in die Gesamtzahl. Mit Frist erinnert die tägliche Mail daran.</p>
+                <?php if (!empty($todos['sponsor_aufgaben'])): ?>
                 <table class="hd-table">
-                    <thead><tr><th>Firma</th><th>Aufgabe</th><th>Erledigt</th></tr></thead>
+                    <thead><tr><th>Firma</th><th>Aufgabe</th><th>Frist</th><th>Erledigt</th></tr></thead>
                     <tbody>
                     <?php foreach (array_slice($todos['sponsor_aufgaben'], 0, TODO_LISTE_MAX) as $t): ?>
                         <tr>
                             <td class="hd-firma"><?= $firma((int) $t['sponsor_id'], (string) $t['firma']) ?></td>
-                            <td class="hd-info"><?= htmlspecialchars($t['titel']) ?></td>
+                            <td class="hd-info">
+                                <?= htmlspecialchars($t['titel']) ?>
+                                <?php if (!empty($t['verantwortlich_name'])): ?>
+                                    <span class="hd-tag">— <?= htmlspecialchars($t['verantwortlich_name']) ?></span>
+                                <?php endif; ?>
+                            </td>
+                            <td class="hd-status">
+                                <?php if (empty($t['faellig_am'])): ?>
+                                    <span>ohne Frist</span>
+                                <?php else: ?>
+                                    <?= $alter((int) $t['tage_ueberfaellig'], 'heute fällig', 'seit %d Tagen überfällig') ?>
+                                <?php endif; ?>
+                            </td>
                             <td class="hd-aktion">
-                                <form method="post" action="api/aufgabe_crud.php">
+                                <form method="post" action="api/aufgabe_orga_crud.php">
                                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                                    <input type="hidden" name="action" value="toggle_erledigt">
+                                    <input type="hidden" name="action" value="set_status">
+                                    <input type="hidden" name="status" value="erledigt">
                                     <input type="hidden" name="aufgabe_id" value="<?= (int) $t['id'] ?>">
-                                    <input type="hidden" name="sponsor_id" value="<?= (int) $t['sponsor_id'] ?>">
                                     <input type="hidden" name="zurueck" value="todos">
                                     <button type="submit" class="hd-haken" title="Als erledigt markieren">○ abhaken</button>
                                 </form>
@@ -328,8 +361,46 @@ $rest = static function (array $liste): int {
                 <?php if ($rest($todos['sponsor_aufgaben']) > 0): ?>
                     <p class="hd-mehr">… und <?= $rest($todos['sponsor_aufgaben']) ?> weitere</p>
                 <?php endif; ?>
+                <?php else: ?>
+                <p class="hd-sub">Keine offenen Aufgaben.</p>
+                <?php endif; ?>
+
+                <form method="post" action="api/aufgabe_orga_crud.php" class="todo-neu">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                    <input type="hidden" name="action" value="create">
+                    <input type="hidden" name="kontext_typ" value="sponsor">
+                    <input type="hidden" name="zurueck" value="todos">
+                    <div class="todo-neu-feld">
+                        <label for="neu_sponsor">Sponsor</label>
+                        <?php /* Datalist statt <select>: bei 100+ Firmen ist Tippen schneller als Scrollen. */ ?>
+                        <input list="sponsoren_liste" id="neu_sponsor" name="sponsor_firma" required
+                               placeholder="Firma tippen…" autocomplete="off">
+                        <datalist id="sponsoren_liste">
+                            <?php foreach ($sponsorenListe as $s): ?>
+                                <option value="<?= htmlspecialchars($s['firma']) ?>"></option>
+                            <?php endforeach; ?>
+                        </datalist>
+                    </div>
+                    <div class="todo-neu-feld todo-neu-breit">
+                        <label for="neu_titel">Aufgabe</label>
+                        <input type="text" id="neu_titel" name="titel" required placeholder="Was ist zu tun?">
+                    </div>
+                    <div class="todo-neu-feld">
+                        <label for="neu_faellig">Frist <span class="todo-neu-opt">optional</span></label>
+                        <input type="date" id="neu_faellig" name="faellig_am">
+                    </div>
+                    <div class="todo-neu-feld">
+                        <label for="neu_wer">Wer <span class="todo-neu-opt">optional</span></label>
+                        <select id="neu_wer" name="verantwortlich_user_id">
+                            <option value="">– offen –</option>
+                            <?php foreach ($orgaUsers as $ou): ?>
+                                <option value="<?= (int) $ou['id'] ?>"><?= htmlspecialchars($ou['name']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <button type="submit" class="hd-haken hd-haken-add">+ anlegen</button>
+                </form>
             </section>
-            <?php endif; ?>
         </main>
         </div>
 

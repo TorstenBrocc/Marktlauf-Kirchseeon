@@ -211,18 +211,30 @@ function todosOhneReaktion(PDO $pdo): array
 /**
  * Offene Aufgaben, die am Sponsor hängen.
  *
- * sponsor_aufgaben hat weder Fälligkeitsdatum noch Verantwortlichen
- * (migrations/006_sponsors.sql) — ein Termin wäre also erfunden. Gezeigt wird
- * deshalb der Titel ohne Datum, nicht in die Gesamtzahl gerechnet.
+ * Datenbasis ist seit Migration 063 die vollwertige `aufgaben`-Tabelle, gebunden über
+ * kontext_typ='sponsor'. Die frühere `sponsor_aufgaben` kannte nur Titel + erledigt —
+ * ohne Frist und Verantwortlichen fiel nie auf, wenn etwas liegen blieb.
+ *
+ * Frist und Verantwortlicher sind **optional** (TT 2026-08-13): schnell erfassen soll
+ * möglich bleiben. `hat_termin` sagt den Verbrauchern, welcher Fall vorliegt — die Mail
+ * braucht das, um terminierte von nachrichtlichen Einträgen zu unterscheiden.
+ *
+ * Die Gesamtzahl lässt diese Gruppe weiterhin außen vor (`offeneTodosAlle()`); ob
+ * terminierte Aufgaben künftig mitzählen, ist eine offene Frage an TT.
  */
 function todosSponsorAufgaben(PDO $pdo): array
 {
     $stmt = $pdo->query("
-        SELECT sa.id, sa.sponsor_id, sa.titel, s.firma
-        FROM sponsor_aufgaben sa
-        JOIN sponsors s ON s.id = sa.sponsor_id
-        WHERE sa.erledigt = 0
-        ORDER BY s.firma ASC, sa.id ASC
+        SELECT a.id, a.kontext_id AS sponsor_id, a.titel, a.notiz, a.faellig_am,
+               a.faellig_am IS NOT NULL AS hat_termin,
+               DATEDIFF(CURDATE(), a.faellig_am) AS tage_ueberfaellig,
+               s.firma, u.name AS verantwortlich_name
+        FROM aufgaben a
+        JOIN sponsors s ON s.id = a.kontext_id
+        LEFT JOIN users u ON u.id = a.verantwortlich_user_id
+        WHERE a.kontext_typ = 'sponsor'
+          AND a.status <> 'erledigt'
+        ORDER BY (a.faellig_am IS NULL), a.faellig_am ASC, s.firma ASC, a.id ASC
     ");
     return $stmt->fetchAll();
 }
