@@ -40,10 +40,13 @@ foreach ($nummeriert as $r) {
 
 // Abzurechnen: zugesagte bzw. bereits bestätigte Sponsoren mit Paket UND hinterlegtem Betrag. Ohne
 // Betrag (summe) ist ein Sponsor nicht abzurechnen und erscheint nicht — steuerbar über das
-// Betrag-Feld am Sponsor.
+// Betrag-Feld am Sponsor. Sponsoren mit vorhandener Rechnung (Entwurf/nummeriert/versendet) sind
+// ausgeblendet — der Status wechselt seit 2026-08-13 erst beim Versand auf 'abgerechnet', darf
+// hier also nicht mehr als Filter herhalten. Verwerfen löscht die Rechnungszeile → Sponsor
+// erscheint wieder.
 $abzurechnen = [];
 try {
-    $stmt = $pdo->query("SELECT id, firma, paket, summe FROM sponsors WHERE status IN ('zugesagt','bestaetigt') AND paket IS NOT NULL AND paket <> '' AND summe > 0 ORDER BY firma");
+    $stmt = $pdo->query("SELECT id, firma, paket, summe, rechnung_firma, rechnung_strasse, rechnung_plz, rechnung_ort FROM sponsors s WHERE status IN ('zugesagt','bestaetigt') AND paket IS NOT NULL AND paket <> '' AND summe > 0 AND NOT EXISTS (SELECT 1 FROM sponsor_rechnungen r WHERE r.sponsor_id = s.id) ORDER BY firma");
     $abzurechnen = $stmt->fetchAll();
 } catch (PDOException $e) {
     // ignore
@@ -66,6 +69,8 @@ $paketLabel = static function (?string $p): string {
     <link rel="icon" type="image/svg+xml" href="../assets/images/logo-final.svg">
     <style>
         .rech-intro { font-size: 0.9rem; color: var(--text-light); margin-bottom: 1.25rem; line-height: 1.5; }
+        ul.rech-intro { padding-left: 1.2rem; margin-top: 0; }
+        ul.rech-intro li { margin-bottom: 0.25rem; }
         .rech-section-title { font-size: 1.05rem; margin: 1.75rem 0 0.6rem; }
         .rech-empty { color: var(--text-light); font-size: 0.9rem; padding: 0.25rem 0 0.75rem; }
         .rech-hint { font-size: 0.78rem; color: var(--text-light); }
@@ -108,21 +113,15 @@ $paketLabel = static function (?string $p): string {
                 <div class="alert alert-error"><?= htmlspecialchars($flashError) ?></div>
             <?php endif; ?>
 
-            <p class="rech-intro">
-                Ablauf: unten <strong>Abzurechnen</strong> stehen alle zugesagten und bestätigten
-                Sponsoren mit Paket und hinterlegtem Betrag — hier <strong>Entwurf erzeugen</strong>.
-                Sponsoren ohne Betrag
-                erscheinen nicht; den Betrag pflegst du am Sponsor. Die Rechnung wandert dann als Entwurf nach
-                <strong>Wartet auf Nummer</strong>: Dort trägt der Kassier die fortlaufende
-                Rechnungs-<strong>Nummer</strong> ein (nur die laufende Zahl, das Jahr <?= date('Y') ?>
-                ergänzt das System automatisch). Nach der Nummernvergabe kann die Rechnung unter
-                <strong>Nummeriert</strong> an den Sponsor gesendet werden — der Kassier steht
-                dabei in Kopie. Den Text dieser Mail pflegst du unter
-                <a href="rechnungsmail.php">Rechnungs-Begleitmail</a>. Beim Erzeugen wird der
-                Sponsor automatisch auf Status „Abgerechnet" gesetzt. Solange eine Rechnung
-                <strong>nicht versendet</strong> ist, lässt sie sich <strong>verwerfen</strong> — eine
-                schon vergebene Nummer wird dabei wieder frei.
-            </p>
+            <ul class="rech-intro">
+                <li>Betrag am Sponsor pflegen, dann erscheint er hier — Sponsoren ohne Betrag erscheinen nicht.</li>
+                <li>Fortlaufende Nummer von den gestellten Rechnungen ableiten, sofern nichts anderes gesagt ist
+                    (nur die laufende Zahl, das Jahr <?= date('Y') ?> ergänzt das System automatisch).</li>
+                <li>Jahreszahl wechselt automatisch — der Nummernkreis beginnt dann wieder von vorn.</li>
+                <li>Versendung geschieht mit der Vorlage aus <a href="rechnungsmail.php">Rechnungs-Begleitmail</a> —
+                    kassier@atsv-kirchseeon.de ist automatisch in Kopie (CC).</li>
+                <li>Der Sponsor wird beim Versand der Rechnung automatisch auf „Abgerechnet" gesetzt.</li>
+            </ul>
 
             <h2 class="rech-section-title">Abzurechnen<?= $abzurechnen ? ' (' . count($abzurechnen) . ')' : '' ?></h2>
             <?php if (!$abzurechnen): ?>
@@ -140,6 +139,16 @@ $paketLabel = static function (?string $p): string {
                         </thead>
                         <tbody>
                             <?php foreach ($abzurechnen as $s): ?>
+                                <?php
+                                    // Anschrift-Vorschau fürs Bestätigungs-Pop-up — gleiche Fallback-Logik
+                                    // wie rechnungSnapshotVonSponsor() (rechnung_firma vor firma).
+                                    $anFirma   = trim((string) ($s['rechnung_firma'] ?? '')) !== ''
+                                        ? trim((string) $s['rechnung_firma'])
+                                        : (string) $s['firma'];
+                                    $anStrasse = trim((string) ($s['rechnung_strasse'] ?? ''));
+                                    $anPlzOrt  = trim(trim((string) ($s['rechnung_plz'] ?? '')) . ' ' . trim((string) ($s['rechnung_ort'] ?? '')));
+                                    $anschrift = implode("\n", array_filter([$anFirma, $anStrasse, $anPlzOrt], static fn ($z) => $z !== ''));
+                                ?>
                                 <tr>
                                     <td class="rech-firma"><?= htmlspecialchars($s['firma']) ?></td>
                                     <td><?= htmlspecialchars($paketLabel($s['paket'])) ?></td>
@@ -148,7 +157,7 @@ $paketLabel = static function (?string $p): string {
                                         <div class="rech-actions">
                                             <a href="sponsor_form.php?id=<?= (int) $s['id'] ?>" class="btn btn-small btn-secondary">Sponsor öffnen</a>
                                             <form method="post" action="api/rechnung_crud.php"
-                                                  onsubmit="return confirm('Entwurf für <?= htmlspecialchars(addslashes($s['firma']), ENT_QUOTES) ?> erzeugen?');">
+                                                  onsubmit="return confirmEntwurf(<?= htmlspecialchars(json_encode((string) $s['firma']), ENT_QUOTES) ?>, <?= htmlspecialchars(json_encode($anschrift), ENT_QUOTES) ?>, <?= $anStrasse === '' ? 'true' : 'false' ?>);">
                                                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                                                 <input type="hidden" name="action" value="generate">
                                                 <input type="hidden" name="sponsor_ids[]" value="<?= (int) $s['id'] ?>">
@@ -163,7 +172,7 @@ $paketLabel = static function (?string $p): string {
                 </div>
             <?php endif; ?>
 
-            <h2 class="rech-section-title">Wartet auf Nummer<?= $entwuerfe ? ' (' . count($entwuerfe) . ')' : '' ?></h2>
+            <h2 class="rech-section-title">Rechnungsentwurf (fortlaufende RG-Nr. eintragen)<?= $entwuerfe ? ' (' . count($entwuerfe) . ')' : '' ?></h2>
             <?php if (!$entwuerfe): ?>
                 <p class="rech-empty">Keine offenen Entwürfe.</p>
             <?php else: ?>
@@ -323,6 +332,13 @@ $paketLabel = static function (?string $p): string {
         </main>
     </div>
     <script>
+    function confirmEntwurf(firma, anschrift, strasseFehlt) {
+        var msg = 'Entwurf für ' + firma + ' erzeugen?\n\nRechnungsanschrift:\n' + anschrift;
+        if (strasseFehlt) {
+            msg += '\n\n⚠️ Straße fehlt (z. B. Großkunden-PLZ) — die Rechnung wird ohne Straße erstellt.';
+        }
+        return window.confirm(msg);
+    }
     function confirmVerwerfen(form, firma, nummer) {
         var msg = nummer
             ? 'Rechnung ' + nummer + ' (' + firma + ') endgültig verwerfen?\n\n'

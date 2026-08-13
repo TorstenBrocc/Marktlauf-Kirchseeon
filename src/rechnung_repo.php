@@ -30,10 +30,11 @@ function rechnungSnapshotVonSponsor(array $sponsor, array $pakete = [], bool $is
     $plz     = trim((string) ($sponsor['rechnung_plz'] ?? ''));
     $ort     = trim((string) ($sponsor['rechnung_ort'] ?? ''));
 
-    // Pflichtprüfungen (Adresse + Betrag) sammeln
+    // Pflichtprüfungen (Adresse + Betrag) sammeln. Die Straße ist bewusst KEINE Pflicht:
+    // Großempfänger haben oft eine Großkunden-PLZ ohne Straße (z. B. „80791 München") —
+    // das Bestätigungs-Pop-up in orga/rechnungen.php weist vor dem Erzeugen darauf hin.
     $fehlt = [];
     if ($firma === '')              { $fehlt[] = 'Firma/Empfänger'; }
-    if ($strasse === '')            { $fehlt[] = 'Straße (Rechnungsanschrift)'; }
     if ($plz === '' || $ort === '') { $fehlt[] = 'PLZ/Ort (Rechnungsanschrift)'; }
 
     try {
@@ -116,13 +117,9 @@ function rechnungEntwurfErstellen(PDO $pdo, int $sponsorId, ?int $userId): array
 
     $neueId = (int) $pdo->lastInsertId();
 
-    // Sponsor als abgerechnet markieren (aber ein bereits bezahlter bleibt bezahlt).
-    try {
-        $pdo->prepare("UPDATE sponsors SET status = 'abgerechnet' WHERE id = :id AND status <> 'bezahlt'")
-            ->execute(['id' => $sponsorId]);
-    } catch (PDOException $e) {
-        // Status-ENUM evtl. noch nicht migriert -> Status unverändert lassen
-    }
+    // KEIN Statuswechsel hier (Änderung 2026-08-13): der Sponsor wird erst beim erfolgreichen
+    // VERSAND auf 'abgerechnet' gesetzt (orga/api/rechnung_versand.php). Die „Abzurechnen"-Liste
+    // blendet Sponsoren mit vorhandener Rechnung über die Rechnungstabelle aus.
 
     return [
         'id'       => $neueId,
@@ -213,9 +210,10 @@ function rechnungNummerVergeben(PDO $pdo, int $id, string $nummer, ?int $userId)
  * was genau der Sinn der Aktion ist: eine noch nicht versendete Nummer darf neu verwendet
  * werden, ein Nummernloch wäre die schlechtere Buchführung.
  *
- * Räumt vollständig auf: Protokollzeilen gehen per ON DELETE CASCADE (Migration 043) mit, und
- * der Sponsor fällt von 'abgerechnet' auf 'bestaetigt' zurück, damit er wieder unter
- * „Abzurechnen" auftaucht. 'bezahlt' bleibt unangetastet — Geld ist geflossen.
+ * Räumt vollständig auf: Protokollzeilen gehen per ON DELETE CASCADE (Migration 043) mit; mit
+ * dem Löschen der Rechnungszeile taucht der Sponsor wieder unter „Abzurechnen" auf. Ein noch
+ * 'abgerechneter' Sponsor (Altbestand vor 2026-08-13, als schon das Erzeugen den Status setzte)
+ * fällt zusätzlich auf 'bestaetigt' zurück. 'bezahlt' bleibt unangetastet — Geld ist geflossen.
  *
  * Wirft RuntimeException, wenn die Rechnung fehlt oder schon erfolgreich versendet wurde.
  * @return array{nummer:string, firma:string, status_zurueck:bool}

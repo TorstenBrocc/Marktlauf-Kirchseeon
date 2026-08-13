@@ -141,6 +141,17 @@ rechnungVersandLog(
     $ok ? null : 'PDF liegt in Drive, aber Mailversand fehlgeschlagen'
 );
 
+// Erst der erfolgreiche Versand rechnet den Sponsor ab (TT-Entscheidung 2026-08-13);
+// ein bereits bezahlter bleibt bezahlt.
+if ($ok) {
+    try {
+        $pdo->prepare("UPDATE sponsors SET status = 'abgerechnet' WHERE id = :id AND status <> 'bezahlt'")
+            ->execute(['id' => (int) $row['sponsor_id']]);
+    } catch (PDOException $e) {
+        logError('Rechnung Versand — Sponsorstatus: ' . $e->getMessage());
+    }
+}
+
 $_SESSION['flash_success'] = $ok
     ? 'Rechnung ' . $nummer . ' an ' . $empfaenger . ' gesendet (Kassier in Kopie) und in Google Drive abgelegt.'
     : '';
