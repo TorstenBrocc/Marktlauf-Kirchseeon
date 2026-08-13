@@ -12,7 +12,7 @@ name: Tägliche Erinnerungen
 #   1. aufgaben_erinnerung.php — Einzelmail an den Verantwortlichen für Aufgaben,
 #      die HEUTE fällig sind (eigene Idempotenz über erinnerung_gesendet).
 #   2. offene_todos_digest.php --modus=auto — Sponsoring-ToDos an die jeweils Zuständigen.
-#      Montags der volle Überblick, an den anderen Tagen nur, was neu dazugekommen ist;
+#      Freitags der volle Überblick, an den anderen Tagen nur, was neu dazugekommen ist;
 #      ist nichts neu, geht keine Mail raus.
 # Die beiden decken verschiedene Dinge ab (Orga-Aufgaben vs. Sponsoring) — keine Doppelmails.
 #
