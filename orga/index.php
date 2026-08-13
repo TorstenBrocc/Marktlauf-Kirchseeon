@@ -86,10 +86,16 @@ try {
     $meineStmt->execute(['user_id' => $user['id']]);
     $meineAufgaben = $meineStmt->fetchAll();
 
+    // Nur kontextlose Aufgaben: seit Migration 063 liegen auch die Sponsor-Aufgaben in
+    // dieser Tabelle, die haben aber ihre eigene Sicht (orga/offene_todos.php + Sponsor-Maske).
+    // Ohne den Filter würde diese Verwaltungsliste mit Sponsoring-Einträgen volllaufen.
+    // „Meine offenen Aufgaben" oben filtert bewusst NICHT — was mir zugewiesen ist, gehört
+    // in meine persönliche Liste, egal woran es hängt.
     $orgaStmt = $pdo->query("
         SELECT a.*, u.name AS verantwortlich_name
         FROM aufgaben a
         LEFT JOIN users u ON a.verantwortlich_user_id = u.id
+        WHERE a.kontext_typ IS NULL
         ORDER BY
             CASE a.status WHEN 'offen' THEN 1 WHEN 'in_arbeit' THEN 2 ELSE 3 END,
             a.faellig_am ASC,
@@ -97,7 +103,7 @@ try {
     ");
     $orgaAufgaben = $orgaStmt->fetchAll();
 
-    $orgaUsers = $pdo->query("SELECT id, name FROM users WHERE role IN ('admin', 'orga') AND active = 1 ORDER BY name")->fetchAll();
+    $orgaUsers = orgaUserListe($pdo);
 } catch (PDOException $e) {
     // Table may not exist yet
 }
