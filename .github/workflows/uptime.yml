@@ -1,0 +1,56 @@
+name: Uptime Check
+
+# Prüft die Erreichbarkeit der Live-Seite (B-7). Bei Fehlschlag schickt
+# GitHub automatisch eine E-Mail an den Repo-Owner (Actions-Fehler-Notification).
+# Hinweis: geplante Workflows können unter Last verzögert starten und werden
+# nach 60 Tagen Repo-Inaktivität deaktiviert.
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'   # alle 15 Minuten
+  workflow_dispatch:          # manuell auslösbar
+    inputs:
+      test_alert:
+        description: 'Absichtlich fehlschlagen (Test der Fehler-Benachrichtigung)'
+        type: boolean
+        default: false
+
+jobs:
+  check:
+    name: HTTP 200 der Kernseiten
+    runs-on: ubuntu-latest
+    steps:
+      - name: Seiten prüfen
+        run: |
+          if [ "${{ inputs.test_alert }}" = "true" ]; then
+            echo "::error::Test-Alarm — absichtlicher Fehlschlag zur Pruefung der Benachrichtigung."
+            exit 1
+          fi
+          urls=(
+            "https://atsv-kirchseeon-marktlauf.de/"
+            "https://atsv-kirchseeon-marktlauf.de/helfer-anmeldung.php"
+            "https://atsv-kirchseeon-marktlauf.de/orga/"
+          )
+          fail=0
+          for u in "${urls[@]}"; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" -m 25 -L "$u" || echo "000")
+            echo "$u -> $code"
+            if [ "$code" != "200" ]; then
+              echo "::error::$u lieferte HTTP $code (erwartet 200)"
+              fail=1
+            fi
+          done
+          exit $fail
+
+      - name: Push-Benachrichtigung bei Ausfall (ntfy)
+        if: failure()
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+        run: |
+          if [ -z "$NTFY_TOPIC" ]; then echo "kein NTFY_TOPIC gesetzt - uebersprungen"; exit 0; fi
+          curl -s \
+            -H "Title: Marktlauf-Website DOWN" \
+            -H "Priority: high" \
+            -H "Tags: rotating_light" \
+            -d "Uptime-Check fehlgeschlagen. ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            "https://ntfy.sh/$NTFY_TOPIC" >/dev/null && echo "ntfy gesendet"

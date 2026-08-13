@@ -1,0 +1,11 @@
+/* Motion — short, functional, ease. Nothing bounces. */
+:root {
+  --ease: ease; /* @kind other */
+  --ease-out: ease-out; /* @kind other */
+  --duration-fast: 0.2s; /* @kind other */
+  --duration-med: 0.3s; /* @kind other */
+  --duration-reveal: 0.65s; /* @kind other */
+  --lift-hover: translateY(-2px); /* @kind other */
+  --lift-card: translateY(-5px); /* @kind other */
+  --lift-subtle: translateY(-1px); /* @kind other */
+}

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://atsv-kirchseeon-marktlauf.de/sitemap.xml

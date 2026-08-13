@@ -1,0 +1,65 @@
+RewriteEngine On
+
+# Kanonische Domain: www -> ohne www (erzwingt zugleich https)
+RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+RewriteRule ^ https://%1%{REQUEST_URI} [L,R=301]
+
+# http -> https
+RewriteCond %{HTTPS} off
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Kanonische Startseite: /index.html -> / (vermeidet Duplicate Content)
+RewriteCond %{THE_REQUEST} \s/+index\.html[\s?] [NC]
+RewriteRule ^index\.html$ / [L,R=301]
+
+# Gzip/Deflate-Kompression fuer Text-Assets
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/javascript application/javascript application/json image/svg+xml text/xml application/xml
+</IfModule>
+
+# UTF-8 fuer Text-Dateien erzwingen (sonst rendern Umlaute in humans.txt/robots.txt
+# als Mojibake, weil text/plain ohne charset + nosniff auf Latin-1 zurueckfaellt)
+<IfModule mod_mime.c>
+  AddCharset utf-8 .txt
+</IfModule>
+
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# Browser-Caching fuer statische Assets (PageSpeed: "efficient cache policy")
+<IfModule mod_expires.c>
+  ExpiresActive On
+  # Bilder & Fonts: lange cachen (aendern sich selten; Deploy stempelt CSS/JS per ?v=)
+  ExpiresByType image/png                "access plus 1 year"
+  ExpiresByType image/jpeg               "access plus 1 year"
+  ExpiresByType image/gif                "access plus 1 year"
+  ExpiresByType image/webp               "access plus 1 year"
+  ExpiresByType image/svg+xml            "access plus 1 year"
+  ExpiresByType image/x-icon             "access plus 1 year"
+  ExpiresByType font/woff2               "access plus 1 year"
+  ExpiresByType font/woff                "access plus 1 year"
+  ExpiresByType application/font-woff    "access plus 1 year"
+  # CSS & JS: 1 Monat (Deploy haengt ?v=<sha> an -> Cache-Busting bei Aenderung)
+  ExpiresByType text/css                 "access plus 1 month"
+  ExpiresByType application/javascript   "access plus 1 month"
+  ExpiresByType text/javascript          "access plus 1 month"
+  # HTML: nicht dauerhaft cachen (Inhalte sollen aktuell bleiben)
+  ExpiresByType text/html                "access plus 0 seconds"
+</IfModule>
+
+<IfModule mod_headers.c>
+  # Passende Cache-Control-Header ergaenzend zu mod_expires
+  <FilesMatch "\.(png|jpe?g|gif|webp|svg|ico|woff2?|ttf|eot)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  <FilesMatch "\.(css|js)$">
+    Header set Cache-Control "public, max-age=2592000"
+  </FilesMatch>
+</IfModule>
+
+<FilesMatch "\.(md|sql|sqlite|log|sample|sh|ini|bak)$">
+  Require all denied
+</FilesMatch>

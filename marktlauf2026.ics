@@ -1,0 +1,21 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//ATSV Kirchseeon//Marktlauf//DE
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+UID:marktlauf-2026@atsv-kirchseeon-marktlauf.de
+DTSTAMP:20260729T192822Z
+SEQUENCE:1
+DTSTART:20260920T080000Z
+DTEND:20260920T113000Z
+SUMMARY:Marktlauf Kirchseeon 2026
+DESCRIPTION:Der Marktlauf Kirchseeon geht in die nächste Runde! Wir freuen uns auf dich. Alle Infos unter www.atsv-kirchseeon-marktlauf.de
+LOCATION:JEK\, Westring 6\, 85614 Kirchseeon
+BEGIN:VALARM
+TRIGGER:-PT60M
+ACTION:DISPLAY
+DESCRIPTION:Erinnerung Marktlauf Kirchseeon
+END:VALARM
+END:VEVENT
+END:VCALENDAR

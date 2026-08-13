@@ -1,0 +1,82 @@
+name: Registration Check
+
+# Prueft, ob die eingebetteten RaceResult-Anmeldeformulare noch funktionieren.
+# Hintergrund: Der Uptime-Check misst nur den HTTP-Status der eigenen Seiten (200).
+# Der RaceResult-Aufruf laeuft clientseitig per XHR — ein 404 dort (z. B. nach
+# Umbenennen der Registrierung im Backend) bleibt fuer den Uptime-Check unsichtbar.
+# Dieser Workflow ruft denselben Endpoint direkt auf und alarmiert bei != 200.
+#
+# Quelle der Wahrheit sind die eingebetteten Snippets selbst — rname/key/eventid
+# werden aus den Live-Dateien extrahiert, nicht hier hartkodiert. So testet der
+# Check immer exakt das, was die Website an RaceResult schickt.
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'   # alle 15 Minuten
+  workflow_dispatch:          # manuell ausloesbar
+    inputs:
+      test_alert:
+        description: 'Absichtlich fehlschlagen (Test der Fehler-Benachrichtigung)'
+        type: boolean
+        default: false
+
+jobs:
+  check:
+    name: RaceResult-Registrierungen erreichbar
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Anmeldeformulare pruefen
+        run: |
+          if [ "${{ inputs.test_alert }}" = "true" ]; then
+            echo "::error::Test-Alarm — absichtlicher Fehlschlag zur Pruefung der Benachrichtigung."
+            exit 1
+          fi
+
+          # "Anzeigename:Datei" — je Registrierung eine eingebettete Snippet-Datei.
+          forms=(
+            "Einzelanmeldung:index.html"
+            "Sammelanmeldung:anmeldung-familie.php"
+          )
+          fail=0
+          for entry in "${forms[@]}"; do
+            label="${entry%%:*}"
+            file="${entry##*:}"
+            eid=$(grep -oE 'RRReg_eventid="[^"]+"' "$file"  | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
+            name=$(grep -oE 'RRReg_name="[^"]+"' "$file"    | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
+            key=$(grep -oE 'RRReg_key="[^"]+"' "$file"      | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
+
+            if [ -z "$eid" ] || [ -z "$name" ] || [ -z "$key" ]; then
+              echo "::error::$label ($file): RRReg_-Konfiguration nicht gefunden — Snippet umgebaut?"
+              fail=1
+              continue
+            fi
+
+            code=$(curl -s -o /dev/null -w "%{http_code}" -m 25 -X POST -G \
+              --data-urlencode "eventid=$eid" \
+              --data-urlencode "rname=$name" \
+              --data-urlencode "key=$key" \
+              --data-urlencode "lang=de-de" \
+              "https://events2.raceresult.com/api/registrations/request" || echo "000")
+
+            echo "$label ($name) -> $code"
+            if [ "$code" != "200" ]; then
+              echo "::error::$label: RaceResult lieferte HTTP $code fuer \"$name\" (erwartet 200)"
+              fail=1
+            fi
+          done
+          exit $fail
+
+      - name: Push-Benachrichtigung bei Ausfall (ntfy)
+        if: failure()
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+        run: |
+          if [ -z "$NTFY_TOPIC" ]; then echo "kein NTFY_TOPIC gesetzt - uebersprungen"; exit 0; fi
+          curl -s \
+            -H "Title: ⚠️ ALARM 🚨" \
+            -H "Priority: high" \
+            -d "Anmeldung Marktlauf defekt
+          ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            "https://ntfy.sh/$NTFY_TOPIC" >/dev/null && echo "ntfy gesendet"
