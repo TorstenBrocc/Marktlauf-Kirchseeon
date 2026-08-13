@@ -506,14 +506,15 @@ try {
         /* Angeschrieben: ganze Zeile hell transparent blau (Ampel-Blau) */
         .status-angefragt-row { background: rgba(43, 125, 233, 0.12); }
         .branche-heading-row td {
-            background: var(--bg);
-            font-weight: 700;
-            font-size: 1.2rem;
-            padding: 0.85rem 0.75rem 0.55rem;
-            border-top: 3px solid var(--primary);
-            letter-spacing: 0.01em;
+            background: var(--white);
+            font-weight: 600;
+            font-size: 1.05rem;
+            padding: 0.6rem 0.75rem 0.5rem;
+            border-bottom: 2px solid var(--border);
         }
         .branche-heading-count { color: var(--text-light); font-weight: 400; font-size: 0.85rem; }
+        /* Graue Lückenzeile setzt die Branchen-Gruppen als Kacheln voneinander ab */
+        .branche-gap td { padding: 0; height: 14px; background: var(--bg); border: none; }
         .kein-kontakt-row {
             background: #f9f9f9;
         }
@@ -815,6 +816,7 @@ try {
                             ?>
                             <?php foreach ($sequence as $item): ?>
                                 <?php if (isset($item['heading'])): ?>
+                                    <?php if (!empty($headingSeen)): ?><tr class="branche-gap"><td colspan="<?= $colCount ?>"></td></tr><?php endif; $headingSeen = true; ?>
                                     <tr class="branche-heading-row"><td colspan="<?= $colCount ?>"><?= htmlspecialchars($item['heading']) ?> <span class="branche-heading-count">(<?= (int) $item['count'] ?>)</span></td></tr>
                                 <?php else: ?>
                                 <?php
