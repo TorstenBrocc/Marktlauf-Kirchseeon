@@ -69,8 +69,9 @@ $prio = static function ($p): string {
 
 /** Letzter Notiz-Stand als eigene Zeile unter dem Eintrag. */
 $notiz = static function (?string $notizen): string {
-    $stand = todoNotizStand($notizen);
-    return $stand === '' ? '' : '<span class="todo-notiz">' . htmlspecialchars($stand) . '</span>';
+    // Immer ein Element ausgeben (auch leer) — bei display:contents braucht jede Zeile
+    // dieselbe Anzahl Rasterzellen, sonst verrutschen die Spaltenkanten (wie beim Kontakt).
+    return '<span class="todo-notiz">' . htmlspecialchars(todoNotizStand($notizen)) . '</span>';
 };
 
 $rest = static function (array $liste): int {
@@ -98,7 +99,7 @@ $rest = static function (array $liste): int {
             margin-bottom: 1.25rem;
         }
         .todo-summe {
-            background: var(--primary);
+            background: #007230;
             color: #fff;
             border-radius: 999px;
             padding: 0.15rem 0.7rem;
@@ -111,31 +112,28 @@ $rest = static function (array $liste): int {
             background: var(--white);
             border-radius: 8px;
             box-shadow: var(--shadow-card);
-            padding: 0;
-            margin-bottom: 1.4rem;
-            overflow: hidden;
+            padding: 1.25rem 1.35rem;
+            margin-bottom: 1.25rem;
         }
-        /* Überschrift als eigenes Band — deutlich abgesetzt, nicht als weitere Textzeile. */
+        /* Schlichte Überschrift (Helfer-Draht-Look) — kein grüner Balken mehr. */
         .todo-gruppe > h2 {
-            font-size: 0.95rem;
+            font-size: 1rem;
             font-weight: 700;
-            letter-spacing: 0.02em;
-            margin: 0;
-            padding: 0.7rem 1.35rem;
-            background: var(--primary);
-            color: #fff;
+            margin: 0 0 0.15rem;
+            padding: 0;
+            color: var(--text);
             display: flex;
             align-items: center;
-            gap: 0.6rem;
+            gap: 0.55rem;
             flex-wrap: wrap;
         }
-        .todo-gruppe.ist-fehler > h2 { background: var(--error); }
-        .todo-gruppe.ist-nachrichtlich > h2 { background: var(--text-light); }
+        .todo-gruppe.ist-fehler > h2 { color: var(--error); }
+        .todo-gruppe.ist-nachrichtlich > h2 { color: var(--text-light); }
         .todo-anzahl {
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             font-weight: 700;
-            color: var(--primary);
-            background: #fff;
+            color: var(--text-light);
+            background: var(--bg);
             border-radius: 999px;
             padding: 0.05rem 0.55rem;
         }
@@ -144,75 +142,63 @@ $rest = static function (array $liste): int {
         .todo-was {
             font-size: 0.78rem;
             color: var(--text-light);
-            margin: 0;
-            padding: 0.6rem 1.35rem 0.2rem 1.35rem;
+            margin: 0 0 0.7rem;
+            padding: 0;
         }
 
-        /* Echtes Spaltenraster: Firma | Status/Frist | Kontakt. Die <li> selbst sind
-           display:contents, damit alle Zeilen an denselben Spaltenkanten ausgerichtet
-           sind statt jede für sich umzubrechen. */
+        /* Ausgerichtetes 4-Spalten-Raster (Helfer-Draht-Look): Firma | Info | Status/Frist | Kontakt.
+           <li> = display:contents; jede Zeile liefert genau 4 Rasterzellen an denselben Kanten. */
         .todo-liste {
             list-style: none;
             margin: 0;
-            padding: 0.4rem 1.35rem 1rem 1.35rem;
+            padding: 0;
             display: grid;
-            grid-template-columns: minmax(10rem, 2.2fr) minmax(7rem, 1fr) auto;
+            grid-template-columns: minmax(9rem, 1.6fr) minmax(11rem, 3fr) minmax(6.5rem, auto) auto;
             align-items: baseline;
-            column-gap: 1rem;
+            column-gap: 1.25rem;
         }
         .todo-liste > li { display: contents; }
-        .todo-name {
-            font-weight: 600;
-            overflow-wrap: anywhere;
-            padding: 0.4rem 0 0 0;
+        .todo-name    { grid-column: 1; font-weight: 600; overflow-wrap: anywhere; }
+        .todo-notiz   { grid-column: 2; font-size: 0.78rem; color: var(--text-light); font-style: italic; overflow-wrap: anywhere; }
+        .todo-meta    { grid-column: 3; font-size: 0.78rem; color: var(--text-light); display: flex; gap: 0.45rem; flex-wrap: wrap; align-items: baseline; }
+        .todo-kontakt { grid-column: 4; display: flex; gap: 0.35rem; flex-wrap: wrap; justify-content: flex-end; }
+        .todo-name, .todo-notiz, .todo-meta, .todo-kontakt {
+            padding: 0.5rem 0;
             border-top: 1px solid var(--border);
         }
-        .todo-meta, .todo-kontakt {
-            padding: 0.4rem 0 0 0;
-            border-top: 1px solid var(--border);
-        }
-        /* Erste Zeile ohne Trennlinie — die Überschrift trennt schon. */
+        /* Erste Zeile ohne Trennlinie. */
         .todo-liste > li:first-child .todo-name,
+        .todo-liste > li:first-child .todo-notiz,
         .todo-liste > li:first-child .todo-meta,
         .todo-liste > li:first-child .todo-kontakt { border-top: none; }
         .todo-name a { color: inherit; text-decoration: none; }
-        .todo-name a:hover { text-decoration: underline; color: var(--primary); }
-        .todo-meta { font-size: 0.78rem; color: var(--text-light); display: flex; gap: 0.45rem; flex-wrap: wrap; align-items: baseline; }
+        .todo-name a:hover { text-decoration: underline; color: #007230; }
         .todo-alter { white-space: nowrap; }
-        .todo-alter.dringend { color: var(--primary-dark); font-weight: 700; }
+        .todo-alter.dringend { color: #007230; font-weight: 700; }
         .todo-prio {
             font-size: 0.66rem;
             font-weight: 700;
             text-transform: uppercase;
-            color: var(--primary);
-            border: 1px solid var(--primary);
+            color: #007230;
+            border: 1px solid #007230;
             border-radius: 999px;
             padding: 0 0.35rem;
             white-space: nowrap;
         }
-        .todo-notiz {
-            grid-column: 1 / -1;
-            font-size: 0.76rem;
-            color: var(--text-light);
-            font-style: italic;
-            overflow-wrap: anywhere;
-            padding: 0.1rem 0 0.15rem 0;
-        }
-        .todo-kontakt { display: flex; gap: 0.35rem; flex-wrap: wrap; justify-content: flex-end; }
         .todo-kontakt a {
             font-size: 0.72rem;
             padding: 0.1rem 0.5rem;
-            border: 1px solid var(--primary);
+            border: 1px solid #007230;
             border-radius: 999px;
-            color: var(--primary);
+            color: #007230;
             text-decoration: none;
             white-space: nowrap;
         }
-        .todo-kontakt a:hover { background: var(--primary); color: #fff; }
-        .todo-mehr { font-size: 0.78rem; color: var(--text-light); margin: 0; padding: 0 1.35rem 1rem 1.35rem; }
+        .todo-kontakt a:hover { background: #007230; color: #fff; }
+        .todo-mehr { font-size: 0.78rem; color: var(--text-light); margin: 0.7rem 0 0; padding: 0; }
         .todo-leer {
             background: var(--success-bg);
-            border-left: 4px solid var(--primary);
+            border-left: 4px solid #007230;
             border-radius: 8px;
             padding: 1.25rem 1.5rem;
         }
@@ -221,15 +207,16 @@ $rest = static function (array $liste): int {
            horizontales Scrollen (vertikal ist die Leserichtung). */
         /* Handy: Raster auflösen, alles untereinander — vertikal ist die Leserichtung. */
         @media (max-width: 700px) {
+            .todo-gruppe { padding: 1.25rem 1rem; }
             .todo-liste {
                 grid-template-columns: 1fr;
-                padding: 0.4rem 1rem 1rem 1rem;
+                padding: 0;
                 row-gap: 0;
             }
-            .todo-gruppe > h2, .todo-was, .todo-mehr { padding-left: 1rem; padding-right: 1rem; }
             .todo-liste > li { display: block; padding: 0.55rem 0; border-top: 1px solid var(--border); }
             .todo-liste > li:first-child { border-top: none; }
-            .todo-name, .todo-meta, .todo-kontakt { border-top: none; padding-top: 0.15rem; }
+            .todo-name, .todo-notiz, .todo-meta, .todo-kontakt { border-top: none; padding-top: 0.15rem; }
+            .todo-notiz:empty { display: none; }
             .todo-kontakt { justify-content: flex-start; }
             .todo-kontakt a { padding: 0.28rem 0.65rem; font-size: 0.78rem; }
         }
