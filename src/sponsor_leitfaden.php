@@ -41,6 +41,18 @@ function sponsorLeitfadenPath(string $name): string
 }
 
 /**
+ * Anzeige-/Download-Name aus dem gespeicherten Dateinamen.
+ * Gespeichert wird "<sponsorId>__<originalname>"; hier fällt das ID-Präfix wieder weg,
+ * damit der echte hochgeladene Dateiname sichtbar ist.
+ */
+function sponsorLeitfadenDisplayName(string $stored): string
+{
+    $base = basename($stored);
+    $pos = strpos($base, '__');
+    return $pos === false ? $base : substr($base, $pos + 2);
+}
+
+/**
  * Hochgeladenen Leitfaden validieren und ablegen.
  * Gibt den Dateinamen (relativ zu storage/files/leitfaeden/) zurück oder null (keine Datei).
  * Wirft RuntimeException bei ungültigem Typ/zu groß/Schreibfehler.
@@ -61,7 +73,8 @@ function materializeSponsorLeitfaden(int $sponsorId, array $file): ?string
         throw new RuntimeException('Leitfaden ist zu groß (max. 10 MB).');
     }
 
-    $ext = strtolower(pathinfo((string) ($file['name'] ?? ''), PATHINFO_EXTENSION));
+    $origName = basename((string) ($file['name'] ?? ''));
+    $ext = strtolower(pathinfo($origName, PATHINFO_EXTENSION));
     if (!in_array($ext, sponsorLeitfadenAllowedExts(), true)) {
         throw new RuntimeException('Leitfaden-Typ nicht erlaubt. Erlaubt: PDF, DOC(X), ODT, RTF, MD, TXT.');
     }
@@ -70,10 +83,16 @@ function materializeSponsorLeitfaden(int $sponsorId, array $file): ?string
         throw new RuntimeException('Leitfaden-Verzeichnis konnte nicht angelegt werden.');
     }
 
-    // Alten Leitfaden dieses Sponsors (evtl. andere Endung) entfernen.
+    // Alten Leitfaden dieses Sponsors (evtl. anderer Name/Endung) entfernen.
     deleteSponsorLeitfaden($sponsorId);
 
-    $name = 'leitfaden-' . $sponsorId . '.' . $ext;
+    // Originalnamen sicher machen (nur harmlose Zeichen) und mit ID-Präfix eindeutig ablegen.
+    $safe = preg_replace('/[^A-Za-z0-9._-]+/', '-', $origName) ?? '';
+    $safe = trim($safe, '-.');
+    if ($safe === '' || strtolower(pathinfo($safe, PATHINFO_EXTENSION)) !== $ext) {
+        $safe = 'leitfaden.' . $ext;
+    }
+    $name = $sponsorId . '__' . $safe;
     $dest = SPONSOR_LEITFADEN_DIR . '/' . $name;
     if (!@move_uploaded_file($tmp, $dest)) {
         throw new RuntimeException('Leitfaden konnte nicht gespeichert werden.');
@@ -83,10 +102,10 @@ function materializeSponsorLeitfaden(int $sponsorId, array $file): ?string
     return $name;
 }
 
-/** Alle Leitfaden-Dateien eines Sponsors löschen (endungsunabhängig per ID-Präfix). */
+/** Alle Leitfaden-Dateien eines Sponsors löschen (per ID-Präfix "<id>__"). */
 function deleteSponsorLeitfaden(int $sponsorId): void
 {
-    foreach (glob(SPONSOR_LEITFADEN_DIR . '/leitfaden-' . $sponsorId . '.*') ?: [] as $old) {
+    foreach (glob(SPONSOR_LEITFADEN_DIR . '/' . $sponsorId . '__*') ?: [] as $old) {
         @unlink($old);
     }
 }

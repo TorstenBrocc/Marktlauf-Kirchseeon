@@ -10,6 +10,7 @@ require_once __DIR__ . '/../src/db.php';
 require_once __DIR__ . '/../src/sponsor_status.php';
 require_once __DIR__ . '/../src/rechnung.php';
 require_once __DIR__ . '/../src/sponsor_rotation.php';
+require_once __DIR__ . '/../src/sponsor_leitfaden.php';
 
 $user = getCurrentUserFromGuard();
 $isAdmin = isAdminFromGuard();
@@ -799,17 +800,42 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                         </div>
 
                         <div class="form-group">
-                            <label for="quellenurl">Quellenlink (Recherche-Beleg)</label>
+                            <label for="quellenurl">Fördermaske</label>
                             <input type="url" id="quellenurl" name="quellenurl" maxlength="500"
                                    placeholder="https://…"
                                    value="<?= htmlspecialchars($sponsor['quellenurl'] ?? '') ?>">
                         </div>
 
                         <div class="form-group">
+                            <label for="weitere_links">Weitere Links</label>
+                            <?php
+                            $wl = trim((string) ($sponsor['weitere_links'] ?? ''));
+                            if ($wl !== ''):
+                            ?>
+                                <ul style="margin:0.2rem 0 0.5rem; padding-left:1.1rem; font-size:0.9rem;">
+                                <?php foreach (preg_split('/\r\n|\r|\n/', $wl) ?: [] as $zeile):
+                                    $zeile = trim($zeile);
+                                    if ($zeile === '') { continue; }
+                                    if (strpos($zeile, '|') !== false) {
+                                        [$lab, $u] = array_map('trim', explode('|', $zeile, 2));
+                                    } else {
+                                        $lab = $u = $zeile;
+                                    }
+                                    $href = preg_match('#^https?://#i', $u) ? $u : 'https://' . $u;
+                                ?>
+                                    <li><a href="<?= htmlspecialchars($href) ?>" target="_blank" rel="noopener noreferrer"><?= htmlspecialchars($lab) ?> ↗</a></li>
+                                <?php endforeach; ?>
+                                </ul>
+                            <?php endif; ?>
+                            <textarea id="weitere_links" name="weitere_links" rows="3"
+                                      placeholder="Eine URL pro Zeile — optional: Beschriftung | https://…"><?= htmlspecialchars($sponsor['weitere_links'] ?? '') ?></textarea>
+                        </div>
+
+                        <div class="form-group">
                             <label>Leitfaden / ausgefüllte Anfrage</label>
                             <?php if ($isEdit && !empty($sponsor['leitfaden_datei'])): ?>
                                 <p style="margin:0.2rem 0 0.4rem;">
-                                    📄 <a href="api/leitfaden_download.php?id=<?= (int) $sponsorId ?>" target="_blank" rel="noopener noreferrer">Leitfaden öffnen ↓</a>
+                                    📄 <a href="api/leitfaden_download.php?id=<?= (int) $sponsorId ?>" target="_blank" rel="noopener noreferrer"><?= htmlspecialchars(sponsorLeitfadenDisplayName((string) $sponsor['leitfaden_datei'])) ?> ↓</a>
                                 </p>
                                 <details style="font-size:0.85rem; color: var(--text-light);">
                                     <summary style="cursor:pointer;">ersetzen</summary>

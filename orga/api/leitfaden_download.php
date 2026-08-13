@@ -41,11 +41,8 @@ if (!is_file($path)) {
 
 $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
 
-// Lesbarer Download-Name aus dem Firmennamen.
-$slug = mb_strtolower(trim((string) ($row['firma'] ?? '')));
-$slug = str_replace(['ä', 'ö', 'ü', 'ß'], ['ae', 'oe', 'ue', 'ss'], $slug);
-$slug = trim(preg_replace('/[^a-z0-9]+/', '-', $slug) ?? '', '-');
-$downloadName = 'Leitfaden-' . ($slug !== '' ? $slug : ('sponsor-' . $id)) . '.' . $ext;
+// Echten hochgeladenen Dateinamen ausliefern (ID-Präfix entfällt).
+$downloadName = sponsorLeitfadenDisplayName($datei);
 
 header('Content-Type: ' . sponsorLeitfadenContentType($ext));
 header('Content-Disposition: attachment; filename="' . $downloadName . '"');
