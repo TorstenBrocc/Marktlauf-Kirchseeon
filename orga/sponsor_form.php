@@ -469,6 +469,65 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
         .kein-kontakt-details.visible {
             display: block;
         }
+        /* Inline-Stil der Maske: Werte statt Kästen, platzoptimiertes Fluss-Raster */
+        .fe-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem 1.4rem;
+        }
+        .fe-field {
+            display: flex;
+            align-items: baseline;
+            gap: 0.4rem;
+            min-width: 0;
+            flex: 0 1 auto;
+            padding: 0.15rem 0;
+        }
+        .fe-field.full { flex-basis: 100%; }
+        .fe-label {
+            font-size: 0.72rem;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            white-space: nowrap;
+            flex: 0 0 auto;
+        }
+        .fe {
+            border-radius: 4px;
+            padding: 0.05rem 0.3rem;
+            cursor: text;
+            min-width: 2.5rem;
+            border-bottom: 1px dashed transparent;
+            overflow-wrap: anywhere;
+        }
+        .fe:hover { background: var(--bg); border-bottom-color: var(--border); }
+        .fe:focus { outline: 2px solid var(--primary); outline-offset: 1px; }
+        .fe.empty { color: var(--text-light); font-style: italic; font-weight: 400; }
+        .fe.val { font-weight: 500; }
+        .fe.ta { display: block; white-space: pre-wrap; width: 100%; }
+        .fe-inline-input, .fe-inline-textarea {
+            font: inherit;
+            padding: 0.15rem 0.3rem;
+            border: 1px solid var(--primary);
+            border-radius: 4px;
+            box-sizing: border-box;
+            max-width: 100%;
+        }
+        .fe-inline-textarea { width: 100%; min-height: 4rem; }
+        .fe-status { font-size: 0.72rem; margin-left: 0.15rem; }
+        /* Typ/Status wie in der Stammdatenübersicht einfärben (paket = Fläche, status = Ampel-Rand) */
+        .paket-select.paket-hauptsponsor { background: linear-gradient(135deg, #ff6b35, #f7931e); color: #fff; }
+        .paket-select.paket-gold { background: #ffd700; color: #333; }
+        .paket-select.paket-silber { background: #c0c0c0; color: #333; }
+        .paket-select.paket-bronze { background: #cd7f32; color: #fff; }
+        .paket-select.paket-sachsponsor { background: #6b7280; color: #fff; }
+        .paket-select.paket-none { color: var(--text-light); }
+        .status-select { border-left-width: 4px; }
+        .status-select.ampel-grau  { border-left-color: #9aa0a6; }
+        .status-select.ampel-blau  { border-left-color: #2b7de9; }
+        .status-select.ampel-gelb  { border-left-color: #f4b400; }
+        .status-select.ampel-gruen { border-left-color: var(--primary); }
+        .status-select.ampel-rot   { border-left-color: var(--error); }
     </style>
 </head>
 <body>
@@ -521,6 +580,17 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                     <div class="form-card">
                         <h2>Stammdaten</h2>
 
+                        <?php if ($isEdit): ?>
+                        <div class="fe-grid">
+                            <?= feField('firma', $sponsor['firma'] ?? '', 'Firma', 'text', true, 'Firmenname') ?>
+                            <?= feField('gruppe_name', $aktuelleGruppe, 'Konzern/Gruppe', 'text', true, 'z. B. Ahorn Gruppe', 'gruppe-liste') ?>
+                        </div>
+                        <datalist id="gruppe-liste">
+                            <?php foreach ($gruppen as $g): ?>
+                                <option value="<?= htmlspecialchars($g['name']) ?>">
+                            <?php endforeach; ?>
+                        </datalist>
+                        <?php else: ?>
                         <div class="form-group">
                             <label for="firma" class="required">Firma</label>
                             <input type="text" id="firma" name="firma" required
@@ -538,6 +608,7 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                                 <?php endforeach; ?>
                             </datalist>
                         </div>
+                        <?php endif; ?>
 
                         <div class="form-group">
                             <label>Branche <span style="font-weight:400;color:var(--text-light)">(Mehrfachauswahl)</span></label>
@@ -624,6 +695,28 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                                 . ' href="' . htmlspecialchars($href) . '"'
                                 . ' target="_blank" rel="noopener noreferrer">' . $icon . '</a>';
                         }
+
+                        /**
+                         * Inline-Feld der Maske: Label + editierbarer Wert (Doppelklick). Speichert
+                         * per field_update. $type steuert den Inline-Editor (text/email/url/number/textarea).
+                         * Leerer Wert -> kompakter Platzhalter. $full = eigene ganze Zeile.
+                         */
+                        function feField(string $field, string $value, string $label, string $type = 'text', bool $full = false, string $placeholder = '—', string $list = ''): string {
+                            $empty = ($value === '');
+                            $cls = 'fe' . ($type === 'textarea' ? ' ta' : '') . ($empty ? ' empty' : ' val');
+                            $span = '<span class="' . $cls . '" data-field="' . htmlspecialchars($field) . '"'
+                                . ' data-value="' . htmlspecialchars($value) . '"'
+                                . ' data-type="' . htmlspecialchars($type) . '"'
+                                . ' data-placeholder="' . htmlspecialchars($placeholder) . '"'
+                                . ($list !== '' ? ' data-list="' . htmlspecialchars($list) . '"' : '')
+                                . ' tabindex="0" title="Doppelklick zum Bearbeiten">'
+                                . htmlspecialchars($empty ? $placeholder : $value) . '</span>';
+                            // Verstecktes name-Feld: der Speichern-Button (Logo/Leitfaden/Rotation/kein-Kontakt)
+                            // postet den aktuellen Wert weiter mit; der Inline-Editor pflegt es nach.
+                            $hidden = '<input type="hidden" name="' . htmlspecialchars($field) . '" value="' . htmlspecialchars($value) . '">';
+                            return '<div class="fe-field' . ($full ? ' full' : '') . '">'
+                                . '<span class="fe-label">' . htmlspecialchars($label) . '</span>' . $span . $hidden . '</div>';
+                        }
                         ?>
                         <?php if (!$isEdit): ?>
                         <p class="ap-hint">
@@ -680,7 +773,7 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="paket">Sponsoring-Typ</label>
-                                <select id="paket" name="paket">
+                                <select id="paket" name="paket" class="paket-select paket-<?= ($sponsor['paket'] ?? '') ?: 'none' ?>">
                                     <option value="gold" <?= ($sponsor['paket'] ?? '') === 'gold' ? 'selected' : '' ?>>Gold</option>
                                     <option value="silber" <?= ($sponsor['paket'] ?? '') === 'silber' ? 'selected' : '' ?>>Silber</option>
                                     <option value="bronze" <?= ($sponsor['paket'] ?? '') === 'bronze' ? 'selected' : '' ?>>Bronze</option>
@@ -721,7 +814,7 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="status">Status</label>
-                                <select id="status" name="status">
+                                <select id="status" name="status" class="status-select ampel-<?= sponsorStatusAmpel($sponsor['status'] ?? 'neu') ?>">
                                     <?php $currentStatus = $sponsor['status'] ?? 'neu'; ?>
                                     <?php foreach (SPONSOR_STATUS as $key => $meta): ?>
                                         <option value="<?= $key ?>" <?= $currentStatus === $key ? 'selected' : '' ?>><?= htmlspecialchars($meta['label']) ?></option>
@@ -785,6 +878,15 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                             Leistung und Betrag kommen aus dem gebuchten Paket; Paketpreise sind netto (zzgl. 19&nbsp;% USt).
                         </p>
 
+                        <?php if ($isEdit): ?>
+                        <div class="fe-grid">
+                            <?= feField('rechnung_firma', $sponsor['rechnung_firma'] ?? '', 'Firma / z. Hd.', 'text', false, '—') ?>
+                            <?= feField('rechnung_email', $sponsor['rechnung_email'] ?? '', 'Rechnungs-E-Mail', 'email', false, 'buchhaltung@…') ?>
+                            <?= feField('rechnung_strasse', $sponsor['rechnung_strasse'] ?? '', 'Straße + Nr.', 'text', true, '—') ?>
+                            <?= feField('rechnung_plz', $sponsor['rechnung_plz'] ?? '', 'PLZ', 'text', false, '—') ?>
+                            <?= feField('rechnung_ort', $sponsor['rechnung_ort'] ?? '', 'Ort', 'text', false, '—') ?>
+                        </div>
+                        <?php else: ?>
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="rechnung_firma">Firma / z. Hd.</label>
@@ -817,6 +919,7 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                                        value="<?= htmlspecialchars($sponsor['rechnung_ort'] ?? '') ?>">
                             </div>
                         </div>
+                        <?php endif; ?>
 
                         <div class="form-group">
                             <div class="checkbox-single">
@@ -839,6 +942,13 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                             Werden beim CSV-Import automatisch befüllt.
                         </p>
 
+                        <?php if ($isEdit): ?>
+                        <div class="fe-grid">
+                            <?= feField('foerderprogramm', $sponsor['foerderprogramm'] ?? '', 'Förderprogramm / Angebot', 'textarea', true, '—') ?>
+                            <?= feField('kontaktweg', $sponsor['kontaktweg'] ?? '', 'Antrag / Kontaktweg', 'textarea', true, '—') ?>
+                            <?= feField('quellenurl', $sponsor['quellenurl'] ?? '', 'Fördermaske', 'url', true, 'https://…') ?>
+                        </div>
+                        <?php else: ?>
                         <div class="form-group">
                             <label for="foerderprogramm">Förderprogramm / Sponsoring-Angebot</label>
                             <textarea id="foerderprogramm" name="foerderprogramm" rows="3"><?= htmlspecialchars($sponsor['foerderprogramm'] ?? '') ?></textarea>
@@ -855,13 +965,12 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                                    placeholder="https://…"
                                    value="<?= htmlspecialchars($sponsor['quellenurl'] ?? '') ?>">
                         </div>
+                        <?php endif; ?>
 
                         <div class="form-group">
-                            <label for="weitere_links">Weitere Links</label>
-                            <?php
-                            $wl = trim((string) ($sponsor['weitere_links'] ?? ''));
-                            if ($wl !== ''):
-                            ?>
+                            <?php $wl = trim((string) ($sponsor['weitere_links'] ?? '')); ?>
+                            <?php if (!$isEdit): ?><label for="weitere_links">Weitere Links</label><?php endif; ?>
+                            <?php if ($wl !== ''): ?>
                                 <ul style="margin:0.2rem 0 0.5rem; padding-left:1.1rem; font-size:0.9rem;">
                                 <?php foreach (preg_split('/\r\n|\r|\n/', $wl) ?: [] as $zeile):
                                     $zeile = trim($zeile);
@@ -877,8 +986,12 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                                 <?php endforeach; ?>
                                 </ul>
                             <?php endif; ?>
-                            <textarea id="weitere_links" name="weitere_links" rows="3"
-                                      placeholder="Eine URL pro Zeile — optional: Beschriftung | https://…"><?= htmlspecialchars($sponsor['weitere_links'] ?? '') ?></textarea>
+                            <?php if ($isEdit): ?>
+                                <div class="fe-grid"><?= feField('weitere_links', $sponsor['weitere_links'] ?? '', 'Weitere Links', 'textarea', true, 'Eine URL pro Zeile — optional: Beschriftung | https://…') ?></div>
+                            <?php else: ?>
+                                <textarea id="weitere_links" name="weitere_links" rows="3"
+                                          placeholder="Eine URL pro Zeile — optional: Beschriftung | https://…"><?= htmlspecialchars($sponsor['weitere_links'] ?? '') ?></textarea>
+                            <?php endif; ?>
                         </div>
 
                         <div class="form-group">
@@ -983,10 +1096,16 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                     <div class="form-card">
                         <h2>Sonstiges</h2>
 
+                        <?php if ($isEdit): ?>
+                        <div class="fe-grid">
+                            <?= feField('notizen', $sponsor['notizen'] ?? '', 'Notizen', 'textarea', true, '—') ?>
+                        </div>
+                        <?php else: ?>
                         <div class="form-group">
                             <label for="notizen">Notizen</label>
                             <textarea id="notizen" name="notizen" rows="4"><?= htmlspecialchars($sponsor['notizen'] ?? '') ?></textarea>
                         </div>
+                        <?php endif; ?>
 
                         <div class="form-group">
                             <div class="checkbox-single">
@@ -1461,6 +1580,132 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
 
             var value = (el.type === 'checkbox') ? (el.checked ? '1' : '0') : el.value;
             save(el, name, { value: value });
+        });
+    })();
+
+    // ---- Typ/Status wie in der Stammdatenübersicht einfärben ----------------
+    (function () {
+        var STATUS_AMPEL = <?php
+            $statusAmpelMap = [];
+            foreach (SPONSOR_STATUS as $sKey => $sMeta) { $statusAmpelMap[$sKey] = sponsorStatusAmpel($sKey); }
+            echo json_encode($statusAmpelMap, JSON_UNESCAPED_UNICODE);
+        ?>;
+        var paketClasses = ['paket-hauptsponsor', 'paket-gold', 'paket-silber', 'paket-bronze', 'paket-sachsponsor', 'paket-none'];
+        var ampelClasses = ['ampel-grau', 'ampel-blau', 'ampel-gelb', 'ampel-gruen', 'ampel-rot'];
+        function swap(el, all, cls) { all.forEach(function (c) { el.classList.remove(c); }); if (cls) el.classList.add(cls); }
+        var paketSel = document.getElementById('paket');
+        var statusSel = document.getElementById('status');
+        if (paketSel) paketSel.addEventListener('change', function () {
+            swap(paketSel, paketClasses, 'paket-' + (paketSel.value || 'none'));
+        });
+        if (statusSel) statusSel.addEventListener('change', function () {
+            swap(statusSel, ampelClasses, 'ampel-' + (STATUS_AMPEL[statusSel.value] || 'grau'));
+        });
+    })();
+
+    // ---- Einzelmaske: Inline-Bearbeitung der Textfelder (Doppelklick) --------
+    // Nur im Bearbeiten-Modus (braucht sponsor-id). Speichert je Feld per field_update.
+    (function () {
+        var form = document.getElementById('sponsor-form');
+        if (!form) return;
+        var idField = form.querySelector('input[name="sponsor_id"]');
+        if (!idField) return;
+        var SPONSOR_ID = idField.value;
+        var CSRF = (form.querySelector('input[name="csrf_token"]') || {}).value || '';
+        var timers = {};
+
+        function applyValue(span, val) {
+            span.dataset.value = val;
+            var empty = (val === '');
+            span.textContent = empty ? (span.dataset.placeholder || '—') : val;
+            span.classList.toggle('empty', empty);
+            span.classList.toggle('val', !empty);
+            // Verstecktes name-Feld nachziehen, damit der Speichern-Button korrekt postet.
+            var hid = span.parentNode && span.parentNode.querySelector('input[type="hidden"]');
+            if (hid) hid.value = val;
+        }
+        function setStatus(span, field, text, color, fade) {
+            var wrap = span.closest('.fe-field');
+            if (!wrap) return;
+            var el = wrap.querySelector('.fe-status');
+            if (!el) {
+                el = document.createElement('span');
+                el.className = 'fe-status';
+                el.setAttribute('aria-live', 'polite');
+                wrap.appendChild(el);
+            }
+            el.textContent = text;
+            el.style.color = color;
+            if (timers[field]) { clearTimeout(timers[field]); delete timers[field]; }
+            if (fade) timers[field] = setTimeout(function () { el.textContent = ''; }, 2000);
+        }
+        function save(span, field, value, prev) {
+            var body = new URLSearchParams();
+            body.set('action', 'field_update');
+            body.set('csrf_token', CSRF);
+            body.set('sponsor_id', SPONSOR_ID);
+            body.set('field', field);
+            body.set('value', value);
+            setStatus(span, field, 'speichert…', 'var(--text-light)', false);
+            fetch('api/sponsor_crud.php', { method: 'POST', headers: { 'X-Requested-With': 'fetch' }, body: body })
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    if (d && d.ok) {
+                        setStatus(span, field, 'gespeichert', '#007230', true);
+                    } else {
+                        applyValue(span, prev); // z. B. Firma darf nicht leer sein -> zurücksetzen
+                        setStatus(span, field, (d && d.message) || 'Fehler', '#c0392b', false);
+                    }
+                })
+                .catch(function () { setStatus(span, field, 'Netzwerkfehler', '#c0392b', false); });
+        }
+        function startEdit(span) {
+            if (span.querySelector('input, textarea')) return;
+            var type = span.dataset.type || 'text';
+            var current = span.dataset.value || '';
+            var editor;
+            if (type === 'textarea') {
+                editor = document.createElement('textarea');
+                editor.className = 'fe-inline-textarea';
+                editor.rows = 3;
+            } else {
+                editor = document.createElement('input');
+                editor.className = 'fe-inline-input';
+                editor.type = (type === 'number' ? 'number' : type === 'email' ? 'email' : type === 'url' ? 'url' : 'text');
+                if (span.dataset.list) editor.setAttribute('list', span.dataset.list);
+            }
+            editor.value = current;
+            span.textContent = '';
+            span.classList.remove('empty');
+            span.appendChild(editor);
+            editor.focus();
+            if (editor.select) editor.select();
+
+            var closed = false;
+            function commit() {
+                if (closed) return; closed = true;
+                var val = (editor.value || '').trim();
+                applyValue(span, val);
+                if (val !== current) save(span, span.dataset.field, val, current);
+            }
+            function cancel() {
+                if (closed) return; closed = true;
+                applyValue(span, current);
+            }
+            editor.addEventListener('blur', commit);
+            editor.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') { e.preventDefault(); cancel(); }
+                else if (e.key === 'Enter' && type !== 'textarea') { e.preventDefault(); editor.blur(); }
+            });
+        }
+        form.addEventListener('dblclick', function (e) {
+            var span = e.target.closest('.fe');
+            if (span && form.contains(span)) startEdit(span);
+        });
+        form.addEventListener('keydown', function (e) {
+            if (e.key !== 'Enter' && e.key !== 'F2') return;
+            var span = e.target.closest('.fe');
+            if (span && !span.querySelector('input, textarea')) { e.preventDefault(); startEdit(span); }
         });
     })();
 
