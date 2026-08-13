@@ -19,7 +19,7 @@ Läuferinnen und Läufer, Familien, Helfer, lokale Unterstützer.
 - **Ton:** herzlich, klar, sachlich-positiv. **Keine Werbefloskeln, keine Ausrufezeichen-Ketten.**
 - **Konkret statt allgemein:** Datum, Ort, Uhrzeit, Link nennen, sobald sie in den Fakten stehen.
 - **Keine erfundenen Fakten.** Nur verwenden, was in den Fakten steht; Unbestätigtes als Vorbehalt kennzeichnen („noch vorläufig", „unter Vorbehalt").
-- **Emoji: standardmäßig keine.** (Einzige Ausnahme in den Kanal-Deltas unten.)
+- **Emoji: nur aus der Erlaubt-Liste, funktional statt Deko.** Erlaubt: **📅** (Termin/Datum), **📍** (Ort/Treffpunkt). Alles andere nicht verwenden. Diese Liste ist die **einzige** Stelle — hier ergänzen/kürzen; kein UI-Schalter nötig.
 - **Trennzeichen:** der Mittelpunkt `·` trennt Metazeilen („Bambini · 500 m"); der Gedankenstrich `—` trennt Gedanken.
 - **Casing:** normale Satz-Schreibung, keine Großschreibung ganzer Sätze.
 - **Zahlen/Einheiten:** „500 m", „1 km & 2 km", „10:00 Uhr", Zeiträume „12:30–13:30 Uhr", Datum ausgeschrieben („Sonntag, 20. September 2026"), Beträge deutsch („4.200 €").
@@ -30,7 +30,7 @@ Läuferinnen und Läufer, Familien, Helfer, lokale Unterstützer.
 
 <!-- voice:channel:newsletter -->
 Newsletter: 200–350 Wörter, in 2–4 thematischen Blöcken mit kleinen Zwischenüberschriften.
-Betreffzeilen kurz (max. ~60 Zeichen), konkret, kein Clickbait. **Emoji-frei.**
+Betreffzeilen kurz (max. ~60 Zeichen), konkret, kein Clickbait. **Emoji nur funktional aus der Erlaubt-Liste (📅/📍), sehr sparsam.**
 <!-- /voice:channel:newsletter -->
 
 <!-- voice:channel:presse -->
@@ -39,7 +39,7 @@ Pressetext: neutral-journalistisch, kurze Sätze, keine Werbung, keine Ausrufeze
 <!-- /voice:channel:presse -->
 
 <!-- voice:channel:social -->
-Social-Post (Instagram/Facebook): kurz, max. ~5 Sätze / ~80 Wörter. **Höchstens EIN Emoji, Default keins.**
+Social-Post (Instagram/Facebook): kurz, max. ~5 Sätze / ~80 Wörter. **Emoji nur aus der Erlaubt-Liste, höchstens 1–2, funktional (z. B. 📅/📍) — keine Deko-Emojis.**
 Hashtags nicht anhängen (werden separat ergänzt). Schreibe die Caption so, dass sie **ohne** klickbaren
 Link funktioniert (Instagram-Feed erlaubt keinen klickbaren Caption-Link → auf „Link in Bio" verweisen);
 auf Facebook darf ein Link stehen. Instagram braucht immer ein Bild.
