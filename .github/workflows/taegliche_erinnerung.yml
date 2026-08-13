@@ -1,0 +1,46 @@
+name: Tägliche Erinnerungen
+
+# Ersetzt einen Server-Cron: Strato-Shared-Hosting bietet kein crontab per SSH,
+# also verbindet sich GitHub Actions per SSH (gleiche Secrets wie der Deploy) und
+# ruft die CLI-Skripte auf — dasselbe Muster wie sponsor_versand.yml.
+#
+# Vorgeschichte: bin/aufgaben_erinnerung.php trug im Dateikopf einen Cron-Eintrag,
+# den es auf Strato nie gab. Das Skript lief dadurch seit seiner Erstellung nie
+# automatisch, obwohl es in der Doku als „live" geführt wurde (gefunden 2026-08-13).
+#
+# Zwei Schritte, bewusst getrennt:
+#   1. aufgaben_erinnerung.php — Einzelmail an den Verantwortlichen für Aufgaben,
+#      die HEUTE fällig sind (eigene Idempotenz über erinnerung_gesendet).
+#   2. offene_todos_digest.php — Tagesüberblick über ÜBERFÄLLIGE Aufgaben, fällige
+#      Wiedervorlagen, unbeantwortete Anschreiben und Fehler in der Versand-Queue.
+# Die Mengen überschneiden sich nicht, deshalb gibt es keine Doppelmails.
+#
+# Hinweis: geplante Workflows starten unter Last evtl. verzögert und werden nach
+# 60 Tagen Repo-Inaktivität deaktiviert (wie beim Uptime-Check).
+
+on:
+  schedule:
+    - cron: '0 6 * * *'   # 06:00 UTC = 08:00 MESZ / 07:00 MEZ
+  workflow_dispatch:       # manuell im Actions-Tab auslösbar
+
+# Nur ein Lauf gleichzeitig — ein verzögerter Lauf soll den nächsten nicht überholen.
+concurrency:
+  group: taegliche-erinnerung
+  cancel-in-progress: false
+
+jobs:
+  erinnerungen:
+    name: Erinnerungen versenden
+    runs-on: ubuntu-latest
+    steps:
+      - name: Aufgaben-Erinnerung (heute fällig) + ToDo-Digest per SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SFTP_HOST }}
+          username: ${{ secrets.SFTP_USERNAME }}
+          key: ${{ secrets.SFTP_SSH_KEY }}
+          command_timeout: 15m
+          script: |
+            cd ${{ secrets.SFTP_REMOTE_PATH }}
+            MARKTLAUF_CLI=1 /bin/php bin/aufgaben_erinnerung.php
+            MARKTLAUF_CLI=1 /bin/php bin/offene_todos_digest.php
