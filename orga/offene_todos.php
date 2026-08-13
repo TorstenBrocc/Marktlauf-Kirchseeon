@@ -93,7 +93,7 @@ $rest = static function (array $liste): int {
         .todo-intro { color: var(--text-light); font-size: 0.85rem; margin: 0; }
 
         .hd-card { background: var(--white); border-radius: 8px; box-shadow: var(--shadow-card); padding: 1.25rem 1.35rem; margin-bottom: 1.25rem; }
-        .hd-card > h2 { font-size: 1rem; font-weight: 700; margin: 0 0 0.15rem; display: flex; align-items: center; gap: 0.55rem; flex-wrap: wrap; color: var(--text); }
+        .hd-card > h2 { font-size: 2rem; font-weight: 700; margin: 0 0 0.4rem; display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; color: var(--text); }
         .hd-card.ist-fehler > h2 { color: var(--error); }
         .hd-card.ist-nachrichtlich > h2 { color: var(--text-light); }
         .hd-count { font-size: 0.72rem; font-weight: 700; color: var(--text-light); background: var(--bg); border-radius: 999px; padding: 0.05rem 0.55rem; }
@@ -163,7 +163,7 @@ $rest = static function (array $liste): int {
 
             <?php if (!empty($todos['bestaetigung'])): ?>
             <section class="hd-card">
-                <h2>Bestätigung offen <span class="hd-count"><?= count($todos['bestaetigung']) ?></span></h2>
+                <h2>Bestätigungs-Mail offen <span class="hd-count"><?= count($todos['bestaetigung']) ?></span></h2>
                 <p class="hd-sub">Hat zugesagt — die Bestätigung mit den Sponsoring-Bedingungen ist noch nicht raus. Läuft über <a href="bestaetigungen.php">Bestätigungen</a>.</p>
                 <table class="hd-table">
                     <thead><tr><th>Firma</th><th>Info</th><th>Status / Frist</th><th>Kontakt</th></tr></thead>
@@ -184,7 +184,7 @@ $rest = static function (array $liste): int {
 
             <?php if (!empty($todos['bedingungen'])): ?>
             <section class="hd-card">
-                <h2>Bedingungen nicht bestätigt <span class="hd-count"><?= count($todos['bedingungen']) ?></span></h2>
+                <h2>Sponsoring-Bedingungen nicht bestätigt <span class="hd-count"><?= count($todos['bedingungen']) ?></span></h2>
                 <p class="hd-sub">Bestätigung ist raus, die Sponsoring-Bedingungen sind aber noch nicht gegengezeichnet. Erfassen in der Einzelmaske (wann, auf welchem Weg, Beleg im Ordner).</p>
                 <table class="hd-table">
                     <thead><tr><th>Firma</th><th>Info</th><th>Status / Frist</th><th>Kontakt</th></tr></thead>
@@ -282,7 +282,7 @@ $rest = static function (array $liste): int {
 
             <?php if (!empty($todos['bedingungen_beleg'])): ?>
             <section class="hd-card ist-nachrichtlich">
-                <h2>Bedingungen bestätigt — Beleg fehlt <span class="hd-count"><?= count($todos['bedingungen_beleg']) ?></span></h2>
+                <h2>Sponsoring-Bedingungen bestätigt — Beleg fehlt <span class="hd-count"><?= count($todos['bedingungen_beleg']) ?></span></h2>
                 <p class="hd-sub">Inhaltlich erledigt, nur die Rückmeldung liegt nicht im Sponsor-Ordner. Zählt deshalb nicht in die Gesamtzahl.</p>
                 <table class="hd-table">
                     <thead><tr><th>Firma</th><th>Bestätigt</th></tr></thead>
