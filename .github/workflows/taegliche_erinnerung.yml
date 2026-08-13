@@ -18,10 +18,17 @@ name: Tägliche Erinnerungen
 # Hinweis: geplante Workflows starten unter Last evtl. verzögert und werden nach
 # 60 Tagen Repo-Inaktivität deaktiviert (wie beim Uptime-Check).
 
+# ZEITPLAN BEWUSST DEAKTIVIERT (TT, 2026-08-13): Erst will TT die Mail selbst sehen,
+# bevor sie an das gesamte Orga-Team geht. Bis dahin läuft der Workflow ausschließlich
+# manuell über den Actions-Tab. Zum Scharfschalten den schedule-Block unten wieder
+# einkommentieren — vorher aber die offene Frage klären, wer welche Erinnerung ab
+# welchem Zeitpunkt über welchen Kanal bekommt (intern/offene-todos-spec.md).
+#
+# on:
+#   schedule:
+#     - cron: '0 6 * * *'   # 06:00 UTC = 08:00 MESZ / 07:00 MEZ
 on:
-  schedule:
-    - cron: '0 6 * * *'   # 06:00 UTC = 08:00 MESZ / 07:00 MEZ
-  workflow_dispatch:       # manuell im Actions-Tab auslösbar
+  workflow_dispatch:       # nur manuell im Actions-Tab auslösbar
 
 # Nur ein Lauf gleichzeitig — ein verzögerter Lauf soll den nächsten nicht überholen.
 concurrency:
