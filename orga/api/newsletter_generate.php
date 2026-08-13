@@ -13,6 +13,7 @@ require_once __DIR__ . '/../../src/db.php';
 require_once __DIR__ . '/../../src/logger.php';
 require_once __DIR__ . '/../../src/llm_client.php';
 require_once __DIR__ . '/../../src/newsletter/blocks.php';
+require_once __DIR__ . '/../../src/brand_voice.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -33,8 +34,6 @@ if ($provider !== null && !in_array($provider, ['gemini', 'mistral'], true)) {
 }
 
 $refDir   = __DIR__ . '/../../src/newsletter/';
-$identity = @file_get_contents($refDir . '01_identity.md') ?: '';
-$style    = @file_get_contents($refDir . '02_style.md') ?: '';
 $template = @file_get_contents($refDir . '03_html_master_template.md') ?: '{{CONTENT}}';
 
 // Marken-Farben aus der gemeinsamen Quelle einsetzen ({{token:--x}} -> Hex).
@@ -74,9 +73,8 @@ if (is_array($blocks) && $blocks !== []) {
         echo json_encode(['error' => 'Bitte zuerst Fakten/Inhalte für den Newsletter eingeben.']);
         exit;
     }
-    $bodyPrompt = "Du schreibst den Inhalt eines Vereins-Newsletters.\n\n"
-        . "IDENTITÄT:\n" . $identity . "\n\nSTIL:\n" . $style . "\n\n"
-        . "Erzeuge NUR den HTML-Body (Fließtext) aus den Fakten: erlaubt sind <p>, <h2>, "
+    $bodyPrompt = brandVoiceSystem('newsletter') . "\n\n"
+        . "AUFGABE: Erzeuge NUR den HTML-Body (Fließtext) aus den Fakten: erlaubt sind <p>, <h2>, "
         . "<ul>/<li>, <a href>, <strong>. KEIN <html>/<head>/<body>, keine Inline-Styles, "
         . "keine Code-Fences, keine Erklärung. Nur die genannten Fakten verwenden.";
     $bodyHtml = trim(llmGenerate($bodyPrompt, $fakten, $provider));
@@ -85,8 +83,8 @@ if (is_array($blocks) && $blocks !== []) {
 }
 
 // --- Betreffzeilen ---
-$subjectPrompt = "Du bist Newsletter-Redakteur für den ATSV Kirchseeon (Marktlauf Kirchseeon).\n"
-    . $style . "\n\nGib GENAU 3 Betreffzeilen aus, je eine pro Zeile, ohne Nummerierung, "
+$subjectPrompt = brandVoiceSystem('newsletter') . "\n\n"
+    . "AUFGABE: Gib GENAU 3 Betreffzeilen aus, je eine pro Zeile, ohne Nummerierung, "
     . "ohne Anführungszeichen, max. ~60 Zeichen. Nur die genannten Fakten verwenden.";
 $subjectRaw = llmGenerate($subjectPrompt, $fakten, $provider);
 $subjects = [];
