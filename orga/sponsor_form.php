@@ -314,21 +314,30 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
             background: #b71c1c;
         }
         /* Ansprechpartner: ruhige Textzeilen, Doppelklick zum Bearbeiten, Autosave in die DB */
-        /* Jeder Ansprechpartner als eigene Karte-in-Karte (grau auf weißer form-card) */
+        /* Ansprechpartner als Kartenraster: mind. 2 nebeneinander, wenn Platz ist */
+        #ap-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+            gap: 0.6rem;
+        }
+        /* Jede Karte-in-Karte (grau auf weißer form-card), Inhalt vertikal gestapelt */
         .ap-item {
             display: flex;
-            flex-wrap: wrap;
-            align-items: flex-start;
-            gap: 0.5rem 1rem;
+            flex-direction: column;
+            gap: 0.5rem;
             padding: 0.8rem 0.9rem;
-            margin-bottom: 0.6rem;
             border: 1px solid var(--border);
             border-radius: 8px;
             background: var(--bg);
         }
-        .ap-item:last-of-type {
-            margin-bottom: 0;
+        .ap-item-foot {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
         }
+        .ap-item-foot .ap-remove { margin-left: auto; }
+        .ap-item-foot .ap-status { min-width: 0; text-align: left; }
         /* Signatur: eine Zeile pro Feld */
         .ap-item-main {
             flex: 1 1 320px;
@@ -602,7 +611,7 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                          * damit die Doppelklick-Bearbeitung des Werts nicht kollidiert.
                          */
                         function apActionIcon(string $kind, string $value): string {
-                            $icon = $kind === 'tel' ? '📞' : '✉';
+                            $icon = $kind === 'tel' ? '📞' : '✉️';
                             $title = $kind === 'tel' ? 'Anrufen' : 'E-Mail schreiben';
                             $href = '';
                             if ($value !== '') {
@@ -650,12 +659,14 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                                             <?= apEditSpan('email', (string) ($ap['email'] ?? ''), 'E-Mail') ?>
                                         </div>
                                     </div>
-                                    <label class="ap-anschreiben-toggle" title="Ins Anschreiben aufnehmen">
-                                        <input type="checkbox" data-field="im_anschreiben" <?= $imAnschreiben ? 'checked' : '' ?>>
-                                        <span>Anschreiben</span>
-                                    </label>
-                                    <span class="ap-status" aria-live="polite"></span>
-                                    <button type="button" class="ap-remove" title="Ansprechpartner löschen">×</button>
+                                    <div class="ap-item-foot">
+                                        <label class="ap-anschreiben-toggle" title="Ins Anschreiben aufnehmen">
+                                            <input type="checkbox" data-field="im_anschreiben" <?= $imAnschreiben ? 'checked' : '' ?>>
+                                            <span>Anschreiben</span>
+                                        </label>
+                                        <span class="ap-status" aria-live="polite"></span>
+                                        <button type="button" class="ap-remove" title="Ansprechpartner löschen">×</button>
+                                    </div>
                                 </div>
                             <?php endforeach; ?>
                         </div>
@@ -1316,7 +1327,7 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
 
         // Kontaktzeile: ausgeblendetes Aktions-Icon (füllt sich beim ersten gespeicherten Wert) + editierbarer Wert.
         function contactLine(field, placeholder, kind) {
-            var icon = kind === 'tel' ? '📞' : '✉';
+            var icon = kind === 'tel' ? '📞' : '✉️';
             var title = kind === 'tel' ? 'Anrufen' : 'E-Mail schreiben';
             return '<div class="ap-line ap-contact-line">' +
                 '<a class="ap-action ap-action-hidden" data-kind="' + kind + '" title="' + title + '"' +
@@ -1341,11 +1352,13 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                     contactLine('telefon', 'Telefon', 'tel') +
                     contactLine('email', 'E-Mail', 'mail') +
                 '</div>' +
-                '<label class="ap-anschreiben-toggle" title="Ins Anschreiben aufnehmen">' +
-                    '<input type="checkbox" data-field="im_anschreiben" checked><span>Anschreiben</span>' +
-                '</label>' +
-                '<span class="ap-status" aria-live="polite"></span>' +
-                '<button type="button" class="ap-remove" title="Ansprechpartner löschen">×</button>';
+                '<div class="ap-item-foot">' +
+                    '<label class="ap-anschreiben-toggle" title="Ins Anschreiben aufnehmen">' +
+                        '<input type="checkbox" data-field="im_anschreiben" checked><span>Anschreiben</span>' +
+                    '</label>' +
+                    '<span class="ap-status" aria-live="polite"></span>' +
+                    '<button type="button" class="ap-remove" title="Ansprechpartner löschen">×</button>' +
+                '</div>';
             container.appendChild(item);
             var first = item.querySelector('.ap-edit[data-field="vorname"]');
             if (first) startEdit(first);
