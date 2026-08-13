@@ -142,4 +142,19 @@ $st = $pdo->prepare("UPDATE sponsors SET ort = 'München' WHERE id = 12 AND ort 
 $st->execute();
 echo $st->rowCount() > 0 ? "ORT #12: Kirchseeon → München korrigiert\n" : "OK  #12: Ort bereits korrekt\n";
 
+// --- Allianz: lokale Generalvertretung als Kontaktzeile -------------------
+// Die Nummer stand bisher nur im Notizfeld — als Ansprechpartner ist sie in der
+// Maske direkt nutzbar (und taucht in Listen/Exporten auf).
+$st = $pdo->prepare("SELECT COUNT(*) FROM sponsor_ansprechpartner WHERE sponsor_id = 80 AND telefon = '08091 5383836'");
+$st->execute();
+if ((int) $st->fetchColumn() === 0) {
+    $pdo->prepare("
+        INSERT INTO sponsor_ansprechpartner (sponsor_id, nachname, funktion, telefon)
+        VALUES (80, 'Gillhuber e.K.', 'Generalvertretung Kirchseeon', '08091 5383836')
+    ")->execute();
+    echo "AP  #80 Allianz: Generalvertretung Gillhuber als Kontakt angelegt\n";
+} else {
+    echo "OK  #80 Allianz: Kontakt bereits vorhanden\n";
+}
+
 echo "Fertig.\n";
