@@ -461,13 +461,14 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                 <a href="../docs/poster-generator.md" target="_blank" rel="noopener" style="margin-left:0.6rem;font-size:0.85rem">ℹ️ Doku</a></p>
             <p class="so-notice">
                 PNG-Grafik mit Ergebnis-Highlights in drei Formaten: <strong>Quadratisch 1080×1080</strong> (Feed),
-                <strong>Portrait 1080×1350</strong> (Instagram-Feed, füllt am meisten) und <strong>Story 1080×1920</strong>.
+                <strong>Portrait 1080×1350</strong> (Instagram-Feed, füllt am meisten), neu <strong>Instagram-Grid 1080×1440 (3:4)</strong> (Grid seit 01/2026 + Feed) und <strong>Story 1080×1920</strong>.
             </p>
             <div class="so-card-controls">
                 <div class="so-field">
                     <label for="so-card-format">Format</label>
                     <select id="so-card-format">
                         <option value="portrait">Portrait 1080×1350 (Feed)</option>
+                        <option value="grid34">Instagram-Grid 1080×1440 (3:4)</option>
                         <option value="square">Quadratisch 1080×1080</option>
                         <option value="story">Story 1080×1920</option>
                     </select>
@@ -539,6 +540,7 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                     <h3>1 · Formate (Bildgröße)</h3>
                     <ul>
                         <li><strong>Portrait 1080×1350 (4:5)</strong> — empfohlen fürs Instagram-Feed, füllt am meisten Platz.</li>
+                        <li><strong>Instagram-Grid 1080×1440 (3:4)</strong> — füllt das Profil-Grid (seit 01/2026 auf 3:4) UND den Feed; Wichtiges mittig halten.</li>
                         <li><strong>Quadratisch 1080×1080 (1:1)</strong> — sicher überall (Feed IG + FB).</li>
                         <li><strong>Story 1080×1920 (9:16)</strong> — für Instagram-/Facebook-Stories.</li>
                         <li>Das Instagram-Profil-Grid schneidet neuerdings auf <strong>3:4</strong> — Logo/Text/Gesichter mittig halten.</li>
@@ -806,6 +808,7 @@ let lastCardDataUrl = null; // wird beim Rendern in Modul 3 gesetzt, für Auto-P
 const CARD_FORMATS = {
     square:   { w: 1080, h: 1080, label: 'Quadratisch 1080×1080' },
     portrait: { w: 1080, h: 1350, label: 'Portrait 1080×1350' },
+    grid34:   { w: 1080, h: 1440, label: 'Instagram-Grid 1080×1440' },
     story:    { w: 1080, h: 1920, label: 'Story 1080×1920' },
 };
 const DEFAULT_LOGO = <?= json_encode('../assets/images/ATSV_Logo-750x968.png') ?>;
