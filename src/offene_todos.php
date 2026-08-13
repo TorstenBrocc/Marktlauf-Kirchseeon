@@ -40,6 +40,12 @@ const TODO_LISTE_MAX = 8;
 const TODO_NOTIZ_LAENGE = 140;
 
 /**
+ * Wochentag für den vollen Überblick (ISO: 1 = Montag … 7 = Sonntag).
+ * Freitag (TT, 2026-08-13) — zum Wochenausklang, wenn Zeit fürs Nacharbeiten ist.
+ */
+const TODO_WOCHENTAG_VOLL = 5;
+
+/**
  * Status, die kein ToDo mehr erzeugen. `bestaetigt` fehlt hier bewusst nicht —
  * ab dort übernimmt die Rechnungs-/Abrechnungsstrecke.
  */

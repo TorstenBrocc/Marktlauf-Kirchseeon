@@ -7,9 +7,9 @@
  *
  * RHYTHMUS (TT, 2026-08-13): wöchentlich der volle Überblick, dazwischen nur, wenn etwas
  * NEU dazugekommen ist. Umgesetzt über --modus:
- *   voll  Alles Offene. Läuft montags und bei jedem manuellen Aufruf.
+ *   voll  Alles Offene. Läuft freitags und bei jedem manuellen Aufruf.
  *   neu   Nur, was HEUTE dazugekommen ist. Ist nichts neu, geht keine Mail raus.
- *   auto  Montag = voll, sonst neu. Das nutzt der Workflow.
+ *   auto  Freitag = voll, sonst neu. Das nutzt der Workflow.
  *
  * „Neu" wird aus den ohnehin gelesenen Daten abgeleitet, nicht aus einer
  * Benachrichtigungs-Tabelle: heute fällig geworden, heute die 21-Tage-Schwelle erreicht,
@@ -61,8 +61,9 @@ if (!in_array($modus, ['voll', 'neu', 'auto'], true)) {
     exit("ABBRUCH: --modus muss voll, neu oder auto sein.\n");
 }
 if ($modus === 'auto') {
-    // 1 = Montag. Wochenstart = voller Überblick, sonst nur Neues.
-    $modus = ((int) date('N') === 1) ? 'voll' : 'neu';
+    // 5 = Freitag (TT, 2026-08-13): der volle Überblick kommt zum Wochenausklang,
+    // wenn Zeit fürs Nacharbeiten ist. An den anderen Tagen nur Neues.
+    $modus = ((int) date('N') === TODO_WOCHENTAG_VOLL) ? 'voll' : 'neu';
 }
 
 /**
@@ -90,40 +91,73 @@ try {
     $todos = offeneTodosAlle($pdo);
 
     // Gruppen in Bearbeitungsreihenfolge; je Gruppe der Titel und wie eine Zeile klingt.
+    // Kurzform der Notiz für die Mail: in der Praxis war die 140-Zeichen-Fassung der
+    // Hauptgrund, warum die Mail unlesbar wurde. Auf der Seite bleibt sie länger.
+    $notizKurz = static function (?string $notizen): string {
+        $n = todoNotizStand($notizen);
+        return mb_strlen($n) > 90 ? mb_substr($n, 0, 89) . '…' : $n;
+    };
+
+    // Je Gruppe: Titel, ob Fehlerzustand, und wie eine Zeile in Felder zerlegt wird.
+    // Struktur statt fertiger Strings, damit Mail-HTML echte Spalten bauen kann.
     $gruppenDef = [
-        'bestaetigung' => ['Bestätigung offen', static function (array $t): string {
+        'bestaetigung' => ['Bestätigung offen', false, static function (array $t) use ($notizKurz): array {
             $tage = (int) $t['tage'];
-            return $t['firma'] . ' — ' . ($tage <= 0 ? 'heute zugesagt' : 'seit ' . $tage . ' Tagen zugesagt')
-                . ', Bestätigung noch nicht raus';
+            return [
+                'firma'   => (string) $t['firma'],
+                'frist'   => $tage <= 0 ? 'heute zugesagt' : 'zugesagt vor ' . $tage . ' Tagen',
+                'telefon' => (string) ($t['telefon'] ?? ''),
+                'notiz'   => $notizKurz($t['notizen'] ?? null),
+            ];
         }],
-        'bedingungen' => ['Bedingungen nicht bestätigt', static function (array $t): string {
+        'bedingungen' => ['Bedingungen nicht bestätigt', false, static function (array $t) use ($notizKurz): array {
             $tage = (int) $t['tage'];
-            return $t['firma'] . ' — Bedingungen ' . ($tage <= 0 ? 'seit heute' : 'seit ' . $tage . ' Tagen') . ' nicht gegengezeichnet';
+            return [
+                'firma'   => (string) $t['firma'],
+                'frist'   => $tage <= 0 ? 'seit heute offen' : 'seit ' . $tage . ' Tagen offen',
+                'telefon' => (string) ($t['telefon'] ?? ''),
+                'notiz'   => $notizKurz($t['notizen'] ?? null),
+            ];
         }],
-        'wiedervorlagen' => ['Wiedervorlage fällig', static function (array $t): string {
+        'wiedervorlagen' => ['Wiedervorlage fällig', false, static function (array $t) use ($notizKurz): array {
             $tage = (int) $t['tage'];
-            return $t['firma'] . ' — ' . ($tage <= 0 ? 'heute fällig' : 'seit ' . $tage . ' Tagen überfällig')
-                . (trim((string) $t['telefon']) !== '' ? ' · Tel. ' . $t['telefon'] : '')
-                . (todoNotizStand($t['notizen']) !== '' ? ' | ' . todoNotizStand($t['notizen']) : '');
+            return [
+                'firma'   => (string) $t['firma'],
+                'frist'   => $tage <= 0 ? 'heute fällig' : $tage . ' Tage überfällig',
+                'telefon' => (string) ($t['telefon'] ?? ''),
+                'notiz'   => $notizKurz($t['notizen'] ?? null),
+            ];
         }],
-        'versand_fehler' => ['Versand-Queue: Fehler', static function (array $t): string {
-            return $t['firma'] . ' — ' . ($t['fehler'] !== '' ? $t['fehler'] : 'Versand fehlgeschlagen');
+        'versand_fehler' => ['Versand-Queue: Fehler', true, static function (array $t): array {
+            return [
+                'firma'   => (string) $t['firma'],
+                'frist'   => $t['fehler'] !== '' ? (string) $t['fehler'] : 'Versand fehlgeschlagen',
+                'telefon' => '',
+                'notiz'   => '',
+            ];
         }],
-        'nie_angeschrieben' => ['Noch nie angeschrieben', static function (array $t): string {
+        'nie_angeschrieben' => ['Noch nie angeschrieben', false, static function (array $t) use ($notizKurz): array {
             $tage = (int) $t['tage'];
-            return $t['firma'] . ' — ' . ($tage <= 0 ? 'heute angelegt, noch nicht angeschrieben' : 'liegt seit ' . $tage . ' Tagen unangeschrieben')
-                . (trim((string) $t['telefon']) !== '' ? ' · Tel. ' . $t['telefon'] : '');
+            return [
+                'firma'   => (string) $t['firma'],
+                'frist'   => $tage <= 0 ? 'heute angelegt' : 'liegt ' . $tage . ' Tage',
+                'telefon' => (string) ($t['telefon'] ?? ''),
+                'notiz'   => $notizKurz($t['notizen'] ?? null),
+            ];
         }],
-        'ohne_reaktion' => ['Angeschrieben ohne Reaktion', static function (array $t): string {
-            return $t['firma'] . ' — seit ' . (int) $t['tage'] . ' Tagen ohne Antwort'
-                . (trim((string) $t['telefon']) !== '' ? ' · Tel. ' . $t['telefon'] : '')
-                . (todoNotizStand($t['notizen']) !== '' ? ' | ' . todoNotizStand($t['notizen']) : '');
+        'ohne_reaktion' => ['Angeschrieben ohne Reaktion', false, static function (array $t) use ($notizKurz): array {
+            return [
+                'firma'   => (string) $t['firma'],
+                'frist'   => (int) $t['tage'] . ' Tage ohne Antwort',
+                'telefon' => (string) ($t['telefon'] ?? ''),
+                'notiz'   => $notizKurz($t['notizen'] ?? null),
+            ];
         }],
     ];
 
     // Zeilen nach Zuständigem einsortieren. 0 = ohne Zuständigen.
     $proUser = [];
-    foreach ($gruppenDef as $key => [$titel, $bauer]) {
+    foreach ($gruppenDef as $key => [$titel, $istFehler, $bauer]) {
         foreach (($todos[$key] ?? []) as $zeile) {
             if ($modus === 'neu' && !todoIstNeu($key, $zeile)) {
                 continue;
@@ -157,7 +191,8 @@ try {
             return $zeilen;
         }
         $gekuerzt = array_slice($zeilen, 0, TODO_LISTE_MAX);
-        $gekuerzt[] = '… und ' . $rest . ' weitere im Cockpit';
+        // Als eigene Zeile markiert, damit die Mail sie ohne Spalten rendert.
+        $gekuerzt[] = ['firma' => '… und ' . $rest . ' weitere auf der Seite', 'mehr' => true];
         return $gekuerzt;
     };
 
@@ -173,17 +208,19 @@ try {
         // Gruppen in definierter Reihenfolge zusammenbauen
         $gruppen = [];
         $anzahl = 0;
-        foreach ($gruppenDef as $key => [$titel, $_]) {
+        foreach ($gruppenDef as $key => [$titel, $istFehler, $_]) {
             if (!empty($meine[$key])) {
                 $anzahl += count($meine[$key]);
-                $gruppen[] = ['titel' => $titel, 'zeilen' => $deckeln($meine[$key])];
+                $gruppen[] = ['titel' => $titel, 'ist_fehler' => $istFehler,
+                              'zeilen' => $deckeln($meine[$key])];
             }
         }
         if ($istAdmin && $herrenlos !== []) {
-            foreach ($gruppenDef as $key => [$titel, $_]) {
+            foreach ($gruppenDef as $key => [$titel, $istFehler, $_]) {
                 if (!empty($herrenlos[$key])) {
                     $anzahl += count($herrenlos[$key]);
-                    $gruppen[] = ['titel' => 'OHNE ZUSTÄNDIGEN — bitte zuordnen: ' . $titel,
+                    $gruppen[] = ['titel' => 'Ohne Zuständigen — bitte zuordnen: ' . $titel,
+                                  'ist_fehler' => $istFehler,
                                   'zeilen' => $deckeln($herrenlos[$key])];
                 }
             }
@@ -203,7 +240,15 @@ try {
             foreach ($gruppen as $g) {
                 echo '  ' . $g['titel'] . ' (' . count($g['zeilen']) . ")\n";
                 foreach ($g['zeilen'] as $z) {
-                    echo '    • ' . $z . "\n";
+                    $teile = array_filter([
+                        $z['firma'] ?? '',
+                        trim((string) ($z['frist'] ?? '')),
+                        trim((string) ($z['telefon'] ?? '')) !== '' ? 'Tel. ' . $z['telefon'] : '',
+                    ], static fn ($t) => $t !== '');
+                    echo '    • ' . implode(' · ', $teile) . "\n";
+                    if (trim((string) ($z['notiz'] ?? '')) !== '') {
+                        echo '        ' . $z['notiz'] . "\n";
+                    }
                 }
             }
             $sent++;
