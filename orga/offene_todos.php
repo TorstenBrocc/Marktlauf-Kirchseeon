@@ -46,7 +46,9 @@ $kontakt = static function (?string $telefon, ?string $email): string {
     if ($mail !== '') {
         $out .= '<a href="mailto:' . htmlspecialchars($mail) . '">✉️ Mail</a>';
     }
-    return $out === '' ? '' : '<span class="todo-kontakt">' . $out . '</span>';
+    // Immer ein Element ausgeben — bei display:contents braucht jede Zeile die
+    // gleiche Anzahl Rasterzellen, sonst verrutschen die Spaltenkanten.
+    return '<span class="todo-kontakt">' . $out . '</span>';
 };
 
 /** Alters-/Fristangabe. `dringend` hebt hervor, ohne die Seite rot einzufärben. */
@@ -109,67 +111,97 @@ $rest = static function (array $liste): int {
             background: var(--white);
             border-radius: 8px;
             box-shadow: var(--shadow-card);
-            border-left: 4px solid var(--primary);
-            padding: 1.1rem 1.35rem;
-            margin-bottom: 1.1rem;
+            padding: 0;
+            margin-bottom: 1.4rem;
+            overflow: hidden;
         }
-        .todo-gruppe.ist-fehler { border-left-color: var(--error); }
-        .todo-gruppe.ist-nachrichtlich { border-left-color: var(--border); }
+        /* Überschrift als eigenes Band — deutlich abgesetzt, nicht als weitere Textzeile. */
         .todo-gruppe > h2 {
             font-size: 0.95rem;
-            margin: 0 0 0.2rem 0;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            margin: 0;
+            padding: 0.7rem 1.35rem;
+            background: var(--primary);
+            color: #fff;
             display: flex;
-            align-items: baseline;
-            gap: 0.5rem;
+            align-items: center;
+            gap: 0.6rem;
             flex-wrap: wrap;
         }
+        .todo-gruppe.ist-fehler > h2 { background: var(--error); }
+        .todo-gruppe.ist-nachrichtlich > h2 { background: var(--text-light); }
         .todo-anzahl {
             font-size: 0.75rem;
             font-weight: 700;
             color: var(--primary);
-            background: var(--success-bg);
+            background: #fff;
             border-radius: 999px;
-            padding: 0.05rem 0.5rem;
+            padding: 0.05rem 0.55rem;
         }
-        .todo-gruppe.ist-fehler .todo-anzahl { color: var(--error); background: var(--error-bg); }
-        .todo-was { font-size: 0.78rem; color: var(--text-light); margin: 0 0 0.7rem 0; }
+        .todo-gruppe.ist-fehler .todo-anzahl { color: var(--error); }
+        .todo-gruppe.ist-nachrichtlich .todo-anzahl { color: var(--text); }
+        .todo-was {
+            font-size: 0.78rem;
+            color: var(--text-light);
+            margin: 0;
+            padding: 0.6rem 1.35rem 0.2rem 1.35rem;
+        }
 
-        .todo-liste { list-style: none; margin: 0; padding: 0; }
-        .todo-liste > li {
+        /* Echtes Spaltenraster: Firma | Status/Frist | Kontakt. Die <li> selbst sind
+           display:contents, damit alle Zeilen an denselben Spaltenkanten ausgerichtet
+           sind statt jede für sich umzubrechen. */
+        .todo-liste {
+            list-style: none;
+            margin: 0;
+            padding: 0.4rem 1.35rem 1rem 1.35rem;
             display: grid;
-            grid-template-columns: 1fr auto;
-            gap: 0.2rem 0.9rem;
-            padding: 0.55rem 0;
-            border-bottom: 1px solid var(--border);
+            grid-template-columns: minmax(10rem, 2.2fr) minmax(7rem, 1fr) auto;
+            align-items: baseline;
+            column-gap: 1rem;
         }
-        .todo-liste > li:last-child { border-bottom: none; }
-        .todo-zeile { display: flex; align-items: baseline; gap: 0.5rem; flex-wrap: wrap; min-width: 0; }
-        .todo-name { font-weight: 600; overflow-wrap: anywhere; }
+        .todo-liste > li { display: contents; }
+        .todo-name {
+            font-weight: 600;
+            overflow-wrap: anywhere;
+            padding: 0.4rem 0 0 0;
+            border-top: 1px solid var(--border);
+        }
+        .todo-meta, .todo-kontakt {
+            padding: 0.4rem 0 0 0;
+            border-top: 1px solid var(--border);
+        }
+        /* Erste Zeile ohne Trennlinie — die Überschrift trennt schon. */
+        .todo-liste > li:first-child .todo-name,
+        .todo-liste > li:first-child .todo-meta,
+        .todo-liste > li:first-child .todo-kontakt { border-top: none; }
         .todo-name a { color: inherit; text-decoration: none; }
         .todo-name a:hover { text-decoration: underline; color: var(--primary); }
-        .todo-alter { font-size: 0.75rem; color: var(--text-light); white-space: nowrap; }
+        .todo-meta { font-size: 0.78rem; color: var(--text-light); display: flex; gap: 0.45rem; flex-wrap: wrap; align-items: baseline; }
+        .todo-alter { white-space: nowrap; }
         .todo-alter.dringend { color: var(--primary-dark); font-weight: 700; }
         .todo-prio {
-            font-size: 0.68rem;
+            font-size: 0.66rem;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.04em;
             color: var(--primary);
             border: 1px solid var(--primary);
             border-radius: 999px;
-            padding: 0 0.4rem;
+            padding: 0 0.35rem;
+            white-space: nowrap;
         }
         .todo-notiz {
             grid-column: 1 / -1;
-            font-size: 0.78rem;
+            font-size: 0.76rem;
             color: var(--text-light);
             font-style: italic;
             overflow-wrap: anywhere;
+            padding: 0.1rem 0 0.15rem 0;
         }
-        .todo-kontakt { display: flex; gap: 0.4rem; flex-wrap: wrap; justify-self: end; }
+        .todo-kontakt { display: flex; gap: 0.35rem; flex-wrap: wrap; justify-content: flex-end; }
         .todo-kontakt a {
-            font-size: 0.75rem;
-            padding: 0.15rem 0.55rem;
+            font-size: 0.72rem;
+            padding: 0.1rem 0.5rem;
             border: 1px solid var(--primary);
             border-radius: 999px;
             color: var(--primary);
@@ -177,7 +209,7 @@ $rest = static function (array $liste): int {
             white-space: nowrap;
         }
         .todo-kontakt a:hover { background: var(--primary); color: #fff; }
-        .todo-mehr { font-size: 0.78rem; color: var(--text-light); margin: 0.6rem 0 0 0; }
+        .todo-mehr { font-size: 0.78rem; color: var(--text-light); margin: 0; padding: 0 1.35rem 1rem 1.35rem; }
         .todo-leer {
             background: var(--success-bg);
             border-left: 4px solid var(--primary);
@@ -187,11 +219,19 @@ $rest = static function (array $liste): int {
 
         /* Handy: alles untereinander, Kontakt-Buttons unter den Namen — kein
            horizontales Scrollen (vertikal ist die Leserichtung). */
+        /* Handy: Raster auflösen, alles untereinander — vertikal ist die Leserichtung. */
         @media (max-width: 700px) {
-            .todo-gruppe { padding: 1rem; }
-            .todo-liste > li { grid-template-columns: 1fr; }
-            .todo-kontakt { justify-self: start; }
-            .todo-kontakt a { padding: 0.3rem 0.7rem; }
+            .todo-liste {
+                grid-template-columns: 1fr;
+                padding: 0.4rem 1rem 1rem 1rem;
+                row-gap: 0;
+            }
+            .todo-gruppe > h2, .todo-was, .todo-mehr { padding-left: 1rem; padding-right: 1rem; }
+            .todo-liste > li { display: block; padding: 0.55rem 0; border-top: 1px solid var(--border); }
+            .todo-liste > li:first-child { border-top: none; }
+            .todo-name, .todo-meta, .todo-kontakt { border-top: none; padding-top: 0.15rem; }
+            .todo-kontakt { justify-content: flex-start; }
+            .todo-kontakt a { padding: 0.28rem 0.65rem; font-size: 0.78rem; }
         }
     </style>
 </head>
@@ -231,8 +271,8 @@ $rest = static function (array $liste): int {
                 <ul class="todo-liste">
                     <?php foreach (array_slice($todos['bestaetigung'], 0, TODO_LISTE_MAX) as $t): ?>
                     <li>
-                        <span class="todo-zeile">
                             <span class="todo-name"><a href="sponsor_form.php?id=<?= (int) $t['id'] ?>"><?= htmlspecialchars($t['firma']) ?></a></span>
+                        <span class="todo-meta">
                             <?= $prio($t['prioritaet']) ?>
                             <?php if (!empty($t['paket'])): ?>
                                 <span class="todo-alter"><?= htmlspecialchars(ucfirst((string) $t['paket'])) ?></span>
@@ -257,8 +297,8 @@ $rest = static function (array $liste): int {
                 <ul class="todo-liste">
                     <?php foreach (array_slice($todos['wiedervorlagen'], 0, TODO_LISTE_MAX) as $t): ?>
                     <li>
-                        <span class="todo-zeile">
                             <span class="todo-name"><a href="sponsor_form.php?id=<?= (int) $t['id'] ?>"><?= htmlspecialchars($t['firma']) ?></a></span>
+                        <span class="todo-meta">
                             <?= $prio($t['prioritaet']) ?>
                             <span class="todo-alter"><?= htmlspecialchars(sponsorStatusLabel((string) $t['status'])) ?></span>
                             <?= $alter((int) $t['tage'], 'heute fällig', 'seit %d Tagen überfällig') ?>
@@ -281,10 +321,11 @@ $rest = static function (array $liste): int {
                 <ul class="todo-liste">
                     <?php foreach (array_slice($todos['versand_fehler'], 0, TODO_LISTE_MAX) as $t): ?>
                     <li>
-                        <span class="todo-zeile">
                             <span class="todo-name"><?= htmlspecialchars($t['firma']) ?></span>
+                        <span class="todo-meta">
                             <span class="todo-alter"><?= htmlspecialchars($t['fehler'] !== '' ? $t['fehler'] : 'Versand fehlgeschlagen') ?></span>
                         </span>
+                        <span class="todo-kontakt"></span>
                     </li>
                     <?php endforeach; ?>
                 </ul>
@@ -298,8 +339,8 @@ $rest = static function (array $liste): int {
                 <ul class="todo-liste">
                     <?php foreach (array_slice($todos['nie_angeschrieben'], 0, TODO_LISTE_MAX) as $t): ?>
                     <li>
-                        <span class="todo-zeile">
                             <span class="todo-name"><a href="sponsor_form.php?id=<?= (int) $t['id'] ?>"><?= htmlspecialchars($t['firma']) ?></a></span>
+                        <span class="todo-meta">
                             <?= $prio($t['prioritaet']) ?>
                             <?= $alter((int) $t['tage'], 'heute angelegt', 'liegt seit %d Tagen', false) ?>
                         </span>
@@ -321,8 +362,8 @@ $rest = static function (array $liste): int {
                 <ul class="todo-liste">
                     <?php foreach (array_slice($todos['ohne_reaktion'], 0, TODO_LISTE_MAX) as $t): ?>
                     <li>
-                        <span class="todo-zeile">
                             <span class="todo-name"><a href="sponsor_form.php?id=<?= (int) $t['id'] ?>"><?= htmlspecialchars($t['firma']) ?></a></span>
+                        <span class="todo-meta">
                             <?= $prio($t['prioritaet']) ?>
                             <?= $alter((int) $t['tage'], 'heute', 'seit %d Tagen keine Antwort') ?>
                         </span>
@@ -344,10 +385,11 @@ $rest = static function (array $liste): int {
                 <ul class="todo-liste">
                     <?php foreach (array_slice($todos['sponsor_aufgaben'], 0, TODO_LISTE_MAX) as $t): ?>
                     <li>
-                        <span class="todo-zeile">
                             <span class="todo-name"><a href="sponsor_form.php?id=<?= (int) $t['sponsor_id'] ?>"><?= htmlspecialchars($t['firma']) ?></a></span>
+                        <span class="todo-meta">
                             <span class="todo-alter"><?= htmlspecialchars($t['titel']) ?></span>
                         </span>
+                        <span class="todo-kontakt"></span>
                     </li>
                     <?php endforeach; ?>
                 </ul>

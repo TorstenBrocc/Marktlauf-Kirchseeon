@@ -35,6 +35,15 @@ require_once __DIR__ . '/../src/logger.php';
 // Orga-Team eine Testmail zu schicken.
 $dryRun = in_array('--dry-run', $argv ?? [], true);
 
+// --nur-an=<mail>: nur an diese eine Adresse senden. Für die Sichtprobe, bevor der
+// Verteiler aufgemacht wird — verhindert, dass eine Testmail an das ganze Team geht.
+$nurAn = '';
+foreach ($argv ?? [] as $arg) {
+    if (str_starts_with((string) $arg, '--nur-an=')) {
+        $nurAn = trim(substr((string) $arg, 9));
+    }
+}
+
 try {
     $pdo = getDbConnection();
     $todos = offeneTodosAlle($pdo);
@@ -99,6 +108,18 @@ try {
         WHERE active = 1 AND role IN ('admin','orga') AND NULLIF(TRIM(email),'') IS NOT NULL
         ORDER BY name
     ")->fetchAll();
+
+    if ($nurAn !== '') {
+        $empfaenger = array_values(array_filter(
+            $empfaenger,
+            static fn (array $e): bool => strcasecmp(trim((string) $e['email']), $nurAn) === 0
+        ));
+        if ($empfaenger === []) {
+            echo "ABBRUCH: {$nurAn} ist kein aktiver Orga-/Admin-Empfänger.\n";
+            exit(1);
+        }
+        echo "Eingeschränkt auf {$nurAn}.\n";
+    }
 
     if ($empfaenger === []) {
         echo "Keine aktiven Orga-/Admin-Empfänger gefunden — nichts verschickt.\n";
