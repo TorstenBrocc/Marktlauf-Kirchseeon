@@ -701,18 +701,19 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                             </div>
                         </div>
                         <div class="form-group">
-                            <label style="display:flex; align-items:center; gap:0.4rem;">
-                                <input type="checkbox" name="bedingungen_beleg" value="1" <?= !empty($sponsor['bedingungen_beleg']) ? 'checked' : '' ?>>
-                                Rückmeldung im Sponsor-Ordner abgelegt
-                            </label>
+                            <div class="checkbox-single">
+                                <input type="checkbox" id="bedingungen_beleg" name="bedingungen_beleg" value="1" <?= !empty($sponsor['bedingungen_beleg']) ? 'checked' : '' ?>>
+                                <label for="bedingungen_beleg">Rückmeldung im Sponsor-Ordner abgelegt</label>
+                            </div>
                         </div>
                     </div>
 
                     <div class="form-card">
-                        <h2>Rechnungsanschrift</h2>
+                        <h2>Rechnung</h2>
                         <p style="font-size:0.8rem; color: var(--text-light); margin-top:-0.5rem; margin-bottom:1rem;">
-                            Nur ausfüllen, falls die Rechnung an eine andere Adresse als die Firma
-                            gehen soll (z. B. zentrale Buchhaltung einer Unternehmensgruppe).
+                            Abweichende Rechnungsanschrift nur ausfüllen, falls die Rechnung an eine andere
+                            Adresse als die Firma gehen soll (z. B. zentrale Buchhaltung einer Unternehmensgruppe).
+                            Leistung und Betrag kommen aus dem gebuchten Paket; Paketpreise sind netto (zzgl. 19&nbsp;% USt).
                         </p>
 
                         <div class="form-row">
@@ -747,36 +748,6 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                                        value="<?= htmlspecialchars($sponsor['rechnung_ort'] ?? '') ?>">
                             </div>
                         </div>
-                    </div>
-
-                    <div class="form-card">
-                        <h2>Rechnung / Leistung</h2>
-                        <p style="font-size:0.8rem; color: var(--text-light); margin-top:-0.5rem; margin-bottom:0.75rem;">
-                            Für die Sponsoring-Rechnung. <strong>Leistung und Betrag kommen aus dem
-                            gebuchten Paket</strong> (siehe Tabelle). Paketpreise verstehen sich immer
-                            <strong>netto</strong> (zzgl. 19&nbsp;% USt).
-                        </p>
-
-                        <table style="width:100%;border-collapse:collapse;font-size:0.78rem;margin-bottom:1.25rem;color:var(--text-light)">
-                            <thead>
-                                <tr style="text-align:left">
-                                    <th style="padding:0.25rem 0.4rem;border-bottom:1px solid var(--border)">Paket</th>
-                                    <th style="padding:0.25rem 0.4rem;border-bottom:1px solid var(--border);white-space:nowrap">Investition</th>
-                                    <th style="padding:0.25rem 0.4rem;border-bottom:1px solid var(--border)">Leistungen</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                            <?php foreach (['hauptsponsor', 'gold', 'silber', 'bronze'] as $pk):
-                                if (empty($rechnungPakete[$pk])) { continue; }
-                                $pd = $rechnungPakete[$pk]; ?>
-                                <tr>
-                                    <td style="padding:0.25rem 0.4rem;font-weight:600;white-space:nowrap"><?= htmlspecialchars((string)($pd['name'] ?? $pk)) ?></td>
-                                    <td style="padding:0.25rem 0.4rem;white-space:nowrap"><?= htmlspecialchars((string)($pd['investition'] ?? '')) ?></td>
-                                    <td style="padding:0.25rem 0.4rem"><?= htmlspecialchars((string)($pd['highlights'] ?? '')) ?></td>
-                                </tr>
-                            <?php endforeach; ?>
-                            </tbody>
-                        </table>
 
                         <div class="form-group">
                             <div class="checkbox-single">
