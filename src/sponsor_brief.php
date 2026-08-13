@@ -329,6 +329,14 @@ function sponsorBestaetigungSektionen(): array {
                        . "Rechnungsadresse sowie alle für die Buchhaltung notwendigen Informationen "
                        . "(z. B. Ansprechpartner Buchhaltung).",
         ],
+        [
+            'id'      => 's9',
+            'titel'   => '9. Sponsoring-Bedingungen',
+            'checked' => true,
+            'text'    => "**Sponsoring-Bedingungen**\n\n"
+                       . "Grundlage unserer Zusammenarbeit sind die beiliegenden Sponsoring-Bedingungen. "
+                       . "Bitte geben Sie uns dazu eine kurze positive Rückmeldung – damit gelten sie als vereinbart.",
+        ],
     ];
 }
 

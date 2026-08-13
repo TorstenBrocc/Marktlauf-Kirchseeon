@@ -49,10 +49,10 @@ try {
     // ignore
 }
 
-// Migration 030 (Rechnungsanschrift/Gruppen) evtl. noch nicht angewendet — graceful.
-$hasRechnung = false;
+// Bedingungen-Bestätigung (Migration 062) evtl. noch nicht angewendet — graceful.
+$hasBedingungen = false;
 try {
-    $hasRechnung = (bool) $pdo->query("SHOW COLUMNS FROM sponsors LIKE 'rechnung_firma'")->fetchColumn();
+    $hasBedingungen = (bool) $pdo->query("SHOW COLUMNS FROM sponsors LIKE 'bedingungen_bestaetigt_am'")->fetchColumn();
 } catch (PDOException $e) {
     // ignore
 }
@@ -75,7 +75,7 @@ $colCount = 9;
 if ($hasZustaendig) {
     $colCount++;
 }
-if ($hasRechnung) {
+if ($hasBedingungen) {
     $colCount++;
 }
 
@@ -546,14 +546,18 @@ try {
             vertical-align: middle;
             white-space: nowrap;
         }
-        .col-rechnung {
+        .col-bedingungen {
             text-align: center;
         }
-        .rechnung-ja {
+        .bed-ja {
             color: var(--primary);
             font-weight: 600;
         }
-        .rechnung-nein {
+        .bed-nein {
+            color: #c0392b;
+            font-weight: 700;
+        }
+        .bed-neutral {
             color: var(--text-light);
         }
         .table-wrap {
@@ -735,7 +739,7 @@ try {
                             <th>Summe</th>
                             <th>Status</th>
                             <th>Wiedervorlage</th>
-                            <?php if ($hasRechnung): ?><th class="col-rechnung" title="Rechnungsanschrift hinterlegt?">Rechnung</th><?php endif; ?>
+                            <?php if ($hasBedingungen): ?><th class="col-bedingungen" title="Sponsoring-Bedingungen vom Sponsor bestätigt?">Bedingungen</th><?php endif; ?>
                             <?php if ($hasZustaendig): ?><th>Zuständig</th><?php endif; ?>
                             <th>Notiz</th>
                             <th>Aktion</th>
@@ -857,13 +861,29 @@ try {
                                             –
                                         <?php endif; ?>
                                     </td>
-                                    <?php if ($hasRechnung): ?>
+                                    <?php if ($hasBedingungen): ?>
                                         <?php
-                                        $hatRechnung = !empty($s['rechnung_firma']) || !empty($s['rechnung_strasse'])
-                                            || !empty($s['rechnung_plz']) || !empty($s['rechnung_ort']) || !empty($s['rechnung_email']);
+                                        $bedStatus     = (string) ($s['status'] ?? '');
+                                        $bedBestaetigt = !empty($s['bedingungen_bestaetigt_am']);
+                                        if (!sponsorBedingungenBenoetigt($bedStatus)) {
+                                            $bedCls = 'bed-neutral'; $bedSym = '–';
+                                            $bedTip = 'Bestätigung noch nicht verschickt';
+                                        } elseif ($bedBestaetigt) {
+                                            $bedCls   = 'bed-ja';
+                                            $bedWeg   = sponsorBedingungenWegLabel((string) ($s['bedingungen_weg'] ?? ''));
+                                            $bedDatum = date('d.m.Y', strtotime((string) $s['bedingungen_bestaetigt_am']));
+                                            $bedBeleg = !empty($s['bedingungen_beleg']);
+                                            $bedSym   = '✓' . ($bedBeleg ? ' 📎' : '');
+                                            $bedTip   = 'Bestätigt am ' . $bedDatum
+                                                . ($bedWeg !== '' ? ' (' . $bedWeg . ')' : '')
+                                                . ($bedBeleg ? ' · Rückmeldung im Ordner' : ' · Beleg fehlt');
+                                        } else {
+                                            $bedCls = 'bed-nein'; $bedSym = '✗';
+                                            $bedTip = 'Bedingungen noch nicht bestätigt';
+                                        }
                                         ?>
-                                        <td class="col-rechnung" title="<?= $hatRechnung ? 'Rechnungsanschrift hinterlegt' : 'Keine Rechnungsanschrift hinterlegt' ?>">
-                                            <span class="<?= $hatRechnung ? 'rechnung-ja' : 'rechnung-nein' ?>"><?= $hatRechnung ? '✓' : '✗' ?></span>
+                                        <td class="col-bedingungen" title="<?= htmlspecialchars($bedTip) ?>">
+                                            <span class="<?= $bedCls ?>"><?= $bedSym ?></span>
                                         </td>
                                     <?php endif; ?>
                                     <?php if ($hasZustaendig): ?>

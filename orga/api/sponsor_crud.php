@@ -309,8 +309,8 @@ try {
             $gruppeId = sponsorGruppeIdFromPost($pdo, $_POST['gruppe_name'] ?? '');
 
             $stmt = $pdo->prepare('
-                INSERT INTO sponsors (firma, paket, prioritaet, ort, summe, status, kein_kontakt, kein_kontakt_grund, kein_kontakt_wer, kein_kontakt_datum, notizen, wiedervorlage, gruppe_id, rechnung_firma, rechnung_strasse, rechnung_plz, rechnung_ort, rechnung_email, rechnung_leistung, leistung_zeitraum, rechnung_betrag_brutto, branche, foerderprogramm, kontaktweg, website, quellenurl, ansprache)
-                VALUES (:firma, :paket, :prioritaet, :ort, :summe, :status, :kein_kontakt, :kein_kontakt_grund, :kein_kontakt_wer, :kein_kontakt_datum, :notizen, :wiedervorlage, :gruppe_id, :rechnung_firma, :rechnung_strasse, :rechnung_plz, :rechnung_ort, :rechnung_email, :rechnung_leistung, :leistung_zeitraum, :rechnung_betrag_brutto, :branche, :foerderprogramm, :kontaktweg, :website, :quellenurl, :ansprache)
+                INSERT INTO sponsors (firma, paket, prioritaet, ort, summe, status, kein_kontakt, kein_kontakt_grund, kein_kontakt_wer, kein_kontakt_datum, notizen, wiedervorlage, gruppe_id, rechnung_firma, rechnung_strasse, rechnung_plz, rechnung_ort, rechnung_email, rechnung_leistung, leistung_zeitraum, rechnung_betrag_brutto, branche, foerderprogramm, kontaktweg, website, quellenurl, ansprache, bedingungen_bestaetigt_am, bedingungen_weg, bedingungen_beleg)
+                VALUES (:firma, :paket, :prioritaet, :ort, :summe, :status, :kein_kontakt, :kein_kontakt_grund, :kein_kontakt_wer, :kein_kontakt_datum, :notizen, :wiedervorlage, :gruppe_id, :rechnung_firma, :rechnung_strasse, :rechnung_plz, :rechnung_ort, :rechnung_email, :rechnung_leistung, :leistung_zeitraum, :rechnung_betrag_brutto, :branche, :foerderprogramm, :kontaktweg, :website, :quellenurl, :ansprache, :bedingungen_bestaetigt_am, :bedingungen_weg, :bedingungen_beleg)
             ');
             $stmt->execute([
                 'firma'              => $firma,
@@ -340,6 +340,9 @@ try {
                 'ansprache'          => ($_POST['ansprache'] ?? 'sie') === 'du' ? 'du' : 'sie',
                 'website'            => trim($_POST['website'] ?? '') ?: null,
                 'quellenurl'         => trim($_POST['quellenurl'] ?? '') ?: null,
+                'bedingungen_bestaetigt_am' => $_POST['bedingungen_bestaetigt_am'] ?: null,
+                'bedingungen_weg'    => in_array($_POST['bedingungen_weg'] ?? '', sponsorBedingungenWegKeys(), true) ? $_POST['bedingungen_weg'] : null,
+                'bedingungen_beleg'  => isset($_POST['bedingungen_beleg']) ? 1 : 0,
             ]);
 
             $newSponsorId = (int) $pdo->lastInsertId();
@@ -434,7 +437,10 @@ try {
                     kontaktweg = :kontaktweg,
                     website = :website,
                     quellenurl = :quellenurl,
-                    ansprache = :ansprache
+                    ansprache = :ansprache,
+                    bedingungen_bestaetigt_am = :bedingungen_bestaetigt_am,
+                    bedingungen_weg = :bedingungen_weg,
+                    bedingungen_beleg = :bedingungen_beleg
                 WHERE id = :id
             ');
             $stmt->execute([
@@ -465,6 +471,9 @@ try {
                 'ansprache'          => ($_POST['ansprache'] ?? 'sie') === 'du' ? 'du' : 'sie',
                 'website'            => trim($_POST['website'] ?? '') ?: null,
                 'quellenurl'         => trim($_POST['quellenurl'] ?? '') ?: null,
+                'bedingungen_bestaetigt_am' => $_POST['bedingungen_bestaetigt_am'] ?: null,
+                'bedingungen_weg'    => in_array($_POST['bedingungen_weg'] ?? '', sponsorBedingungenWegKeys(), true) ? $_POST['bedingungen_weg'] : null,
+                'bedingungen_beleg'  => isset($_POST['bedingungen_beleg']) ? 1 : 0,
                 'id'                 => $sponsorId,
             ]);
 
