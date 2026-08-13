@@ -387,6 +387,8 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                 </div>
             </div>
             <div class="so-actions">
+                <button class="btn btn-secondary" id="so-review-btn">Mit KI gegenprüfen</button>
+                <span id="so-review-spinner" style="display:none;font-size:0.85rem;color:var(--text-light)">⏳ prüft …</span>
                 <button class="btn btn-secondary" id="so-save-draft">Als Entwurf speichern</button>
                 <button class="btn btn-primary"    id="so-save-approved">Freigeben</button>
                 <?php if ($last): ?>
@@ -396,6 +398,10 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                 </span>
                 <?php endif; ?>
                 <span id="so-saved-msg">Gespeichert.</span>
+            </div>
+            <div id="so-review-box" style="display:none;margin-top:1rem">
+                <p style="font-size:.82rem;color:var(--text-light);margin:0 0 0.4rem" id="so-review-caption">Gegenprüfung:</p>
+                <div class="so-notice" id="so-review-text" style="white-space:pre-wrap"></div>
             </div>
         </div>
 
@@ -718,6 +724,48 @@ document.getElementById('so-generate-btn').addEventListener('click', async () =>
         errEl.style.display = 'block';
     } finally {
         btn.disabled         = false;
+        spinner.style.display = 'none';
+    }
+});
+
+// Gegenprüfen: zweiter KI-Pass gegen die Voice-Regeln (bevorzugt der andere Provider)
+document.getElementById('so-review-btn').addEventListener('click', async () => {
+    const btn     = document.getElementById('so-review-btn');
+    const spinner = document.getElementById('so-review-spinner');
+    const box     = document.getElementById('so-review-box');
+    const textEl  = document.getElementById('so-review-text');
+    const caption = document.getElementById('so-review-caption');
+    const labels  = { gemini: 'Google Gemini', mistral: 'Mistral' };
+
+    btn.disabled = true;
+    spinner.style.display = 'inline';
+    try {
+        const r = await fetch('api/social_review.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: new URLSearchParams({
+                csrf_token:  csrf,
+                provider:    document.getElementById('so-provider').value,
+                anlass:      document.getElementById('so-anlass').value,
+                stichpunkte: document.getElementById('so-stichpunkte').value,
+                social:      document.getElementById('so-social').value,
+                article:     document.getElementById('so-article').value,
+            }),
+        });
+        const d = await r.json();
+        if (d.error) {
+            caption.textContent = 'Gegenprüfung:';
+            textEl.textContent  = '⚠️ ' + d.error;
+        } else {
+            caption.textContent = 'Gegenprüfung (' + (labels[d.provider] || d.provider) + '):';
+            textEl.textContent  = d.review;
+        }
+    } catch (e) {
+        caption.textContent = 'Gegenprüfung:';
+        textEl.textContent  = '⚠️ Netzwerkfehler.';
+    } finally {
+        box.style.display = 'block';
+        btn.disabled = false;
         spinner.style.display = 'none';
     }
 });
