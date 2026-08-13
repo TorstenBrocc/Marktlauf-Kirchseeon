@@ -678,11 +678,41 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                     </div>
 
                     <div class="form-card">
+                        <h2>Bedingungen-Bestätigung</h2>
+                        <p style="font-size:0.8rem; color: var(--text-light); margin-top:-0.5rem; margin-bottom:1rem;">
+                            Hat der Sponsor die Sponsoring-Bedingungen bestätigt? Eintragen, sobald die
+                            Rückmeldung da ist — dann erscheint in der Übersicht der grüne Haken.
+                        </p>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="bedingungen_bestaetigt_am">Bestätigt am</label>
+                                <input type="date" id="bedingungen_bestaetigt_am" name="bedingungen_bestaetigt_am"
+                                       value="<?= !empty($sponsor['bedingungen_bestaetigt_am']) ? date('Y-m-d', strtotime((string) $sponsor['bedingungen_bestaetigt_am'])) : '' ?>">
+                            </div>
+                            <div class="form-group">
+                                <label for="bedingungen_weg">Weg der Rückmeldung</label>
+                                <select id="bedingungen_weg" name="bedingungen_weg">
+                                    <option value="">– bitte wählen –</option>
+                                    <?php $bedWegCur = $sponsor['bedingungen_weg'] ?? ''; ?>
+                                    <?php foreach (SPONSOR_BEDINGUNGEN_WEG as $wKey => $wLabel): ?>
+                                        <option value="<?= $wKey ?>" <?= $bedWegCur === $wKey ? 'selected' : '' ?>><?= htmlspecialchars($wLabel) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label style="display:flex; align-items:center; gap:0.4rem;">
+                                <input type="checkbox" name="bedingungen_beleg" value="1" <?= !empty($sponsor['bedingungen_beleg']) ? 'checked' : '' ?>>
+                                Rückmeldung im Sponsor-Ordner abgelegt
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-card">
                         <h2>Rechnungsanschrift</h2>
                         <p style="font-size:0.8rem; color: var(--text-light); margin-top:-0.5rem; margin-bottom:1rem;">
                             Nur ausfüllen, falls die Rechnung an eine andere Adresse als die Firma
-                            gehen soll (z. B. zentrale Buchhaltung einer Unternehmensgruppe). In der
-                            Übersicht wird nur angezeigt, ob eine Rechnungsanschrift hinterlegt ist.
+                            gehen soll (z. B. zentrale Buchhaltung einer Unternehmensgruppe).
                         </p>
 
                         <div class="form-row">

@@ -40,6 +40,31 @@ function sponsorStatusAmpel(string $status): string {
     return SPONSOR_STATUS[$status]['ampel'] ?? 'grau';
 }
 
+/** Rückmelde-Wege für die Bestätigung der Sponsoring-Bedingungen. */
+const SPONSOR_BEDINGUNGEN_WEG = [
+    'email'        => 'E-Mail-Antwort',
+    'unterschrift' => 'Unterschrift',
+    'telefon'      => 'Telefon',
+    'persoenlich'  => 'Persönlich',
+    'sonstige'     => 'Sonstige',
+];
+
+function sponsorBedingungenWegKeys(): array {
+    return array_keys(SPONSOR_BEDINGUNGEN_WEG);
+}
+
+function sponsorBedingungenWegLabel(string $weg): string {
+    return SPONSOR_BEDINGUNGEN_WEG[$weg] ?? '';
+}
+
+/**
+ * Ist eine Bedingungen-Bestätigung für diesen Status "benötigt"?
+ * Erst ab verschickter Bestätigung (Status bestaetigt/abgerechnet/bezahlt) — davor neutral (grau).
+ */
+function sponsorBedingungenBenoetigt(string $status): bool {
+    return in_array($status, ['bestaetigt', 'abgerechnet', 'bezahlt'], true);
+}
+
 /**
  * Nach erfolgreichem Anschreiben-Versand Tracking-Felder setzen.
  * Status wird nur aus dem Vor-Versand-Zustand 'neu' auf 'angefragt'
