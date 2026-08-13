@@ -91,21 +91,39 @@ try {
                         exit;
                     }
                 } else {
-                    // Aus der ToDo-Kachel: dort tippt man in eine Datalist, die nur den Namen
-                    // liefert. Bewusst serverseitig aufgelöst statt per JS in ein Hidden-Feld —
-                    // sonst legt ein Tippfehler stillschweigend eine Aufgabe ohne Sponsor an.
-                    $firmaEingabe = trim($_POST['sponsor_firma'] ?? '');
-                    $treffer = $pdo->prepare('SELECT id FROM sponsors WHERE firma = :firma');
-                    $treffer->execute(['firma' => $firmaEingabe]);
+                    // Aus der ToDo-Kachel: dort tippt man in eine Datalist, die nur Text liefert.
+                    // Bewusst serverseitig aufgelöst statt per JS in ein Hidden-Feld — sonst legt
+                    // ein Tippfehler stillschweigend eine Aufgabe ohne Sponsor an.
+                    //
+                    // Gesucht wird in der Firma UND im Ansprechpartner-Namen (TT 2026-08-13).
+                    // Firma zuerst: steht ein Firmenname exakt so im Bestand, ist er gemeint,
+                    // auch wenn zufällig eine Person genauso heißt.
+                    $eingabe = trim($_POST['sponsor_suche'] ?? '');
+
+                    $treffer = $pdo->prepare('SELECT id FROM sponsors WHERE firma = :wert');
+                    $treffer->execute(['wert' => $eingabe]);
                     $ids = $treffer->fetchAll(PDO::FETCH_COLUMN);
 
                     if (count($ids) === 0) {
-                        $_SESSION['flash_error'] = 'Kein Sponsor mit dem Namen „' . $firmaEingabe . '" — bitte aus der Vorschlagsliste wählen.';
+                        // Personenname → über die Ansprechpartner auf den Sponsor schließen.
+                        // DISTINCT, weil dieselbe Person mehrfach beim selben Sponsor stehen kann.
+                        $perStmt = $pdo->prepare("
+                            SELECT DISTINCT ap.sponsor_id
+                            FROM sponsor_ansprechpartner ap
+                            JOIN sponsors s ON s.id = ap.sponsor_id
+                            WHERE TRIM(CONCAT(ap.vorname, ' ', ap.nachname)) = :wert
+                        ");
+                        $perStmt->execute(['wert' => $eingabe]);
+                        $ids = $perStmt->fetchAll(PDO::FETCH_COLUMN);
+                    }
+
+                    if (count($ids) === 0) {
+                        $_SESSION['flash_error'] = 'Weder Firma noch Ansprechpartner „' . $eingabe . '" gefunden — bitte aus der Vorschlagsliste wählen.';
                         header('Location: ' . $redirectUrl);
                         exit;
                     }
                     if (count($ids) > 1) {
-                        $_SESSION['flash_error'] = 'Der Name „' . $firmaEingabe . '" kommt mehrfach vor — bitte die Aufgabe direkt beim Sponsor anlegen.';
+                        $_SESSION['flash_error'] = '„' . $eingabe . '" passt auf mehrere Sponsoren — bitte die Firma wählen oder die Aufgabe direkt beim Sponsor anlegen.';
                         header('Location: ' . $redirectUrl);
                         exit;
                     }
