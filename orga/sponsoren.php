@@ -743,11 +743,9 @@ try {
             $urlFlat = '?' . http_build_query($qsFlat);
             $urlGroup = '?' . http_build_query($qsGroup);
             ?>
-            <div class="ansicht-toggle" style="margin-bottom:0.6rem;font-size:0.85rem;color:var(--text-light)">
-                Ansicht:
-                <a href="<?= htmlspecialchars($urlFlat) ?>" style="<?= !$groupByBranche ? 'font-weight:600;color:var(--text)' : '' ?>">Liste</a>
-                ·
-                <a href="<?= htmlspecialchars($urlGroup) ?>" style="<?= $groupByBranche ? 'font-weight:600;color:var(--text)' : '' ?>">nach Branche gruppieren</a>
+            <div class="ansicht-toggle" style="margin-bottom:0.75rem;display:inline-flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;font-size:0.85rem">
+                <a href="<?= htmlspecialchars($urlFlat) ?>" style="padding:0.4rem 0.85rem;text-decoration:none;<?= !$groupByBranche ? 'background:var(--primary);color:#fff' : 'color:var(--text)' ?>">Liste</a>
+                <a href="<?= htmlspecialchars($urlGroup) ?>" style="padding:0.4rem 0.85rem;text-decoration:none;border-left:1px solid var(--border);<?= $groupByBranche ? 'background:var(--primary);color:#fff' : 'color:var(--text)' ?>">Nach Branche</a>
             </div>
 
             <div class="table-wrap">
@@ -784,7 +782,15 @@ try {
                             // unter jeder seiner Branchen; „Ohne Branche" kommt ans Ende.
                             $sequence = [];
                             if ($groupByBranche) {
-                                foreach ($branchen as $bName) {
+                                // Gruppen-Namen = Einstellungs-Liste + alle real vergebenen Branchen,
+                                // damit auch Sponsoren mit „unbekannter" Branche eine Überschrift bekommen.
+                                $groupNames = $branchen;
+                                foreach ($sponsoren as $s) {
+                                    foreach ($brancheArr($s) as $bv) {
+                                        if ($bv !== '' && !in_array($bv, $groupNames, true)) { $groupNames[] = $bv; }
+                                    }
+                                }
+                                foreach ($groupNames as $bName) {
                                     $grp = [];
                                     foreach ($sponsoren as $s) {
                                         if (in_array($bName, $brancheArr($s), true)) { $grp[] = $s; }
