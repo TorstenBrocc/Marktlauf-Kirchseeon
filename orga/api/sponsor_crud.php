@@ -240,6 +240,173 @@ if (($_POST['action'] ?? '') === 'inline_update') {
     }
 }
 
+/**
+ * Feldweiser Autosave der Sponsor-Einzelmaske (sponsor_form.php im Bearbeiten-Modus).
+ * Jeder Request schreibt genau EIN Feld — damit kann ein fehlendes Formularfeld nie
+ * stumm Bestandsdaten leeren. Antwortet als JSON, wird per fetch() aufgerufen.
+ */
+if (($_POST['action'] ?? '') === 'field_update') {
+    header('Content-Type: application/json');
+
+    if (!verifyCsrfToken($_POST['csrf_token'] ?? '')) {
+        echo json_encode(['ok' => false, 'message' => 'Ungültige Anfrage.']);
+        exit;
+    }
+
+    $sponsorId = (int) ($_POST['sponsor_id'] ?? 0);
+    $field = (string) ($_POST['field'] ?? '');
+    $rawValue = $_POST['value'] ?? '';
+
+    if ($sponsorId <= 0) {
+        echo json_encode(['ok' => false, 'message' => 'Ungültige Sponsor-ID.']);
+        exit;
+    }
+
+    // Einfache Textfelder (leer -> NULL), Datumsfelder und 0/1-Checkboxen.
+    // Die Spaltennamen stammen ausschließlich aus diesen Whitelists — nie aus Nutzer-Input in die SQL.
+    $plainText = [
+        'ort', 'notizen', 'rechnung_firma', 'rechnung_email', 'rechnung_strasse',
+        'rechnung_plz', 'rechnung_ort', 'foerderprogramm', 'kontaktweg',
+        'quellenurl', 'weitere_links', 'website',
+    ];
+    $dateFields = ['wiedervorlage', 'bedingungen_bestaetigt_am'];
+    $checkboxFields = ['rechnung_betrag_brutto', 'bedingungen_beleg'];
+
+    try {
+        $pdo = getDbConnection();
+
+        // Autosave gibt es nur zu einem bestehenden Sponsor (Neuanlage läuft weiter über 'create').
+        $chk = $pdo->prepare('SELECT 1 FROM sponsors WHERE id = :id');
+        $chk->execute(['id' => $sponsorId]);
+        if (!$chk->fetchColumn()) {
+            echo json_encode(['ok' => false, 'message' => 'Sponsor nicht gefunden.']);
+            exit;
+        }
+
+        // firma: Pflichtfeld, darf per Autosave nicht geleert werden.
+        if ($field === 'firma') {
+            $firma = trim((string) $rawValue);
+            if ($firma === '') {
+                echo json_encode(['ok' => false, 'message' => 'Firma darf nicht leer sein.']);
+                exit;
+            }
+            $pdo->prepare('UPDATE sponsors SET firma = :v WHERE id = :id')
+                ->execute(['v' => $firma, 'id' => $sponsorId]);
+            echo json_encode(['ok' => true]);
+            exit;
+        }
+
+        // status: gegen erlaubte Werte prüfen.
+        if ($field === 'status') {
+            if (!sponsorStatusValid((string) $rawValue)) {
+                echo json_encode(['ok' => false, 'message' => 'Ungültiger Status.']);
+                exit;
+            }
+            $pdo->prepare('UPDATE sponsors SET status = :v WHERE id = :id')
+                ->execute(['v' => (string) $rawValue, 'id' => $sponsorId]);
+            echo json_encode(['ok' => true]);
+            exit;
+        }
+
+        // paket: nur der Typ selbst; der Betrag speichert sich als eigenes Feld (summe).
+        if ($field === 'paket') {
+            $paket = in_array($rawValue, ['hauptsponsor', 'gold', 'silber', 'bronze', 'sachsponsor'], true) ? (string) $rawValue : null;
+            $pdo->prepare('UPDATE sponsors SET paket = :v WHERE id = :id')
+                ->execute(['v' => $paket, 'id' => $sponsorId]);
+            echo json_encode(['ok' => true]);
+            exit;
+        }
+
+        // summe: freie Zahl, 0/leer -> NULL.
+        if ($field === 'summe') {
+            $summe = (float) $rawValue ?: null;
+            $pdo->prepare('UPDATE sponsors SET summe = :v WHERE id = :id')
+                ->execute(['v' => $summe, 'id' => $sponsorId]);
+            echo json_encode(['ok' => true]);
+            exit;
+        }
+
+        // prioritaet: leer|1|2|3.
+        if ($field === 'prioritaet') {
+            $pdo->prepare('UPDATE sponsors SET prioritaet = :v WHERE id = :id')
+                ->execute(['v' => sponsorPrioritaetFromPost($rawValue), 'id' => $sponsorId]);
+            echo json_encode(['ok' => true]);
+            exit;
+        }
+
+        // gruppe_name (Freitext) -> gruppe_id (Gruppe wiederverwenden/anlegen).
+        if ($field === 'gruppe_name') {
+            $gruppeId = sponsorGruppeIdFromPost($pdo, (string) $rawValue);
+            $pdo->prepare('UPDATE sponsors SET gruppe_id = :v WHERE id = :id')
+                ->execute(['v' => $gruppeId, 'id' => $sponsorId]);
+            echo json_encode(['ok' => true]);
+            exit;
+        }
+
+        // ansprache: du|sie.
+        if ($field === 'ansprache') {
+            $ansprache = ((string) $rawValue === 'du') ? 'du' : 'sie';
+            $pdo->prepare('UPDATE sponsors SET ansprache = :v WHERE id = :id')
+                ->execute(['v' => $ansprache, 'id' => $sponsorId]);
+            echo json_encode(['ok' => true]);
+            exit;
+        }
+
+        // bedingungen_weg: gegen erlaubte Wege prüfen, sonst NULL.
+        if ($field === 'bedingungen_weg') {
+            $weg = in_array((string) $rawValue, sponsorBedingungenWegKeys(), true) ? (string) $rawValue : null;
+            $pdo->prepare('UPDATE sponsors SET bedingungen_weg = :v WHERE id = :id')
+                ->execute(['v' => $weg, 'id' => $sponsorId]);
+            echo json_encode(['ok' => true]);
+            exit;
+        }
+
+        // branche[]: Mehrfachauswahl -> JSON-Array (oder NULL). Werte kommen als value[].
+        if ($field === 'branche') {
+            $arr = array_values(array_filter(array_map('trim', (array) ($_POST['value'] ?? []))));
+            $branche = !empty($arr) ? json_encode($arr) : null;
+            $pdo->prepare('UPDATE sponsors SET branche = :v WHERE id = :id')
+                ->execute(['v' => $branche, 'id' => $sponsorId]);
+            echo json_encode(['ok' => true]);
+            exit;
+        }
+
+        // Datumsfelder (leer -> NULL). $field ist per Whitelist geprüft.
+        if (in_array($field, $dateFields, true)) {
+            $val = trim((string) $rawValue) ?: null;
+            $pdo->prepare("UPDATE sponsors SET {$field} = :v WHERE id = :id")
+                ->execute(['v' => $val, 'id' => $sponsorId]);
+            echo json_encode(['ok' => true]);
+            exit;
+        }
+
+        // 0/1-Checkboxen. $field ist per Whitelist geprüft.
+        if (in_array($field, $checkboxFields, true)) {
+            $val = ((string) $rawValue === '1') ? 1 : 0;
+            $pdo->prepare("UPDATE sponsors SET {$field} = :v WHERE id = :id")
+                ->execute(['v' => $val, 'id' => $sponsorId]);
+            echo json_encode(['ok' => true]);
+            exit;
+        }
+
+        // Einfache Textfelder (leer -> NULL). $field ist per Whitelist geprüft.
+        if (in_array($field, $plainText, true)) {
+            $val = trim((string) $rawValue) ?: null;
+            $pdo->prepare("UPDATE sponsors SET {$field} = :v WHERE id = :id")
+                ->execute(['v' => $val, 'id' => $sponsorId]);
+            echo json_encode(['ok' => true]);
+            exit;
+        }
+
+        echo json_encode(['ok' => false, 'message' => 'Ungültiges Feld.']);
+        exit;
+    } catch (PDOException $e) {
+        logError('Sponsor field_update error: ' . $e->getMessage());
+        echo json_encode(['ok' => false, 'message' => 'Datenbankfehler.']);
+        exit;
+    }
+}
+
 $csrfToken = $_POST['csrf_token'] ?? '';
 if (!verifyCsrfToken($csrfToken)) {
     $_SESSION['flash_error'] = 'Ungültige Anfrage.';

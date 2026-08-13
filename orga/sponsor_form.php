@@ -489,7 +489,7 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
             <?php endif; ?>
 
             <div class="form-container">
-                <form method="post" action="api/sponsor_crud.php" enctype="multipart/form-data">
+                <form id="sponsor-form" method="post" action="api/sponsor_crud.php" enctype="multipart/form-data">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                     <input type="hidden" name="action" value="<?= $isEdit ? 'update' : 'create' ?>">
                     <?php if ($isEdit): ?>
@@ -973,6 +973,9 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                     <div class="form-actions">
                         <button type="submit" class="btn btn-primary"><?= $isEdit ? 'Speichern' : 'Anlegen' ?></button>
                         <a href="sponsoren.php" class="btn btn-secondary">Abbrechen</a>
+                        <?php if ($isEdit): ?>
+                        <span style="font-size:0.8rem; color: var(--text-light);">Änderungen werden automatisch gespeichert — der Button ist nur noch Sicherheitsnetz.</span>
+                        <?php endif; ?>
                     </div>
                 </form>
 
@@ -1282,6 +1285,105 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
         };
     })();
 
+    // ---- Einzelmaske: feldweiser Autosave -------------------------------------
+    // Jedes Feld speichert sich beim Ändern selbst (change feuert bei Text/Zahl/Textarea
+    // erst beim Verlassen). Nur im Bearbeiten-Modus aktiv; die Neuanlage läuft weiter
+    // über den „Anlegen"-Button. Datei-Uploads, Logo-Drive-Auswahl, kein-Kontakt-Block
+    // und Löschen behalten ihren eigenen Weg.
+    (function () {
+        var form = document.getElementById('sponsor-form');
+        if (!form) return;
+        var idField = form.querySelector('input[name="sponsor_id"]');
+        if (!idField) return; // Anlegen-Modus: noch keine Sponsor-id, kein Autosave
+        var SPONSOR_ID = idField.value;
+        var CSRF = (form.querySelector('input[name="csrf_token"]') || {}).value || '';
+
+        // Erlaubte Felder (Spiegel der Backend-Whitelist in api/sponsor_crud.php).
+        var FIELDS = {
+            firma: 1, gruppe_name: 1, ansprache: 1, paket: 1, summe: 1, prioritaet: 1,
+            ort: 1, status: 1, wiedervorlage: 1, bedingungen_bestaetigt_am: 1,
+            bedingungen_weg: 1, bedingungen_beleg: 1, rechnung_firma: 1, rechnung_email: 1,
+            rechnung_strasse: 1, rechnung_plz: 1, rechnung_ort: 1, rechnung_betrag_brutto: 1,
+            foerderprogramm: 1, kontaktweg: 1, quellenurl: 1, weitere_links: 1,
+            website: 1, notizen: 1
+        };
+
+        var timers = {};
+        function statusEl(control) {
+            // Statusanzeige pro Feld: einmalig neben dem Label anlegen, danach wiederverwenden.
+            var group = control.closest('.form-group') || control.parentNode;
+            var el = group.querySelector(':scope > .field-status') || group.querySelector('.field-status');
+            if (!el) {
+                el = document.createElement('span');
+                el.className = 'field-status';
+                el.setAttribute('aria-live', 'polite');
+                el.style.marginLeft = '0.5rem';
+                el.style.fontSize = '0.78rem';
+                var lbl = group.querySelector('label');
+                if (lbl) { lbl.appendChild(el); } else { group.appendChild(el); }
+            }
+            return el;
+        }
+        function setStatus(control, key, text, color, fade) {
+            var el = statusEl(control);
+            el.textContent = text;
+            el.style.color = color;
+            if (timers[key]) { clearTimeout(timers[key]); delete timers[key]; }
+            if (fade) {
+                timers[key] = setTimeout(function () { el.textContent = ''; }, 2000);
+            }
+        }
+
+        function save(control, field, params) {
+            var body = new URLSearchParams();
+            body.set('action', 'field_update');
+            body.set('csrf_token', CSRF);
+            body.set('sponsor_id', SPONSOR_ID);
+            body.set('field', field);
+            Object.keys(params).forEach(function (k) {
+                if (Array.isArray(params[k])) {
+                    params[k].forEach(function (v) { body.append(k, v); });
+                } else {
+                    body.set(k, params[k]);
+                }
+            });
+            setStatus(control, field, 'speichert…', 'var(--text-light)', false);
+            fetch('api/sponsor_crud.php', {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'fetch' },
+                body: body
+            }).then(function (r) { return r.json(); }).then(function (d) {
+                if (d && d.ok) {
+                    setStatus(control, field, 'gespeichert', '#007230', true);
+                } else {
+                    setStatus(control, field, (d && d.message) || 'Fehler', '#c0392b', false);
+                }
+            }).catch(function () {
+                setStatus(control, field, 'Netzwerkfehler', '#c0392b', false);
+            });
+        }
+
+        form.addEventListener('change', function (e) {
+            var el = e.target;
+            var name = el.name;
+            if (!name) return; // Ansprechpartner-Felder tragen keinen name -> ignoriert
+
+            // Branche: Mehrfachauswahl -> alle angehakten Werte gemeinsam speichern.
+            if (name === 'branche[]') {
+                var checked = form.querySelectorAll('input[name="branche[]"]:checked');
+                var vals = Array.prototype.map.call(checked, function (c) { return c.value; });
+                var trigger = document.getElementById('branche-trigger') || el;
+                save(trigger, 'branche', { 'value[]': vals });
+                return;
+            }
+
+            if (!FIELDS[name]) return;
+
+            var value = (el.type === 'checkbox') ? (el.checked ? '1' : '0') : el.value;
+            save(el, name, { value: value });
+        });
+    })();
+
     function toggleKeinKontaktDetails() {
         var checkbox = document.getElementById('kein_kontakt');
         var details = document.getElementById('kein-kontakt-details');
@@ -1364,6 +1466,9 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
             } else {
                 betrag.value = '';
             }
+            // Programmatisch gesetzter Betrag feuert kein change -> Autosave selbst anstoßen,
+            // damit der Betrag zum neuen Typ passt (Feld bleibt die Quelle der Wahrheit).
+            betrag.dispatchEvent(new Event('change', { bubbles: true }));
         });
     })();
     </script>
