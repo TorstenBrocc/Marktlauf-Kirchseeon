@@ -92,6 +92,78 @@ function todoNotizStand(?string $notizen): string
 }
 
 /**
+ * Titel und Beschreibung je ToDo-Gruppe — die eine Wahrheit für Seite UND Mail.
+ *
+ * Vorgeschichte: Diese Texte standen zweimal, im Markup von orga/offene_todos.php und
+ * im Digest. Als eine Session die Titel schärfte („Bestätigung offen" →
+ * „Bestätigungs-Mail offen"), wusste die Mail davon nichts und sah anders aus als die
+ * Seite — genau die Beanstandung von TT am 13.08.2026. Seither leben sie hier.
+ *
+ * Bewusst NICHT hier: die Spaltenköpfe. Die sind medienabhängig — die Seite hat in
+ * „Aufgaben am Sponsor" eine Erledigt-Spalte mit Formular, die eine Mail nicht haben kann.
+ * Strukturen bleiben beim jeweiligen Renderer, nur Wortlaute sind gemeinsam.
+ *
+ * `link` ist ein optionaler Absprung, den nur die Seite rendert: In der Mail wäre er
+ * überflüssig, dort führt ohnehin ein Button auf die Seite.
+ *
+ * @return array<string, array{titel:string, sub:string, ton?:string,
+ *         link?:array{vor:string, label:string, href:string}}>
+ */
+function todoGruppenMeta(): array
+{
+    return [
+        'bestaetigung' => [
+            'titel' => 'Bestätigungs-Mail offen',
+            'sub'   => 'Hat zugesagt — die Bestätigung mit den Sponsoring-Bedingungen ist noch nicht raus.',
+            'link'  => ['vor' => 'Läuft über', 'label' => 'Bestätigungen', 'href' => 'bestaetigungen.php'],
+        ],
+        'bedingungen' => [
+            'titel' => 'Sponsoring-Bedingungen nicht bestätigt',
+            'sub'   => 'Bestätigung ist raus, die Sponsoring-Bedingungen sind aber noch nicht gegengezeichnet. '
+                     . 'Erfassen in der Einzelmaske (wann, auf welchem Weg, Beleg im Ordner).',
+        ],
+        'wiedervorlagen' => [
+            'titel' => 'Wiedervorlage fällig',
+            'sub'   => 'Termin gesetzt und erreicht — hier war jemand schon dran und wollte nachfassen.',
+        ],
+        'versand_fehler' => [
+            'titel' => 'Versand-Queue: Fehler',
+            'sub'   => 'Ein Anschreiben ist nicht rausgegangen. Betrifft den Job, der automatisch läuft — '
+                     . 'bleibt sonst unbemerkt liegen.',
+            'ton'   => 'fehler',
+        ],
+        'nie_angeschrieben' => [
+            'titel' => 'Noch nie angeschrieben',
+            'sub'   => 'Steht im Bestand, wurde aber nie angesprochen.',
+            'link'  => ['vor' => 'Anschreiben läuft über', 'label' => 'Erstanschreiben', 'href' => 'erstanschreiben.php'],
+        ],
+        'ohne_reaktion' => [
+            'titel' => 'Angeschrieben ohne Reaktion',
+            'sub'   => 'Seit mindestens ' . TODO_KEINE_REAKTION_TAGE . ' Tagen keine Rückmeldung und kein Termin '
+                     . 'gesetzt. Sobald der Status weitergedreht oder eine Wiedervorlage eingetragen wird, fällt '
+                     . 'der Eintrag von selbst heraus.',
+        ],
+        'bedingungen_beleg' => [
+            'titel' => 'Sponsoring-Bedingungen bestätigt — Beleg fehlt',
+            'sub'   => 'Inhaltlich erledigt, nur die Rückmeldung liegt nicht im Sponsor-Ordner. '
+                     . 'Zählt deshalb nicht in die Gesamtzahl.',
+            'ton'   => 'nachrichtlich',
+        ],
+        'sponsor_aufgaben' => [
+            'titel' => 'Aufgaben am Sponsor',
+            // Wortlaut korrigiert (13.08.2026): Die vorige Fassung versprach „Mit Frist erinnert
+            // die tägliche Mail daran" — das trifft es nicht. Erinnert wird über
+            // bin/aufgaben_erinnerung.php, und zwar nur mit gesetztem Verantwortlichen und nur
+            // am Fälligkeitstag. Der Sponsoring-Digest führt diese Gruppe (noch) nicht.
+            'sub'   => 'Frist und Verantwortliche sind freiwillig — ohne Frist bleibt eine Aufgabe '
+                     . 'nachrichtlich und zählt nicht in die Gesamtzahl. Mit Frist und Verantwortlichem '
+                     . 'erinnert die Aufgaben-Mail am Fälligkeitstag daran.',
+            'ton'   => 'nachrichtlich',
+        ],
+    ];
+}
+
+/**
  * Wählbare Fassung einer Telefonnummer für einen tel:-Link.
  *
  * Nötig, weil in einem Datensatz „Tel. 08091 2038" stand — reines Leerzeichen-Entfernen
