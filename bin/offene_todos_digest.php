@@ -118,6 +118,19 @@ try {
     // ist medienabhängig: die Seite hat eine Erledigt-Spalte mit Formular, die Mail nicht.
     $meta = todoGruppenMeta();
     $vier = ['Firma', 'Info', 'Status / Frist', 'Kontakt'];
+    // Frist-Text für Aufgaben: überfällig, heute, oder Vorausschau.
+    $fristText = static function (?int $tage): string {
+        if ($tage === null) {
+            return 'ohne Frist';
+        }
+        if ($tage > 0) {
+            return $tage . ' Tage überfällig';
+        }
+        if ($tage === 0) {
+            return 'heute fällig';
+        }
+        return $tage === -1 ? 'morgen fällig' : 'in ' . abs($tage) . ' Tagen fällig';
+    };
     $gruppenDef = [
         'bestaetigung' => [$vier,
             static function (array $t) use ($notizKurz, $statusText, $kontaktWert): array {
@@ -126,7 +139,7 @@ try {
                         ['t' => $notizKurz($t['notizen'] ?? null), 'k' => 'info'],
                         ['t' => $statusText($t, $tage <= 0 ? 'heute zugesagt' : 'seit ' . $tage . ' Tagen', false), 'k' => 'status'],
                         ['t' => $kontaktWert($t), 'k' => 'kontakt']];
-            }],
+            }, 'zustaendig_user_id', false],
         'bedingungen' => [$vier,
             static function (array $t) use ($notizKurz, $statusText, $kontaktWert): array {
                 $tage = (int) $t['tage'];
@@ -134,7 +147,7 @@ try {
                         ['t' => $notizKurz($t['notizen'] ?? null), 'k' => 'info'],
                         ['t' => $statusText($t, $tage <= 0 ? 'seit heute' : 'seit ' . $tage . ' Tagen'), 'k' => 'status'],
                         ['t' => $kontaktWert($t), 'k' => 'kontakt']];
-            }],
+            }, 'zustaendig_user_id', false],
         'wiedervorlagen' => [$vier,
             static function (array $t) use ($notizKurz, $statusText, $kontaktWert): array {
                 $tage = (int) $t['tage'];
@@ -142,12 +155,12 @@ try {
                         ['t' => $notizKurz($t['notizen'] ?? null), 'k' => 'info'],
                         ['t' => $statusText($t, $tage <= 0 ? 'heute fällig' : $tage . ' Tage überfällig'), 'k' => 'status'],
                         ['t' => $kontaktWert($t), 'k' => 'kontakt']];
-            }],
+            }, 'zustaendig_user_id', false],
         'versand_fehler' => [['Firma', 'Fehler'],
             static function (array $t): array {
                 return [['t' => (string) $t['firma'], 'k' => 'firma'],
                         ['t' => $t['fehler'] !== '' ? (string) $t['fehler'] : 'Versand fehlgeschlagen', 'k' => 'info']];
-            }],
+            }, 'zustaendig_user_id', true],
         'nie_angeschrieben' => [$vier,
             static function (array $t) use ($notizKurz, $statusText, $kontaktWert): array {
                 $tage = (int) $t['tage'];
@@ -155,24 +168,52 @@ try {
                         ['t' => $notizKurz($t['notizen'] ?? null), 'k' => 'info'],
                         ['t' => $statusText($t, $tage <= 0 ? 'heute angelegt' : 'liegt ' . $tage . ' Tage', false), 'k' => 'status'],
                         ['t' => $kontaktWert($t), 'k' => 'kontakt']];
-            }],
+            }, 'zustaendig_user_id', false],
+        // Aufgaben am Sponsor (TT, 2026-08-13): in dieselbe tägliche Mail, mit Vorausschau
+        // auf TODO_FRIST_VORSCHAU_TAGE Tage. Zwei Besonderheiten:
+        //   - Routing über die AUFGABE (verantwortlich_user_id), nicht über den Sponsor —
+        //     wer die Aufgabe hat, bekommt sie, unabhängig davon, wer den Sponsor betreut.
+        //   - 'immer' => wird in beiden Modi gezeigt. Sonst hinge die Sichtbarkeit einer Frist
+        //     am Wochentag, und genau daran ist ursprünglich eine Wiedervorlage vorbeigelaufen.
+        //   - Nur Aufgaben MIT Frist innerhalb des Fensters; undatierte bleiben seitenintern.
+        'sponsor_aufgaben' => [
+            ['Firma', 'Aufgabe', 'Frist'],
+            static function (array $t) use ($fristText): array {
+                $tage = $t['tage_ueberfaellig'] === null ? null : (int) $t['tage_ueberfaellig'];
+                return [['t' => (string) $t['firma'], 'k' => 'firma'],
+                        ['t' => (string) $t['titel'], 'k' => 'plain'],
+                        ['t' => $fristText($tage), 'k' => 'status']];
+            },
+            'verantwortlich_user_id',
+            true,
+        ],
         'ohne_reaktion' => [$vier,
             static function (array $t) use ($notizKurz, $statusText, $kontaktWert): array {
                 return [['t' => (string) $t['firma'], 'k' => 'firma'],
                         ['t' => $notizKurz($t['notizen'] ?? null), 'k' => 'info'],
                         ['t' => $statusText($t, (int) $t['tage'] . ' Tage ohne Antwort', false), 'k' => 'status'],
                         ['t' => $kontaktWert($t), 'k' => 'kontakt']];
-            }],
+            }, 'zustaendig_user_id', false],
     ];
 
     // Zeilen nach Zuständigem einsortieren. 0 = ohne Zuständigen.
     $proUser = [];
-    foreach ($gruppenDef as $key => [$kopf, $bauer]) {
+    foreach ($gruppenDef as $key => [$kopf, $bauer, $schluessel, $immer]) {
         foreach (($todos[$key] ?? []) as $zeile) {
-            if ($modus === 'neu' && !todoIstNeu($key, $zeile)) {
+            // Aufgaben ohne Frist gehören nicht in die Mail — sie sind zu keinem Zeitpunkt
+            // fällig und würden jeden Tag gleich dastehen. Mit Frist gilt das Vorschaufenster.
+            if ($key === 'sponsor_aufgaben') {
+                if (empty($zeile['faellig_am'])) {
+                    continue;
+                }
+                if ((int) $zeile['tage_ueberfaellig'] < -TODO_FRIST_VORSCHAU_TAGE) {
+                    continue;
+                }
+            }
+            if (!$immer && $modus === 'neu' && !todoIstNeu($key, $zeile)) {
                 continue;
             }
-            $uid = (int) ($zeile['zustaendig_user_id'] ?? 0);
+            $uid = (int) ($zeile[$schluessel] ?? 0);
             $proUser[$uid][$key][] = ['zellen' => $bauer($zeile)];
         }
     }
@@ -218,7 +259,7 @@ try {
         // Gruppen in definierter Reihenfolge zusammenbauen
         $gruppen = [];
         $anzahl = 0;
-        foreach ($gruppenDef as $key => [$kopf, $_]) {
+        foreach ($gruppenDef as $key => [$kopf, $_, $__, $___]) {
             if (!empty($meine[$key])) {
                 $anzahl += count($meine[$key]);
                 $gruppen[] = [
@@ -231,7 +272,7 @@ try {
             }
         }
         if ($istAdmin && $herrenlos !== []) {
-            foreach ($gruppenDef as $key => [$kopf, $_]) {
+            foreach ($gruppenDef as $key => [$kopf, $_, $__, $___]) {
                 if (!empty($herrenlos[$key])) {
                     $anzahl += count($herrenlos[$key]);
                     $gruppen[] = [

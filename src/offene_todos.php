@@ -40,6 +40,13 @@ const TODO_LISTE_MAX = 8;
 const TODO_NOTIZ_LAENGE = 140;
 
 /**
+ * Wie viele Tage die Erinnerung bei Aufgaben-Fristen vorausschaut (TT, 2026-08-13:
+ * „alle fristen für die nächsten 2 Tage"). Gilt nur für Aufgaben mit Frist — undatierte
+ * Aufgaben bleiben nachrichtlich und tauchen in der Mail nicht auf.
+ */
+const TODO_FRIST_VORSCHAU_TAGE = 2;
+
+/**
  * Wochentag für den vollen Überblick (ISO: 1 = Montag … 7 = Sonntag).
  * Freitag (TT, 2026-08-13) — zum Wochenausklang, wenn Zeit fürs Nacharbeiten ist.
  */
@@ -151,13 +158,12 @@ function todoGruppenMeta(): array
         ],
         'sponsor_aufgaben' => [
             'titel' => 'Aufgaben am Sponsor',
-            // Wortlaut korrigiert (13.08.2026): Die vorige Fassung versprach „Mit Frist erinnert
-            // die tägliche Mail daran" — das trifft es nicht. Erinnert wird über
-            // bin/aufgaben_erinnerung.php, und zwar nur mit gesetztem Verantwortlichen und nur
-            // am Fälligkeitstag. Der Sponsoring-Digest führt diese Gruppe (noch) nicht.
+            // Wortlaut folgt der Entscheidung von TT (13.08.2026): terminierte Aufgaben zählen
+            // mit und stehen in derselben täglichen Mail, mit Vorausschau auf zwei Tage.
             'sub'   => 'Frist und Verantwortliche sind freiwillig — ohne Frist bleibt eine Aufgabe '
-                     . 'nachrichtlich und zählt nicht in die Gesamtzahl. Mit Frist und Verantwortlichem '
-                     . 'erinnert die Aufgaben-Mail am Fälligkeitstag daran.',
+                     . 'nachrichtlich und zählt nicht in die Gesamtzahl. Mit Frist zählt sie mit und '
+                     . 'steht in der täglichen Erinnerung, sobald die Frist höchstens '
+                     . TODO_FRIST_VORSCHAU_TAGE . ' Tage entfernt ist.',
             'ton'   => 'nachrichtlich',
         ],
     ];
@@ -299,7 +305,7 @@ function todosSponsorAufgaben(PDO $pdo): array
     $stmt = $pdo->query("
         SELECT a.id, a.kontext_id AS sponsor_id, a.titel, a.notiz, a.faellig_am,
                DATEDIFF(CURDATE(), a.faellig_am) AS tage_ueberfaellig,
-               s.firma, u.name AS verantwortlich_name
+               s.firma, a.verantwortlich_user_id, u.name AS verantwortlich_name
         FROM aufgaben a
         JOIN sponsors s ON s.id = a.kontext_id
         LEFT JOIN users u ON u.id = a.verantwortlich_user_id
@@ -399,8 +405,9 @@ function offeneTodosAlle(PDO $pdo): array
         }
     }
 
-    // Sponsor-Aufgaben zählen nicht mit: sie haben keinen Termin und sind damit
-    // nichts, was „heute" fällig wäre. Sie werden nur nachrichtlich gezeigt.
+    // Sponsor-Aufgaben MIT Frist zählen mit (TT, 2026-08-13): eine Aufgabe mit
+    // Fälligkeit verhält sich wie eine Wiedervorlage. Ohne Frist bleibt sie
+    // nachrichtlich — sie ist nichts, was zu einem Zeitpunkt fällig wäre.
     // Der fehlende Beleg zählt nicht mit: die Sache ist inhaltlich erledigt, es fehlt
     // nur die Ablage. Sichtbar ja, als Druckmittel in der Gesamtzahl nein.
     $ergebnis['gesamt'] = count($ergebnis['wiedervorlagen'])
@@ -408,7 +415,11 @@ function offeneTodosAlle(PDO $pdo): array
         + count($ergebnis['bedingungen'])
         + count($ergebnis['versand_fehler'])
         + count($ergebnis['nie_angeschrieben'])
-        + count($ergebnis['ohne_reaktion']);
+        + count($ergebnis['ohne_reaktion'])
+        + count(array_filter(
+            $ergebnis['sponsor_aufgaben'],
+            static fn (array $a): bool => !empty($a['faellig_am'])
+        ));
 
     return $ergebnis;
 }

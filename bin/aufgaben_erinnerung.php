@@ -3,10 +3,13 @@
 /**
  * CLI-Tool: Aufgaben-Erinnerungen versenden
  *
- * Täglich per Cron ausführen:
- * 0 8 * * * /usr/bin/php /path/to/bin/aufgaben_erinnerung.php
+ * Läuft täglich über .github/workflows/taegliche_erinnerung.yml — Strato hat kein
+ * crontab per SSH (der frühere Cron-Hinweis hier war jahrelang wirkungslos).
  *
  * Sendet E-Mails an Verantwortliche, deren Aufgaben heute fällig sind.
+ *
+ * NICHT für Sponsor-Aufgaben (kontext_typ = 'sponsor') — die laufen ausschließlich über
+ * bin/offene_todos_digest.php, gesammelt und mit Vorausschau. Siehe WHERE-Klausel unten.
  */
 
 // Strato: SSH-Shell liefert cgi-fcgi statt cli → Bypass via MARKTLAUF_CLI=1
@@ -30,6 +33,12 @@ try {
           AND a.status != 'erledigt'
           AND a.erinnerung_gesendet = 0
           AND u.active = 1
+          -- Sponsor-Aufgaben ausgeklammert (TT, 2026-08-13): sie stehen in derselben
+          -- taeglichen Erinnerung wie die uebrigen Sponsoring-ToDos, inklusive
+          -- Vorausschau auf zwei Tage (bin/offene_todos_digest.php). Zwei Absender
+          -- fuer dasselbe Objekt waere genau die Doppelbenachrichtigung, die wir
+          -- vermeiden wollten -- ein Objekt, ein Erinnerungsweg.
+          AND (a.kontext_typ IS NULL OR a.kontext_typ <> 'sponsor')
     ");
 
     $aufgaben = $stmt->fetchAll();
