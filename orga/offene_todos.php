@@ -40,7 +40,7 @@ $kontakt = static function (?string $telefon, ?string $email): string {
     $out = [];
     $tel = trim((string) $telefon);
     if ($tel !== '') {
-        $out[] = '<a href="tel:' . htmlspecialchars(preg_replace('/\s+/', '', $tel)) . '">' . htmlspecialchars($tel) . '</a>';
+        $out[] = '<a href="tel:' . htmlspecialchars(todoTelefonHref($tel)) . '">' . htmlspecialchars($tel) . '</a>';
     }
     $mail = trim((string) $email);
     if ($mail !== '') {

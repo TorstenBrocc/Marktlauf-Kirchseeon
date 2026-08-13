@@ -92,6 +92,19 @@ function todoNotizStand(?string $notizen): string
 }
 
 /**
+ * Wählbare Fassung einer Telefonnummer für einen tel:-Link.
+ *
+ * Nötig, weil in einem Datensatz „Tel. 08091 2038" stand — reines Leerzeichen-Entfernen
+ * hätte daraus „Tel.080912038" und damit einen toten Link gemacht. Behalten werden nur
+ * Ziffern und ein führendes Plus; die Anzeige bleibt unverändert formatiert.
+ */
+function todoTelefonHref(string $telefon): string
+{
+    $plus = str_starts_with(ltrim($telefon), '+') ? '+' : '';
+    return $plus . preg_replace('/\D+/', '', $telefon);
+}
+
+/**
  * Gemeinsame SELECT-Bausteine für Sponsor-Zeilen: erster hinterlegter Kontakt und
  * die Notiz. Unterabfragen statt JOIN, damit ein Sponsor mit drei Ansprechpartnern
  * nicht dreimal in der Liste steht.
