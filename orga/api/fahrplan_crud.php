@@ -118,6 +118,18 @@ try {
 
     if ($action === 'loeschen') {
         $id = (int) ($_POST['id'] ?? 0);
+        // Leeren, nur automatisch angelegten Entwurfs-Post mit wegraeumen;
+        // Posts mit Inhalt bleiben als Historie stehen
+        $stmt = $pdo->prepare('SELECT post_id FROM social_fahrplan WHERE id = :id');
+        $stmt->execute(['id' => $id]);
+        $postId = (int) ($stmt->fetchColumn() ?: 0);
+        if ($postId > 0) {
+            $pdo->prepare(
+                "DELETE FROM post_race_contents
+                  WHERE id = :pid AND status = 'draft' AND geprueft_am IS NULL
+                    AND COALESCE(llm_text_social, '') = '' AND COALESCE(llm_text_article, '') = ''"
+            )->execute(['pid' => $postId]);
+        }
         $pdo->prepare('DELETE FROM social_fahrplan WHERE id = :id')->execute(['id' => $id]);
         fahrplanJson(true);
     }

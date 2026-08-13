@@ -104,4 +104,18 @@ if ($review === '') {
     exit;
 }
 
+// Ergebnis am Post persistieren (Post-Detail sendet post_id; alter Orchestrator nicht)
+$postId = (int) ($_POST['post_id'] ?? 0);
+if ($postId > 0) {
+    try {
+        getDbConnection()->prepare(
+            'UPDATE post_race_contents
+                SET geprueft_am = NOW(), geprueft_provider = :p, geprueft_ergebnis = :r
+              WHERE id = :id'
+        )->execute(['p' => $used, 'r' => $review, 'id' => $postId]);
+    } catch (Throwable $e) {
+        logError('social_review: Persistieren fehlgeschlagen: ' . $e->getMessage());
+    }
+}
+
 echo json_encode(['review' => $review, 'provider' => $used], JSON_UNESCAPED_UNICODE);
