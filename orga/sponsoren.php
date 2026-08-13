@@ -505,6 +505,14 @@ try {
         .status-in_klaerung-row { background: rgba(244, 180, 0, 0.16); }
         /* Angeschrieben: ganze Zeile hell transparent blau (Ampel-Blau) */
         .status-angefragt-row { background: rgba(43, 125, 233, 0.12); }
+        .branche-heading-row td {
+            background: var(--bg);
+            font-weight: 600;
+            font-size: 0.9rem;
+            padding: 0.5rem 0.75rem;
+            border-top: 2px solid var(--border);
+        }
+        .branche-heading-count { color: var(--text-light); font-weight: 400; }
         .kein-kontakt-row {
             background: #f9f9f9;
         }
@@ -728,6 +736,20 @@ try {
                 </div>
             </div>
 
+            <?php
+            $groupByBranche = (($_GET['gruppe'] ?? '') === 'branche');
+            $qsFlat = $_GET; unset($qsFlat['gruppe']);
+            $qsGroup = $qsFlat; $qsGroup['gruppe'] = 'branche';
+            $urlFlat = '?' . http_build_query($qsFlat);
+            $urlGroup = '?' . http_build_query($qsGroup);
+            ?>
+            <div class="ansicht-toggle" style="margin-bottom:0.6rem;font-size:0.85rem;color:var(--text-light)">
+                Ansicht:
+                <a href="<?= htmlspecialchars($urlFlat) ?>" style="<?= !$groupByBranche ? 'font-weight:600;color:var(--text)' : '' ?>">Liste</a>
+                ·
+                <a href="<?= htmlspecialchars($urlGroup) ?>" style="<?= $groupByBranche ? 'font-weight:600;color:var(--text)' : '' ?>">nach Branche gruppieren</a>
+            </div>
+
             <div class="table-wrap">
                 <table class="data-table">
                     <thead>
@@ -753,9 +775,43 @@ try {
                         <?php else: ?>
                             <?php
                             $prioMeta = [1 => ['Hoch', 'prio-1'], 2 => ['Mittel', 'prio-2'], 3 => ['Niedrig', 'prio-3']];
+                            $brancheArr = function ($s) {
+                                if (empty($s['branche'])) { return []; }
+                                $d = json_decode($s['branche'], true);
+                                return is_array($d) ? $d : [$s['branche']];
+                            };
+                            // Anzeige-Reihenfolge: flach oder nach Branche gruppiert. Ein Sponsor erscheint
+                            // unter jeder seiner Branchen; „Ohne Branche" kommt ans Ende.
+                            $sequence = [];
+                            if ($groupByBranche) {
+                                foreach ($branchen as $bName) {
+                                    $grp = [];
+                                    foreach ($sponsoren as $s) {
+                                        if (in_array($bName, $brancheArr($s), true)) { $grp[] = $s; }
+                                    }
+                                    if ($grp) {
+                                        $sequence[] = ['heading' => $bName, 'count' => count($grp)];
+                                        foreach ($grp as $g) { $sequence[] = ['sponsor' => $g]; }
+                                    }
+                                }
+                                $ohne = [];
+                                foreach ($sponsoren as $s) {
+                                    if (!$brancheArr($s)) { $ohne[] = $s; }
+                                }
+                                if ($ohne) {
+                                    $sequence[] = ['heading' => 'Ohne Branche', 'count' => count($ohne)];
+                                    foreach ($ohne as $g) { $sequence[] = ['sponsor' => $g]; }
+                                }
+                            } else {
+                                foreach ($sponsoren as $s) { $sequence[] = ['sponsor' => $s]; }
+                            }
                             ?>
-                            <?php foreach ($sponsoren as $s): ?>
+                            <?php foreach ($sequence as $item): ?>
+                                <?php if (isset($item['heading'])): ?>
+                                    <tr class="branche-heading-row"><td colspan="<?= $colCount ?>"><?= htmlspecialchars($item['heading']) ?> <span class="branche-heading-count">(<?= (int) $item['count'] ?>)</span></td></tr>
+                                <?php else: ?>
                                 <?php
+                                $s = $item['sponsor'];
                                 $apList = $ansprechpartnerBySponsor[$s['id']] ?? [];
                                 $apCount = count($apList);
                                 $firstAp = $apList[0] ?? null;
@@ -926,6 +982,7 @@ try {
                                         <?php endif; ?>
                                     </td>
                                 </tr>
+                                <?php endif; ?>
                             <?php endforeach; ?>
                         <?php endif; ?>
                     </tbody>
