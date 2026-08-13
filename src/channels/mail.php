@@ -472,55 +472,114 @@ function sendVereinAnschreiben(
 }
 
 /**
- * Tagesüberblick „Offene ToDos" — bewusst ein Digest, kein Ereignis-Alarm.
+ * Überblick „Offene ToDos Sponsoring" — als echte HTML-Mail, gleiche Ordnung wie
+ * orga/offene_todos.php.
  *
- * Verschickt wird nur, wenn es tatsächlich etwas zu tun gibt; die Entscheidung
- * darüber trifft der Aufrufer (bin/offene_todos_digest.php). Die Inhalte stammen
- * aus src/offene_todos.php — derselben Quelle, aus der das Cockpit seinen Block
- * baut, damit Mail und Anzeige nicht auseinanderlaufen.
+ * Bewusst NICHT über marktlaufMailBody(): das escaped einen Text und setzt nur
+ * Zeilenumbrüche — daraus wurde in der Praxis ein unlesbarer Bandwurm. Hier wird
+ * stattdessen eine Tabelle je Gruppe gebaut (grünes Titelband, Spalten Firma /
+ * Frist / Telefon, Notiz als eigene Zeile darunter). Tabellen + Inline-Styles,
+ * weil Mailprogramme weder Grid noch Flexbox noch <style>-Blöcke verlässlich können.
  *
- * @param array<int,array{titel:string,zeilen:array<int,string>}> $gruppen
+ * @param array<int,array{titel:string, ist_fehler?:bool, zeilen:array<int,array{
+ *            firma:string, frist?:string, telefon?:string, notiz?:string, mehr?:bool}>}> $gruppen
  */
 function sendOffeneTodosDigest(string $to, string $name, int $gesamt, array $gruppen, string $modus = 'voll'): bool {
-    // Der Betreff sagt, warum die Mail kommt: Wochenüberblick oder heute Dazugekommenes.
     $subject = $modus === 'neu'
         ? '🔔 Neu heute: ' . $gesamt . ' offene ToDos Sponsoring – Marktlauf'
         : '🔔 Offene ToDos Sponsoring (' . $gesamt . ') – Marktlauf';
 
-    $abschnitte = '';
-    foreach ($gruppen as $gruppe) {
-        if (empty($gruppe['zeilen'])) {
-            continue;
-        }
-        $abschnitte .= "\n" . $gruppe['titel'] . ' (' . count($gruppe['zeilen']) . ")\n";
-        foreach ($gruppe['zeilen'] as $zeile) {
-            $abschnitte .= '  • ' . $zeile . "\n";
-        }
-    }
-
     $anrede = trim($name) !== '' ? 'Hallo ' . $name . ',' : 'Hallo,';
     $einleitung = $modus === 'neu'
-        ? "heute sind {$gesamt} Punkte dazugekommen, für die du zuständig bist:"
-        : "diese {$gesamt} Punkte liegen bei dir offen:";
-    $body = <<<TEXT
-{$anrede}
+        ? 'heute sind ' . $gesamt . ' Punkte dazugekommen, für die du zuständig bist:'
+        : 'diese ' . $gesamt . ' Punkte liegen bei dir offen:';
+    $seite = 'https://atsv-kirchseeon-marktlauf.de/orga/offene_todos.php';
 
-{$einleitung}
-{$abschnitte}
-Alles auf einen Blick — dort kannst du direkt weiterarbeiten:
-https://atsv-kirchseeon-marktlauf.de/orga/offene_todos.php
+    $e = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
+    $rand = '1px solid #e2e2e2';
 
-📧 Fragen? info@atsv-kirchseeon-marktlauf.de
+    // ---- Text-Fassung (Fallback für Clients ohne HTML) ----
+    $text = $anrede . "\n\n" . $einleitung . "\n";
+    foreach ($gruppen as $g) {
+        if (empty($g['zeilen'])) {
+            continue;
+        }
+        $text .= "\n" . $g['titel'] . ' (' . count($g['zeilen']) . ")\n";
+        foreach ($g['zeilen'] as $z) {
+            $teile = array_filter([
+                $z['firma'] ?? '',
+                trim((string) ($z['frist'] ?? '')),
+                trim((string) ($z['telefon'] ?? '')) !== '' ? 'Tel. ' . $z['telefon'] : '',
+            ], static fn ($t) => $t !== '');
+            $text .= '  - ' . implode(' · ', $teile) . "\n";
+            if (trim((string) ($z['notiz'] ?? '')) !== '') {
+                $text .= '      ' . $z['notiz'] . "\n";
+            }
+        }
+    }
+    $text .= "\nAlles auf einen Blick: " . $seite
+        . "\n\nFragen? info@atsv-kirchseeon-marktlauf.de\n\nSportliche Grüße\nDein Marktlauf-Team";
 
-Sportliche Grüße
-Dein Marktlauf-Team
-──────────────────────────
-ATSV Kirchseeon Marktlauf
-https://atsv-kirchseeon-marktlauf.de
-TEXT;
+    // ---- HTML-Fassung ----
+    $html = '<div style="font:14px/1.5 -apple-system,\'Segoe UI\',Helvetica,Arial,sans-serif;color:#222222;max-width:640px">'
+          . '<p style="margin:0 0 12px 0">' . $e($anrede) . '</p>'
+          . '<p style="margin:0 0 18px 0">' . $e($einleitung) . '</p>';
 
-    $mail = marktlaufMailBody($body);
-    return sendMail($to, $subject, $mail['text'], $mail['html']);
+    foreach ($gruppen as $g) {
+        if (empty($g['zeilen'])) {
+            continue;
+        }
+        $bandFarbe = !empty($g['ist_fehler']) ? '#d32f2f' : '#009640';
+        $html .= '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"'
+               . ' style="border-collapse:collapse;width:100%;margin:0 0 20px 0;border:' . $rand . ';border-radius:6px">'
+               . '<tr><td colspan="3" style="background:' . $bandFarbe . ';color:#ffffff;font-weight:700;'
+               . 'padding:9px 12px;font-size:14px">' . $e($g['titel'])
+               . ' <span style="font-weight:400;opacity:.85">(' . count($g['zeilen']) . ')</span></td></tr>';
+
+        $letzter = count($g['zeilen']) - 1;
+        foreach ($g['zeilen'] as $i => $z) {
+            $hatNotiz = trim((string) ($z['notiz'] ?? '')) !== '';
+            $u = ($i === $letzter && !$hatNotiz) ? '0' : $rand;
+            $ur = ($i === $letzter) ? '0' : $rand;
+
+            if (!empty($z['mehr'])) {
+                $html .= '<tr><td colspan="3" style="padding:8px 12px;color:#666666;font-size:13px;'
+                       . 'border-top:' . $rand . '">' . $e($z['firma']) . '</td></tr>';
+                continue;
+            }
+
+            $tel = trim((string) ($z['telefon'] ?? ''));
+            $telZelle = $tel === '' ? '' :
+                '<a href="tel:' . $e(preg_replace('/\s+/', '', $tel) ?? $tel) . '"'
+                . ' style="color:#009640;text-decoration:none;white-space:nowrap">' . $e($tel) . '</a>';
+
+            $html .= '<tr>'
+                   . '<td style="padding:8px 12px 6px 12px;font-weight:600;border-bottom:' . $u . '">'
+                   . $e($z['firma']) . '</td>'
+                   . '<td style="padding:8px 8px 6px 8px;color:#555555;font-size:13px;white-space:nowrap;'
+                   . 'border-bottom:' . $u . '">' . $e(trim((string) ($z['frist'] ?? ''))) . '</td>'
+                   . '<td align="right" style="padding:8px 12px 6px 8px;font-size:13px;border-bottom:' . $u . '">'
+                   . $telZelle . '</td>'
+                   . '</tr>';
+
+            if ($hatNotiz) {
+                $html .= '<tr><td colspan="3" style="padding:0 12px 8px 12px;color:#777777;font-size:12px;'
+                       . 'font-style:italic;border-bottom:' . $ur . '">' . $e((string) $z['notiz']) . '</td></tr>';
+            }
+        }
+        $html .= '</table>';
+    }
+
+    $social = marktlaufSocialLinks();
+    $html .= '<p style="margin:0 0 6px 0"><a href="' . $seite . '"'
+           . ' style="display:inline-block;background:#009640;color:#ffffff;text-decoration:none;'
+           . 'padding:10px 16px;border-radius:6px;font-weight:600">Offene ToDos öffnen</a></p>'
+           . '<p style="margin:14px 0 0 0;color:#666666;font-size:12px">'
+           . 'Fragen? info@atsv-kirchseeon-marktlauf.de</p>'
+           . '<div style="margin-top:16px">' . $social['html'] . '</div>'
+           . '</div>';
+
+    return sendMail($to, $subject, $text . "\n\n" . $social['text'], $html);
 }
 
 function sendAufgabeErinnerung(string $to, string $name, string $aufgabeTitel, string $faelligAm): bool {
