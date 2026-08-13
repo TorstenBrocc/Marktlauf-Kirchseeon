@@ -340,7 +340,7 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
         .ap-item-foot .ap-status { min-width: 0; text-align: left; }
         /* Signatur: eine Zeile pro Feld */
         .ap-item-main {
-            flex: 1 1 320px;
+            flex: 0 0 auto;
             min-width: 0;
             display: flex;
             flex-direction: column;
