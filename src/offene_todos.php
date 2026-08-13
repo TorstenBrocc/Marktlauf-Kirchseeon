@@ -254,7 +254,9 @@ function todosVersandFehler(PDO $pdo): array
     $stmt = $pdo->query("
         SELECT q.id, q.sponsor_id,
                COALESCE(NULLIF(q.firma, ''), s.firma, '(unbekannt)') AS firma,
-               COALESCE(q.fehler_text, '') AS fehler
+               COALESCE(q.fehler_text, '') AS fehler,
+               s.zustaendig_user_id,
+               (SELECT u.name FROM users u WHERE u.id = s.zustaendig_user_id) AS zustaendig
         FROM sponsor_versand_queue q
         LEFT JOIN sponsors s ON s.id = q.sponsor_id
         WHERE q.status = 'fehler'

@@ -11,9 +11,10 @@ name: Tägliche Erinnerungen
 # Zwei Schritte, bewusst getrennt:
 #   1. aufgaben_erinnerung.php — Einzelmail an den Verantwortlichen für Aufgaben,
 #      die HEUTE fällig sind (eigene Idempotenz über erinnerung_gesendet).
-#   2. offene_todos_digest.php — Tagesüberblick über ÜBERFÄLLIGE Aufgaben, fällige
-#      Wiedervorlagen, unbeantwortete Anschreiben und Fehler in der Versand-Queue.
-# Die Mengen überschneiden sich nicht, deshalb gibt es keine Doppelmails.
+#   2. offene_todos_digest.php --modus=auto — Sponsoring-ToDos an die jeweils Zuständigen.
+#      Montags der volle Überblick, an den anderen Tagen nur, was neu dazugekommen ist;
+#      ist nichts neu, geht keine Mail raus.
+# Die beiden decken verschiedene Dinge ab (Orga-Aufgaben vs. Sponsoring) — keine Doppelmails.
 #
 # Hinweis: geplante Workflows starten unter Last evtl. verzögert und werden nach
 # 60 Tagen Repo-Inaktivität deaktiviert (wie beim Uptime-Check).
@@ -50,4 +51,4 @@ jobs:
           script: |
             cd ${{ secrets.SFTP_REMOTE_PATH }}
             MARKTLAUF_CLI=1 /bin/php bin/aufgaben_erinnerung.php
-            MARKTLAUF_CLI=1 /bin/php bin/offene_todos_digest.php
+            MARKTLAUF_CLI=1 /bin/php bin/offene_todos_digest.php --modus=auto
