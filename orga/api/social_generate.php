@@ -12,6 +12,7 @@ require_once __DIR__ . '/../../src/db.php';
 require_once __DIR__ . '/../../src/logger.php';
 require_once __DIR__ . '/../../src/raceresult_client.php';
 require_once __DIR__ . '/../../src/llm_client.php';
+require_once __DIR__ . '/../../src/social_anlaesse.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -32,24 +33,18 @@ if ($provider !== null && !in_array($provider, ['gemini', 'mistral'], true)) {
     $provider = null;
 }
 
-// Allgemeiner Generator: Anlass + eigener Prompt + Stichpunkte + optional Renntag-Daten
-$anlassLabels = [
-    'renntag'       => 'Nachbericht zum Renntag (Ergebnisdaten siehe unten)',
-    'ankuendigung'  => 'Ankündigung des Events (Vorschau, Aufruf zur Anmeldung)',
-    'countdown'     => 'Countdown / Vorfreude vor dem Event',
-    'sponsoren_dank' => 'Dank an Sponsoren und Partner',
-    'helfer'        => 'Helfer-Aufruf / Dank an Helfer',
-    'allgemein'     => 'Allgemeiner Vereins-/Event-Beitrag',
-];
+// Allgemeiner Generator: Anlass + eigener Prompt + Stichpunkte + optional Renntag-Daten.
+// Anlass-Katalog kommt aus src/social_anlaesse.php (eine Quelle fuer Maske + APIs).
+$anlaesse = socialAnlaesse();
 $anlass = $_POST['anlass'] ?? 'allgemein';
-if (!isset($anlassLabels[$anlass])) {
+if (!isset($anlaesse[$anlass])) {
     $anlass = 'allgemein';
 }
 $stichpunkte = trim($_POST['stichpunkte'] ?? '');
 $userPrompt  = trim($_POST['prompt'] ?? '');
 $hashtags    = trim($_POST['hashtags'] ?? '');
 
-$parts = ['Anlass: ' . $anlassLabels[$anlass]];
+$parts = ['Anlass: ' . $anlaesse[$anlass]['prompt']];
 if ($anlass === 'renntag') {
     $parts[] = "Ergebnisdaten:\n" . raceResultToPromptText(raceResultData(getDbConnection()));
 }
