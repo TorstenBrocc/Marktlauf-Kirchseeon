@@ -28,10 +28,27 @@ $pdo = getDbConnection();
 $todos = offeneTodosAlle($pdo);
 
 // Auswahllisten fürs Schnellanlegen in „Aufgaben am Sponsor".
-$sponsorenListe = [];
+//
+// Die Vorschlagsliste enthält zwei Sorten Einträge: Firmen und Ansprechpartner (TT-Wunsch
+// 2026-08-13 — „dass auch im Namen gesucht wird"). Ein Ansprechpartner-Eintrag trägt den
+// Personennamen als Wert und die Firma als sichtbaren Zusatz, damit erkennbar bleibt, wohin
+// die Aufgabe läuft. Aufgelöst wird beides serverseitig in aufgabe_orga_crud.php.
+$sponsorAuswahl = [];
 $orgaUsers = [];
 try {
-    $sponsorenListe = $pdo->query('SELECT id, firma FROM sponsors ORDER BY firma')->fetchAll();
+    foreach ($pdo->query('SELECT firma FROM sponsors ORDER BY firma') as $s) {
+        $sponsorAuswahl[] = ['wert' => (string) $s['firma'], 'zusatz' => ''];
+    }
+    $apStmt = $pdo->query("
+        SELECT TRIM(CONCAT(ap.vorname, ' ', ap.nachname)) AS person, s.firma
+        FROM sponsor_ansprechpartner ap
+        JOIN sponsors s ON s.id = ap.sponsor_id
+        WHERE TRIM(CONCAT(ap.vorname, ' ', ap.nachname)) <> ''
+        ORDER BY ap.nachname, ap.vorname
+    ");
+    foreach ($apStmt as $ap) {
+        $sponsorAuswahl[] = ['wert' => (string) $ap['person'], 'zusatz' => (string) $ap['firma']];
+    }
     $orgaUsers = orgaUserListe($pdo);
 } catch (PDOException $e) {
     logError('ToDo-Seite: Auswahllisten nicht ladbar: ' . $e->getMessage());
@@ -382,11 +399,11 @@ $rest = static function (array $liste): int {
                     <div class="todo-neu-feld">
                         <label for="neu_sponsor">Sponsor</label>
                         <?php /* Datalist statt <select>: bei 100+ Firmen ist Tippen schneller als Scrollen. */ ?>
-                        <input list="sponsoren_liste" id="neu_sponsor" name="sponsor_firma" required
-                               placeholder="Firma tippen…" autocomplete="off">
+                        <input list="sponsoren_liste" id="neu_sponsor" name="sponsor_suche" required
+                               placeholder="Firma oder Person tippen…" autocomplete="off">
                         <datalist id="sponsoren_liste">
-                            <?php foreach ($sponsorenListe as $s): ?>
-                                <option value="<?= htmlspecialchars($s['firma']) ?>"></option>
+                            <?php foreach ($sponsorAuswahl as $s): ?>
+                                <option value="<?= htmlspecialchars($s['wert']) ?>"><?= htmlspecialchars($s['zusatz']) ?></option>
                             <?php endforeach; ?>
                         </datalist>
                     </div>
