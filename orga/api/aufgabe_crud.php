@@ -35,6 +35,13 @@ if (!in_array($action, $validActions, true)) {
 
 $redirectUrl = $sponsorId > 0 ? '../sponsor_form.php?id=' . $sponsorId : '../sponsoren.php';
 
+// Rücksprungziel als Schlüssel, nie als URL aus dem Request (sonst Open Redirect).
+$zurueckZiele = ['todos' => '../offene_todos.php'];
+$zurueck = $_POST['zurueck'] ?? '';
+if (isset($zurueckZiele[$zurueck])) {
+    $redirectUrl = $zurueckZiele[$zurueck];
+}
+
 try {
     $pdo = getDbConnection();
 
