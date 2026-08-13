@@ -83,6 +83,12 @@ foreach (socialAnlaesse() as $anlassKey => $anlassDef) {
     $anlassGruppen[$anlassDef['gruppe']][$anlassKey] = $anlassDef['ui'];
 }
 
+// Vorwahl aus dem Social-Fahrplan (?anlass=...)
+$vorwahlAnlass = $_GET['anlass'] ?? '';
+if (!isset(socialAnlaesse()[$vorwahlAnlass])) {
+    $vorwahlAnlass = '';
+}
+
 // Repo-Assets (Logos/Marken) für die Grafik — rekursiver Scan über assets/images.
 // Statische Dateien → Vorschau lädt zuverlässig (kein Auth-Endpoint). SVG bewusst
 // ausgeklammert (der Grafik-Renderer rastert SVG-Logos nicht zuverlässig).
@@ -350,7 +356,7 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                         <?php foreach ($anlassGruppen as $gruppe => $eintraege): ?>
                         <optgroup label="<?= htmlspecialchars($gruppe) ?>">
                             <?php foreach ($eintraege as $anlassKey => $anlassUi): ?>
-                            <option value="<?= htmlspecialchars($anlassKey) ?>"><?= htmlspecialchars($anlassUi) ?></option>
+                            <option value="<?= htmlspecialchars($anlassKey) ?>" <?= $anlassKey === $vorwahlAnlass ? 'selected' : '' ?>><?= htmlspecialchars($anlassUi) ?></option>
                             <?php endforeach; ?>
                         </optgroup>
                         <?php endforeach; ?>
