@@ -12,7 +12,29 @@ require_once __DIR__ . '/../../src/logger.php';
 require_once __DIR__ . '/../../src/sponsor_status.php';
 require_once __DIR__ . '/../../src/sponsor_rotation.php';
 require_once __DIR__ . '/../../src/sponsor_beleg.php';
+require_once __DIR__ . '/../../src/sponsor_leitfaden.php';
 require_once __DIR__ . '/../../src/rechnung.php';
+
+/**
+ * Optionalen Leitfaden-Upload persistieren. Braucht die (frisch vergebene) Sponsor-id,
+ * läuft daher nach dem INSERT/UPDATE. Fehler landen als Flash, brechen das Speichern nicht ab.
+ */
+function sponsorApplyLeitfaden(PDO $pdo, int $sponsorId): void {
+    if (!isset($_FILES['leitfaden'])) {
+        return;
+    }
+    try {
+        $datei = materializeSponsorLeitfaden($sponsorId, $_FILES['leitfaden']);
+    } catch (RuntimeException $e) {
+        $_SESSION['flash_error'] = $e->getMessage();
+        return;
+    }
+    if ($datei === null) {
+        return; // kein Upload in diesem Request
+    }
+    $pdo->prepare('UPDATE sponsors SET leitfaden_datei = :d WHERE id = :id')
+        ->execute(['d' => $datei, 'id' => $sponsorId]);
+}
 
 /**
  * Rotations-Felder (Aktiv-Haken + optionaler Logo-Upload) persistieren und den
@@ -308,6 +330,7 @@ try {
             $newSponsorId = (int) $pdo->lastInsertId();
 
             sponsorApplyRotation($pdo, $newSponsorId, $firma);
+            sponsorApplyLeitfaden($pdo, $newSponsorId);
 
             // Weiter in die Bearbeiten-Maske: Ansprechpartner werden dort per Autosave
             // gepflegt (brauchen die frisch vergebene Sponsor-id).
@@ -434,6 +457,7 @@ try {
             ]);
 
             sponsorApplyRotation($pdo, $sponsorId, $firma);
+            sponsorApplyLeitfaden($pdo, $sponsorId);
 
             $_SESSION['flash_success'] = 'Sponsor aktualisiert.';
             header('Location: ../sponsor_form.php?id=' . $sponsorId);
@@ -449,6 +473,7 @@ try {
             $stmt = $pdo->prepare('DELETE FROM sponsors WHERE id = :id');
             $stmt->execute(['id' => $sponsorId]);
             deleteSponsorLogo($sponsorId);
+            deleteSponsorLeitfaden($sponsorId);
             try {
                 writeSponsorenFeed($pdo);
             } catch (Throwable $e) {
