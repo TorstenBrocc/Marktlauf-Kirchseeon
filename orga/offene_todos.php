@@ -82,6 +82,23 @@ $zeile = static function (string $firma, string $info, string $status, string $k
         . '</tr>';
 };
 
+// Titel und Beschreibung kommen zentral aus src/offene_todos.php (todoGruppenMeta()),
+// damit Seite und Erinnerungsmail nicht auseinanderlaufen. Nur der Absprung-Link wird
+// hier gerendert — in der Mail wäre er überflüssig.
+$meta = todoGruppenMeta();
+$kopfZeile = static function (string $key, int $anzahl) use ($meta): string {
+    $m = $meta[$key];
+    $out = '<h2>' . htmlspecialchars($m['titel'])
+         . ' <span class="hd-count">' . $anzahl . '</span></h2>'
+         . '<p class="hd-sub">' . htmlspecialchars($m['sub']);
+    if (isset($m['link'])) {
+        $out .= ' ' . htmlspecialchars($m['link']['vor'])
+              . ' <a href="' . htmlspecialchars($m['link']['href']) . '">'
+              . htmlspecialchars($m['link']['label']) . '</a>.';
+    }
+    return $out . '</p>';
+};
+
 $rest = static function (array $liste): int {
     return max(0, count($liste) - TODO_LISTE_MAX);
 };
@@ -183,8 +200,7 @@ $rest = static function (array $liste): int {
 
             <?php if (!empty($todos['bestaetigung'])): ?>
             <section class="hd-card">
-                <h2>Bestätigungs-Mail offen <span class="hd-count"><?= count($todos['bestaetigung']) ?></span></h2>
-                <p class="hd-sub">Hat zugesagt — die Bestätigung mit den Sponsoring-Bedingungen ist noch nicht raus. Läuft über <a href="bestaetigungen.php">Bestätigungen</a>.</p>
+                <?= $kopfZeile('bestaetigung', count($todos['bestaetigung'])) ?>
                 <table class="hd-table">
                     <thead><tr><th>Firma</th><th>Info</th><th>Status / Frist</th><th>Kontakt</th></tr></thead>
                     <tbody>
@@ -204,8 +220,7 @@ $rest = static function (array $liste): int {
 
             <?php if (!empty($todos['bedingungen'])): ?>
             <section class="hd-card">
-                <h2>Sponsoring-Bedingungen nicht bestätigt <span class="hd-count"><?= count($todos['bedingungen']) ?></span></h2>
-                <p class="hd-sub">Bestätigung ist raus, die Sponsoring-Bedingungen sind aber noch nicht gegengezeichnet. Erfassen in der Einzelmaske (wann, auf welchem Weg, Beleg im Ordner).</p>
+                <?= $kopfZeile('bedingungen', count($todos['bedingungen'])) ?>
                 <table class="hd-table">
                     <thead><tr><th>Firma</th><th>Info</th><th>Status / Frist</th><th>Kontakt</th></tr></thead>
                     <tbody>
@@ -225,8 +240,7 @@ $rest = static function (array $liste): int {
 
             <?php if (!empty($todos['wiedervorlagen'])): ?>
             <section class="hd-card">
-                <h2>Wiedervorlage fällig <span class="hd-count"><?= count($todos['wiedervorlagen']) ?></span></h2>
-                <p class="hd-sub">Termin gesetzt und erreicht — hier war jemand schon dran und wollte nachfassen.</p>
+                <?= $kopfZeile('wiedervorlagen', count($todos['wiedervorlagen'])) ?>
                 <table class="hd-table">
                     <thead><tr><th>Firma</th><th>Info</th><th>Status / Frist</th><th>Kontakt</th></tr></thead>
                     <tbody>
@@ -246,8 +260,7 @@ $rest = static function (array $liste): int {
 
             <?php if (!empty($todos['versand_fehler'])): ?>
             <section class="hd-card ist-fehler">
-                <h2>Versand-Queue: Fehler <span class="hd-count"><?= count($todos['versand_fehler']) ?></span></h2>
-                <p class="hd-sub">Ein Anschreiben ist nicht rausgegangen. Betrifft den Job, der automatisch läuft — bleibt sonst unbemerkt liegen.</p>
+                <?= $kopfZeile('versand_fehler', count($todos['versand_fehler'])) ?>
                 <table class="hd-table">
                     <thead><tr><th>Firma</th><th>Fehler</th></tr></thead>
                     <tbody>
@@ -264,8 +277,7 @@ $rest = static function (array $liste): int {
 
             <?php if (!empty($todos['nie_angeschrieben'])): ?>
             <section class="hd-card">
-                <h2>Noch nie angeschrieben <span class="hd-count"><?= count($todos['nie_angeschrieben']) ?></span></h2>
-                <p class="hd-sub">Steht im Bestand, wurde aber nie angesprochen. Anschreiben läuft über <a href="erstanschreiben.php">Erstanschreiben</a>.</p>
+                <?= $kopfZeile('nie_angeschrieben', count($todos['nie_angeschrieben'])) ?>
                 <table class="hd-table">
                     <thead><tr><th>Firma</th><th>Info</th><th>Status / Frist</th><th>Kontakt</th></tr></thead>
                     <tbody>
@@ -283,8 +295,7 @@ $rest = static function (array $liste): int {
 
             <?php if (!empty($todos['ohne_reaktion'])): ?>
             <section class="hd-card">
-                <h2>Angeschrieben ohne Reaktion <span class="hd-count"><?= count($todos['ohne_reaktion']) ?></span></h2>
-                <p class="hd-sub">Seit mindestens <?= TODO_KEINE_REAKTION_TAGE ?> Tagen keine Rückmeldung und kein Termin gesetzt. Sobald der Status weitergedreht oder eine Wiedervorlage eingetragen wird, fällt der Eintrag von selbst heraus.</p>
+                <?= $kopfZeile('ohne_reaktion', count($todos['ohne_reaktion'])) ?>
                 <table class="hd-table">
                     <thead><tr><th>Firma</th><th>Info</th><th>Status / Frist</th><th>Kontakt</th></tr></thead>
                     <tbody>
@@ -302,8 +313,7 @@ $rest = static function (array $liste): int {
 
             <?php if (!empty($todos['bedingungen_beleg'])): ?>
             <section class="hd-card ist-nachrichtlich">
-                <h2>Sponsoring-Bedingungen bestätigt — Beleg fehlt <span class="hd-count"><?= count($todos['bedingungen_beleg']) ?></span></h2>
-                <p class="hd-sub">Inhaltlich erledigt, nur die Rückmeldung liegt nicht im Sponsor-Ordner. Zählt deshalb nicht in die Gesamtzahl.</p>
+                <?= $kopfZeile('bedingungen_beleg', count($todos['bedingungen_beleg'])) ?>
                 <table class="hd-table">
                     <thead><tr><th>Firma</th><th>Bestätigt</th></tr></thead>
                     <tbody>
@@ -322,8 +332,7 @@ $rest = static function (array $liste): int {
 
             <?php /* Immer sichtbar, auch wenn leer — sonst gäbe es keinen Ort zum Anlegen. */ ?>
             <section class="hd-card ist-nachrichtlich">
-                <h2>Aufgaben am Sponsor <span class="hd-count"><?= count($todos['sponsor_aufgaben']) ?></span></h2>
-                <p class="hd-sub">Frist und Verantwortliche sind freiwillig — ohne Frist bleibt eine Aufgabe nachrichtlich und zählt nicht in die Gesamtzahl. Mit Frist erinnert die tägliche Mail daran.</p>
+                <?= $kopfZeile('sponsor_aufgaben', count($todos['sponsor_aufgaben'])) ?>
                 <?php if (!empty($todos['sponsor_aufgaben'])): ?>
                 <table class="hd-table">
                     <thead><tr><th>Firma</th><th>Aufgabe</th><th>Frist</th><th>Erledigt</th></tr></thead>

@@ -113,15 +113,13 @@ try {
     $kontaktWert = static fn (array $t): string =>
         trim((string) ($t['telefon'] ?? '')) . '|' . trim((string) ($t['email'] ?? ''));
 
-    // Titel, Beschreibung und Spaltenköpfe sind wortgleich mit orga/offene_todos.php.
-    // Sie stehen hier (noch) doppelt — die Zentralisierung nach src/offene_todos.php ist mit
-    // der Parallel-Session abgestimmt und folgt als eigener Schnitt.
+    // Titel und Beschreibung kommen aus todoGruppenMeta() (src/offene_todos.php) — dieselbe
+    // Quelle wie die Seite. Hier stehen nur noch Spaltenköpfe und der Zeilenbau, denn beides
+    // ist medienabhängig: die Seite hat eine Erledigt-Spalte mit Formular, die Mail nicht.
+    $meta = todoGruppenMeta();
     $vier = ['Firma', 'Info', 'Status / Frist', 'Kontakt'];
     $gruppenDef = [
-        'bestaetigung' => [
-            'Bestätigungs-Mail offen',
-            'Hat zugesagt — die Bestätigung mit den Sponsoring-Bedingungen ist noch nicht raus.',
-            false, $vier,
+        'bestaetigung' => [$vier,
             static function (array $t) use ($notizKurz, $statusText, $kontaktWert): array {
                 $tage = (int) $t['tage'];
                 return [['t' => (string) $t['firma'], 'k' => 'firma'],
@@ -129,10 +127,7 @@ try {
                         ['t' => $statusText($t, $tage <= 0 ? 'heute zugesagt' : 'seit ' . $tage . ' Tagen', false), 'k' => 'status'],
                         ['t' => $kontaktWert($t), 'k' => 'kontakt']];
             }],
-        'bedingungen' => [
-            'Sponsoring-Bedingungen nicht bestätigt',
-            'Bestätigung ist raus, die Bedingungen sind aber noch nicht gegengezeichnet.',
-            false, $vier,
+        'bedingungen' => [$vier,
             static function (array $t) use ($notizKurz, $statusText, $kontaktWert): array {
                 $tage = (int) $t['tage'];
                 return [['t' => (string) $t['firma'], 'k' => 'firma'],
@@ -140,10 +135,7 @@ try {
                         ['t' => $statusText($t, $tage <= 0 ? 'seit heute' : 'seit ' . $tage . ' Tagen'), 'k' => 'status'],
                         ['t' => $kontaktWert($t), 'k' => 'kontakt']];
             }],
-        'wiedervorlagen' => [
-            'Wiedervorlage fällig',
-            'Termin gesetzt und erreicht — hier war jemand schon dran und wollte nachfassen.',
-            false, $vier,
+        'wiedervorlagen' => [$vier,
             static function (array $t) use ($notizKurz, $statusText, $kontaktWert): array {
                 $tage = (int) $t['tage'];
                 return [['t' => (string) $t['firma'], 'k' => 'firma'],
@@ -151,18 +143,12 @@ try {
                         ['t' => $statusText($t, $tage <= 0 ? 'heute fällig' : $tage . ' Tage überfällig'), 'k' => 'status'],
                         ['t' => $kontaktWert($t), 'k' => 'kontakt']];
             }],
-        'versand_fehler' => [
-            'Versand-Queue: Fehler',
-            'Ein Anschreiben ist nicht rausgegangen — bleibt sonst unbemerkt liegen.',
-            true, ['Firma', 'Fehler'],
+        'versand_fehler' => [['Firma', 'Fehler'],
             static function (array $t): array {
                 return [['t' => (string) $t['firma'], 'k' => 'firma'],
                         ['t' => $t['fehler'] !== '' ? (string) $t['fehler'] : 'Versand fehlgeschlagen', 'k' => 'info']];
             }],
-        'nie_angeschrieben' => [
-            'Noch nie angeschrieben',
-            'Steht im Bestand, wurde aber nie angesprochen.',
-            false, $vier,
+        'nie_angeschrieben' => [$vier,
             static function (array $t) use ($notizKurz, $statusText, $kontaktWert): array {
                 $tage = (int) $t['tage'];
                 return [['t' => (string) $t['firma'], 'k' => 'firma'],
@@ -170,10 +156,7 @@ try {
                         ['t' => $statusText($t, $tage <= 0 ? 'heute angelegt' : 'liegt ' . $tage . ' Tage', false), 'k' => 'status'],
                         ['t' => $kontaktWert($t), 'k' => 'kontakt']];
             }],
-        'ohne_reaktion' => [
-            'Angeschrieben ohne Reaktion',
-            'Seit mindestens ' . TODO_KEINE_REAKTION_TAGE . ' Tagen keine Rückmeldung und kein Termin gesetzt.',
-            false, $vier,
+        'ohne_reaktion' => [$vier,
             static function (array $t) use ($notizKurz, $statusText, $kontaktWert): array {
                 return [['t' => (string) $t['firma'], 'k' => 'firma'],
                         ['t' => $notizKurz($t['notizen'] ?? null), 'k' => 'info'],
@@ -184,7 +167,7 @@ try {
 
     // Zeilen nach Zuständigem einsortieren. 0 = ohne Zuständigen.
     $proUser = [];
-    foreach ($gruppenDef as $key => [$titel, $sub, $istFehler, $kopf, $bauer]) {
+    foreach ($gruppenDef as $key => [$kopf, $bauer]) {
         foreach (($todos[$key] ?? []) as $zeile) {
             if ($modus === 'neu' && !todoIstNeu($key, $zeile)) {
                 continue;
@@ -235,20 +218,29 @@ try {
         // Gruppen in definierter Reihenfolge zusammenbauen
         $gruppen = [];
         $anzahl = 0;
-        foreach ($gruppenDef as $key => [$titel, $sub, $istFehler, $kopf, $_]) {
+        foreach ($gruppenDef as $key => [$kopf, $_]) {
             if (!empty($meine[$key])) {
                 $anzahl += count($meine[$key]);
-                $gruppen[] = ['titel' => $titel, 'sub' => $sub, 'ist_fehler' => $istFehler,
-                              'kopf' => $kopf, 'zeilen' => $deckeln($meine[$key])];
+                $gruppen[] = [
+                    'titel'      => $meta[$key]['titel'],
+                    'sub'        => $meta[$key]['sub'],
+                    'ist_fehler' => ($meta[$key]['ton'] ?? '') === 'fehler',
+                    'kopf'       => $kopf,
+                    'zeilen'     => $deckeln($meine[$key]),
+                ];
             }
         }
         if ($istAdmin && $herrenlos !== []) {
-            foreach ($gruppenDef as $key => [$titel, $sub, $istFehler, $kopf, $_]) {
+            foreach ($gruppenDef as $key => [$kopf, $_]) {
                 if (!empty($herrenlos[$key])) {
                     $anzahl += count($herrenlos[$key]);
-                    $gruppen[] = ['titel' => 'Ohne Zuständigen — bitte zuordnen: ' . $titel,
-                                  'sub' => $sub, 'ist_fehler' => $istFehler,
-                                  'kopf' => $kopf, 'zeilen' => $deckeln($herrenlos[$key])];
+                    $gruppen[] = [
+                        'titel'      => 'Ohne Zuständigen — bitte zuordnen: ' . $meta[$key]['titel'],
+                        'sub'        => $meta[$key]['sub'],
+                        'ist_fehler' => ($meta[$key]['ton'] ?? '') === 'fehler',
+                        'kopf'       => $kopf,
+                        'zeilen'     => $deckeln($herrenlos[$key]),
+                    ];
                 }
             }
         }
