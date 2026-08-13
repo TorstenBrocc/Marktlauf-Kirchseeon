@@ -1,0 +1,16 @@
+/* TEAM */
+Projektleiter & Entwickler: Torsten Tyras — AI Enterprise Engineer
+LinkedIn: https://www.linkedin.com/in/torstentyras/
+GitHub: https://github.com/TorstenBrocc
+
+/* THANKS */
+Dank an: ATSV Kirchseeon e.V. für das Vertrauen und die Zusammenarbeit beim Marktlauf-Projekt.
+
+/* SITE */
+Letzte Aktualisierung: 2026-08-07
+Standort: Kirchseeon, Deutschland
+Sprachen: Deutsch, Englisch
+Standards: HTML5, CSS3, ES6+
+Frontend: Vanilla JavaScript, Leaflet.js, i18n (JSON de/en)
+Backend: PHP 8.4, MySQL (PDO)
+Deployment: GitHub Actions → Strato

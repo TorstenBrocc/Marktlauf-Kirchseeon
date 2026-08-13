@@ -1,0 +1,4 @@
+# Ablage für per Dashboard erzeugte Social-Post-Grafiken (öffentliche HTTPS-URL
+# für Instagram/Facebook via Make.com). Laufzeit-Inhalt ist per deploy.yml aus
+# dem rsync --delete ausgenommen, damit hochgeladene Bilder nicht bei jedem
+# Deploy verschwinden. Erzeugt von orga/api/social_dispatch.php.

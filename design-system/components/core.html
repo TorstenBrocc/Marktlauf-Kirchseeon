@@ -1,0 +1,88 @@
+<!DOCTYPE html><html lang="de"><head><meta charset="utf-8">
+<link rel="stylesheet" href="../tokens.php">
+<link rel="stylesheet" href="../../css/fonts.css">
+<style>body{margin:0;padding:20px;font-family:var(--font-main);background:var(--white);color:var(--text-strong)}a{color:var(--link)}a:hover{color:var(--link-hover)}.row{display:flex;flex-wrap:wrap;gap:14px;align-items:center}.lbl{font-family:var(--font-heading);font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-400);margin-bottom:8px}</style>
+<script src="../../assets/vendor/react/react.production.min.js"></script>
+<script src="../../assets/vendor/react/react-dom.production.min.js"></script>
+<script src="../_ds_bundle.js"></script></head><body><div id="root"></div>
+<script>const {
+  Button,
+  Badge,
+  Chip,
+  Card,
+  Alert
+} = window.MarktlaufKirchseeonDesignSystem_48e1b5;
+function Demo() {
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '18px'
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "lbl"
+  }, "Button"), /*#__PURE__*/React.createElement("div", {
+    className: "row"
+  }, /*#__PURE__*/React.createElement(Button, {
+    variant: "primary"
+  }, "Nachricht senden"), /*#__PURE__*/React.createElement(Button, {
+    variant: "gold",
+    pill: true,
+    size: "lg"
+  }, "Jetzt anmelden"), /*#__PURE__*/React.createElement(Button, {
+    variant: "outline",
+    pill: true
+  }, "Sekund\xE4r"), /*#__PURE__*/React.createElement(Button, {
+    variant: "primary",
+    size: "sm"
+  }, "Speichern"), /*#__PURE__*/React.createElement(Button, {
+    variant: "primary",
+    disabled: true
+  }, "Deaktiviert"))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "lbl"
+  }, "Badge & Chip"), /*#__PURE__*/React.createElement("div", {
+    className: "row"
+  }, /*#__PURE__*/React.createElement(Badge, {
+    tone: "neu"
+  }, "Neu"), /*#__PURE__*/React.createElement(Badge, {
+    tone: "bestaetigt"
+  }, "Best\xE4tigt"), /*#__PURE__*/React.createElement(Badge, {
+    tone: "abgelehnt"
+  }, "Abgelehnt"), /*#__PURE__*/React.createElement(Badge, {
+    tone: "orange",
+    uppercase: true
+  }, "Vorank\xFCndigung"), /*#__PURE__*/React.createElement(Chip, {
+    time: "09:00"
+  }, "Bambini \xB7 500 m"), /*#__PURE__*/React.createElement(Chip, {
+    tilted: true,
+    tone: "weiss"
+  }, "E-Mobilit\xE4t & Sport"))), /*#__PURE__*/React.createElement("div", {
+    className: "row",
+    style: {
+      alignItems: 'stretch'
+    }
+  }, /*#__PURE__*/React.createElement(Card, {
+    hoverable: true,
+    padding: "18px",
+    style: {
+      flex: '1 1 200px'
+    }
+  }, /*#__PURE__*/React.createElement("strong", null, "Karte"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: 'var(--gray-600)',
+      fontSize: '14px'
+    }
+  }, "Wei\xDF, 12px, --shadow-sm")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: '1 1 260px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '8px'
+    }
+  }, /*#__PURE__*/React.createElement(Alert, {
+    tone: "success"
+  }, "Helfer best\xE4tigt."), /*#__PURE__*/React.createElement(Alert, {
+    tone: "formError"
+  }, "Bitte alle Pflichtfelder ausf\xFCllen."))));
+}
+ReactDOM.createRoot(document.getElementById('root')).render(/*#__PURE__*/React.createElement(Demo, null));</script></body></html>

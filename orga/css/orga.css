@@ -1,0 +1,1089 @@
+/* ATSV Kirchseeon Marktlauf - Orga Dashboard CSS */
+/*
+ * KOMPAKT-PASS (2026-07-14): Das Dashboard ist Verwaltungssoftware, keine
+ * Marketing-Website. Design-Prinzip = "density-first": kompakte Controls mit
+ * einheitlicher Hoehe, dezente Abstaende, Farbe als Signal (nicht als Flaeche).
+ * Details/Prinzipien: intern/dashboard-ui-prinzipien.md
+ */
+
+:root {
+    --primary: #009640;
+    --primary-dark: #007230;
+    --accent: #ff6b35;
+    --text: #333;
+    --text-light: #666;
+    --bg: #f5f5f5;
+    --white: #fff;
+    --border: #ddd;
+    --error: #d32f2f;
+    --error-bg: #fdecea;
+    --success: #2e7d32;
+    --success-bg: #e8f5e9;
+    /* Kompakt-Skala (Admin-Dichte) */
+    --radius: 5px;
+    --control-pad-y: 0.45rem;
+    --control-pad-x: 0.9rem;
+    /* Schatten-Tokens — identisch zur öffentlichen Website (css/base.css) */
+    --shadow-sm: 0 2px 4px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 6px 12px -1px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 15px 25px -3px rgba(0, 0, 0, 0.15);
+    /* Kachel-Schatten etwas deutlicher als --shadow-md */
+    --shadow-card: 0 10px 22px -4px rgba(0, 0, 0, 0.2);
+    /* ---- P1 Token-Ebene (Scope §8): geschlossene Skalen. Werte benennen den
+       gemessenen Ist-Zustand der Seiten; das Ummappen der Seiten folgt in P2. ---- */
+    /* Abgetöntes Link-Grün — Ziel-Look-Vorlage (intern/CLAUDE.md §UI-Kachel-Pattern) */
+    --link: #007230;
+    /* Signal-Skala: Text- + Flächenfarbe je Stufe (ok / warnung / kritisch).
+       --success/--error bleiben als Alt-Aliase bis zur Seiten-Migration (P2). */
+    --signal-ok: #065f46;
+    --signal-ok-bg: #d1fae5;
+    --signal-warn: #856404;
+    --signal-warn-bg: #fff3cd;
+    --signal-crit: #b91c1c;
+    --signal-crit-bg: #fdecea;
+    /* Abstands-Skala */
+    --sp-1: 0.25rem;
+    --sp-2: 0.5rem;
+    --sp-3: 0.75rem;
+    --sp-4: 1rem;
+    --sp-5: 1.25rem;
+    --sp-6: 1.5rem;
+    /* Typo-Skala (Admin-Dichte; xs = Tabellen-Kopf in Kapitälchen) */
+    --fs-xs: 0.72rem;
+    --fs-sm: 0.8rem;
+    --fs-md: 0.85rem;
+    --fs-base: 0.9rem;
+    --fs-lg: 0.95rem;
+    --fs-xl: 1rem;
+    /* Radius-Stufen — Namen deckungsgleich mit design-system/tokens.php;
+       --radius (5px) bleibt als Alt-Alias bis P2. */
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 8px;
+    --radius-xl: 12px;
+    --radius-pill: 999px;
+    /* Control-Höhe — eine Quelle für gleich hohe Buttons/Inputs/Selects */
+    --control-h: calc(var(--fs-base) * 1.5 + 2 * var(--control-pad-y) + 2px);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--text);
+    background: var(--bg);
+}
+
+/* Login Page */
+.login-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 1rem;
+}
+
+.login-container {
+    background: var(--white);
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    width: 100%;
+    max-width: 400px;
+}
+
+.login-container h1 {
+    margin-bottom: 1.5rem;
+    color: var(--primary);
+    text-align: center;
+}
+
+.login-footer {
+    margin-top: 1.5rem;
+    text-align: center;
+}
+
+.login-footer a {
+    color: var(--text-light);
+}
+
+/* Forms */
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.35rem;
+    font-weight: 500;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: var(--control-pad-y) 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 0.9rem;
+    font-family: inherit;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(0, 150, 64, 0.2);
+}
+
+.form-hint {
+    font-size: 0.8rem;
+    color: var(--text-light);
+    margin-top: 0.25rem;
+}
+
+.required::after {
+    content: " *";
+    color: var(--error);
+}
+
+/* Checkbox Groups */
+.checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.checkbox-group label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: normal;
+    cursor: pointer;
+}
+
+.checkbox-group input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+/* Timetable Grid */
+.timetable {
+    display: grid;
+    grid-template-columns: auto repeat(2, 1fr);
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.timetable-header {
+    font-weight: 500;
+    text-align: center;
+    padding: 0.5rem;
+    background: var(--bg);
+}
+
+.timetable-day {
+    padding: 0.5rem;
+    background: var(--bg);
+}
+
+.timetable-cell {
+    text-align: center;
+    padding: 0.5rem;
+}
+
+.timetable-cell input {
+    width: 20px;
+    height: 20px;
+}
+
+/* Buttons — kompakt, einheitliche Hoehe mit Inputs/Selects */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--control-pad-y) var(--control-pad-x);
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.4;
+    cursor: pointer;
+    text-decoration: none;
+    text-align: center;
+    transition: background-color 0.2s, border-color 0.2s, filter 0.2s;
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: var(--white);
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark);
+}
+
+/* Sekundaer = ruhig (Outline), nicht gefuellt — cleaner im Admin-UI */
+.btn-secondary {
+    background: var(--white);
+    color: var(--text);
+    border-color: var(--border);
+}
+
+.btn-secondary:hover {
+    background: var(--bg);
+}
+
+.btn-small {
+    padding: 0.3rem 0.65rem;
+    font-size: 0.8rem;
+}
+
+.btn-block {
+    display: block;
+    width: 100%;
+}
+
+.btn-action {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    background: var(--white);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-action:hover {
+    background: var(--bg);
+}
+
+.btn-action.btn-danger {
+    background: var(--error-bg);
+    color: var(--error);
+    border-color: transparent;
+}
+
+.btn-action.btn-danger:hover {
+    background: var(--error);
+    color: white;
+}
+
+.btn-success {
+    background: var(--success-bg);
+    color: var(--success);
+    border-color: transparent;
+}
+
+.btn-success:hover {
+    background: var(--success);
+    color: white;
+}
+
+/* Alerts */
+.alert {
+    padding: 0.65rem 0.9rem;
+    border-radius: var(--radius);
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+.alert-error {
+    background: var(--error-bg);
+    color: var(--error);
+}
+
+.alert-success {
+    background: var(--success-bg);
+    color: var(--success);
+}
+
+/* Dashboard Layout */
+.dashboard-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: 230px;
+    background: var(--white);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.sidebar-header h2 {
+    font-size: 1.05rem;
+    color: var(--primary);
+    margin: 0;
+}
+
+.sidebar-header .header-logo {
+    height: 2.25rem;
+    width: auto;
+}
+
+.nav-menu {
+    list-style: none;
+    padding: 0.75rem 0;
+    flex: 1;
+}
+
+.nav-item a {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1.25rem;
+    color: var(--text);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: background-color 0.2s;
+}
+
+.nav-item a:hover {
+    background: var(--bg);
+}
+
+.nav-item.active a {
+    background: rgba(0, 150, 64, 0.1);
+    color: var(--primary);
+    font-weight: 500;
+}
+
+/* Items unter einer Abschnitts-Überschrift einrücken (Dashboard bleibt bündig).
+   Doppelklasse für höhere Spezifität, damit auch deaktivierte Items (.nav-disabled,
+   z. B. Live-Ticker) die Basis-Regel .nav-item .nav-disabled sicher überschreiben. */
+.nav-item.nav-item-sub a,
+.nav-item.nav-item-sub .nav-disabled {
+    padding-left: 2.25rem;
+}
+
+/* Dritte Ebene: Items, die zusätzlich unter einer Gruppen-Überschrift hängen
+   (aktuell nur SPONSOREN → DATEN / SPONSOREN-ANSCHREIBEN). */
+.nav-item.nav-item-sub.nav-item-sub-2 a,
+.nav-item.nav-item-sub.nav-item-sub-2 .nav-disabled {
+    padding-left: 3rem;
+}
+
+/* Noch nicht gebautes Nav-Ziel (z. B. Live-Ticker, Phase 3): sichtbar, aber nicht klickbar */
+.nav-item .nav-disabled {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1.25rem;
+    color: var(--text-light);
+    font-size: 0.9rem;
+    cursor: default;
+}
+
+/* Abschnitts-Überschriften in CI-Grün. --primary-dark statt --primary: das helle
+   Markengrün erreicht auf Weiß bei dieser Schriftgröße keinen AA-Kontrast (3.9:1).
+   Greift effektiv nur noch für Unter-Abschnitte (.nav-section-sub) — Abschnitte ohne
+   Gruppe werden unten aufs Eltern-Niveau gehoben. */
+.nav-section {
+    padding: 0.9rem 1.25rem 0.4rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--primary-dark);
+}
+
+/* Eltern-Ebene: Gruppen-Überschrift (SPONSOREN) und alle Abschnitte OHNE Gruppe
+   (HELFER-ORGA, KOMMUNIKATION, …) teilen dasselbe Niveau — kräftig, rein schwarz. */
+.nav-group,
+.nav-section:not(.nav-section-sub) {
+    padding: 1.1rem 1.25rem 0.2rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #000;
+}
+
+/* Abschnitts-Überschrift innerhalb einer Gruppe: eingerückt und etwas enger am
+   Vorgänger, damit die Staffelung Gruppe → Abschnitt → Item sichtbar wird. */
+.nav-section.nav-section-sub {
+    padding: 0.55rem 1.25rem 0.3rem 2.25rem;
+}
+
+.badge {
+    font-size: 0.625rem;
+    padding: 0.125rem 0.5rem;
+    background: var(--border);
+    color: var(--text-light);
+    border-radius: 10px;
+    text-transform: uppercase;
+}
+
+.sidebar-footer {
+    padding: 1rem 1.25rem;
+    border-top: 1px solid var(--border);
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0.75rem;
+}
+
+.user-name {
+    font-weight: 500;
+}
+
+.user-role {
+    font-size: 0.75rem;
+    color: var(--text-light);
+}
+
+/* Main Content */
+.main-content {
+    flex: 1;
+    padding: 1.5rem;
+    overflow-y: auto;
+}
+
+.content-header {
+    margin-bottom: 1.25rem;
+}
+
+.content-header h1 {
+    font-size: 1.35rem;
+    color: var(--text);
+}
+
+/* =====================================================================
+   Kachel-Layout — GLOBALES Layout-Pattern (Doku: docs/ui-kacheln.md)
+   Standard, um Inhalte statt seitenbreit in responsiven Karten zu zeigen.
+   Auf JEDER neuen Orga-Seite mit Listen/Objekten dieses Pattern verwenden.
+
+     <div class="kachel-grid">
+        <div class="kachel"> … </div>
+        …
+     </div>
+
+   - .kachel-grid: responsives Raster, bricht automatisch um (auto-fit),
+     mobil einspaltig -> nur vertikales Scrollen.
+   - .kachel: einzelne Karte (Fläche, Rand, Radius, Schatten).
+   Das Dashboard-Grid (.dashboard-grid + .card) ist die KPI-Variante davon.
+   ===================================================================== */
+.kachel-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+    align-items: start;
+}
+.kachel {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.15rem;
+    box-shadow: var(--shadow-card);
+}
+
+/* Dashboard Grid */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1rem;
+}
+
+.card {
+    background: var(--white);
+    padding: 1.15rem;
+    border-radius: 6px;
+    box-shadow: var(--shadow-card);
+}
+
+.card h3 {
+    font-size: 0.95rem;
+    color: var(--text-light);
+    margin-bottom: 0.5rem;
+}
+
+.card-stat {
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.card-label {
+    font-size: 0.875rem;
+    color: var(--text-light);
+}
+
+.card-note {
+    font-size: 0.75rem;
+    color: var(--text-light);
+    margin-top: 0.5rem;
+    font-style: italic;
+}
+
+.card-admin {
+    border-left: 3px solid var(--accent);
+}
+
+/* Dashboard-Kacheln: klickbarer Absprung je Sidebar-Tool mit Ampel-Signal.
+   Signal steckt im linken Rand (Farbe als Signal, nicht als Fläche):
+   grün = ok/erledigt, orange = braucht Aufmerksamkeit, grau = neutral. */
+.card-tile {
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    color: inherit;
+    border-left: 3px solid var(--border);
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+a.card-tile:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-1px);
+}
+
+.card-tile.signal-ok { border-left-color: var(--primary); }
+.card-tile.signal-attention { border-left-color: var(--accent); }
+.card-tile.signal-neutral { border-left-color: var(--border); }
+.card-tile.signal-attention .card-stat { color: var(--accent); }
+
+.card-tile-open {
+    margin-top: 0.25rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--primary);
+}
+
+.card-tile-disabled {
+    opacity: 0.7;
+}
+
+.card-tile-disabled h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.quick-links {
+    list-style: none;
+}
+
+.quick-links li {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.quick-links li:last-child {
+    border-bottom: none;
+}
+
+.quick-links a {
+    color: var(--primary);
+    text-decoration: none;
+}
+
+.quick-links a:hover {
+    text-decoration: underline;
+}
+
+.quick-links a.btn-brand {
+    display: inline-block;
+    padding: 0.35rem 0.7rem;
+    border-radius: var(--radius);
+    color: #fff;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.quick-links a.btn-brand:hover {
+    text-decoration: none;
+    filter: brightness(0.9);
+}
+
+.btn-brand-raceresult { background: #C41011; }
+.btn-brand-trello { background: #0079BF; }
+.btn-brand-onedrive { background: #6264A7; }
+.btn-brand-github { background: #24292e; }
+
+.quick-links .btn-brand.is-disabled {
+    display: inline-block;
+    padding: 0.35rem 0.7rem;
+    border-radius: var(--radius);
+    color: #fff;
+    font-size: 0.85rem;
+    font-weight: 500;
+    background: #9ca3af;
+    opacity: 0.75;
+    cursor: not-allowed;
+    text-decoration: line-through;
+}
+.quick-links .quick-hint {
+    font-size: 0.8rem;
+    color: var(--text-light);
+}
+.btn-brand-strava { background: #FC4C02; }
+
+/* Zugangsdaten-Hinweis je Schnellzugriff-Button (nur Admin sichtbar) */
+.qc-info {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-light);
+    font-size: 1rem;
+    line-height: 1;
+    padding: 0.15rem 0.3rem;
+    border-radius: 4px;
+}
+.qc-info:hover { color: var(--text); background: var(--border); }
+.qc-note {
+    flex-basis: 100%;
+    margin-top: 0.4rem;
+    padding: 0.5rem;
+    background: #f7f7f7;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+.qc-note-text {
+    width: 100%;
+    box-sizing: border-box;
+    font-family: monospace;
+    font-size: 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.4rem;
+    resize: vertical;
+    background: #fff;
+    color: var(--text);
+}
+.qc-note-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-top: 0.4rem;
+}
+.qc-copy {
+    padding: 0.25rem 0.6rem;
+    font-size: 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--white);
+    cursor: pointer;
+    color: var(--text);
+}
+.qc-copy:hover { background: var(--border); }
+.qc-edit { font-size: 0.75rem; }
+
+/* Mobile Header Bar */
+.mobile-header {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 56px;
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    padding: 0 1rem;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 1000;
+}
+
+.mobile-header h1 {
+    font-size: 1.1rem;
+    color: var(--primary);
+    margin: 0;
+}
+
+.mobile-header .header-logo {
+    height: 2rem;
+    width: auto;
+}
+
+.burger-btn {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    width: 28px;
+    height: 28px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+}
+
+.burger-btn span {
+    display: block;
+    width: 100%;
+    height: 2px;
+    background: var(--text);
+    border-radius: 1px;
+    transition: transform 0.2s, opacity 0.2s;
+}
+
+/* Sidebar Overlay */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1001;
+}
+
+/* Responsive: < 1024px */
+@media (max-width: 1023px) {
+    .mobile-header {
+        display: flex;
+    }
+
+    .main-content {
+        padding-top: 72px; /* 56px header + 16px spacing */
+    }
+
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 280px;
+        z-index: 1002;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+    }
+
+    .sidebar.open {
+        transform: translateX(0);
+    }
+
+    .sidebar-overlay.open {
+        display: block;
+    }
+}
+
+/* Responsive: < 480px */
+@media (max-width: 479px) {
+    .sidebar {
+        width: 100%;
+    }
+
+    .mobile-header h1 {
+        font-size: 1rem;
+    }
+}
+
+/* ── Markdown-Legende in den Brief-Editoren ──────────────────
+   Aufklapper rechts in der Kopfzeile über dem Markdown-Feld.
+   Inhalt kommt aus sponsorMarkdownLegende() (src/sponsor_brief.php),
+   damit Legende und Renderer nicht auseinanderlaufen. */
+.md-legende {
+    font-size: 0.8rem;
+    color: var(--text-light);
+    /* Anker für das aufgeklappte Panel */
+    position: relative;
+}
+
+.md-legende > summary {
+    cursor: pointer;
+    user-select: none;
+    padding: 0.15rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg);
+    color: var(--text);
+    white-space: nowrap;
+}
+
+.md-legende > summary:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+/* Als überlagerndes Panel statt im Fluss: die Kopfzeile ist ein Flex-Container,
+   im Fluss würde der Inhalt auf die Breite des Aufklappers gequetscht und die
+   Zeile aufblähen. So verschiebt sich beim Öffnen nichts. */
+.md-legende-body {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    z-index: 20;
+    width: 26rem;
+    max-width: 78vw;
+    /* Auf niedrigen Fenstern nicht abschneiden, sondern im Panel scrollen */
+    max-height: 70vh;
+    overflow-y: auto;
+    padding: 0.75rem 0.9rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--white);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.14);
+}
+
+@media (max-width: 600px) {
+    .md-legende-body {
+        width: auto;
+        max-width: none;
+        right: auto;
+        left: 0;
+        min-width: 16rem;
+    }
+}
+
+.md-tabelle {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.md-tabelle td {
+    padding: 0.2rem 0.4rem 0.2rem 0;
+    vertical-align: top;
+    border: 0;
+}
+
+.md-tabelle .md-syntax {
+    width: 45%;
+    white-space: nowrap;
+}
+
+.md-legende code {
+    font-size: 0.95em;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 0 0.25rem;
+}
+
+.md-legende .md-ergebnis {
+    color: var(--text);
+}
+
+.md-hinweis {
+    margin: 0.6rem 0 0.2rem;
+    line-height: 1.45;
+}
+
+.md-nicht {
+    margin: 0.2rem 0 0;
+    padding-left: 1.1rem;
+    line-height: 1.45;
+}
+
+/* ============================================================
+   ANSCHREIBEN-SEITEN — Empfänger-Kopf, Compose, Anhang-Kachel
+   Gemeinsame Bausteine aller Sponsoren-Anschreiben (eine Seite je Briefvorlage).
+   Lagen vorher als <style>-Block in jeder Briefseite; zentral, damit die Seiten
+   nicht auseinanderdriften. Spec: intern/sponsoren-anschreiben-seiten-spec.md
+   ============================================================ */
+
+.brief-card {
+    background: var(--white);
+    border-radius: 8px;
+    box-shadow: var(--shadow-card);
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+}
+
+.brief-hint { font-size: 0.8rem; color: var(--text-light); }
+
+/* --- Empfänger-Kopf --- */
+.empf-kopf {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.85rem 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.empf-kopf-zeile {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.empf-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-light);
+}
+
+.empf-select {
+    padding: 0.4rem 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.9rem;
+    min-width: 15rem;
+    max-width: 100%;
+    box-sizing: border-box;
+    background: var(--white);
+    color: var(--text);
+}
+
+.empf-zahl { font-size: 0.9rem; color: var(--text); }
+.empf-zahl strong { font-size: 1.05rem; color: var(--primary); }
+
+.empf-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(0, 150, 64, 0.1);
+    border: 1px solid var(--primary);
+    color: var(--text);
+    border-radius: 14px;
+    padding: 0.2rem 0.7rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.empf-chip a { color: var(--text-light); text-decoration: none; }
+.empf-chip a:hover { color: var(--error); }
+
+.empf-toggle {
+    margin-left: auto;
+    font-size: 0.8rem;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.25rem 0.6rem;
+    cursor: pointer;
+    color: var(--text-light);
+    white-space: nowrap;
+}
+
+.empf-toggle:hover { background: var(--bg); color: var(--text); }
+
+.empf-hinweis {
+    font-size: 0.82rem;
+    color: var(--text);
+    background: rgba(255, 193, 7, 0.13);
+    border: 1px solid rgba(255, 193, 7, 0.5);
+    border-radius: 6px;
+    padding: 0.5rem 0.7rem;
+    margin: 0.65rem 0 0;
+    line-height: 1.5;
+}
+
+.empf-liste { margin-top: 0.85rem; border-top: 1px solid var(--border); padding-top: 0.75rem; }
+.empf-liste-actions { display: flex; gap: 0.5rem; margin-bottom: 0.6rem; }
+
+.empf-items {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    max-height: 22rem;
+    overflow-y: auto;
+}
+
+.empf-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    padding: 0.45rem 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    font-size: 0.88rem;
+}
+
+.empf-item.aktiv { border-color: var(--primary); background: rgba(0, 150, 64, 0.07); }
+.empf-item .firma { font-weight: 600; flex: 1; min-width: 10rem; word-break: break-word; }
+.empf-item input[type=checkbox] { accent-color: var(--primary); cursor: pointer; flex-shrink: 0; }
+
+.empf-tag {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 12px;
+    background: var(--white);
+    border: 1px solid var(--border);
+    color: var(--text-light);
+    white-space: nowrap;
+}
+
+.empf-tag.stop { background: var(--error-bg); border-color: var(--error); color: var(--error); }
+
+/* --- Anhang-Kachel --- */
+.anhang-kachel-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.5rem;
+}
+
+.anhang-gruppe-titel {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-light);
+    margin: 0.9rem 0 0.35rem;
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.anhang-gruppe-titel .brief-hint { font-weight: 400; }
+.anhang-fest { flex-shrink: 0; font-size: 0.85rem; }
+
+.anhang-warn {
+    font-size: 0.82rem;
+    color: var(--text);
+    background: rgba(255, 193, 7, 0.15);
+    border: 1px solid rgba(255, 193, 7, 0.55);
+    border-radius: 6px;
+    padding: 0.5rem 0.7rem;
+    margin: 0.3rem 0 0;
+    line-height: 1.5;
+}
+
+.empf-tag.warn { background: rgba(255, 193, 7, 0.18); border-color: rgba(255, 193, 7, 0.6); color: var(--text); }
+
+/* Dateiliste der Anhang-Kachel (geteiltes Partial _anhang_kachel.php) */
+.plakat-liste { list-style: none; margin: 0.4rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.plakat-item { display: flex; align-items: center; flex-wrap: nowrap; gap: 0.75rem; padding: 0.5rem 0.75rem; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; }
+.plakat-item span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.plakat-item .anhang-abwahl { flex-shrink: 0; accent-color: var(--primary); width: 1rem; height: 1rem; cursor: pointer; margin: 0; }
+.plakat-hinweis { font-size: 0.8rem; color: var(--text); background: rgba(255,193,7,0.15); border: 1px solid rgba(255,193,7,0.55); border-radius: 6px; padding: 0.5rem 0.75rem; margin: 0.9rem 0 0.5rem; line-height: 1.5; }
+.plakat-upload-form { margin-top: 0.75rem; display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+
+/* ============================================================
+   Helfer-Draht-Bauvorlage (Ziel-Look, intern/CLAUDE.md §UI-Kachel-Pattern)
+   Kanon = orga/helfer_verzeichnis.php; zentral statt je Seite dupliziert.
+   Weiße Karte + Tabelle mit grauer Kapitälchen-Kopfzeile, dünne Trennlinien,
+   Links im abgetönten Grün (--link). Seiten-Eigenheiten bleiben lokal.
+   ============================================================ */
+.hd-card { background: var(--white); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); padding: 1.25rem; margin-bottom: 1.25rem; }
+.hd-card h2 { font-size: var(--fs-xl); margin: 0 0 0.9rem; }
+.hd-table { width: 100%; border-collapse: collapse; }
+.hd-table th, .hd-table td { padding: 0.5rem 0.6rem; text-align: left; border-bottom: 1px solid var(--border); font-size: var(--fs-base); vertical-align: top; }
+.hd-table th { background: var(--bg); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-light); font-weight: 700; }
+.hd-table a { color: var(--link); text-decoration: none; }
+.hd-table a:hover { text-decoration: underline; }

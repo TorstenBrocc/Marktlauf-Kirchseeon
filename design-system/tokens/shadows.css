@@ -1,0 +1,12 @@
+:root {
+  --shadow-sm: 0 2px 4px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 6px 12px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 15px 25px -3px rgba(0, 0, 0, 0.15);
+  --shadow-xl: 0 25px 50px -5px rgba(0, 0, 0, 0.2);
+  --shadow-card: 0 10px 22px -4px rgba(0, 0, 0, 0.2);       /* orga tiles */
+  --shadow-plakette: 0 8px 20px -8px rgba(0,0,0,.28);
+  --shadow-gold-cta: 0 12px 26px -8px rgba(244,184,30,.7);
+  --shadow-ds-card: 0 10px 26px -18px rgba(20,60,30,.4);
+  --focus-ring: 0 0 0 3px rgba(0, 150, 64, 0.1);
+  --focus-ring-orga: 0 0 0 2px rgba(0, 150, 64, 0.2);
+}

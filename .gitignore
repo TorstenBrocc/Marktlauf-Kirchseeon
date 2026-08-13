@@ -1,0 +1,62 @@
+# --- AI / Cline ---
+.clinerules
+# .memory/   # entkommentieren zum Ignorieren; im public-Repo ohnehin nicht relevant
+
+# --- macOS ---
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+
+# --- Editoren ---
+.vscode/
+.idea/
+*.swp
+*.swo
+*.bak
+
+# --- Sicherheit (KRITISCH) ---
+.env
+.env.*
+credentials.json
+*.pem
+*.key
+storage/config.php
+.user.ini
+storage/.user.ini
+migrations/00?_seed_*.sql
+
+# --- Dependencies / Build ---
+node_modules/
+jspm_packages/
+vendor/
+dist/
+build/
+venv/
+
+# Ausnahme: self-hosted Third-Party-Frontend-Assets (Leaflet u. a.). Das sind
+# ausgelieferte Bibliotheken, KEIN Composer-/Build-vendor — sie müssen deployt
+# werden (DSGVO: kein CDN). Deshalb aus dem generischen vendor/-Ignore herausgelöst.
+!assets/vendor/
+!assets/vendor/**
+
+# --- Logs ---
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+storage/logs/*
+!storage/logs/.gitkeep
+Thumbs.db
+
+# --- Projekt-spezifisch: niemals committen ---
+briefing.md
+.claude/lessons.md
+.claude/settings.local.json
+assets/images/design-briefing*.md
+sponsor-data/
+*.sponsor.csv
+scripts/
+
+# --- Debug-Dateien (temporär, nie committen) ---
+whoami_ip.php

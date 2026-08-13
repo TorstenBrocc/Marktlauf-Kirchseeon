@@ -1,0 +1,42 @@
+name: SFTP Deployment
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:   # manueller Deploy im Actions-Tab (z. B. Re-Deploy des aktuellen Stands)
+
+jobs:
+  web-deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Stamp asset versions (cache-busting)
+      run: |
+        V="${GITHUB_SHA::8}"
+        for f in *.html; do
+          [ -e "$f" ] || continue
+          sed -i \
+            -e "s|href=\"css/base.css\"|href=\"css/base.css?v=$V\"|g" \
+            -e "s|href=\"css/layout.css\"|href=\"css/layout.css?v=$V\"|g" \
+            -e "s|href=\"css/components.css\"|href=\"css/components.css?v=$V\"|g" \
+            -e "s|src=\"js/main.js\"|src=\"js/main.js?v=$V\"|g" \
+            -e "s|src=\"js/maps.js\"|src=\"js/maps.js?v=$V\"|g" \
+            "$f"
+        done
+        sed -i "s|/lang/\${lang}.json|/lang/\${lang}.json?v=$V|g" js/main.js
+        echo "Assets gestempelt mit v=$V"
+
+    - name: SSH Deploy
+      uses: easingthemes/ssh-deploy@v5.1.0
+      with:
+        SSH_PRIVATE_KEY: ${{ secrets.SFTP_SSH_KEY }}
+        REMOTE_HOST: ${{ secrets.SFTP_HOST }}
+        REMOTE_USER: ${{ secrets.SFTP_USERNAME }}
+        TARGET: ${{ secrets.SFTP_REMOTE_PATH }}
+        SOURCE: "./"
+        ARGS: "-rlgoDzvc -i --delete"
+        EXCLUDE: ".git/, .github/, .claude/, .vscode/, node_modules/, .clinerules, .memory/, .gitignore, .DS_Store, storage/config.php, storage/files/, storage/logs/, data/status.json, data/sponsoren.json, .user.ini, .env, venv/, tests/, README.md, THIRD-PARTY-NOTICES.md, assets/social/, assets/sponsoren-live/"

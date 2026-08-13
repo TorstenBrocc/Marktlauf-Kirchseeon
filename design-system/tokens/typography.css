@@ -1,0 +1,43 @@
+/* Typography — three families, each with a fixed job. */
+:root {
+  --font-display: 'Fredoka', system-ui, -apple-system, sans-serif;   /* Eventname, Zahlen, Headlines */
+  --font-heading: 'Montserrat', system-ui, -apple-system, sans-serif; /* Kicker, Labels, Auszeichnungen */
+  --font-main: 'Poppins', 'Inter', system-ui, -apple-system, sans-serif; /* Fließtext */
+  /* Orga-Dashboard: bewusst System-Schrift (Quelle: -apple-system, BlinkMacSystemFont,
+     'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif) */
+  --font-ui: system-ui, -apple-system, sans-serif;
+
+  /* Scale */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.75rem;
+
+  /* Fluid display sizes from the live site */
+  --text-h1: clamp(2rem, 5vw, 3.5rem);
+  --text-h2: clamp(1.5rem, 4vw, 2.5rem);
+  --text-h3: clamp(1.25rem, 3vw, 1.75rem);
+  --text-hero: clamp(3rem, 7vw, 96px);
+
+  /* Weights */
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-black: 800;
+
+  /* Line heights */
+  --leading-hero: .92;
+  --leading-tight: 1.2;
+  --leading-body: 1.5;
+  --leading-prose: 1.8;
+
+  /* Tracking */
+  --tracking-hero: -.01em;
+  --tracking-label: .05em;
+  --tracking-kicker: .16em;
+  --tracking-caps: .1em;
+}

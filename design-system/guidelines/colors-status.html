@@ -1,0 +1,18 @@
+<!-- @dsCard group="Colors" viewport="700x160" name="Statusfarben" subtitle="Ampel im Orga-Dashboard und Formular-Rückmeldungen" -->
+<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><link rel="stylesheet" href="../tokens.php"><link rel="stylesheet" href="../../css/fonts.css">
+<style>body{margin:0;padding:18px;font-family:var(--font-main);background:var(--white);color:var(--text-strong)}
+a{color:var(--link)}a:hover{color:var(--link-hover)}
+.sw{display:flex;gap:10px}.sw>div{flex:1}.chip{height:64px;border-radius:10px}
+.n{font-family:var(--font-main);font-size:12px;font-weight:600;margin-top:7px}
+.h{font-family:var(--font-heading);font-size:11px;color:var(--gray-500);letter-spacing:.04em}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.tok{font-family:var(--font-heading);font-size:11px;color:var(--gray-400)}</style></head><body><div class="row">
+<span style="padding:6px 12px;border-radius:4px;font-size:13px;font-weight:500;background:var(--warn-bg);color:var(--warn-fg)">Neu</span>
+<span style="padding:6px 12px;border-radius:4px;font-size:13px;font-weight:500;background:var(--success-bg);color:var(--success-fg)">Bestätigt</span>
+<span style="padding:6px 12px;border-radius:4px;font-size:13px;font-weight:500;background:var(--error-bg);color:var(--error)">Abgelehnt</span>
+</div>
+<div class="row" style="margin-top:12px">
+<span style="flex:1;padding:10px 14px;border-radius:6px;font-size:13px;font-weight:600;text-align:center;background:var(--form-success-bg);color:var(--form-success-fg);border:1px solid var(--form-success-border)">Nachricht gesendet</span>
+<span style="flex:1;padding:10px 14px;border-radius:6px;font-size:13px;font-weight:600;text-align:center;background:var(--form-error-bg);color:var(--form-error-fg);border:1px solid var(--form-error-border)">Bitte Pflichtfelder ausfüllen</span>
+</div>
+<div class="tok" style="margin-top:10px">--warn-bg / --success-bg / --error-bg · --form-success-* / --form-error-*</div></body></html>

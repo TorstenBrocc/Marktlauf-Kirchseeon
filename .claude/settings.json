@@ -1,0 +1,19 @@
+{
+  "attribution": {
+    "commits": false,
+    "pullRequests": false
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.command' | grep -qi 'co-authored-by: claude' && exit 2 || exit 0"
+          }
+        ]
+      }
+    ]
+  }
+}

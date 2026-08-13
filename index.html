@@ -1,0 +1,969 @@
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATSV Marktlauf Kirchseeon 2026 | Infos & Anmeldung</title>
+    <meta name="description" content="Offizieller Marktlauf des ATSV Kirchseeon 2026. Alle Infos zu Strecken, Terminen, Anmeldung und Ergebnissen für Läufer & Familien im Landkreis Ebersberg.">
+    <link rel="canonical" href="https://atsv-kirchseeon-marktlauf.de/">
+    <link rel="icon" type="image/png" href="assets/images/ATSV_Logo-750x968.png">
+    
+    <!-- LCP: Display-Font (H1 "Marktlauf Kirchseeon") frueh laden -->
+    <link rel="preload" href="assets/fonts/fredoka-latin.woff2" as="font" type="font/woff2" crossorigin>
+
+    <!-- Fonts -->
+    <link rel="stylesheet" href="css/fonts.css">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/components.css">
+
+    <!-- Leaflet & Plugins for GPX Maps: werden per js/maps.js on-demand geladen
+         (erst beim Scrollen zu den Karten bzw. beim Öffnen des Höhenprofils),
+         um die Total Blocking Time beim Seitenaufbau zu reduzieren. -->
+
+    <!-- Newsletter Form Styles -->
+    <style>
+      .newsletter-form {
+        max-width: 400px;
+        margin: 0 auto;
+        text-align: left;
+      }
+
+      .newsletter-form .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      .newsletter-form .form-group {
+        margin-bottom: 1rem;
+      }
+
+      .newsletter-form label {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+        color: var(--gray-700, #374151);
+      }
+
+      .newsletter-form input[type="text"],
+      .newsletter-form input[type="email"] {
+        width: 100%;
+        padding: 0.625rem 0.75rem;
+        border: 1px solid var(--gray-300, #d1d5db);
+        border-radius: 6px;
+        font-size: 1rem;
+        transition: border-color 0.2s, box-shadow 0.2s;
+      }
+
+      .newsletter-form input:focus {
+        outline: none;
+        border-color: var(--color-primary, #009640);
+        box-shadow: 0 0 0 3px rgba(0, 150, 64, 0.1);
+      }
+
+      .newsletter-form .checkbox-group {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.625rem;
+        font-size: 0.875rem;
+        color: var(--gray-600, #4b5563);
+        line-height: 1.5;
+        cursor: pointer;
+      }
+
+      .newsletter-form .checkbox-group input[type="checkbox"] {
+        width: 1.125rem;
+        height: 1.125rem;
+        margin-top: 0.125rem;
+        flex-shrink: 0;
+        accent-color: var(--color-primary, #009640);
+        cursor: pointer;
+      }
+
+      .newsletter-form .checkbox-group a {
+        color: var(--color-primary, #009640);
+        text-decoration: underline;
+      }
+
+      .newsletter-form .btn-submit {
+        width: 100%;
+        padding: 0.75rem 1.5rem;
+        background: var(--color-primary, #009640);
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .newsletter-form .btn-submit:hover {
+        background: var(--color-primary-dark, #007230);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 150, 64, 0.3);
+      }
+
+      .newsletter-form .btn-submit:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .newsletter-success {
+        text-align: center;
+        padding: 2rem;
+        background: #e7faf0;
+        border: 1px solid #13ce66;
+        border-radius: 8px;
+        color: #085229;
+      }
+
+      .newsletter-success h4 {
+        margin: 0 0 0.5rem 0;
+        font-size: 1.1rem;
+      }
+
+      .newsletter-success p {
+        margin: 0;
+        font-size: 0.9rem;
+      }
+
+      /* Honeypot: off-screen, not display:none */
+      .hp-field {
+        position: absolute;
+        left: -9999px;
+        top: -9999px;
+      }
+
+      @media (max-width: 480px) {
+        .newsletter-form .form-row {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://atsv-kirchseeon-marktlauf.de/">
+    <meta property="og:title" content="ATSV Marktlauf Kirchseeon 2026 | Infos & Anmeldung">
+    <meta property="og:description" content="Offizieller Marktlauf des ATSV Kirchseeon 2026. Alle Infos zu Strecken, Terminen, Anmeldung und Ergebnissen für Läufer & Familien im Landkreis Ebersberg.">
+    <meta property="og:image" content="https://atsv-kirchseeon-marktlauf.de/assets/images/Marktlauf-Logo-Schrift-1180x579%20freigestellt.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:locale" content="de_DE">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://atsv-kirchseeon-marktlauf.de/assets/images/ATSV_Logo-750x968.png">
+    <style>
+        /* ── Live-Ticker-Banner ──────────────────────────────── */
+        .live-ticker-bar {
+            background: #1c3a1c;
+            color: #fff;
+            padding: 0.6rem 1rem;
+            font-size: 0.88rem;
+            line-height: 1.4;
+        }
+        .live-ticker-inner {
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+        .live-ticker-label {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-weight: 700;
+            white-space: nowrap;
+            padding-top: 1px;
+            color: #7dda8a;
+            text-transform: uppercase;
+            font-size: 0.78rem;
+            letter-spacing: 0.04em;
+        }
+        .live-ticker-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #7dda8a;
+            flex-shrink: 0;
+            animation: liveTickerPulse 1.4s ease-in-out infinite;
+        }
+        @keyframes liveTickerPulse {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.35; }
+        }
+        .live-ticker-messages {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+        .live-ticker-entry {
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
+        }
+        .live-ticker-typ {
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0.1rem 0.45rem;
+            border-radius: 10px;
+            flex-shrink: 0;
+        }
+        .live-ticker-typ-info     { background: #1a73e8; color: #fff; }
+        .live-ticker-typ-warnung  { background: #e67e22; color: #fff; }
+        .live-ticker-typ-ergebnis { background: #009640; color: #fff; }
+        .live-ticker-text { flex: 1; }
+    </style>
+</head>
+<body>
+
+    <header class="main-header">
+        <div class="nav-container">
+            <a href="/" class="logo-plakette">
+                <img src="assets/images/marktlauf-wordmark.png" alt="Marktlauf Kirchseeon" class="logo-wordmark">
+                <span class="logo-divider"></span>
+                <img src="assets/images/ATSV_Logo-750x968.png" alt="ATSV Kirchseeon 1906" class="logo-atsv">
+            </a>
+
+            <button class="mobile-menu-toggle" aria-label="Menü öffnen">
+                <span class="burger-icon"></span>
+            </button>
+
+            <nav class="nav-links">
+                <a href="#distanzen" class="nav-link" data-i18n="nav.laeufe">Läufe</a>
+                <a href="#ablauf" class="nav-link" data-i18n="nav.zeitplan">Zeitplan</a>
+                <a href="#strecke" class="nav-link" data-i18n="nav.strecke">Strecke</a>
+                <a href="#sponsoren" class="nav-link" data-i18n="nav.sponsoren">Sponsoren</a>
+                <a href="#faq" class="nav-link" data-i18n="nav.faq">FAQ</a>
+                <a href="#connect" class="nav-link" data-i18n="nav.kontakt">Newsletter &amp;<br>Kontakt</a>
+                <div class="lang-switcher">
+                    <button id="lang-toggle" class="lang-btn" title="Sprache wechseln">
+                        <img src="assets/images/allemand.png" alt="Deutsch" id="lang-flag" class="flag-icon">
+                    </button>
+                </div>
+                <a href="#anmeldung" class="nav-link nav-cta" data-i18n="nav.anmeldung">Jetzt anmelden</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <!-- Live-Ticker Banner (nur sichtbar wenn aktive Meldungen vorhanden) -->
+        <div id="live-ticker-bar" class="live-ticker-bar" hidden aria-live="polite" aria-atomic="false">
+            <div class="live-ticker-inner">
+                <span class="live-ticker-label" aria-label="Live-Ticker">
+                    <span class="live-ticker-dot" aria-hidden="true"></span>
+                    Live
+                </span>
+                <div id="live-ticker-messages" class="live-ticker-messages"></div>
+            </div>
+        </div>
+
+        <!-- Hero Section -->
+        <section id="hero" class="hero">
+            <div class="hero-blob-center"></div>
+
+            <div class="hero-inner">
+                <div class="hero-content">
+                    <!-- Kooperations-Pille -->
+                    <div class="hero-koop-badge">
+                        <span class="koop-text" data-i18n="hero.koop">In Kooperation mit</span>
+                        <img src="assets/images/Wort-u-Bildmarke-Gemeinde.png" alt="Markt Kirchseeon – Eine starke Gemeinde mit Tradition und Zukunft" class="koop-logo">
+                    </div>
+
+                    <!-- Kicker -->
+                    <div class="hero-kicker">
+                        <span class="hero-kicker-bar"></span>
+                        <a href="https://www.kirchseeon.de/energie-und-umwelttag/" class="hero-kicker-link" target="_blank" rel="noopener noreferrer" title="Energie- und Umwelttag – Veranstaltungsseite der Gemeinde Kirchseeon"><span class="hero-kicker-text" data-i18n="hero.kicker">Energie- &amp; Umwelttag 2026</span><svg class="hero-kicker-ext" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg></a>
+                    </div>
+
+                    <!-- Titel -->
+                    <h1>Marktlauf<br>Kirchseeon</h1>
+
+                    <!-- Jahr + Motto -->
+                    <div class="hero-year-motto">
+                        <span class="hero-year">2026</span>
+                        <span class="hero-motto-chip" data-i18n="hero.motto">E-Mobilität &amp; Sport</span>
+                    </div>
+
+                    <!-- Meta-Zeilen -->
+                    <div class="hero-meta">
+                        <span class="hero-meta-line hero-meta-line--stacked">
+                            <span class="hero-meta-row">
+                                <span class="hero-meta-dot hero-meta-dot--gold"></span>
+                                <span data-i18n="hero.meta_date">Sonntag, 20. September 2026 · Start 10:00 Uhr</span>
+                            </span>
+                            <span class="hero-meta-note" data-i18n="hero.meta_date_note">(Startnummern-Ausgabe vorauss. ab 09:00 Uhr)</span>
+                            <a href="marktlauf2026.ics" class="hero-cal-link"><span class="hero-cal-icon" aria-hidden="true">📅</span> <span data-i18n="hero.add_to_calendar">Zum Kalender hinzufügen</span></a>
+                        </span>
+                        <span class="hero-meta-line">
+                            <span class="hero-meta-dot hero-meta-dot--white"></span>
+                            <span data-i18n="hero.meta_location">Start &amp; Ziel: JEK, Westring 6, 85614 Kirchseeon</span>
+                        </span>
+                    </div>
+
+                    <!-- Countdown -->
+                    <div id="countdown" class="countdown"></div>
+
+                    <!-- CTAs -->
+                    <div class="hero-actions">
+                        <a href="#anmeldung" class="btn btn-primary" data-i18n="hero.cta_primary">Jetzt anmelden</a>
+                        <a href="#distanzen" class="btn btn-secondary" data-i18n="hero.cta_secondary">Alle Läufe</a>
+                    </div>
+                </div>
+
+                <!-- Floating Marktlauf Badge -->
+                <div class="hero-float-badge">
+                    <img src="assets/images/logo-final.svg" alt="Marktlauf Logo">
+                </div>
+
+                <!-- Läufer Silhouette -->
+                <img src="assets/images/laeufer.png" alt="Läufer" class="hero-runner">
+            </div>
+        </section>
+
+        <!-- Über den Marktlauf (SEO-Content / Einführung) -->
+        <section id="ueber" class="section-padding">
+            <style>
+                #ueber { background: var(--gray-50, #f8fafc); }
+                #ueber .ueber-inner { max-width: 760px; margin: 0 auto; text-align: center; }
+                #ueber h2 { margin-bottom: 1rem; }
+                #ueber h2::after {
+                    content: ""; display: block; width: 64px; height: 4px;
+                    background: var(--color-primary, #009640); border-radius: 2px;
+                    margin: 0.9rem auto 0;
+                }
+                #ueber .ueber-lead {
+                    font-size: 1.2rem; font-weight: 500; line-height: 1.7;
+                    color: var(--gray-800, #1f2937); margin-bottom: 1.5rem;
+                }
+                #ueber .ueber-body { text-align: left; }
+                #ueber .ueber-body p {
+                    line-height: 1.8; margin-bottom: 1.1rem;
+                    color: var(--gray-600, #475569);
+                }
+                #ueber .ueber-body p:last-child { margin-bottom: 0; }
+            </style>
+            <div class="container">
+                <div class="ueber-inner">
+                    <h2 data-i18n="ueber.title">Über den Marktlauf Kirchseeon</h2>
+                    <p class="ueber-lead" data-i18n="ueber.p1">Der Marktlauf Kirchseeon ist das jährliche Laufevent des ATSV Kirchseeon 1906 e. V. Er lockt jedes Jahr Läuferinnen und Läufer aus Kirchseeon und weit darüber hinaus an die Startlinie. Jedes Jahr im September verwandelt sich das Kirchseeoner Umland erneut in eine Laufstrecke für alle Generationen – vom Bambini-Lauf über die Schülerläufe bis zur anspruchsvollen 10-km-Distanz für ambitionierte Freizeit- und Wettkampfläufer.</p>
+                    <div class="ueber-body">
+                        <p data-i18n="ueber.p2">Der Marktlauf ist mehr als ein Wettkampf: Als Teil des Energie- &amp; Umwelttags verbindet er Sport, Familie und Nachhaltigkeit zu einem Fest für die ganze Region. Vereine und lokale Sponsoren sorgen für Stimmung und Verpflegung, im Ziel warten Urkunden und Medaillen auf alle Finisher.</p>
+                        <p data-i18n="ueber.p3">Ob erfahrener Wettkampfläufer oder Familie mit Laufeinsteigern – beim Marktlauf Kirchseeon findet jeder die passende Distanz. Melde dich jetzt an und sei dabei, wenn Kirchseeon läuft.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Distanzen Section -->
+        <section id="distanzen" class="section-padding">
+            <div class="container">
+                <h2 class="text-center" data-i18n="distanzen.title">Die Läufe</h2>
+                <div class="run-grid">
+                    <!-- Bambini -->
+                    <a href="#strecke" class="run-card">
+                        <div class="run-card-header">
+                            <span class="run-category" data-i18n="distanzen.bambini.category">Bambini</span>
+                            <span class="run-distance">500m</span>
+                        </div>
+                        <p class="run-card-desc" data-i18n="distanzen.bambini.desc">Der perfekte Einstieg für die kleinsten Sportler. Ein kurzer, spannender Lauf für alle Bambinis.</p>
+                    </a>
+                    <!-- Schüler -->
+                    <a href="#strecke" class="run-card">
+                        <div class="run-card-header">
+                            <span class="run-category" data-i18n="distanzen.schueler.category">Schüler</span>
+                            <span class="run-distance">1km & 2km</span>
+                        </div>
+                        <p class="run-card-desc" data-i18n="distanzen.schueler.desc">Herausforderungen für Schüler in zwei verschiedenen Distanzen, um die eigenen Grenzen zu testen.</p>
+                    </a>
+                    <!-- Elite -->
+                    <a href="#strecke" class="run-card">
+                        <div class="run-card-header">
+                            <span class="run-category" data-i18n="distanzen.elite.category">Jugend & Erwachsene</span>
+                            <span class="run-distance">5km & 10km</span>
+                        </div>
+                        <p class="run-card-desc" data-i18n="distanzen.elite.desc">Die Königsdisziplinen für ambitionierte Läufer und Hobbysportler. Wer holt sich den Sieg in Kirchseeon?</p>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Ablauf Section -->
+        <section id="ablauf" class="section-padding" style="background-color: var(--gray-50);">
+            <div class="container">
+                <h2 class="text-center" data-i18n="ablauf.title">Zeitplan</h2>
+                <p class="text-center" data-i18n="ablauf.subtitle" style="max-width: 680px; margin: -0.5rem auto 2.5rem; color: var(--gray-600); font-style: italic;">Zeitplan ist noch vorläufig und kann sich noch mal ändern. Wird noch mal bekanntgegeben, wenn es so kommen sollte.</p>
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content">
+                            <span class="timeline-time" data-i18n="ablauf.time1">10:00 Uhr</span>
+                            <span class="timeline-event" data-i18n="ablauf.event1">Bambini · 500 m</span>
+                            <span class="strecke-alter" data-i18n="alter.bambini">bis 6 Jahre</span>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content">
+                            <span class="timeline-time" data-i18n="ablauf.time2">10:30 Uhr</span>
+                            <span class="timeline-event" data-i18n="ablauf.event2">Schüler · 1 km & 2 km</span>
+                            <span class="strecke-alter"><span data-i18n="alter.1km">ab 6 Jahre</span> (1km) | <span data-i18n="alter.2km">8–12 Jahre</span> (2km)</span>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content">
+                            <span class="timeline-time" data-i18n="ablauf.time3">11:00 Uhr</span>
+                            <span class="timeline-event" data-i18n="ablauf.event3">Jugend & Erwachsene · 5 km & 10 km</span>
+                            <span class="strecke-alter"><span data-i18n="alter.5km">ab 13 Jahre</span> (5km) | <span data-i18n="alter.10km">ab 16 Jahre</span> (10km)</span>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content">
+                            <span class="timeline-time" data-i18n="ablauf.time4">12:30–13:30 Uhr</span>
+                            <span class="timeline-event" data-i18n="ablauf.event4">Siegerehrungen</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Strecke Section -->
+        <section id="strecke" class="section-padding">
+            <div class="container">
+                <h2 class="text-center" data-i18n="strecke.title">Start & Ziel</h2>
+                <p class="text-center" style="margin-bottom: var(--space-lg); color: var(--gray-600);" data-i18n="strecke.address">
+                    Start und Ziel befinden sich am Westring 6, 85614 Kirchseeon.
+                </p>
+                
+                <div class="map-container" id="location-map"></div>
+
+                <div class="route-container">
+                    <h3 class="text-center" style="margin-bottom: var(--space-md);" data-i18n="strecke.routes_title">Die Strecken</h3>
+                    <div class="route-grid">
+                        <!-- Bambini -->
+                        <div class="route-card" data-route-id="bambini-500m">
+                            <div class="route-map-preview"></div>
+                            <div class="route-card-content">
+                                <div class="route-info">
+                                    <span class="route-title">Bambini</span>
+                                    <span class="route-distance">500m</span>
+                                </div>
+                                <span class="strecke-alter" data-i18n="alter.bambini">bis 6 Jahre</span>
+                                <span class="route-disclaimer" data-i18n="strecke.details_soon">Streckendetails folgen in Kürze</span>
+                                <a href="#" class="btn btn-secondary gpx-download" download style="visibility: hidden;">
+                                    <img src="assets/images/icon-gpx.svg" alt="GPX Icon" class="gpx-thumb">
+                                    <span>GPX Download</span>
+                                </a>
+                            </div>
+                        </div>
+                        <!-- Schüler 1km -->
+                        <div class="route-card" data-route-id="schueler-1km">
+                            <div class="route-map-preview"></div>
+                            <div class="route-card-content">
+                                <div class="route-info">
+                                    <span class="route-title">Schüler</span>
+                                    <span class="route-distance">1km</span>
+                                </div>
+                                <span class="strecke-alter" data-i18n="alter.1km">ab 6 Jahre</span>
+                                <span class="route-disclaimer" data-i18n="strecke.disclaimer">* Streckenverlauf unter Vorbehalt - noch in Abstimmung mit Gemeinde</span>
+                                <a href="assets/courses/1km.gpx" class="btn btn-secondary gpx-download" download>
+                                    <img src="assets/images/icon-gpx.svg" alt="GPX Icon" class="gpx-thumb">
+                                    <span>GPX Download</span>
+                                </a>
+                            </div>
+                        </div>
+                        <!-- Schüler 2km -->
+                        <div class="route-card" data-route-id="schueler-2km">
+                            <div class="route-map-preview" id="preview-map-schueler-2km"></div>
+                            <div class="route-card-content">
+                                <div class="route-info">
+                                    <span class="route-title">Schüler</span>
+                                    <span class="route-distance">2km</span>
+                                </div>
+                                <span class="strecke-alter" data-i18n="alter.2km">8–12 Jahre</span>
+                                <span class="route-disclaimer" data-i18n="strecke.disclaimer">* Streckenverlauf unter Vorbehalt - noch in Abstimmung mit Gemeinde</span>
+                                <a href="assets/courses/2km.gpx" class="btn btn-secondary gpx-download" download>
+                                    <img src="assets/images/icon-gpx.svg" alt="GPX Icon" class="gpx-thumb">
+                                    <span>GPX Download</span>
+                                </a>
+                            </div>
+                        </div>
+                        <!-- Jugend & Erwachsene 5km -->
+                        <div class="route-card" data-route-id="elite-5km">
+                            <div class="route-map-preview" id="preview-map-elite-5km"></div>
+                            <div class="route-card-content">
+                                <div class="route-info">
+                                    <span class="route-title">Jugend & Erwachsene</span>
+                                    <span class="route-distance">5km</span>
+                                </div>
+                                <span class="strecke-alter" data-i18n="alter.5km">ab 13 Jahre</span>
+                                <span class="route-disclaimer" data-i18n="strecke.disclaimer">* Streckenverlauf unter Vorbehalt - noch in Abstimmung mit Gemeinde</span>
+                                <a href="assets/courses/5km.gpx" class="btn btn-secondary gpx-download" download>
+                                    <img src="assets/images/icon-gpx.svg" alt="GPX Icon" class="gpx-thumb">
+                                    <span>GPX Download</span>
+                                </a>
+                            </div>
+                        </div>
+                        <!-- Jugend & Erwachsene 10km -->
+                        <div class="route-card" data-route-id="elite-10km">
+                            <div class="route-map-preview" id="preview-map-elite-10km"></div>
+                            <div class="route-card-content">
+                                <div class="route-info">
+                                    <span class="route-title">Jugend & Erwachsene</span>
+                                    <span class="route-distance">10km</span>
+                                </div>
+                                <span class="strecke-alter" data-i18n="alter.10km">ab 16 Jahre</span>
+                                <span class="route-disclaimer" data-i18n="strecke.disclaimer">* Streckenverlauf unter Vorbehalt - noch in Abstimmung mit Gemeinde</span>
+                                <a href="assets/courses/10km.gpx" class="btn btn-secondary gpx-download" download>
+                                    <img src="assets/images/icon-gpx.svg" alt="GPX Icon" class="gpx-thumb">
+                                    <span>GPX Download</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Anmeldung Section -->
+        <section id="anmeldung" class="section-padding" style="background-color: var(--gray-50);">
+            <div class="container">
+                <h2 class="text-center" data-i18n="anmeldung.title">Anmeldung</h2>
+                <p class="text-center" style="margin-bottom: var(--space-lg); color: var(--gray-600);" data-i18n="anmeldung.text">
+                    Sichere dir jetzt deinen Startplatz für den Marktlauf 2026!
+                </p>
+                
+                <!-- Umschalter Einzel- / Sammelanmeldung (gleiches Tab-Muster wie Newsletter|Kontakt) -->
+                <div class="connect-tabs anmeldung-tabs">
+                    <div class="connect-card">
+                        <div class="tab-nav">
+                            <button class="tab-btn active" data-tab="einzel">Einzelanmeldung</button>
+                            <button class="tab-btn" data-tab="sammel">Familie / mehrere Personen</button>
+                        </div>
+
+                        <div class="tab-content-wrapper">
+                            <!-- Einzelanmeldung -->
+                            <div class="tab-content active" id="tab-einzel">
+                                <!-- RaceResult Snippet Start (Einzelformular, Key JDwE1JRSUcb1) -->
+                                <script type="text/javascript">
+                                <!--
+                                    var RRReg_eventid="412617";
+                                    var RRReg_name="Einzelanmeldung Marktlauf 2026";
+                                    var RRReg_key="JDwE1JRSUcb1";
+                                    var RRReg_server="https://events2.raceresult.com";
+                                -->
+                                </script>
+                                <script type="text/javascript" src="https://events2.raceresult.com/registrations/init.js?lang=de-de"></script>
+                                <!-- RaceResult Snippet End -->
+                                <!-- Deutsches Datum in der RR-Vor-Oeffnungs-Meldung (ISO -> lesbar) -->
+                                <script>
+                                (function () {
+                                    var MON = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+                                    var TAG = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+                                    var ISO = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:[+-]\d{2}:\d{2}|Z)?/;
+                                    function fmt(iso){ var d=new Date(iso); if(isNaN(d.getTime())) return null;
+                                        var h=('0'+d.getHours()).slice(-2), m=('0'+d.getMinutes()).slice(-2);
+                                        return TAG[d.getDay()]+', '+d.getDate()+'. '+MON[d.getMonth()]+' '+d.getFullYear()+' um '+h+':'+m+' Uhr'; }
+                                    function fix(root){ if(!root) return;
+                                        var w=document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null), n;
+                                        while((n=w.nextNode())){ var m=n.nodeValue.match(ISO); if(m){ var s=fmt(m[0]);
+                                            if(s){ n.nodeValue=n.nodeValue.replace(m[0], s).replace(/\.\s*$/, ''); } } } }
+                                    var t=document.getElementById('tab-einzel')||document.body;
+                                    fix(t);
+                                    new MutationObserver(function(ms){ ms.forEach(function(){ fix(t); }); })
+                                        .observe(t,{childList:true,subtree:true,characterData:true});
+                                })();
+                                </script>
+                            </div>
+
+                            <!-- Familien- / Sammelanmeldung (eigenes Formular via iframe, isoliert von den globalen RRReg_-Vars) -->
+                            <div class="tab-content" id="tab-sammel">
+                                <iframe class="anmeldung-iframe" id="sammel-iframe"
+                                        title="Familien- und Sammelanmeldung"
+                                        data-src="anmeldung-familie.php?embed=1"
+                                        scrolling="no" loading="lazy" style="height: 600px;"></iframe>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <script>
+                (function () {
+                    var frame = document.getElementById('sammel-iframe');
+                    var sammelBtn = document.querySelector('.anmeldung-tabs .tab-btn[data-tab="sammel"]');
+                    if (!frame) return;
+
+                    // Lazy: iframe erst beim ersten Wechsel auf den Sammel-Reiter laden
+                    if (sammelBtn) {
+                        sammelBtn.addEventListener('click', function () {
+                            if (!frame.src) frame.src = frame.getAttribute('data-src');
+                        }, { once: true });
+                    }
+
+                    // Auto-Resize: Höhe aus dem iframe übernehmen
+                    window.addEventListener('message', function (e) {
+                        if (e.source !== frame.contentWindow) return;
+                        if (e.data && e.data.type === 'rr-embed-height' && e.data.height) {
+                            frame.style.height = (e.data.height + 8) + 'px';
+                        }
+                    });
+                })();
+                </script>
+            </div>
+        </section>
+
+        <!-- Sponsors Section -->
+        <section id="sponsoren" class="section-padding">
+            <div class="container">
+                <h2 class="text-center" data-i18n="sponsoren.title">Unsere Sponsoren</h2>
+            </div>
+            <div class="sponsor-marquee-wrap">
+                <div class="sponsor-marquee-track">
+                    <!-- Original set -->
+                    <div class="sponsor-item"><a href="https://apotheke-kirchseeon.de" target="_blank" rel="noopener noreferrer" title="Apotheke St. Josef, Kirchseeon"><img src="assets/images/sponsoren/Apotheke%20St.%20Josef.png" alt="Apotheke St. Josef" loading="lazy"></a></div>
+                    <div class="sponsor-item"><a href="https://www.kskmse.de" target="_blank" rel="noopener noreferrer" title="Kreissparkasse München Starnberg Ebersberg"><img src="assets/images/sponsoren/KSKMSE_Instituts-Logo-Regionen_cmyk_rot.jpg" alt="Kreissparkasse München Starnberg Ebersberg" loading="lazy"></a></div>
+                    <div class="sponsor-item"><a href="https://www.bestattungsdienst-pietas.de/bestattungen-kirchseeon-bestattungsunternehmen-beerdigung-begraebnis.php" target="_blank" rel="noopener noreferrer" title="Bestattungsdienst Pietas, Kirchseeon"><img src="assets/images/sponsoren/Bestattungsdienst-Pietas.svg" alt="Bestattungsdienst Pietas" loading="lazy"></a></div>
+                    <div class="sponsor-item"><a href="https://www.hoermann-gruppe.com" target="_blank" rel="noopener noreferrer" title="Hörmann Gruppe"><img src="assets/images/sponsoren/Hoermann-Logo-pur_rgb.png" alt="Hörmann Gruppe" loading="lazy"></a></div>
+                    <!-- Duplicate for seamless loop -->
+                    <div class="sponsor-item" aria-hidden="true"><a href="https://apotheke-kirchseeon.de" target="_blank" rel="noopener noreferrer" tabindex="-1"><img src="assets/images/sponsoren/Apotheke%20St.%20Josef.png" alt="" loading="lazy"></a></div>
+                    <div class="sponsor-item" aria-hidden="true"><a href="https://www.kskmse.de" target="_blank" rel="noopener noreferrer" tabindex="-1"><img src="assets/images/sponsoren/KSKMSE_Instituts-Logo-Regionen_cmyk_rot.jpg" alt="" loading="lazy"></a></div>
+                    <div class="sponsor-item" aria-hidden="true"><a href="https://www.bestattungsdienst-pietas.de/bestattungen-kirchseeon-bestattungsunternehmen-beerdigung-begraebnis.php" target="_blank" rel="noopener noreferrer" tabindex="-1"><img src="assets/images/sponsoren/Bestattungsdienst-Pietas.svg" alt="" loading="lazy"></a></div>
+                    <div class="sponsor-item" aria-hidden="true"><a href="https://www.hoermann-gruppe.com" target="_blank" rel="noopener noreferrer" tabindex="-1"><img src="assets/images/sponsoren/Hoermann-Logo-pur_rgb.png" alt="" loading="lazy"></a></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FAQ Section -->
+        <section id="faq" class="section-padding">
+            <style>
+                #faq .faq-inner { max-width: 760px; margin: 0 auto; }
+                #faq h2 { text-align: center; margin-bottom: 0.5rem; }
+                #faq h2::after {
+                    content: ""; display: block; width: 64px; height: 4px;
+                    background: var(--color-primary, #009640); border-radius: 2px;
+                    margin: 0.9rem auto 2rem;
+                }
+                #faq .faq-item {
+                    border: 1px solid var(--gray-200, #e5e7eb);
+                    border-radius: 12px; margin-bottom: 0.85rem;
+                    background: #fff; overflow: hidden;
+                }
+                #faq .faq-item summary {
+                    list-style: none; cursor: pointer;
+                    padding: 1.05rem 1.25rem; font-weight: 600;
+                    font-size: 1.05rem; color: var(--gray-800, #1f2937);
+                    display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+                }
+                #faq .faq-item summary::-webkit-details-marker { display: none; }
+                #faq .faq-item summary::after {
+                    content: "+"; font-size: 1.5rem; font-weight: 400; line-height: 1;
+                    color: var(--color-primary, #009640); transition: transform 0.2s ease;
+                }
+                #faq .faq-item[open] summary::after { content: "\2212"; }
+                #faq .faq-item .faq-answer {
+                    padding: 0 1.25rem 1.15rem; line-height: 1.75;
+                    color: var(--gray-600, #475569);
+                }
+                #faq .faq-item .faq-answer a { color: var(--color-primary, #009640); font-weight: 600; }
+            </style>
+            <div class="container">
+                <div class="faq-inner">
+                    <h2 data-i18n="faq.title">FAQ</h2>
+
+                    <details class="faq-item">
+                        <summary data-i18n="faq.q1">Wie und bis wann kann ich mich anmelden?</summary>
+                        <div class="faq-answer" data-i18n="faq.a1">Die Anmeldung läuft online über den Bereich <a href="#anmeldung">Anmeldung</a> auf dieser Seite. Anmeldeschluss ist der 13. September 2026. Danach sind am Renntag noch digitale Nachmeldungen möglich – jeweils bis 30 Minuten vor dem Start des jeweiligen Laufs, solange Startplätze frei sind.</div>
+                    </details>
+
+                    <details class="faq-item">
+                        <summary data-i18n="faq.q2">Was kostet die Teilnahme?</summary>
+                        <div class="faq-answer" data-i18n="faq.a2">Die Startgebühren kannst du direkt bei RaceResult einsehen: <a href="https://my.raceresult.com/412617/registration" target="_blank" rel="noopener noreferrer">my.raceresult.com/412617/registration</a>. Alternativ werden sie dir angezeigt, sobald du die erste Registrierungsmaske im Bereich <a href="#anmeldung">Anmeldung</a> auf unserer Marktlauf-Website ausfüllst.</div>
+                    </details>
+
+                    <details class="faq-item">
+                        <summary data-i18n="faq.q3">Ab wann ist die Startnummern-Ausgabe?</summary>
+                        <div class="faq-answer" data-i18n="faq.a3">Die Startnummern-Ausgabe erfolgt am Renntag voraussichtlich ab 9:00 Uhr im Start-/Zielbereich (JEK, Westring 6, 85614 Kirchseeon).</div>
+                    </details>
+
+                    <details class="faq-item">
+                        <summary data-i18n="faq.q4">Wo finde ich meine Zeit und die Ergebnisse?</summary>
+                        <div class="faq-answer" data-i18n="faq.a4">Alle Zeiten und Ergebnisse findest du nach dem Lauf hier bei RaceResult: <a href="https://my.raceresult.com/412617/results" target="_blank" rel="noopener noreferrer">my.raceresult.com/412617/results</a>.</div>
+                    </details>
+
+                    <details class="faq-item">
+                        <summary data-i18n="faq.q5">Meine Anmeldedaten stimmen nicht – wie kann ich sie korrigieren?</summary>
+                        <div class="faq-answer" data-i18n="faq.a5">Fehlerhafte Anmeldedaten kannst du direkt bei RaceResult korrigieren lassen: <a href="https://my.raceresult.com/412617/contact" target="_blank" rel="noopener noreferrer">my.raceresult.com/412617/contact</a>.</div>
+                    </details>
+
+                    <details class="faq-item">
+                        <summary data-i18n="faq.q6">Bekomme ich eine Urkunde?</summary>
+                        <div class="faq-answer" data-i18n="faq.a6">Urkunden sind voraussichtlich nach dem Lauf zum Download verfügbar bzw. werden per E-Mail zugeschickt.</div>
+                    </details>
+
+                    <details class="faq-item">
+                        <summary data-i18n="faq.q7">Was passiert bei schlechtem Wetter?</summary>
+                        <div class="faq-answer" data-i18n="faq.a7">Der Marktlauf findet bei nahezu jedem Wetter statt. Kurzfristige Änderungen kommunizieren wir über diese Homepage, unsere Social-Media-Kanäle und – für alle, die sich mit E-Mail-Adresse registriert haben – per Benachrichtigung über RaceResult.</div>
+                    </details>
+
+                    <details class="faq-item">
+                        <summary data-i18n="faq.q8">Kann ich meine Anmeldung übertragen oder ändern?</summary>
+                        <div class="faq-answer" data-i18n="faq.a8">Du möchtest deinen Startplatz übertragen oder deine Anmeldung ändern? Melde dich bitte über unser <a href="#connect">Kontaktformular</a> auf unserer Website bei uns.</div>
+                    </details>
+                </div>
+            </div>
+        </section>
+
+        <!-- Connect Section -->
+        <section id="connect" class="section-padding" style="background-color: var(--gray-50);">
+            <div class="container">
+                <h2 class="text-center" data-i18n="kontakt.title">Bleiben Sie in Kontakt!</h2>
+                
+                <div class="connect-tabs">
+                    <div class="connect-card">
+                        <div class="tab-nav">
+                            <button class="tab-btn active" data-tab="newsletter">Newsletter</button>
+                            <button class="tab-btn" data-tab="kontakt">Kontakt</button>
+                        </div>
+
+                        <div class="tab-content-wrapper">
+                            <!-- Newsletter Tab -->
+                            <div class="tab-content active" id="tab-newsletter">
+                                <div class="newsletter-content text-center">
+                                    <h3 data-i18n="newsletter.title">Bleib auf dem Laufenden!</h3>
+                                <p data-i18n="newsletter.text">Melde dich an, um Infos zum Vorverkaufsstart und Strecken-Updates zu erhalten.</p>
+                                <!-- Newsletter Form -->
+                                <div id="newsletter-form-container">
+                                    <form id="newsletter-form" class="newsletter-form" action="https://57eb0a62.sibforms.com/serve/MUIFAPEUm7riCa-8dCbCdBqnq8fs9EuKr6XeZmmToEO6Y1Lu3KDIlCyuXJmjnP0iYh9nboo0K362lInilON6HCklIKgwA4DGHhIvUb6TZlPHfXEL-tkjgISTh_gQdGuEh96M32xEwlNEK8KilKIFKvfXmcgLLaKmlpoPH5Dus6HOTfyP6ZGSYmC6w0FWGArNERa5n31eeh5dZnGnaw==" method="POST" target="newsletter-iframe">
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label for="nl-firstname">Vorname *</label>
+                                                <input type="text" id="nl-firstname" name="FIRSTNAME" required placeholder="Vorname">
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="nl-lastname">Nachname *</label>
+                                                <input type="text" id="nl-lastname" name="LASTNAME" required placeholder="Nachname">
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="nl-email">E-Mail *</label>
+                                            <input type="email" id="nl-email" name="EMAIL" required placeholder="ihre@email.de">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="checkbox-group">
+                                                <input type="checkbox" name="DATENSCHUTZ_AKZEPTIERT" value="1" required>
+                                                <span>Ich stimme zu, den Marktlauf Newsletter zu erhalten und akzeptiere die <a href="https://atsvkirchseeon.de/datenschutz-informationspflichten/" target="_blank" rel="noopener">Datenschutzbestimmungen</a>.</span>
+                                            </label>
+                                        </div>
+                                        <!-- Honeypot: off-screen, not display:none -->
+                                        <input type="text" name="email_address_check" value="" class="hp-field" tabindex="-1" autocomplete="off">
+                                        <input type="hidden" name="locale" value="de">
+                                        <button type="submit" class="btn-submit">Newsletter abonnieren</button>
+                                    </form>
+                                    <iframe name="newsletter-iframe" id="newsletter-iframe" style="display:none;"></iframe>
+                                </div>
+                                <div id="newsletter-success" class="newsletter-success" style="display:none;">
+                                    <h4>Vielen Dank!</h4>
+                                    <p>Deine Anmeldung war erfolgreich. Bitte bestätige deine E-Mail-Adresse über den Link in der Bestätigungsmail.</p>
+                                </div>
+                                </div>
+                            </div>
+
+                            <!-- Kontakt Tab -->
+                        <div class="tab-content" id="tab-kontakt">
+                            <h3 class="text-center" style="margin-bottom: var(--space-lg);" data-i18n="kontakt.faq_text">Haben Sie eine schnelle Frage? <a href="#faq" class="text-highlight" style="text-decoration: underline;" data-i18n="kontakt.faq_link">Besuchen Sie unsere FAQ</a></h3>
+                            <div class="contact-wrapper">
+                                <form action="contact.php" method="POST" class="contact-form">
+                                    <div class="form-group">
+                                        <label for="vorname" data-i18n="kontakt.form.vorname">Vorname *</label>
+                                        <input type="text" id="vorname" name="vorname" required placeholder="Vorname">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="nachname" data-i18n="kontakt.form.nachname">Nachname *</label>
+                                        <input type="text" id="nachname" name="nachname" required placeholder="Nachname">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="email" data-i18n="kontakt.form.email">E-Mail-Adresse *</label>
+                                        <input type="email" id="email" name="email" required placeholder="ihre@email.de">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="betreff" data-i18n="kontakt.form.betreff">Betreff / Anliegen *</label>
+                                        <select id="betreff" name="betreff" required>
+                                            <option value="" disabled selected data-i18n="kontakt.form.betreff_placeholder">Bitte wählen Sie ein Thema aus</option>
+                                            <option value="Anmeldung" data-i18n="kontakt.form.opt_anmeldung">Fragen zur Anmeldung / Startgebühr</option>
+                                            <option value="Strecke" data-i18n="kontakt.form.opt_strecke">Streckenverlauf & Zeitnahme</option>
+                                            <option value="Sponsoring" data-i18n="kontakt.form.opt_sponsoring">Sponsoring & Partner</option>
+                                            <option value="Helfer" data-i18n="kontakt.form.opt_helfer">Helfer / Volunteers</option>
+                                            <option value="Sonstiges" data-i18n="kontakt.form.opt_sonstiges">Sonstiges</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="nachricht" data-i18n="kontakt.form.nachricht">Nachricht *</label>
+                                        <textarea id="nachricht" name="nachricht" rows="5" required placeholder="Wie können wir Ihnen helfen?"></textarea>
+                                    </div>
+                                    
+                                    <div class="form-group privacy-group">
+                                        <label class="checkbox-container">
+                                            <input type="checkbox" name="privacy" required>
+                                            <span class="checkmark"></span>
+                                            <span class="label-text" data-i18n="kontakt.form.privacy">Ich habe die <a href="https://atsv-kirchseeon-marktlauf.de/datenschutz.html">Datenschutzerklärung</a> gelesen und stimme der Verarbeitung meiner Daten zu. *</span>
+                                        </label>
+                                    </div>
+                                    
+                                    <!-- Honeypot: off-screen, not display:none -->
+                                    <input type="text" name="email_address_check" value="" class="hp-field" tabindex="-1" autocomplete="off">
+
+                                    <button type="submit" class="btn btn-primary btn-block" data-i18n="kontakt.form.submit">Nachricht senden</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="main-footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <h4 data-i18n="footer.title">Marktlauf 2026</h4>
+                    <p style="color: var(--gray-400); line-height: 1.6;" data-i18n="footer.text">
+                        Ein sportliches Highlight in Kirchseeon für die ganze Familie. 
+                        Wir freuen uns auf euch!
+                    </p>
+                </div>
+                <div class="footer-col">
+                    <h4 data-i18n="footer.links_title">Quick Links</h4>
+                    <div class="footer-links">
+                        <a href="#distanzen" class="footer-link" data-i18n="nav.laeufe">Die Läufe</a>
+                        <a href="#ablauf" class="footer-link" data-i18n="nav.zeitplan">Zeitplan</a>
+                        <a href="#strecke" class="footer-link" data-i18n="nav.strecke">Die Strecke</a>
+                        <a href="#anmeldung" class="footer-link" data-i18n="nav.anmeldung">Anmeldung</a>
+                    </div>
+                </div>
+                <div class="footer-col">
+                    <h4 data-i18n="footer.social_title">Folgt uns</h4>
+                    <div class="footer-social">
+                        <a href="https://www.instagram.com/atsv_marktlauf_kirchseeon" class="footer-social-link social-instagram" target="_blank" rel="noopener noreferrer" aria-label="Instagram" title="Instagram">
+                            <svg viewBox="0 0 1000 1000" fill="currentColor" aria-hidden="true"><path d="M295.42,6c-53.2,2.51-89.53,11-121.29,23.48-32.87,12.81-60.73,30-88.45,57.82S40.89,143,28.17,175.92c-12.31,31.83-20.65,68.19-23,121.42S2.3,367.68,2.56,503.46,3.42,656.26,6,709.6c2.54,53.19,11,89.51,23.48,121.28,12.83,32.87,30,60.72,57.83,88.45S143,964.09,176,976.83c31.8,12.29,68.17,20.67,121.39,23s70.35,2.87,206.09,2.61,152.83-.86,206.16-3.39S799.1,988,830.88,975.58c32.87-12.86,60.74-30,88.45-57.84S964.1,862,976.81,829.06c12.32-31.8,20.69-68.17,23-121.35,2.33-53.37,2.88-70.41,2.62-206.17s-.87-152.78-3.4-206.1-11-89.53-23.47-121.32c-12.85-32.87-30-60.7-57.82-88.45S862,40.87,829.07,28.19c-31.82-12.31-68.17-20.7-121.39-23S637.33,2.3,501.54,2.56,348.75,3.4,295.42,6m5.84,903.88c-48.75-2.12-75.22-10.22-92.86-17-23.36-9-40-19.88-57.58-37.29s-28.38-34.11-37.5-57.42c-6.85-17.64-15.1-44.08-17.38-92.83-2.48-52.69-3-68.51-3.29-202s.22-149.29,2.53-202c2.08-48.71,10.23-75.21,17-92.84,9-23.39,19.84-40,37.29-57.57s34.1-28.39,57.43-37.51c17.62-6.88,44.06-15.06,92.79-17.38,52.73-2.5,68.53-3,202-3.29s149.31.21,202.06,2.53c48.71,2.12,75.22,10.19,92.83,17,23.37,9,40,19.81,57.57,37.29s28.4,34.07,37.52,57.45c6.89,17.57,15.07,44,17.37,92.76,2.51,52.73,3.08,68.54,3.32,202s-.23,149.31-2.54,202c-2.13,48.75-10.21,75.23-17,92.89-9,23.35-19.85,40-37.31,57.56s-34.09,28.38-57.43,37.5c-17.6,6.87-44.07,15.07-92.76,17.39-52.73,2.48-68.53,3-202.05,3.29s-149.27-.25-202-2.53m407.6-674.61a60,60,0,1,0,59.88-60.1,60,60,0,0,0-59.88,60.1M245.77,503c.28,141.8,115.44,256.49,257.21,256.22S759.52,643.8,759.25,502,643.79,245.48,502,245.76,245.5,361.22,245.77,503m90.06-.18a166.67,166.67,0,1,1,167,166.34,166.65,166.65,0,0,1-167-166.34" transform="translate(-2.5 -2.5)"/></svg>
+                        </a>
+                        <a href="https://www.facebook.com/profile.php?id=61591689790244" class="footer-social-link social-facebook" target="_blank" rel="noopener noreferrer" aria-label="Facebook" title="Facebook">
+                            <svg viewBox="0 0 320 512" fill="currentColor" aria-hidden="true"><path d="M279.14 288l14.22-92.66h-88.91v-60.13c0-25.35 12.42-50.06 52.24-50.06h40.42V6.26S260.43 0 225.36 0c-73.22 0-121.08 44.38-121.08 124.72v70.62H22.89V288h81.39v224h100.17V288z"/></svg>
+                        </a>
+                        <a href="https://www.strava.com/clubs/2252807" class="footer-social-link social-strava" target="_blank" rel="noopener noreferrer" aria-label="Strava" title="Strava-Club">
+                            <svg viewBox="0 0 27 40" fill="currentColor" aria-hidden="true"><path d="M11,14 L15,23 L22,23 L11,0 L0,23 L7,23 L11,14"/><path d="M19,40 L11,23 L16,23 L19,30 L22,23 L27,23 L19,40" fill-opacity="0.5"/></svg>
+                        </a>
+                    </div>
+                    <a class="footer-strava-cta" href="https://www.strava.com/clubs/2252807" target="_blank" rel="noopener noreferrer" data-i18n="footer.strava_cta">🏃 Tritt unserem Strava-Club bei — Bestenliste &amp; Routen</a>
+                </div>
+                <div class="footer-col">
+                    <h4 data-i18n="footer.legal_title">Rechtliches</h4>
+                    <div class="footer-links">
+                        <a href="impressum.html" class="footer-link" data-i18n="footer.legal.impressum">Impressum</a>
+                        <a href="datenschutz.html" class="footer-link" data-i18n="footer.legal.privacy">Datenschutzerklärung</a>
+                        <a href="teilnahmebedingungen.html" class="footer-link" data-i18n="footer.legal.terms">Teilnahmebedingungen</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p data-i18n="footer.copyright">&copy; 2026 ATS Kirchseeon e.V. | Alle Rechte vorbehalten.</p>
+                <p class="footer-credits" data-i18n="footer.realized_by">Realisiert durch <a href="/humans.txt" rel="author" class="footer-credits-link">Torsten Tyras</a></p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+    <script>
+    (function () {
+        var bar      = document.getElementById('live-ticker-bar');
+        var messages = document.getElementById('live-ticker-messages');
+        if (!bar || !messages) return;
+
+        var POLL_INTERVAL = 30000; // 30 Sekunden
+        var FEED_URL      = 'data/status.json';
+
+        var typLabel = { info: 'Info', warnung: 'Warnung', ergebnis: 'Ergebnis' };
+
+        function renderTicker(data) {
+            var eintraege = (data && Array.isArray(data.eintraege)) ? data.eintraege : [];
+            if (eintraege.length === 0) {
+                bar.hidden = true;
+                return;
+            }
+            messages.innerHTML = '';
+            eintraege.forEach(function (e) {
+                var entry = document.createElement('div');
+                entry.className = 'live-ticker-entry';
+
+                var pill = document.createElement('span');
+                pill.className = 'live-ticker-typ live-ticker-typ-' + (e.typ || 'info');
+                pill.textContent = typLabel[e.typ] || e.typ;
+
+                var text = document.createElement('span');
+                text.className = 'live-ticker-text';
+                text.textContent = e.nachricht || '';
+
+                entry.appendChild(pill);
+                entry.appendChild(text);
+                messages.appendChild(entry);
+            });
+            bar.hidden = false;
+        }
+
+        function fetchTicker() {
+            fetch(FEED_URL + '?_=' + Date.now(), { cache: 'no-store' })
+                .then(function (r) { return r.ok ? r.json() : null; })
+                .then(function (data) { renderTicker(data); })
+                .catch(function () { /* still running — keep bar as-is */ });
+        }
+
+        fetchTicker();
+        setInterval(fetchTicker, POLL_INTERVAL);
+    }());
+    </script>
+
+    <!-- Map Modal -->
+    <div id="map-modal" class="map-modal">
+        <button id="modal-close-btn" class="modal-close-btn">&times;</button>
+        <div class="map-modal-content">
+            <div id="modal-map-container" class="modal-map-container"></div>
+            <div id="modal-elevation-container" class="modal-elevation-container"></div>
+        </div>
+    </div>
+
+    <!-- Karten-Logik: lädt Leaflet + Plugins dynamisch bei Bedarf nach -->
+    <script src="js/maps.js"></script>
+
+    <!-- Newsletter Form Handler -->
+    <script>
+    (function() {
+        var form = document.getElementById('newsletter-form');
+        var formContainer = document.getElementById('newsletter-form-container');
+        var successMsg = document.getElementById('newsletter-success');
+        var iframe = document.getElementById('newsletter-iframe');
+
+        if (!form) return;
+
+        form.addEventListener('submit', function() {
+            var btn = form.querySelector('.btn-submit');
+            btn.disabled = true;
+            btn.textContent = 'Wird gesendet...';
+        });
+
+        iframe.addEventListener('load', function() {
+            if (form.querySelector('.btn-submit').disabled) {
+                formContainer.style.display = 'none';
+                successMsg.style.display = 'block';
+            }
+        });
+    })();
+    </script>
+</body>
+</html>
