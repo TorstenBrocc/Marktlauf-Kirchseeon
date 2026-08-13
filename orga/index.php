@@ -8,7 +8,6 @@ declare(strict_types=1);
 require_once __DIR__ . '/api/_auth.php';
 require_once __DIR__ . '/../src/db.php';
 require_once __DIR__ . '/../src/logger.php';
-require_once __DIR__ . '/../src/offene_todos.php';
 
 $user = getCurrentUserFromGuard();
 $isAdmin = isAdminFromGuard();
@@ -73,11 +72,6 @@ $renderTile = static function (array $tile): void {
     }
     echo '</a>';
 };
-
-// Offene ToDos — modulübergreifend, was heute Aufmerksamkeit braucht.
-// Quelle ist src/offene_todos.php, dieselbe wie für die tägliche Erinnerungsmail
-// (bin/offene_todos_digest.php). Spec: intern/offene-todos-spec.md
-$todos = offeneTodosAlle($pdo);
 
 $meineAufgaben = [];
 $orgaAufgaben = [];
@@ -303,74 +297,6 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                 grid-template-columns: 1fr;
             }
         }
-        /* Offene ToDos — modulübergreifender Block ganz oben. Spec: intern/offene-todos-spec.md */
-        .todos {
-            background: var(--white);
-            border-radius: 8px;
-            box-shadow: var(--shadow-card);
-            border-left: 4px solid var(--error);
-            padding: 1.25rem 1.5rem;
-            margin-bottom: 1.5rem;
-        }
-        .todos.todos-leer { border-left-color: var(--success, #28a745); }
-        .todos > h2 {
-            font-size: 1.05rem;
-            margin: 0 0 1rem 0;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-        }
-        .todos-zahl {
-            background: var(--error);
-            color: #fff;
-            border-radius: 999px;
-            padding: 0.1rem 0.6rem;
-            font-size: 0.8rem;
-            font-weight: 700;
-        }
-        .todo-gruppe + .todo-gruppe { margin-top: 1.25rem; }
-        .todo-gruppe h3 {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--text-light);
-            font-weight: 700;
-            margin: 0 0 0.5rem 0;
-        }
-        .todo-liste { list-style: none; margin: 0; padding: 0; }
-        .todo-liste li {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: baseline;
-            gap: 0.4rem 0.75rem;
-            padding: 0.45rem 0;
-            border-bottom: 1px solid var(--border);
-        }
-        .todo-liste li:last-child { border-bottom: none; }
-        .todo-name { font-weight: 600; flex: 1 1 12rem; min-width: 0; overflow-wrap: anywhere; }
-        .todo-name a { color: inherit; text-decoration: none; }
-        .todo-name a:hover { text-decoration: underline; }
-        .todo-alter { font-size: 0.75rem; color: var(--text-light); white-space: nowrap; }
-        .todo-alter.ueberfaellig { color: var(--error); font-weight: 700; }
-        .todo-kontakt { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-        .todo-kontakt a {
-            font-size: 0.75rem;
-            padding: 0.15rem 0.5rem;
-            border: 1px solid var(--border);
-            border-radius: 999px;
-            text-decoration: none;
-            white-space: nowrap;
-        }
-        .todo-kontakt a:hover { background: var(--border); }
-        .todo-hinweis { font-size: 0.75rem; color: var(--text-light); margin: 0.6rem 0 0 0; }
-        /* Auf dem Handy jede ToDo-Zeile untereinander — kein horizontales Scrollen. */
-        @media (max-width: 700px) {
-            .todos { padding: 1rem; }
-            .todo-liste li { flex-direction: column; align-items: stretch; gap: 0.3rem; }
-            .todo-name { flex: 1 1 auto; }
-            .todo-kontakt a { padding: 0.3rem 0.7rem; }
-        }
         .dashboard-group {
             margin-bottom: 1.75rem;
         }
@@ -399,143 +325,6 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
             <?php if ($flashError): ?>
                 <div class="alert alert-error"><?= htmlspecialchars($flashError) ?></div>
             <?php endif; ?>
-
-            <?php
-            /**
-             * Kontakt-Buttons einer ToDo-Zeile (antippbar auf dem Handy).
-             * Muster übernommen aus orga/sponsoren.php: im href werden Leerzeichen
-             * entfernt, die Anzeige bleibt formatiert.
-             */
-            $todoKontakt = static function (?string $telefon, ?string $email): string {
-                $out = '';
-                $tel = trim((string) $telefon);
-                if ($tel !== '') {
-                    $out .= '<a href="tel:' . htmlspecialchars(preg_replace('/\s+/', '', $tel)) . '">📞 '
-                          . htmlspecialchars($tel) . '</a>';
-                }
-                $mail = trim((string) $email);
-                if ($mail !== '') {
-                    $out .= '<a href="mailto:' . htmlspecialchars($mail) . '">✉️ Mail</a>';
-                }
-                return $out === '' ? '' : '<span class="todo-kontakt">' . $out . '</span>';
-            };
-            $todoTage = static function (int $tage, string $einsText, string $mehrText): string {
-                $klasse = $tage > 0 ? 'todo-alter ueberfaellig' : 'todo-alter';
-                $text = $tage === 0 ? $einsText : sprintf($mehrText, $tage);
-                return '<span class="' . $klasse . '">' . htmlspecialchars($text) . '</span>';
-            };
-            /**
-             * Lange Gruppen kürzen. Die Überschrift zeigt weiterhin die volle Anzahl,
-             * angezeigt werden nur die dringendsten TODO_LISTE_MAX Einträge.
-             */
-            $todoRest = static function (array $liste): int {
-                return max(0, count($liste) - TODO_LISTE_MAX);
-            };
-            ?>
-            <section class="todos <?= $todos['gesamt'] === 0 ? 'todos-leer' : '' ?>">
-                <h2>
-                    <?= $todos['gesamt'] === 0 ? '✅' : '🔔' ?> Offene ToDos
-                    <?php if ($todos['gesamt'] > 0): ?>
-                        <span class="todos-zahl"><?= $todos['gesamt'] ?></span>
-                    <?php endif; ?>
-                </h2>
-
-                <?php if ($todos['gesamt'] === 0): ?>
-                    <p class="todo-hinweis">Nichts überfällig — alle Wiedervorlagen, Aufgaben und Anschreiben sind im Zeitplan.</p>
-                <?php endif; ?>
-
-                <?php if (!empty($todos['wiedervorlagen'])): ?>
-                <div class="todo-gruppe">
-                    <h3>Wiedervorlage fällig (<?= count($todos['wiedervorlagen']) ?>)</h3>
-                    <ul class="todo-liste">
-                        <?php foreach (array_slice($todos['wiedervorlagen'], 0, TODO_LISTE_MAX) as $t): ?>
-                        <li>
-                            <span class="todo-name">
-                                <a href="sponsor_form.php?id=<?= (int) $t['id'] ?>"><?= htmlspecialchars($t['firma']) ?></a>
-                            </span>
-                            <?= $todoTage((int) $t['tage'], 'heute fällig', 'seit %d Tagen überfällig') ?>
-                            <?= $todoKontakt($t['telefon'], $t['email']) ?>
-                        </li>
-                        <?php endforeach; ?>
-                    </ul>
-                    <?php if ($todoRest($todos['wiedervorlagen']) > 0): ?>
-                        <p class="todo-hinweis">… und <?= $todoRest($todos['wiedervorlagen']) ?> weitere — <a href="sponsoren.php">alle Sponsoren öffnen</a></p>
-                    <?php endif; ?>
-                </div>
-                <?php endif; ?>
-
-                <?php if (!empty($todos['aufgaben'])): ?>
-                <div class="todo-gruppe">
-                    <h3>Überfällige Orga-Aufgaben (<?= count($todos['aufgaben']) ?>)</h3>
-                    <ul class="todo-liste">
-                        <?php foreach (array_slice($todos['aufgaben'], 0, TODO_LISTE_MAX) as $t): ?>
-                        <li>
-                            <span class="todo-name"><?= htmlspecialchars($t['titel']) ?></span>
-                            <?php if ($t['verantwortlich'] !== ''): ?>
-                                <span class="todo-alter"><?= htmlspecialchars($t['verantwortlich']) ?></span>
-                            <?php endif; ?>
-                            <?= $todoTage((int) $t['tage'], 'heute fällig', 'seit %d Tagen überfällig') ?>
-                        </li>
-                        <?php endforeach; ?>
-                    </ul>
-                    <?php if ($todoRest($todos['aufgaben']) > 0): ?>
-                        <p class="todo-hinweis">… und <?= $todoRest($todos['aufgaben']) ?> weitere (siehe „Orga-Aufgaben" weiter unten)</p>
-                    <?php endif; ?>
-                </div>
-                <?php endif; ?>
-
-                <?php if (!empty($todos['ohne_reaktion'])): ?>
-                <div class="todo-gruppe">
-                    <h3>Angeschrieben ohne Reaktion (<?= count($todos['ohne_reaktion']) ?>)</h3>
-                    <ul class="todo-liste">
-                        <?php foreach (array_slice($todos['ohne_reaktion'], 0, TODO_LISTE_MAX) as $t): ?>
-                        <li>
-                            <span class="todo-name">
-                                <a href="sponsor_form.php?id=<?= (int) $t['id'] ?>"><?= htmlspecialchars($t['firma']) ?></a>
-                            </span>
-                            <?= $todoTage((int) $t['tage'], 'heute', 'seit %d Tagen keine Antwort') ?>
-                            <?= $todoKontakt($t['telefon'], $t['email']) ?>
-                        </li>
-                        <?php endforeach; ?>
-                    </ul>
-                    <?php if ($todoRest($todos['ohne_reaktion']) > 0): ?>
-                        <p class="todo-hinweis">… und <?= $todoRest($todos['ohne_reaktion']) ?> weitere, nach Wartezeit sortiert — <a href="sponsoren.php?status=angefragt">alle Angeschriebenen öffnen</a></p>
-                    <?php endif; ?>
-                    <p class="todo-hinweis">Ab <?= TODO_KEINE_REAKTION_TAGE ?> Tagen ohne Statuswechsel. Sobald der Status weitergedreht wird, fällt der Eintrag von selbst heraus.</p>
-                </div>
-                <?php endif; ?>
-
-                <?php if (!empty($todos['versand_fehler'])): ?>
-                <div class="todo-gruppe">
-                    <h3>Versand-Queue: Fehler (<?= count($todos['versand_fehler']) ?>)</h3>
-                    <ul class="todo-liste">
-                        <?php foreach ($todos['versand_fehler'] as $t): ?>
-                        <li>
-                            <span class="todo-name"><?= htmlspecialchars($t['firma']) ?></span>
-                            <span class="todo-alter ueberfaellig"><?= htmlspecialchars($t['fehler'] !== '' ? $t['fehler'] : 'Versand fehlgeschlagen') ?></span>
-                        </li>
-                        <?php endforeach; ?>
-                    </ul>
-                </div>
-                <?php endif; ?>
-
-                <?php if (!empty($todos['sponsor_aufgaben'])): ?>
-                <div class="todo-gruppe">
-                    <h3>Offene Aufgaben an Sponsoren</h3>
-                    <ul class="todo-liste">
-                        <?php foreach (array_slice($todos['sponsor_aufgaben'], 0, TODO_LISTE_MAX) as $t): ?>
-                        <li>
-                            <span class="todo-name">
-                                <a href="sponsor_form.php?id=<?= (int) $t['sponsor_id'] ?>"><?= htmlspecialchars($t['firma']) ?></a>
-                            </span>
-                            <span class="todo-alter"><?= (int) $t['anzahl'] ?> offen</span>
-                        </li>
-                        <?php endforeach; ?>
-                    </ul>
-                    <p class="todo-hinweis">Ohne Termin — Sponsor-Aufgaben haben kein Fälligkeitsdatum, deshalb nur nachrichtlich und nicht in der Gesamtzahl.</p>
-                </div>
-                <?php endif; ?>
-            </section>
 
             <?php if (!empty($meineAufgaben)): ?>
             <div class="meine-aufgaben">
