@@ -48,11 +48,47 @@ $value = json_encode($decoded, JSON_UNESCAPED_UNICODE);
 
 try {
     $pdo = getDbConnection();
+
+    // Branche-Umbenennungen: getaggte Sponsoren mitziehen, damit keine Tags verwaisen.
+    // branche ist ein JSON-Array; wir tauschen den alten gegen den neuen Namen aus.
+    $migrated = 0;
+    if ($key === 'sponsor_branchen') {
+        $renames = json_decode((string) ($_POST['renames'] ?? '[]'), true);
+        if (is_array($renames)) {
+            $sel = $pdo->prepare('SELECT id, branche FROM sponsors WHERE branche LIKE :like');
+            $upd = $pdo->prepare('UPDATE sponsors SET branche = :b WHERE id = :id');
+            foreach ($renames as $rn) {
+                $old = trim((string) ($rn['old'] ?? ''));
+                $new = trim((string) ($rn['new'] ?? ''));
+                if ($old === '' || $new === '' || $old === $new) {
+                    continue;
+                }
+                $sel->execute(['like' => '%' . $old . '%']); // Vorfilter; exakter Vergleich unten
+                foreach ($sel->fetchAll() as $row) {
+                    $arr = json_decode((string) $row['branche'], true);
+                    if (!is_array($arr)) {
+                        continue;
+                    }
+                    $hit = false;
+                    foreach ($arr as &$v) {
+                        if ($v === $old) { $v = $new; $hit = true; }
+                    }
+                    unset($v);
+                    if ($hit) {
+                        $arr = array_values(array_unique($arr)); // falls der neue Name schon getaggt war
+                        $upd->execute(['b' => json_encode($arr, JSON_UNESCAPED_UNICODE), 'id' => $row['id']]);
+                        $migrated++;
+                    }
+                }
+            }
+        }
+    }
+
     $pdo->prepare(
         'INSERT INTO einstellungen (`key`, `value`) VALUES (:k, :v)
          ON DUPLICATE KEY UPDATE `value` = :v2'
     )->execute(['k' => $key, 'v' => $value, 'v2' => $value]);
-    echo json_encode(['ok' => true]);
+    echo json_encode(['ok' => true, 'migrated' => $migrated]);
 } catch (PDOException $e) {
     logError('einstellungen_json_update: ' . $e->getMessage());
     http_response_code(500);

@@ -300,8 +300,9 @@ $makeWebhookSecret = (string) ($config['make_webhook_secret'] ?? '');
                 <ul id="branchen-liste" style="list-style:none;padding:0;margin:0 0 0.75rem;display:flex;flex-direction:column;gap:0.4rem">
                     <?php foreach ($bListe as $i => $b): ?>
                         <li style="display:flex;align-items:center;gap:0.5rem">
-                            <span style="flex:1;font-size:0.875rem"><?= htmlspecialchars($b) ?></span>
-                            <button type="button" class="btn-icon branche-del" data-index="<?= $i ?>" title="Löschen">✕</button>
+                            <input type="text" class="branche-name" value="<?= htmlspecialchars($b) ?>" data-orig="<?= htmlspecialchars($b) ?>" maxlength="100"
+                                   style="flex:1;padding:0.4rem 0.55rem;border:1px solid var(--border);border-radius:6px;font-size:0.875rem">
+                            <button type="button" class="btn-icon branche-del" title="Löschen">✕</button>
                         </li>
                     <?php endforeach; ?>
                 </ul>
@@ -379,25 +380,38 @@ $makeWebhookSecret = (string) ($config['make_webhook_secret'] ?? '');
         const saveBtn   = document.getElementById('branchen-save-btn');
         const statusEl  = document.getElementById('branchen-status');
 
+        function inputs() { return Array.from(liste.querySelectorAll('.branche-name')); }
         function getBranchen() {
-            return Array.from(liste.querySelectorAll('li span')).map(function(s) {
-                return s.textContent.trim();
+            return inputs().map(function(i) { return i.value.trim(); }).filter(Boolean);
+        }
+        // Umbenennungen: bestehende Zeile (data-orig gesetzt), deren Name sich geändert hat.
+        function getRenames() {
+            const out = [];
+            inputs().forEach(function(i) {
+                const orig = (i.dataset.orig || '').trim();
+                const neu = i.value.trim();
+                if (orig && neu && orig !== neu) out.push({ old: orig, 'new': neu });
             });
+            return out;
         }
 
         function addRow(name) {
             const li = document.createElement('li');
             li.style.cssText = 'display:flex;align-items:center;gap:0.5rem';
-            const span = document.createElement('span');
-            span.style.cssText = 'flex:1;font-size:0.875rem';
-            span.textContent = name;
+            const inp = document.createElement('input');
+            inp.type = 'text';
+            inp.className = 'branche-name';
+            inp.maxLength = 100;
+            inp.value = name;
+            inp.dataset.orig = ''; // neue Branche -> keine Migration
+            inp.style.cssText = 'flex:1;padding:0.4rem 0.55rem;border:1px solid var(--border);border-radius:6px;font-size:0.875rem';
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'btn-icon branche-del';
             btn.title = 'Löschen';
             btn.textContent = '✕';
             btn.addEventListener('click', function() { li.remove(); });
-            li.appendChild(span);
+            li.appendChild(inp);
             li.appendChild(btn);
             liste.appendChild(li);
         }
@@ -419,11 +433,11 @@ $makeWebhookSecret = (string) ($config['make_webhook_secret'] ?? '');
         });
 
         saveBtn.addEventListener('click', function() {
-            const branchen = getBranchen();
             const body = new URLSearchParams();
             body.set('csrf_token', csrf);
             body.set('key', 'sponsor_branchen');
-            body.set('value', JSON.stringify(branchen));
+            body.set('value', JSON.stringify(getBranchen()));
+            body.set('renames', JSON.stringify(getRenames()));
             saveBtn.disabled = true;
             fetch('api/einstellungen_json_update.php', {
                 method: 'POST',
@@ -431,11 +445,18 @@ $makeWebhookSecret = (string) ($config['make_webhook_secret'] ?? '');
                 body: body
             }).then(function(r) { return r.json(); })
               .then(function(d) {
-                statusEl.textContent = d.ok ? 'Gespeichert ✓' : (d.message || 'Fehler');
-                statusEl.style.color = d.ok ? 'var(--primary)' : 'var(--error)';
-                setTimeout(function() { statusEl.textContent = ''; }, 2500);
+                if (d.ok) {
+                    // Umbenennungen sind gespeichert -> Ausgangswerte nachziehen.
+                    inputs().forEach(function(i) { i.dataset.orig = i.value.trim(); });
+                    statusEl.textContent = d.migrated ? ('Gespeichert ✓ (' + d.migrated + ' Sponsoren angepasst)') : 'Gespeichert ✓';
+                    statusEl.style.color = 'var(--primary)';
+                } else {
+                    statusEl.textContent = d.message || 'Fehler';
+                    statusEl.style.color = 'var(--error)';
+                }
+                setTimeout(function() { statusEl.textContent = ''; }, 3000);
               })
-              .catch(function() { statusEl.textContent = 'Fehler'; })
+              .catch(function() { statusEl.textContent = 'Fehler'; statusEl.style.color = 'var(--error)'; })
               .finally(function() { saveBtn.disabled = false; });
         });
     })();
