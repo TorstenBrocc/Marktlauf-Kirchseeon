@@ -339,7 +339,14 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
             min-width: 0;
         }
         .ap-line-name { font-weight: 600; }
-        .ap-line-contact { font-size: 0.85rem; color: var(--text-light); }
+        /* Anrede + Vor-/Nachname 50% größer; Funktion bleibt auf Grundgröße */
+        .ap-line-name .ap-edit[data-field="anrede"],
+        .ap-line-name .ap-edit[data-field="vorname"],
+        .ap-line-name .ap-edit[data-field="nachname"] {
+            font-size: 1.5em;
+        }
+        /* Telefon + E-Mail auf dieselbe Größe wie Funktion (Grundgröße) */
+        .ap-line-contact { color: var(--text-light); }
         .ap-sep { color: var(--border); }
         /* Editable value: click-to-edit affordance, wraps instead of clipping */
         .ap-edit {
