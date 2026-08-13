@@ -471,6 +471,52 @@ function sendVereinAnschreiben(
     return sendMail($to, $subject, $textBody, $htmlBody, $attachments);
 }
 
+/**
+ * Tagesüberblick „Offene ToDos" — bewusst ein Digest, kein Ereignis-Alarm.
+ *
+ * Verschickt wird nur, wenn es tatsächlich etwas zu tun gibt; die Entscheidung
+ * darüber trifft der Aufrufer (bin/offene_todos_digest.php). Die Inhalte stammen
+ * aus src/offene_todos.php — derselben Quelle, aus der das Cockpit seinen Block
+ * baut, damit Mail und Anzeige nicht auseinanderlaufen.
+ *
+ * @param array<int,array{titel:string,zeilen:array<int,string>}> $gruppen
+ */
+function sendOffeneTodosDigest(string $to, string $name, int $gesamt, array $gruppen): bool {
+    $subject = '🔔 Offene ToDos (' . $gesamt . ') – Marktlauf';
+
+    $abschnitte = '';
+    foreach ($gruppen as $gruppe) {
+        if (empty($gruppe['zeilen'])) {
+            continue;
+        }
+        $abschnitte .= "\n" . $gruppe['titel'] . ' (' . count($gruppe['zeilen']) . ")\n";
+        foreach ($gruppe['zeilen'] as $zeile) {
+            $abschnitte .= '  • ' . $zeile . "\n";
+        }
+    }
+
+    $anrede = trim($name) !== '' ? 'Hallo ' . $name . ',' : 'Hallo,';
+    $body = <<<TEXT
+{$anrede}
+
+heute brauchen {$gesamt} Punkte deine Aufmerksamkeit:
+{$abschnitte}
+Alles im Cockpit — dort kannst du direkt weiterarbeiten:
+https://atsv-kirchseeon-marktlauf.de/orga/
+
+📧 Fragen? info@atsv-kirchseeon-marktlauf.de
+
+Sportliche Grüße
+Dein Marktlauf-Team
+──────────────────────────
+ATSV Kirchseeon Marktlauf
+https://atsv-kirchseeon-marktlauf.de
+TEXT;
+
+    $mail = marktlaufMailBody($body);
+    return sendMail($to, $subject, $mail['text'], $mail['html']);
+}
+
 function sendAufgabeErinnerung(string $to, string $name, string $aufgabeTitel, string $faelligAm): bool {
     $subject = '⏰ Erinnerung: Aufgabe fällig – ' . $aufgabeTitel;
     $body = <<<TEXT
