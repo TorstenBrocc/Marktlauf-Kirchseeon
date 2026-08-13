@@ -163,6 +163,19 @@ $menu = [
 ];
 $defaultSection = 'readme';
 
+/**
+ * Download-Link als Ghost-Button mit Pfeil-Icon. $href ist relativ zu orga/
+ * (z. B. api/ds_download.php?kind=…). Text/URL werden escaped.
+ */
+function ds_dl_button(string $href, string $label): string
+{
+    $icon = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" '
+          . 'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+          . '<path d="M8 1.9v8.3M4.6 6.8 8 10.2l3.4-3.4M2.6 13.4h10.8"/></svg>';
+    return '<a class="ds-dl" href="' . htmlspecialchars($href) . '" download>'
+         . $icon . '<span>' . htmlspecialchars($label) . '</span></a>';
+}
+
 /** Herkunfts-Badge (Website/Marke vs. Dashboard). */
 function ds_src_badge(string $source): string
 {
@@ -511,6 +524,16 @@ function ds_render_markdown(string $md, int $headingOffset = 0): string
         .ds-snip-copy { margin-left: auto; flex: 0 0 auto; appearance: none; border: 1px solid var(--primary); background: var(--primary); color: #fff; font: inherit; font-size: 0.8rem; font-weight: 600; padding: 0.4rem 0.8rem; border-radius: 8px; cursor: pointer; transition: background 0.12s; }
         .ds-snip-copy:hover { background: var(--primary-dark, #007230); }
         .ds-snip-copy:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+        .ds-snip-actions { margin-left: auto; display: flex; align-items: center; gap: 0.5rem; flex: 0 0 auto; }
+        .ds-snip-actions .ds-snip-copy { margin-left: 0; }
+
+        /* Download-Link (Ghost-Button) — für Element-/Vorlagen-/Readme-Downloads (Punkt 6 #3). */
+        .ds-dl { align-self: flex-start; display: inline-flex; align-items: center; gap: 0.4rem; text-decoration: none; appearance: none; border: 1px solid var(--primary); background: transparent; color: var(--primary); font: inherit; font-size: 0.78rem; font-weight: 600; padding: 0.32rem 0.7rem; border-radius: 8px; cursor: pointer; transition: background 0.12s, color 0.12s; }
+        .ds-dl:hover { background: var(--primary); color: #fff; }
+        .ds-dl:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+        .ds-dl svg { width: 13px; height: 13px; flex: 0 0 auto; }
+        .ds-guide-cap .ds-dl { margin-top: 0.35rem; }
+        .ds-section-dl { margin: -0.4rem 0 1.2rem; }
         /* Auto-Height: JS setzt die echte Höhe (misst den iframe-Inhalt) — keine Beschneidung. */
         .ds-fit { display: block; width: 100%; border: 0; background: var(--white); min-height: 120px; }
 
@@ -612,6 +635,7 @@ function ds_render_markdown(string $md, int $headingOffset = 0): string
                         <?php if ($readmeHtml === ''): ?>
                             <p class="ds-empty">Keine Readme gefunden (Deployment von <code>design-system/readme.md</code> prüfen).</p>
                         <?php else: ?>
+                            <p class="ds-section-dl"><?= ds_dl_button('api/ds_download.php?kind=readme', 'Readme herunterladen (.md)') ?></p>
                             <div class="ds-readme"><?= $readmeHtml ?></div>
                         <?php endif; ?>
                     </section>
@@ -623,6 +647,7 @@ function ds_render_markdown(string $md, int $headingOffset = 0): string
                         <?php if ($voiceHtml === ''): ?>
                             <p class="ds-empty">Keine Voice-Datei gefunden (<code>src/brand/voice.md</code> prüfen).</p>
                         <?php else: ?>
+                            <p class="ds-section-dl"><?= ds_dl_button('api/ds_download.php?kind=voice', 'voice.md herunterladen (.md)') ?></p>
                             <div class="ds-readme"><?= $voiceHtml ?></div>
                         <?php endif; ?>
                     </section>
@@ -696,6 +721,7 @@ function ds_render_markdown(string $md, int $headingOffset = 0): string
                                             <figcaption class="ds-guide-cap">
                                                 <strong><?= htmlspecialchars($it['name']) ?></strong>
                                                 <?php if ($it['sub'] !== ''): ?><span><?= htmlspecialchars($it['sub']) ?></span><?php endif; ?>
+                                                <?= ds_dl_button('api/ds_download.php?kind=guideline&file=' . rawurlencode($it['file']), 'Herunterladen (.html)') ?>
                                             </figcaption>
                                         </figure>
                                     <?php endforeach; ?>
@@ -719,7 +745,12 @@ function ds_render_markdown(string $md, int $headingOffset = 0): string
                                             <strong><?= htmlspecialchars($s['name']) ?></strong>
                                             <span><?= htmlspecialchars($s['sub']) ?></span>
                                         </div>
-                                        <button type="button" class="ds-snip-copy" data-code="snip-code-<?= $i ?>">HTML kopieren</button>
+                                        <div class="ds-snip-actions">
+                                            <button type="button" class="ds-snip-copy" data-code="snip-code-<?= $i ?>">HTML kopieren</button>
+                                            <?php if (isset($s['copy'])): ?>
+                                                <?= ds_dl_button('api/ds_download.php?kind=snippet&file=' . rawurlencode($s['copy']), '.html') ?>
+                                            <?php endif; ?>
+                                        </div>
                                     </header>
                                     <iframe class="ds-fit" src="../design-system/snippets/<?= htmlspecialchars($s['preview']) ?>"
                                             sandbox="allow-scripts allow-same-origin" loading="lazy" title="Vorschau: <?= htmlspecialchars($s['name']) ?>"></iframe>
@@ -745,6 +776,7 @@ function ds_render_markdown(string $md, int $headingOffset = 0): string
                                     <figcaption class="ds-guide-cap">
                                         <strong><?= htmlspecialchars($c['name']) ?></strong>
                                         <?php if ($c['sub'] !== ''): ?><span><?= htmlspecialchars($c['sub']) ?></span><?php endif; ?>
+                                        <?= ds_dl_button('api/ds_download.php?kind=component&file=' . rawurlencode($c['file']), 'Herunterladen (.html)') ?>
                                     </figcaption>
                                 </figure>
                             <?php endforeach; ?>
@@ -769,6 +801,7 @@ function ds_render_markdown(string $md, int $headingOffset = 0): string
                                     <figcaption class="ds-guide-cap">
                                         <strong><?= htmlspecialchars($t['name']) ?></strong>
                                         <span><?= htmlspecialchars($t['sub']) ?></span>
+                                        <?= ds_dl_button('api/ds_download.php?kind=template&file=' . rawurlencode($t['thumb']), 'Vorschau herunterladen (.webp)') ?>
                                     </figcaption>
                                 </figure>
                             <?php endforeach; ?>
