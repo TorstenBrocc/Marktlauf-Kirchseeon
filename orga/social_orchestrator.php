@@ -111,6 +111,9 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
     <meta name="robots" content="noindex, nofollow">
     <title>Social Media | ATSV Kirchseeon Marktlauf</title>
     <link rel="stylesheet" href="css/orga.css?v=<?= @filemtime(__DIR__ . '/css/orga.css') ?>">
+    <!-- Share-Card-CI: self-hosted Brand-Fonts + Design-System-Farbtokens (eine Quelle) -->
+    <link rel="stylesheet" href="../css/fonts.css?v=<?= @filemtime(__DIR__ . '/../css/fonts.css') ?>">
+    <link rel="stylesheet" href="../design-system/tokens/colors.css?v=<?= @filemtime(__DIR__ . '/../design-system/tokens/colors.css') ?>">
     <link rel="icon" type="image/svg+xml" href="../assets/images/logo-final.svg">
     <style>
         /* Kopf: Titel links, Notiz + Meta-Business-Button rechts oben */
@@ -240,40 +243,52 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
 
         /* Die eigentliche Render-Card (off-screen, echte Pixelgröße) — Höhe wird
            je Format per JS gesetzt (1080×1080 / 1080×1350 / 1080×1920). */
+        /* CI wie PostBody.dc.html (DS-Template): Poppins-Basis, Fredoka-Headlines,
+           Gold-Akzente, Hero-Verlauf — Farben aus design-system/tokens/colors.css */
         #social-share-card {
             width: 1080px; height: 1080px;
-            background: #007230; /* Fallback; sichtbare Fläche liefern Overlay/Foto */
+            background: var(--color-primary-dark, #007230); /* Fallback; sichtbare Fläche liefern Overlay/Foto */
             display: flex; flex-direction: column;
             justify-content: space-between; padding: 80px;
-            box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            box-sizing: border-box;
+            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             color: #ffffff; position: relative; overflow: hidden;
         }
         /* Hintergrund-Foto (Vollfläche) + Farb-Overlay darüber; Inhalt darüber */
         .sc-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
         .sc-overlay { position: absolute; inset: 0; z-index: 1;
-            background: linear-gradient(145deg, #009640 0%, #007230 100%); }
+            background: var(--gradient-hero, linear-gradient(128deg, #12a877 0%, #5cbd45 50%, #bcd531 100%)); }
         #social-share-card > *:not(.sc-bg):not(.sc-overlay) { position: relative; z-index: 2; }
         .sc-logos { display: flex; flex-wrap: wrap; gap: 40px; align-items: center; margin-bottom: 24px; }
         .sc-logos img { height: 96px; width: auto; max-width: 340px; object-fit: contain; }
-        .sc-event { font-size: 28px; font-weight: 400; opacity: 0.85; margin-bottom: 16px; }
-        .sc-headline { font-size: 72px; font-weight: 700; line-height: 1.1; margin-bottom: 0; }
+        .sc-event { display: flex; align-items: center; gap: 14px; font-size: 24px; font-weight: 600;
+            letter-spacing: 0.16em; text-transform: uppercase; color: #fff8dd; margin-bottom: 20px; }
+        .sc-event::before { content: ''; width: 44px; height: 4px; border-radius: 2px;
+            background: var(--color-accent-yellow, #f4b81e); flex-shrink: 0; }
+        .sc-headline { font-family: 'Fredoka', 'Trebuchet MS', sans-serif; font-size: 84px;
+            font-weight: 700; line-height: 0.95; letter-spacing: -0.01em; margin-bottom: 0;
+            text-shadow: 0 8px 28px rgba(20,60,30,0.3); }
         .sc-metrics { display: flex; flex-direction: column; gap: 36px; }
         .sc-metric-row { display: flex; gap: 60px; }
         .sc-metric { display: flex; flex-direction: column; }
-        .sc-metric-label { font-size: 22px; opacity: 0.75; margin-bottom: 6px; }
-        .sc-metric-value { font-size: 48px; font-weight: 700; line-height: 1; }
-        .sc-metric-sub { font-size: 26px; opacity: 0.85; margin-top: 4px; }
+        .sc-metric-label { font-size: 21px; font-weight: 600; letter-spacing: 0.12em;
+            text-transform: uppercase; opacity: 0.8; margin-bottom: 8px; }
+        .sc-metric-value { font-family: 'Fredoka', 'Trebuchet MS', sans-serif; font-size: 52px;
+            font-weight: 700; line-height: 1; color: var(--color-accent-yellow, #f4b81e); }
+        .sc-metric-sub { font-size: 26px; font-weight: 500; opacity: 0.9; margin-top: 6px; }
         .sc-highlight {
-            font-size: 26px; opacity: 0.9; background: rgba(255,255,255,0.12);
-            border-radius: 12px; padding: 24px 32px; line-height: 1.4;
+            font-size: 26px; font-weight: 500; background: rgba(255,255,255,0.18);
+            border: 1.5px solid rgba(255,255,255,0.55);
+            border-radius: 16px; padding: 24px 32px; line-height: 1.4;
         }
         .sc-footer { display: flex; justify-content: space-between; align-items: flex-end; gap: 40px; }
         .sc-footer-text { display: flex; flex-direction: column; gap: 6px; }
-        .sc-url { font-size: 22px; opacity: 0.6; }
-        .sc-wordmark { font-size: 32px; font-weight: 700; letter-spacing: 1px; }
+        .sc-url { font-size: 22px; font-weight: 500; opacity: 0.75; }
+        .sc-wordmark { font-family: 'Fredoka', 'Trebuchet MS', sans-serif; font-size: 34px;
+            font-weight: 600; letter-spacing: 0.5px; }
         .sc-qr { display: flex; flex-direction: column; align-items: center; gap: 10px; flex: 0 0 auto; }
         .sc-qr img { width: 200px; height: 200px; background: #fff; padding: 14px; border-radius: 16px; box-sizing: border-box; display: block; }
-        .sc-qr-label { font-size: 24px; font-weight: 600; text-align: center; }
+        .sc-qr-label { font-family: 'Fredoka', 'Trebuchet MS', sans-serif; font-size: 24px; font-weight: 600; text-align: center; }
         #so-card-preview { display: none; margin-top: 1rem; }
         #so-card-preview img { max-width: 360px; border-radius: 8px; border: 1px solid var(--border); }
         #so-card-error { display: none; color: #dc2626; font-size: 0.88rem; margin-top: 0.5rem; }
@@ -859,7 +874,7 @@ const repoAssets = <?= json_encode($repoAssets, JSON_UNESCAPED_UNICODE) ?>;
 let selectedPhotoUrl = '';
 let selectedLogos = [{ url: DEFAULT_LOGO, label: 'ATSV-Logo' }];
 
-// Markenfarben aus den CI-Tokens (orga.css :root) lesen — eine Quelle, kein Drift
+// Markenfarben aus den Design-System-Tokens (design-system/tokens/colors.css) — eine Quelle, kein Drift
 function cssVar(name, fallback) {
     const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
     return v || fallback;
@@ -870,12 +885,20 @@ function hexToRgba(hex, a) {
     return 'rgba(' + parseInt(m[1],16) + ',' + parseInt(m[2],16) + ',' + parseInt(m[3],16) + ',' + a + ')';
 }
 function schemeColors(key) {
-    const primary = cssVar('--primary', '#009640');
-    const dark    = cssVar('--primary-dark', '#007230');
-    const accent  = cssVar('--accent', '#ff6b35');
-    if (key === 'dunkel') return ['#0d4a2b', '#062a18'];
+    const primary = cssVar('--color-primary', '#009640');
+    const dark    = cssVar('--color-primary-dark', '#007230');
+    const accent  = cssVar('--color-accent', '#ff6b35');
+    if (key === 'dunkel') return ['#0d4a2b', '#062a18']; // bewusste Dunkel-Variante, kein Token
     if (key === 'akzent') return [accent, dark];
     return [primary, dark]; // gruen (Marke)
+}
+// CI-Hero-Look wie PostBody.dc.html: Gold-/Teal-Radiale ueber dem Token-Verlauf
+function heroOverlay() {
+    const gold = cssVar('--color-accent-yellow', '#f4b81e');
+    const teal = cssVar('--color-teal', '#0e6f88');
+    return 'radial-gradient(620px 620px at 108% -8%, ' + hexToRgba(gold, 0.55) + ', ' + hexToRgba(gold, 0) + ' 68%), '
+         + 'radial-gradient(640px 640px at -10% 112%, ' + hexToRgba(teal, 0.55) + ', ' + hexToRgba(teal, 0) + ' 66%), '
+         + cssVar('--gradient-hero', 'linear-gradient(128deg, #12a877 0%, #5cbd45 50%, #bcd531 100%)');
 }
 
 // Karte nach Auswahl (Logo, Schema, Anordnung, Foto) stylen
@@ -890,7 +913,8 @@ function applyCardStyle(fmt) {
 
     fillLogos();
 
-    const [c1, c2] = schemeColors(document.getElementById('so-card-scheme').value);
+    const schemeKey = document.getElementById('so-card-scheme').value;
+    const [c1, c2] = schemeColors(schemeKey);
     const hasPhoto = !!selectedPhotoUrl;
     card.classList.toggle('has-photo', hasPhoto);
     if (hasPhoto) {
@@ -898,6 +922,10 @@ function applyCardStyle(fmt) {
         bg.style.display = 'block';
         // dunkles Overlay für Lesbarkeit, unten in Markenfarbe auslaufend
         overlay.style.background = 'linear-gradient(160deg, rgba(0,0,0,0.28) 0%, ' + hexToRgba(c2, 0.78) + ' 100%)';
+    } else if (schemeKey === 'gruen') {
+        // Marken-Schema = CI-Hero-Look (dreistufiger Verlauf + Gold-/Teal-Radiale)
+        bg.style.display = 'none';
+        overlay.style.background = heroOverlay();
     } else {
         bg.style.display = 'none';
         overlay.style.background = 'linear-gradient(145deg, ' + c1 + ' 0%, ' + c2 + ' 100%)';
@@ -1039,6 +1067,15 @@ document.getElementById('so-render-card').addEventListener('click', async () => 
         selectedPhotoUrl ? waitImg(document.getElementById('sc-bg')) : Promise.resolve(),
         waitImg(document.getElementById('sc-qr-img')),
     ]);
+    // Brand-Fonts vor dem Snapshot laden (wie vorlagen.php), sonst rendert der Fallback-Font
+    if (document.fonts && document.fonts.load) {
+        await Promise.all([
+            document.fonts.load('700 84px Fredoka'),
+            document.fonts.load('600 24px Poppins'),
+            document.fonts.load('500 26px Poppins'),
+        ]).catch(() => {});
+        await document.fonts.ready;
+    }
 
     try {
         const canvas = await snapdom.toCanvas(card, {
@@ -1046,7 +1083,8 @@ document.getElementById('so-render-card').addEventListener('click', async () => 
             height:       fmt.h,
             scale:        1,
             dpr:          1,
-            backgroundColor: '#007230',
+            backgroundColor: cssVar('--color-primary-dark', '#007230'),
+            embedFonts:   true,
         });
         const dataUrl = canvas.toDataURL('image/png');
         lastCardDataUrl = dataUrl;
