@@ -42,6 +42,23 @@ return [
         'tile'  => false, // ist die aktuelle Seite — keine Selbst-Kachel
     ],
     [
+        // Direkt unter dem Cockpit (TT, 2026-08-13): der Einstieg in die Tagesarbeit.
+        // Bewusst domänenspezifisch — Helfer, Plakate usw. bekommen bei Bedarf eigene
+        // Sichten nach demselben Muster. Spec: intern/offene-todos-spec.md
+        'key'   => 'offene_todos',
+        'label' => 'Offene ToDos Sponsoring',
+        'href'  => 'offene_todos.php',
+        'kpi'   => static function (PDO $pdo): array {
+            require_once __DIR__ . '/../src/offene_todos.php';
+            $todos = offeneTodosAlle($pdo);
+            return [
+                'value'  => (string) $todos['gesamt'],
+                'label'  => $todos['gesamt'] === 1 ? 'offenes ToDo' : 'offene ToDos',
+                'signal' => $todos['gesamt'] === 0 ? 'ok' : 'attention',
+            ];
+        },
+    ],
+    [
         'key'     => 'helfer',
         'label'   => 'Helfer-Übersicht',
         'section' => 'HELFER-ORGA',

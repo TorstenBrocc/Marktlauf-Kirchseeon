@@ -1,7 +1,7 @@
 #!/usr/bin/env php
 <?php
 /**
- * CLI-Tool: Tagesüberblick „Offene ToDos" per Mail
+ * CLI-Tool: Überblick „Offene ToDos Sponsoring" per Mail
  *
  * Läuft täglich über .github/workflows/taegliche_erinnerung.yml (Strato hat kein
  * crontab per SSH). Empfänger sind alle aktiven Nutzer mit Rolle admin oder orga.
@@ -59,32 +59,40 @@ try {
     };
 
     $zeilen = [];
+    foreach ($todos['bestaetigung'] as $t) {
+        $zeilen[] = $t['firma'] . ' — seit ' . (int) $t['tage'] . ' Tagen zugesagt, Bestätigung noch nicht raus';
+    }
+    $gruppen[] = ['titel' => 'Bestätigung offen', 'zeilen' => $deckeln($zeilen)];
+
+    $zeilen = [];
     foreach ($todos['wiedervorlagen'] as $t) {
         $tage = (int) $t['tage'];
-        $zeilen[] = $t['firma'] . ' — ' . ($tage === 0 ? 'heute fällig' : 'seit ' . $tage . ' Tagen überfällig')
-            . (trim((string) $t['telefon']) !== '' ? ' · Tel. ' . $t['telefon'] : '');
+        $zeilen[] = $t['firma'] . ' — ' . ($tage <= 0 ? 'heute fällig' : 'seit ' . $tage . ' Tagen überfällig')
+            . (trim((string) $t['telefon']) !== '' ? ' · Tel. ' . $t['telefon'] : '')
+            . (todoNotizStand($t['notizen']) !== '' ? ' | ' . todoNotizStand($t['notizen']) : '');
     }
     $gruppen[] = ['titel' => 'Wiedervorlage fällig', 'zeilen' => $deckeln($zeilen)];
-
-    $zeilen = [];
-    foreach ($todos['aufgaben'] as $t) {
-        $zeilen[] = $t['titel'] . ' — seit ' . (int) $t['tage'] . ' Tagen überfällig'
-            . ($t['verantwortlich'] !== '' ? ' (' . $t['verantwortlich'] . ')' : '');
-    }
-    $gruppen[] = ['titel' => 'Überfällige Orga-Aufgaben', 'zeilen' => $deckeln($zeilen)];
-
-    $zeilen = [];
-    foreach ($todos['ohne_reaktion'] as $t) {
-        $zeilen[] = $t['firma'] . ' — seit ' . (int) $t['tage'] . ' Tagen keine Antwort'
-            . (trim((string) $t['telefon']) !== '' ? ' · Tel. ' . $t['telefon'] : '');
-    }
-    $gruppen[] = ['titel' => 'Angeschrieben ohne Reaktion', 'zeilen' => $deckeln($zeilen)];
 
     $zeilen = [];
     foreach ($todos['versand_fehler'] as $t) {
         $zeilen[] = $t['firma'] . ' — ' . ($t['fehler'] !== '' ? $t['fehler'] : 'Versand fehlgeschlagen');
     }
     $gruppen[] = ['titel' => 'Versand-Queue: Fehler', 'zeilen' => $deckeln($zeilen)];
+
+    $zeilen = [];
+    foreach ($todos['nie_angeschrieben'] as $t) {
+        $zeilen[] = $t['firma'] . ' — liegt seit ' . (int) $t['tage'] . ' Tagen unangeschrieben'
+            . (trim((string) $t['telefon']) !== '' ? ' · Tel. ' . $t['telefon'] : '');
+    }
+    $gruppen[] = ['titel' => 'Noch nie angeschrieben', 'zeilen' => $deckeln($zeilen)];
+
+    $zeilen = [];
+    foreach ($todos['ohne_reaktion'] as $t) {
+        $zeilen[] = $t['firma'] . ' — seit ' . (int) $t['tage'] . ' Tagen keine Antwort'
+            . (trim((string) $t['telefon']) !== '' ? ' · Tel. ' . $t['telefon'] : '')
+            . (todoNotizStand($t['notizen']) !== '' ? ' | ' . todoNotizStand($t['notizen']) : '');
+    }
+    $gruppen[] = ['titel' => 'Angeschrieben ohne Reaktion', 'zeilen' => $deckeln($zeilen)];
 
     $empfaenger = $pdo->query("
         SELECT name, email FROM users
