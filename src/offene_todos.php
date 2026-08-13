@@ -208,6 +208,46 @@ function todosSponsorAufgaben(PDO $pdo): array
     return $stmt->fetchAll();
 }
 
+/**
+ * Bedingungen verschickt, aber vom Sponsor noch nicht bestätigt.
+ *
+ * Datenbasis ist Migration 062 (bedingungen_bestaetigt_am / _weg / _beleg). „Benötigt"
+ * ist die Bestätigung erst ab verschickter Bestätigung — die Status-Liste hier spiegelt
+ * bewusst sponsorBedingungenBenoetigt() aus src/sponsor_status.php; wird die dort
+ * erweitert, gehört sie hier nachgezogen.
+ *
+ * Fehlt die Spalte (Migration noch nicht gefahren), wirft die Abfrage — offeneTodosAlle()
+ * fängt das ab und lässt die Gruppe leer, statt die Seite abzuschießen.
+ */
+function todosBedingungenOffen(PDO $pdo): array
+{
+    $stmt = $pdo->query("
+        SELECT s.id, s.firma, s.status, s.bedingungen_beleg,
+               DATEDIFF(CURDATE(), DATE(s.updated_at)) AS tage,
+               " . todoSponsorSpalten() . "
+        FROM sponsors s
+        WHERE s.status IN ('bestaetigt','abgerechnet','bezahlt')
+          AND s.bedingungen_bestaetigt_am IS NULL
+        ORDER BY s.updated_at ASC, s.firma ASC
+    ");
+    return $stmt->fetchAll();
+}
+
+/** Bedingungen bestätigt, aber die Rückmeldung liegt nicht im Sponsor-Ordner. */
+function todosBedingungenBelegFehlt(PDO $pdo): array
+{
+    $stmt = $pdo->query("
+        SELECT s.id, s.firma, s.status, s.bedingungen_weg,
+               DATE(s.bedingungen_bestaetigt_am) AS bestaetigt_am,
+               " . todoSponsorSpalten() . "
+        FROM sponsors s
+        WHERE s.bedingungen_bestaetigt_am IS NOT NULL
+          AND s.bedingungen_beleg = 0
+        ORDER BY s.bedingungen_bestaetigt_am ASC, s.firma ASC
+    ");
+    return $stmt->fetchAll();
+}
+
 /** Fehlgeschlagene Einträge in der Sponsor-Versand-Queue. */
 function todosVersandFehler(PDO $pdo): array
 {
@@ -235,6 +275,8 @@ function offeneTodosAlle(PDO $pdo): array
     $gruppen = [
         'wiedervorlagen'   => 'todosWiedervorlagen',
         'bestaetigung'     => 'todosBestaetigungOffen',
+        'bedingungen'      => 'todosBedingungenOffen',
+        'bedingungen_beleg' => 'todosBedingungenBelegFehlt',
         'versand_fehler'   => 'todosVersandFehler',
         'nie_angeschrieben' => 'todosNieAngeschrieben',
         'ohne_reaktion'    => 'todosOhneReaktion',
@@ -255,8 +297,11 @@ function offeneTodosAlle(PDO $pdo): array
 
     // Sponsor-Aufgaben zählen nicht mit: sie haben keinen Termin und sind damit
     // nichts, was „heute" fällig wäre. Sie werden nur nachrichtlich gezeigt.
+    // Der fehlende Beleg zählt nicht mit: die Sache ist inhaltlich erledigt, es fehlt
+    // nur die Ablage. Sichtbar ja, als Druckmittel in der Gesamtzahl nein.
     $ergebnis['gesamt'] = count($ergebnis['wiedervorlagen'])
         + count($ergebnis['bestaetigung'])
+        + count($ergebnis['bedingungen'])
         + count($ergebnis['versand_fehler'])
         + count($ergebnis['nie_angeschrieben'])
         + count($ergebnis['ohne_reaktion']);

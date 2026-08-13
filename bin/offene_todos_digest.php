@@ -74,6 +74,12 @@ try {
     $gruppen[] = ['titel' => 'Bestätigung offen', 'zeilen' => $deckeln($zeilen)];
 
     $zeilen = [];
+    foreach ($todos['bedingungen'] as $t) {
+        $zeilen[] = $t['firma'] . ' — Bedingungen seit ' . (int) $t['tage'] . ' Tagen nicht gegengezeichnet';
+    }
+    $gruppen[] = ['titel' => 'Bedingungen nicht bestätigt', 'zeilen' => $deckeln($zeilen)];
+
+    $zeilen = [];
     foreach ($todos['wiedervorlagen'] as $t) {
         $tage = (int) $t['tage'];
         $zeilen[] = $t['firma'] . ' — ' . ($tage <= 0 ? 'heute fällig' : 'seit ' . $tage . ' Tagen überfällig')
