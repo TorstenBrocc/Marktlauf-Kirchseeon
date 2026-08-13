@@ -481,8 +481,11 @@ function sendVereinAnschreiben(
  *
  * @param array<int,array{titel:string,zeilen:array<int,string>}> $gruppen
  */
-function sendOffeneTodosDigest(string $to, string $name, int $gesamt, array $gruppen): bool {
-    $subject = '🔔 Offene ToDos (' . $gesamt . ') – Marktlauf';
+function sendOffeneTodosDigest(string $to, string $name, int $gesamt, array $gruppen, string $modus = 'voll'): bool {
+    // Der Betreff sagt, warum die Mail kommt: Wochenüberblick oder heute Dazugekommenes.
+    $subject = $modus === 'neu'
+        ? '🔔 Neu heute: ' . $gesamt . ' offene ToDos Sponsoring – Marktlauf'
+        : '🔔 Offene ToDos Sponsoring (' . $gesamt . ') – Marktlauf';
 
     $abschnitte = '';
     foreach ($gruppen as $gruppe) {
@@ -496,13 +499,16 @@ function sendOffeneTodosDigest(string $to, string $name, int $gesamt, array $gru
     }
 
     $anrede = trim($name) !== '' ? 'Hallo ' . $name . ',' : 'Hallo,';
+    $einleitung = $modus === 'neu'
+        ? "heute sind {$gesamt} Punkte dazugekommen, für die du zuständig bist:"
+        : "diese {$gesamt} Punkte liegen bei dir offen:";
     $body = <<<TEXT
 {$anrede}
 
-heute brauchen {$gesamt} Punkte deine Aufmerksamkeit:
+{$einleitung}
 {$abschnitte}
-Alles im Cockpit — dort kannst du direkt weiterarbeiten:
-https://atsv-kirchseeon-marktlauf.de/orga/
+Alles auf einen Blick — dort kannst du direkt weiterarbeiten:
+https://atsv-kirchseeon-marktlauf.de/orga/offene_todos.php
 
 📧 Fragen? info@atsv-kirchseeon-marktlauf.de
 
