@@ -4,7 +4,7 @@
  *
  * Fester Marken-Rahmen bleibt (Master-Template, {{CONTENT}}); variabel ist der Inhalt als
  * geordnete, an-/abschaltbare Blöcke. Je aktivem Block EIN eigener LLM-Call (Fakten + Stil aus
- * der EINEN Design-Quelle: 01_identity.md + 02_style.md). Die Fragmente ergeben zusammengesetzt
+ * der EINEN Marken-Stimme src/brand/voice.md via brandVoiceSystem()). Die Fragmente ergeben zusammengesetzt
  * den {{CONTENT}}-Body. Spec: intern/newsletter-baukasten-spec.md.
  */
 
@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../llm_client.php';   // llmGenerate()
 require_once __DIR__ . '/../logger.php';
+require_once __DIR__ . '/../brand_voice.php';  // brandVoiceSystem()
 
 /**
  * Block-Katalog. Reihenfolge = Vorschlag in der UI; die Ausgabe-Reihenfolge steuert der Nutzer.
@@ -72,12 +73,7 @@ function newsletterRenderBlock(string $type, string $fakten, ?string $provider =
         return '';
     }
 
-    $refDir   = __DIR__ . '/';
-    $identity = @file_get_contents($refDir . '01_identity.md') ?: '';
-    $style    = @file_get_contents($refDir . '02_style.md') ?: '';
-
-    $system = "Du schreibst einen Abschnitt eines Vereins-Newsletters.\n\n"
-        . "IDENTITÄT:\n" . $identity . "\n\nSTIL:\n" . $style . "\n\n"
+    $system = brandVoiceSystem('newsletter') . "\n\n"
         . "AUFGABE FÜR DIESEN ABSCHNITT:\n" . $catalog[$type]['instruction'] . "\n\n"
         . "Erlaubt sind ausschließlich <p>, <h2>, <ul>/<li>, <a href>, <strong>. "
         . "KEIN <html>/<head>/<body>, keine Inline-Styles, keine Code-Fences, keine Erklärung. "

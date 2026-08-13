@@ -17,6 +17,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/logger.php';
+require_once __DIR__ . '/brand_voice.php';
 
 /**
  * Aktiven Provider aus einstellungen lesen (Default: gemini).
@@ -181,29 +182,20 @@ function llmCurlPost(string $url, string $body, array $headers): ?string
 
 function llmPromptPress(): string
 {
-    return <<<PROMPT
-Du bist Redakteur einer lokalen Tageszeitung im Landkreis Ebersberg (Bayern) und
-schreibst für den ATSV Kirchseeon (Marktlauf Kirchseeon). Verfasse einen sachlichen,
-informativen Beitrag passend zum unten genannten Anlass und den Fakten/Stichpunkten.
-Stil: neutral-journalistisch, kurze Sätze, keine Werbung, keine Ausrufezeichen.
-Länge: ca. 150–200 Wörter.
-Sprache: Deutsch.
-Beachte zusätzliche Anweisungen des Nutzers, falls vorhanden.
-Beginne direkt mit dem Text, ohne Einleitung oder Überschrift.
+    $task = <<<PROMPT
+AUFGABE: Verfasse einen sachlichen, informativen Pressebeitrag (Stil einer lokalen Tageszeitung im
+Landkreis Ebersberg) passend zum unten genannten Anlass und den Fakten/Stichpunkten. Beachte
+zusätzliche Anweisungen des Nutzers, falls vorhanden. Beginne direkt mit dem Text, ohne Überschrift.
 PROMPT;
+    return brandVoiceSystem('presse') . "\n\n" . $task;
 }
 
 function llmPromptSocial(): string
 {
-    return <<<PROMPT
-Du schreibst Social-Media-Posts für Instagram und Facebook des ATSV Kirchseeon
-(Marktlauf Kirchseeon). Verfasse einen Post passend zum unten genannten Anlass und den
-Fakten/Stichpunkten.
-Stil: kurz, emotional, lokal, ein paar passende Emojis, kein Werbe-Spam.
-Länge: max. 5 Sätze / ca. 80 Wörter.
-Sprache: Deutsch.
-Beachte zusätzliche Anweisungen des Nutzers, falls vorhanden.
-Hänge KEINE Hashtags an (die werden separat ergänzt), es sei denn, der Nutzer verlangt es.
-Beginne direkt mit dem Post-Text, ohne Einleitung oder Erklärung.
+    $task = <<<PROMPT
+AUFGABE: Verfasse einen Social-Media-Post (Instagram/Facebook) passend zum unten genannten Anlass
+und den Fakten/Stichpunkten. Beachte zusätzliche Anweisungen des Nutzers, falls vorhanden. Beginne
+direkt mit dem Post-Text, ohne Einleitung oder Erklärung.
 PROMPT;
+    return brandVoiceSystem('social') . "\n\n" . $task;
 }

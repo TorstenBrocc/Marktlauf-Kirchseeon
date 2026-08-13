@@ -26,7 +26,7 @@ gestaltet, der Markensprache.
   `css/base.css` (Tokens), `css/layout.css` (Header/Footer), `css/components.css`
   (Hero, Karten, Timeline, Tabs, Formulare, Sponsorenband), `orga/css/orga.css`
   (Dashboard), `orga/_nav.php` (Modul-Registry), `orga/helfer.php` (Tabellenmuster),
-  `src/newsletter/01_identity.md` und `02_style.md` (Tonalität), `index.html`.
+  `src/brand/voice.md` (Tonalität — die EINE Quelle, speist alle Generatoren), `index.html`.
   Für weitere Arbeiten lohnt es sich, direkt in diesem Repository zu lesen —
   es ist die belastbarste Quelle für alles, was hier beschrieben ist.
 - **Lokaler Ordner `Logo u Print/`:** Logo-Dateien, Plakate (Haupt- und Schulplakat),
@@ -49,7 +49,7 @@ Kontaktbereich siezen an einigen Stellen noch (*„Bleiben Sie in Kontakt!"*,
 *„Wie können wir Ihnen helfen?"*) — das ist ein gewachsener Bruch, kein Muster;
 bei Neuem konsequent duzen.
 
-**Haltung** (aus `src/newsletter/01_identity.md`): bodenständig, herzlich,
+**Haltung** (aus `src/brand/voice.md`): bodenständig, herzlich,
 ehrenamtlich getragen, lokal verwurzelt. **Kein Marketing-Sprech, keine Superlative.**
 
 **Ton.** Herzlich, klar, sachlich-positiv. Keine Werbefloskeln, keine
