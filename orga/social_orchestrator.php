@@ -365,6 +365,9 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
 
             <div class="so-actions">
                 <button class="btn btn-primary" id="so-generate-btn">Entwürfe generieren</button>
+                <label style="display:inline-flex;align-items:center;gap:0.35rem;font-size:0.85rem;color:var(--text-light)">
+                    <input type="checkbox" id="so-mit-merkfeld"> Notiz (Merkfeld) an die KI mitgeben
+                </label>
                 <span class="so-spinner active" id="so-spinner" style="display:none">⏳ KI läuft …</span>
             </div>
             <div id="so-error"></div>
@@ -698,6 +701,7 @@ document.getElementById('so-generate-btn').addEventListener('click', async () =>
                 stichpunkte: document.getElementById('so-stichpunkte').value,
                 prompt:      document.getElementById('so-prompt').value,
                 hashtags:    document.getElementById('so-hashtags').value,
+                mit_merkfeld: document.getElementById('so-mit-merkfeld').checked ? '1' : '0',
             }),
         });
         const d = await r.json();
