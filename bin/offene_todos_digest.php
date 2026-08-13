@@ -43,6 +43,7 @@ require_once __DIR__ . '/../src/db.php';
 require_once __DIR__ . '/../src/offene_todos.php';
 require_once __DIR__ . '/../src/channels/mail.php';
 require_once __DIR__ . '/../src/logger.php';
+require_once __DIR__ . '/../src/sponsor_status.php';  // sponsorStatusLabel() für die Status-Spalte
 
 $argumente = $argv ?? [];
 $dryRun = in_array('--dry-run', $argumente, true);
@@ -91,79 +92,105 @@ try {
     $todos = offeneTodosAlle($pdo);
 
     // Gruppen in Bearbeitungsreihenfolge; je Gruppe der Titel und wie eine Zeile klingt.
-    // Kurzform der Notiz für die Mail: in der Praxis war die 140-Zeichen-Fassung der
-    // Hauptgrund, warum die Mail unlesbar wurde. Auf der Seite bleibt sie länger.
+    // Kurzform der Notiz: in der Praxis war die 140-Zeichen-Fassung der Hauptgrund,
+    // warum die Mail unlesbar wurde. Auf der Seite bleibt sie länger.
     $notizKurz = static function (?string $notizen): string {
         $n = todoNotizStand($notizen);
         return mb_strlen($n) > 90 ? mb_substr($n, 0, 89) . '…' : $n;
     };
+    // „Status / Frist" wie auf der Seite: Priorität, Status-Label, Frist.
+    $statusText = static function (array $t, string $frist, bool $mitStatus = true): string {
+        $teile = [];
+        if ((int) ($t['prioritaet'] ?? 0) === 1) {
+            $teile[] = 'Prio 1';
+        }
+        if ($mitStatus && isset($t['status'])) {
+            $teile[] = sponsorStatusLabel((string) $t['status']);
+        }
+        $teile[] = $frist;
+        return implode(' · ', array_filter($teile, static fn ($x) => trim((string) $x) !== ''));
+    };
+    $kontaktWert = static fn (array $t): string =>
+        trim((string) ($t['telefon'] ?? '')) . '|' . trim((string) ($t['email'] ?? ''));
 
-    // Je Gruppe: Titel, ob Fehlerzustand, und wie eine Zeile in Felder zerlegt wird.
-    // Struktur statt fertiger Strings, damit Mail-HTML echte Spalten bauen kann.
+    // Titel, Beschreibung und Spaltenköpfe sind wortgleich mit orga/offene_todos.php.
+    // Sie stehen hier (noch) doppelt — die Zentralisierung nach src/offene_todos.php ist mit
+    // der Parallel-Session abgestimmt und folgt als eigener Schnitt.
+    $vier = ['Firma', 'Info', 'Status / Frist', 'Kontakt'];
     $gruppenDef = [
-        'bestaetigung' => ['Bestätigung offen', false, static function (array $t) use ($notizKurz): array {
-            $tage = (int) $t['tage'];
-            return [
-                'firma'   => (string) $t['firma'],
-                'frist'   => $tage <= 0 ? 'heute zugesagt' : 'zugesagt vor ' . $tage . ' Tagen',
-                'telefon' => (string) ($t['telefon'] ?? ''),
-                'notiz'   => $notizKurz($t['notizen'] ?? null),
-            ];
-        }],
-        'bedingungen' => ['Bedingungen nicht bestätigt', false, static function (array $t) use ($notizKurz): array {
-            $tage = (int) $t['tage'];
-            return [
-                'firma'   => (string) $t['firma'],
-                'frist'   => $tage <= 0 ? 'seit heute offen' : 'seit ' . $tage . ' Tagen offen',
-                'telefon' => (string) ($t['telefon'] ?? ''),
-                'notiz'   => $notizKurz($t['notizen'] ?? null),
-            ];
-        }],
-        'wiedervorlagen' => ['Wiedervorlage fällig', false, static function (array $t) use ($notizKurz): array {
-            $tage = (int) $t['tage'];
-            return [
-                'firma'   => (string) $t['firma'],
-                'frist'   => $tage <= 0 ? 'heute fällig' : $tage . ' Tage überfällig',
-                'telefon' => (string) ($t['telefon'] ?? ''),
-                'notiz'   => $notizKurz($t['notizen'] ?? null),
-            ];
-        }],
-        'versand_fehler' => ['Versand-Queue: Fehler', true, static function (array $t): array {
-            return [
-                'firma'   => (string) $t['firma'],
-                'frist'   => $t['fehler'] !== '' ? (string) $t['fehler'] : 'Versand fehlgeschlagen',
-                'telefon' => '',
-                'notiz'   => '',
-            ];
-        }],
-        'nie_angeschrieben' => ['Noch nie angeschrieben', false, static function (array $t) use ($notizKurz): array {
-            $tage = (int) $t['tage'];
-            return [
-                'firma'   => (string) $t['firma'],
-                'frist'   => $tage <= 0 ? 'heute angelegt' : 'liegt ' . $tage . ' Tage',
-                'telefon' => (string) ($t['telefon'] ?? ''),
-                'notiz'   => $notizKurz($t['notizen'] ?? null),
-            ];
-        }],
-        'ohne_reaktion' => ['Angeschrieben ohne Reaktion', false, static function (array $t) use ($notizKurz): array {
-            return [
-                'firma'   => (string) $t['firma'],
-                'frist'   => (int) $t['tage'] . ' Tage ohne Antwort',
-                'telefon' => (string) ($t['telefon'] ?? ''),
-                'notiz'   => $notizKurz($t['notizen'] ?? null),
-            ];
-        }],
+        'bestaetigung' => [
+            'Bestätigungs-Mail offen',
+            'Hat zugesagt — die Bestätigung mit den Sponsoring-Bedingungen ist noch nicht raus.',
+            false, $vier,
+            static function (array $t) use ($notizKurz, $statusText, $kontaktWert): array {
+                $tage = (int) $t['tage'];
+                return [['t' => (string) $t['firma'], 'k' => 'firma'],
+                        ['t' => $notizKurz($t['notizen'] ?? null), 'k' => 'info'],
+                        ['t' => $statusText($t, $tage <= 0 ? 'heute zugesagt' : 'seit ' . $tage . ' Tagen', false), 'k' => 'status'],
+                        ['t' => $kontaktWert($t), 'k' => 'kontakt']];
+            }],
+        'bedingungen' => [
+            'Sponsoring-Bedingungen nicht bestätigt',
+            'Bestätigung ist raus, die Bedingungen sind aber noch nicht gegengezeichnet.',
+            false, $vier,
+            static function (array $t) use ($notizKurz, $statusText, $kontaktWert): array {
+                $tage = (int) $t['tage'];
+                return [['t' => (string) $t['firma'], 'k' => 'firma'],
+                        ['t' => $notizKurz($t['notizen'] ?? null), 'k' => 'info'],
+                        ['t' => $statusText($t, $tage <= 0 ? 'seit heute' : 'seit ' . $tage . ' Tagen'), 'k' => 'status'],
+                        ['t' => $kontaktWert($t), 'k' => 'kontakt']];
+            }],
+        'wiedervorlagen' => [
+            'Wiedervorlage fällig',
+            'Termin gesetzt und erreicht — hier war jemand schon dran und wollte nachfassen.',
+            false, $vier,
+            static function (array $t) use ($notizKurz, $statusText, $kontaktWert): array {
+                $tage = (int) $t['tage'];
+                return [['t' => (string) $t['firma'], 'k' => 'firma'],
+                        ['t' => $notizKurz($t['notizen'] ?? null), 'k' => 'info'],
+                        ['t' => $statusText($t, $tage <= 0 ? 'heute fällig' : $tage . ' Tage überfällig'), 'k' => 'status'],
+                        ['t' => $kontaktWert($t), 'k' => 'kontakt']];
+            }],
+        'versand_fehler' => [
+            'Versand-Queue: Fehler',
+            'Ein Anschreiben ist nicht rausgegangen — bleibt sonst unbemerkt liegen.',
+            true, ['Firma', 'Fehler'],
+            static function (array $t): array {
+                return [['t' => (string) $t['firma'], 'k' => 'firma'],
+                        ['t' => $t['fehler'] !== '' ? (string) $t['fehler'] : 'Versand fehlgeschlagen', 'k' => 'info']];
+            }],
+        'nie_angeschrieben' => [
+            'Noch nie angeschrieben',
+            'Steht im Bestand, wurde aber nie angesprochen.',
+            false, $vier,
+            static function (array $t) use ($notizKurz, $statusText, $kontaktWert): array {
+                $tage = (int) $t['tage'];
+                return [['t' => (string) $t['firma'], 'k' => 'firma'],
+                        ['t' => $notizKurz($t['notizen'] ?? null), 'k' => 'info'],
+                        ['t' => $statusText($t, $tage <= 0 ? 'heute angelegt' : 'liegt ' . $tage . ' Tage', false), 'k' => 'status'],
+                        ['t' => $kontaktWert($t), 'k' => 'kontakt']];
+            }],
+        'ohne_reaktion' => [
+            'Angeschrieben ohne Reaktion',
+            'Seit mindestens ' . TODO_KEINE_REAKTION_TAGE . ' Tagen keine Rückmeldung und kein Termin gesetzt.',
+            false, $vier,
+            static function (array $t) use ($notizKurz, $statusText, $kontaktWert): array {
+                return [['t' => (string) $t['firma'], 'k' => 'firma'],
+                        ['t' => $notizKurz($t['notizen'] ?? null), 'k' => 'info'],
+                        ['t' => $statusText($t, (int) $t['tage'] . ' Tage ohne Antwort', false), 'k' => 'status'],
+                        ['t' => $kontaktWert($t), 'k' => 'kontakt']];
+            }],
     ];
 
     // Zeilen nach Zuständigem einsortieren. 0 = ohne Zuständigen.
     $proUser = [];
-    foreach ($gruppenDef as $key => [$titel, $istFehler, $bauer]) {
+    foreach ($gruppenDef as $key => [$titel, $sub, $istFehler, $kopf, $bauer]) {
         foreach (($todos[$key] ?? []) as $zeile) {
             if ($modus === 'neu' && !todoIstNeu($key, $zeile)) {
                 continue;
             }
             $uid = (int) ($zeile['zustaendig_user_id'] ?? 0);
-            $proUser[$uid][$key][] = $bauer($zeile);
+            $proUser[$uid][$key][] = ['zellen' => $bauer($zeile)];
         }
     }
 
@@ -191,8 +218,8 @@ try {
             return $zeilen;
         }
         $gekuerzt = array_slice($zeilen, 0, TODO_LISTE_MAX);
-        // Als eigene Zeile markiert, damit die Mail sie ohne Spalten rendert.
-        $gekuerzt[] = ['firma' => '… und ' . $rest . ' weitere auf der Seite', 'mehr' => true];
+        // Über alle Spalten laufende Zeile — kein Eintrag, nur ein Verweis.
+        $gekuerzt[] = ['mehr' => '… und ' . $rest . ' weitere auf der Seite'];
         return $gekuerzt;
     };
 
@@ -208,20 +235,20 @@ try {
         // Gruppen in definierter Reihenfolge zusammenbauen
         $gruppen = [];
         $anzahl = 0;
-        foreach ($gruppenDef as $key => [$titel, $istFehler, $_]) {
+        foreach ($gruppenDef as $key => [$titel, $sub, $istFehler, $kopf, $_]) {
             if (!empty($meine[$key])) {
                 $anzahl += count($meine[$key]);
-                $gruppen[] = ['titel' => $titel, 'ist_fehler' => $istFehler,
-                              'zeilen' => $deckeln($meine[$key])];
+                $gruppen[] = ['titel' => $titel, 'sub' => $sub, 'ist_fehler' => $istFehler,
+                              'kopf' => $kopf, 'zeilen' => $deckeln($meine[$key])];
             }
         }
         if ($istAdmin && $herrenlos !== []) {
-            foreach ($gruppenDef as $key => [$titel, $istFehler, $_]) {
+            foreach ($gruppenDef as $key => [$titel, $sub, $istFehler, $kopf, $_]) {
                 if (!empty($herrenlos[$key])) {
                     $anzahl += count($herrenlos[$key]);
                     $gruppen[] = ['titel' => 'Ohne Zuständigen — bitte zuordnen: ' . $titel,
-                                  'ist_fehler' => $istFehler,
-                                  'zeilen' => $deckeln($herrenlos[$key])];
+                                  'sub' => $sub, 'ist_fehler' => $istFehler,
+                                  'kopf' => $kopf, 'zeilen' => $deckeln($herrenlos[$key])];
                 }
             }
         }
@@ -240,15 +267,18 @@ try {
             foreach ($gruppen as $g) {
                 echo '  ' . $g['titel'] . ' (' . count($g['zeilen']) . ")\n";
                 foreach ($g['zeilen'] as $z) {
-                    $teile = array_filter([
-                        $z['firma'] ?? '',
-                        trim((string) ($z['frist'] ?? '')),
-                        trim((string) ($z['telefon'] ?? '')) !== '' ? 'Tel. ' . $z['telefon'] : '',
-                    ], static fn ($t) => $t !== '');
-                    echo '    • ' . implode(' · ', $teile) . "\n";
-                    if (trim((string) ($z['notiz'] ?? '')) !== '') {
-                        echo '        ' . $z['notiz'] . "\n";
+                    if (isset($z['mehr'])) {
+                        echo '    ' . $z['mehr'] . "\n";
+                        continue;
                     }
+                    $werte = [];
+                    foreach ($z['zellen'] as $zelle) {
+                        $t = trim(str_replace('|', ' ', $zelle['t']));
+                        if ($t !== '') {
+                            $werte[] = $t;
+                        }
+                    }
+                    echo '    • ' . implode(' · ', $werte) . "\n";
                 }
             }
             $sent++;

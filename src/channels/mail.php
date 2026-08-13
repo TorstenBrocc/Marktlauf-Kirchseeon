@@ -473,17 +473,25 @@ function sendVereinAnschreiben(
 }
 
 /**
- * Überblick „Offene ToDos Sponsoring" — als echte HTML-Mail, gleiche Ordnung wie
- * orga/offene_todos.php.
+ * Überblick „Offene ToDos Sponsoring" als HTML-Mail.
  *
- * Bewusst NICHT über marktlaufMailBody(): das escaped einen Text und setzt nur
- * Zeilenumbrüche — daraus wurde in der Praxis ein unlesbarer Bandwurm. Hier wird
- * stattdessen eine Tabelle je Gruppe gebaut (grünes Titelband, Spalten Firma /
- * Frist / Telefon, Notiz als eigene Zeile darunter). Tabellen + Inline-Styles,
- * weil Mailprogramme weder Grid noch Flexbox noch <style>-Blöcke verlässlich können.
+ * Spiegelt bewusst 1:1 das Design von orga/offene_todos.php (Bauvorlage .hd-card /
+ * .hd-table aus css/orga.css): weiße Karte je Gruppe, großer dunkler Titel mit grauer
+ * Zählpille, Beschreibungszeile, Tabelle mit grauem Kopf und den Spalten
+ * Firma / Info / Status–Frist / Kontakt. Fehler-Gruppen haben einen roten Titel, sonst
+ * dieselbe Karte.
  *
- * @param array<int,array{titel:string, ist_fehler?:bool, zeilen:array<int,array{
- *            firma:string, frist?:string, telefon?:string, notiz?:string, mehr?:bool}>}> $gruppen
+ * Warum Tabellen und Inline-Styles: Mailprogramme können weder Grid noch Flexbox noch
+ * <style>-Blöcke verlässlich. Der Kasten-Schatten der Seite wird zu einem 1px-Rahmen,
+ * weil box-shadow in vielen Clients wegfällt.
+ *
+ * Die Farb- und Größenwerte sind die aufgelösten Tokens aus css/orga.css (--text #333,
+ * --text-light #666, --bg #f5f5f5, --border #ddd, --link #007230, --error #d32f2f).
+ * CSS-Variablen funktionieren in Mails nicht, deshalb hier als Literale — ändert sich
+ * ein Token, gehört es hier nachgezogen.
+ *
+ * @param array<int,array{titel:string, sub?:string, ist_fehler?:bool, kopf:array<int,string>,
+ *            zeilen:array<int,array{zellen?:array<int,array{t:string,k:string}>, mehr?:string}>}> $gruppen
  */
 function sendOffeneTodosDigest(string $to, string $name, int $gesamt, array $gruppen, string $modus = 'voll'): bool {
     $subject = $modus === 'neu'
@@ -497,32 +505,44 @@ function sendOffeneTodosDigest(string $to, string $name, int $gesamt, array $gru
     $seite = 'https://atsv-kirchseeon-marktlauf.de/orga/offene_todos.php';
 
     $e = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
-    $rand = '1px solid #e2e2e2';
 
-    // ---- Text-Fassung (Fallback für Clients ohne HTML) ----
+    // Zellen-Styles je Sorte — Gegenstück zu .hd-firma/.hd-info/.hd-status/.hd-kontakt.
+    $zellStil = [
+        'firma'   => 'font-weight:600',
+        'info'    => 'color:#666666;font-style:italic',
+        'status'  => 'color:#666666',
+        'kontakt' => 'white-space:nowrap',
+        'plain'   => '',
+    ];
+
+    // ---- Text-Fassung (Fallback) ----
     $text = $anrede . "\n\n" . $einleitung . "\n";
     foreach ($gruppen as $g) {
         if (empty($g['zeilen'])) {
             continue;
         }
-        $text .= "\n" . $g['titel'] . ' (' . count($g['zeilen']) . ")\n";
+        $text .= "\n" . $g['titel'] . "\n";
         foreach ($g['zeilen'] as $z) {
-            $teile = array_filter([
-                $z['firma'] ?? '',
-                trim((string) ($z['frist'] ?? '')),
-                trim((string) ($z['telefon'] ?? '')) !== '' ? 'Tel. ' . $z['telefon'] : '',
-            ], static fn ($t) => $t !== '');
-            $text .= '  - ' . implode(' · ', $teile) . "\n";
-            if (trim((string) ($z['notiz'] ?? '')) !== '') {
-                $text .= '      ' . $z['notiz'] . "\n";
+            if (isset($z['mehr'])) {
+                $text .= '  ' . $z['mehr'] . "\n";
+                continue;
             }
+            $werte = [];
+            foreach ($z['zellen'] as $zelle) {
+                if (trim($zelle['t']) !== '') {
+                    $werte[] = trim($zelle['t']);
+                }
+            }
+            $text .= '  - ' . implode(' · ', $werte) . "\n";
         }
     }
     $text .= "\nAlles auf einen Blick: " . $seite
         . "\n\nFragen? info@atsv-kirchseeon-marktlauf.de\n\nSportliche Grüße\nDein Marktlauf-Team";
 
     // ---- HTML-Fassung ----
-    $html = '<div style="font:14px/1.5 -apple-system,\'Segoe UI\',Helvetica,Arial,sans-serif;color:#222222;max-width:640px">'
+    $html = '<div style="font:14px/1.5 -apple-system,\'Segoe UI\',Helvetica,Arial,sans-serif;'
+          . 'color:#333333;background:#f5f5f5;padding:16px">'
+          . '<div style="max-width:660px;margin:0 auto">'
           . '<p style="margin:0 0 12px 0">' . $e($anrede) . '</p>'
           . '<p style="margin:0 0 18px 0">' . $e($einleitung) . '</p>';
 
@@ -530,57 +550,83 @@ function sendOffeneTodosDigest(string $to, string $name, int $gesamt, array $gru
         if (empty($g['zeilen'])) {
             continue;
         }
-        $bandFarbe = !empty($g['ist_fehler']) ? '#d32f2f' : '#009640';
+        $titelFarbe = !empty($g['ist_fehler']) ? '#d32f2f' : '#333333';
+        $anzahl = count(array_filter($g['zeilen'], static fn (array $z): bool => !isset($z['mehr'])));
+
+        $html .= '<div style="background:#ffffff;border:1px solid #dddddd;border-radius:8px;'
+               . 'padding:16px;margin:0 0 16px 0">'
+               . '<h2 style="font-size:20px;font-weight:700;color:' . $titelFarbe . ';margin:0 0 6px 0">'
+               . $e($g['titel'])
+               . ' <span style="font-size:11px;font-weight:700;color:#666666;background:#f5f5f5;'
+               . 'border-radius:999px;padding:2px 8px;vertical-align:middle">' . $anzahl . '</span></h2>';
+
+        if (trim((string) ($g['sub'] ?? '')) !== '') {
+            $html .= '<p style="font-size:12px;color:#666666;margin:0 0 12px 0">' . $e((string) $g['sub']) . '</p>';
+        }
+
         $html .= '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"'
-               . ' style="border-collapse:collapse;width:100%;margin:0 0 20px 0;border:' . $rand . ';border-radius:6px">'
-               . '<tr><td colspan="3" style="background:' . $bandFarbe . ';color:#ffffff;font-weight:700;'
-               . 'padding:9px 12px;font-size:14px">' . $e($g['titel'])
-               . ' <span style="font-weight:400;opacity:.85">(' . count($g['zeilen']) . ')</span></td></tr>';
+               . ' style="border-collapse:collapse;width:100%"><tr>';
+        foreach ($g['kopf'] as $spalte) {
+            $html .= '<th align="left" style="background:#f5f5f5;font-size:11px;text-transform:uppercase;'
+                   . 'letter-spacing:0.05em;color:#666666;font-weight:700;padding:7px 10px;'
+                   . 'border-bottom:1px solid #dddddd">' . $e($spalte) . '</th>';
+        }
+        $html .= '</tr>';
 
         $letzter = count($g['zeilen']) - 1;
         foreach ($g['zeilen'] as $i => $z) {
-            $hatNotiz = trim((string) ($z['notiz'] ?? '')) !== '';
-            $u = ($i === $letzter && !$hatNotiz) ? '0' : $rand;
-            $ur = ($i === $letzter) ? '0' : $rand;
-
-            if (!empty($z['mehr'])) {
-                $html .= '<tr><td colspan="3" style="padding:8px 12px;color:#666666;font-size:13px;'
-                       . 'border-top:' . $rand . '">' . $e($z['firma']) . '</td></tr>';
+            $u = $i === $letzter ? '0' : '1px solid #dddddd';
+            if (isset($z['mehr'])) {
+                $html .= '<tr><td colspan="' . count($g['kopf']) . '" style="padding:8px 10px;'
+                       . 'font-size:12px;color:#666666;border-bottom:' . $u . '">'
+                       . $e($z['mehr']) . '</td></tr>';
                 continue;
             }
-
-            $tel = trim((string) ($z['telefon'] ?? ''));
-            $telZelle = $tel === '' ? '' :
-                '<a href="tel:' . $e(todoTelefonHref($tel)) . '"'
-                . ' style="color:#009640;text-decoration:none;white-space:nowrap">' . $e($tel) . '</a>';
-
-            $html .= '<tr>'
-                   . '<td style="padding:8px 12px 6px 12px;font-weight:600;border-bottom:' . $u . '">'
-                   . $e($z['firma']) . '</td>'
-                   . '<td style="padding:8px 8px 6px 8px;color:#555555;font-size:13px;white-space:nowrap;'
-                   . 'border-bottom:' . $u . '">' . $e(trim((string) ($z['frist'] ?? ''))) . '</td>'
-                   . '<td align="right" style="padding:8px 12px 6px 8px;font-size:13px;border-bottom:' . $u . '">'
-                   . $telZelle . '</td>'
-                   . '</tr>';
-
-            if ($hatNotiz) {
-                $html .= '<tr><td colspan="3" style="padding:0 12px 8px 12px;color:#777777;font-size:12px;'
-                       . 'font-style:italic;border-bottom:' . $ur . '">' . $e((string) $z['notiz']) . '</td></tr>';
+            $html .= '<tr>';
+            foreach ($z['zellen'] as $zelle) {
+                $inhalt = $zelle['k'] === 'kontakt'
+                    ? todoKontaktMailZelle($zelle['t'])
+                    : $e($zelle['t']);
+                $html .= '<td style="padding:8px 10px;font-size:14px;vertical-align:top;border-bottom:' . $u . ';'
+                       . $zellStil[$zelle['k']] . '">' . $inhalt . '</td>';
             }
+            $html .= '</tr>';
         }
-        $html .= '</table>';
+        $html .= '</table></div>';
     }
 
     $social = marktlaufSocialLinks();
-    $html .= '<p style="margin:0 0 6px 0"><a href="' . $seite . '"'
-           . ' style="display:inline-block;background:#009640;color:#ffffff;text-decoration:none;'
-           . 'padding:10px 16px;border-radius:6px;font-weight:600">Offene ToDos öffnen</a></p>'
+    $html .= '<p style="margin:4px 0 0 0"><a href="' . $seite . '"'
+           . ' style="display:inline-block;background:#007230;color:#ffffff;text-decoration:none;'
+           . 'padding:10px 16px;border-radius:8px;font-weight:600">Offene ToDos öffnen</a></p>'
            . '<p style="margin:14px 0 0 0;color:#666666;font-size:12px">'
            . 'Fragen? info@atsv-kirchseeon-marktlauf.de</p>'
            . '<div style="margin-top:16px">' . $social['html'] . '</div>'
-           . '</div>';
+           . '</div></div>';
 
     return sendMail($to, $subject, $text . "\n\n" . $social['text'], $html);
+}
+
+/**
+ * Kontakt-Zelle der Mail: Telefonnummer als tel:-Link, Mailadresse als ✉.
+ * Erwartet "telefon|email" — die Zusammensetzung passiert im Digest, damit hier keine
+ * zweite Formatierungslogik entsteht.
+ */
+function todoKontaktMailZelle(string $wert): string {
+    [$tel, $mail] = array_pad(explode('|', $wert, 2), 2, '');
+    $tel = trim($tel);
+    $mail = trim($mail);
+    $teile = [];
+    if ($tel !== '') {
+        $teile[] = '<a href="tel:' . htmlspecialchars(todoTelefonHref($tel), ENT_QUOTES, 'UTF-8') . '"'
+                 . ' style="color:#007230;text-decoration:none;white-space:nowrap">'
+                 . htmlspecialchars($tel, ENT_QUOTES, 'UTF-8') . '</a>';
+    }
+    if ($mail !== '') {
+        $teile[] = '<a href="mailto:' . htmlspecialchars($mail, ENT_QUOTES, 'UTF-8') . '"'
+                 . ' style="color:#007230;text-decoration:none">✉&nbsp;Mail</a>';
+    }
+    return $teile === [] ? '' : implode('<br>', $teile);
 }
 
 function sendAufgabeErinnerung(string $to, string $name, string $aufgabeTitel, string $faelligAm): bool {
