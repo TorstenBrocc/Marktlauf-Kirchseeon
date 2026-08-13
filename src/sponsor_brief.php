@@ -141,7 +141,8 @@ vielen Dank für Ihre Unterstützung des Marktlaufs Kirchseeon. Anbei erhalten S
 Über einen Ausgleich auf die auf der Rechnung genannte Bankverbindung innerhalb von 14 Tagen freuen wir uns.
 
 Mit sportlichen Grüßen
-ATSV Kirchseeon e.V. – Abteilung Marktlauf
+
+{{signatur}}
 MD;
 
     $bedingungen = <<<MD
@@ -343,6 +344,10 @@ function sponsorBriefPlatzhalterHilfe(string $slug = ''): array {
             '{{netto}}'           => 'Nettobetrag',
             '{{leistung}}'        => 'Leistung/Paket, z. B. Gold-Sponsoring Marktlauf 2026',
             '{{zeitraum}}'        => 'Leistungszeitraum',
+            '{{signatur}}'        => "Allgemeine Orga-Signatur (Orga-Team, info@) mit Website und Social-Media-Logos.\n"
+                                     . "Kommt aus der Mail-Konfiguration — bewusst OHNE Personenbezug, weil die\n"
+                                     . "Rechnung vom Team und nicht von einer Person kommt.\n"
+                                     . "Enthält KEINE Grußformel – die steht im Text darüber.",
         ];
     }
     return [
@@ -614,6 +619,24 @@ function marktlaufSocialLinks(): array {
     ];
 }
 
+/**
+ * Allgemeine Absender-Signatur (Orga-Team / info@) aus der Mail-Konfiguration —
+ * bewusst ohne Personenbezug. Für Mails, die vom Team statt von einer Person
+ * kommen (Rechnungs-Begleitmail) und als Fallback von sponsorSignatur().
+ * Leere Config-Werte fallen bei Name/Rolle auf die Team-Defaults zurück.
+ */
+function sponsorAllgemeineSignatur(): array {
+    $cfg = getConfig()['sponsor_mail'] ?? [];
+    $name = trim((string) ($cfg['sender_name'] ?? ''));
+    $role = trim((string) ($cfg['sender_role'] ?? ''));
+    return [
+        'name'  => $name !== '' ? $name : 'Orga-Team Marktlauf Kirchseeon',
+        'role'  => $role !== '' ? $role : 'Sponsoring · Marktlauf Kirchseeon, ATSV Kirchseeon e.V.',
+        'phone' => (string) ($cfg['sender_phone'] ?? ''),
+        'email' => (string) ($cfg['smtp_from'] ?? ''),
+    ];
+}
+
 function sponsorSignatur(PDO $pdo, int $userId): array {
     if ($userId > 0) {
         try {
@@ -630,13 +653,35 @@ function sponsorSignatur(PDO $pdo, int $userId): array {
             }
         } catch (PDOException $e) {}
     }
-    $cfg = getConfig()['sponsor_mail'] ?? [];
-    return [
-        'name'  => $cfg['sender_name']  ?? 'Orga-Team Marktlauf Kirchseeon',
-        'role'  => $cfg['sender_role']  ?? 'Sponsoring · Marktlauf Kirchseeon, ATSV Kirchseeon e.V.',
-        'phone' => $cfg['sender_phone'] ?? '',
-        'email' => $cfg['smtp_from']    ?? '',
-    ];
+    return sponsorAllgemeineSignatur();
+}
+
+/**
+ * Signatur-Daten als vertrauenswürdige HTML/Text-Blöcke rendern — eine Quelle
+ * für Anschreiben-Kontext und Rechnungs-Begleitmail. Ohne Grußformel: die
+ * schreibt der Absender frei in den Brieftext.
+ */
+function sponsorSignaturBlocks(array $sig): array {
+    $sigRoleHtml  = $sig['role']  !== '' ? htmlspecialchars($sig['role'])  . '<br>' : '';
+    $sigPhoneHtml = $sig['phone'] !== '' ? 'T: ' . htmlspecialchars($sig['phone']) : '';
+    $sigEmailHtml = $sig['email'] !== '' ? ($sigPhoneHtml !== '' ? ' | ' : '') . 'M: <a href="mailto:' . htmlspecialchars($sig['email']) . '">' . htmlspecialchars($sig['email']) . '</a>' : '';
+    $social  = marktlaufSocialLinks();
+    $html = '<p>'
+        . '<strong>' . htmlspecialchars($sig['name']) . '</strong><br>'
+        . $sigRoleHtml
+        . ($sigPhoneHtml . $sigEmailHtml !== '' ? $sigPhoneHtml . $sigEmailHtml . '<br>' : '')
+        . 'W: <a href="https://atsv-kirchseeon-marktlauf.de">atsv-kirchseeon-marktlauf.de</a><br><br>'
+        . $social['html'] . '</p>';
+
+    $parts = [];
+    if ($sig['phone'] !== '') $parts[] = 'T: ' . $sig['phone'];
+    if ($sig['email'] !== '') $parts[] = 'M: ' . $sig['email'];
+    $parts[] = 'W: atsv-kirchseeon-marktlauf.de';
+    $roleText = $sig['role'] !== '' ? $sig['role'] . "\n" : '';
+    $text = "{$sig['name']}\n{$roleText}" . implode(' | ', $parts)
+        . "\n\n" . $social['text'];
+
+    return ['html' => $html, 'text' => $text];
 }
 
 /**
@@ -725,25 +770,7 @@ function sponsorBriefContext(PDO $pdo, int $userId, string $anrede, string $vorn
         }
     } catch (PDOException $e) {}
 
-    $sigRoleHtml  = $sig['role']  !== '' ? htmlspecialchars($sig['role'])  . '<br>' : '';
-    $sigPhoneHtml = $sig['phone'] !== '' ? 'T: ' . htmlspecialchars($sig['phone']) : '';
-    $sigEmailHtml = $sig['email'] !== '' ? ($sigPhoneHtml !== '' ? ' | ' : '') . 'M: <a href="mailto:' . htmlspecialchars($sig['email']) . '">' . htmlspecialchars($sig['email']) . '</a>' : '';
-    // Ohne Grußformel: die schreibt der Absender frei in den Brieftext.
-    $social  = marktlaufSocialLinks();
-    $sigHtml = '<p>'
-        . '<strong>' . htmlspecialchars($sig['name']) . '</strong><br>'
-        . $sigRoleHtml
-        . ($sigPhoneHtml . $sigEmailHtml !== '' ? $sigPhoneHtml . $sigEmailHtml . '<br>' : '')
-        . 'W: <a href="https://atsv-kirchseeon-marktlauf.de">atsv-kirchseeon-marktlauf.de</a><br><br>'
-        . $social['html'] . '</p>';
-
-    $sigParts = [];
-    if ($sig['phone'] !== '') $sigParts[] = 'T: ' . $sig['phone'];
-    if ($sig['email'] !== '') $sigParts[] = 'M: ' . $sig['email'];
-    $sigParts[] = 'W: atsv-kirchseeon-marktlauf.de';
-    $sigRoleText = $sig['role'] !== '' ? $sig['role'] . "\n" : '';
-    $sigText = "{$sig['name']}\n{$sigRoleText}" . implode(' | ', $sigParts)
-        . "\n\n" . $social['text'];
+    $sigBlocks = sponsorSignaturBlocks($sig);
 
     return [
         'inline' => [
@@ -758,11 +785,11 @@ function sponsorBriefContext(PDO $pdo, int $userId, string $anrede, string $vorn
         ],
         'blocksHtml' => [
             'paket_tabelle' => sponsorBriefPaketTabelleHtml($pdo),
-            'signatur'      => $sigHtml,
+            'signatur'      => $sigBlocks['html'],
         ],
         'blocksText' => [
             'paket_tabelle' => sponsorBriefPaketTextListe($pdo),
-            'signatur'      => $sigText,
+            'signatur'      => $sigBlocks['text'],
         ],
     ];
 }
@@ -824,12 +851,16 @@ function rechnungMailInlineFromRow(array $r): array {
     ];
 }
 
-/** Kontext für die Rechnungs-Begleitmail (Blöcke leer — Template hat feste Grußformel). */
+/**
+ * Kontext für die Rechnungs-Begleitmail. {{signatur}} ist hier die allgemeine
+ * Orga-Signatur (info@) — die Rechnung kommt vom Team, nicht von einer Person.
+ */
 function rechnungMailContext(array $r): array {
+    $sig = sponsorSignaturBlocks(sponsorAllgemeineSignatur());
     return [
         'inline'     => rechnungMailInlineFromRow($r),
-        'blocksHtml' => [],
-        'blocksText' => [],
+        'blocksHtml' => ['signatur' => $sig['html']],
+        'blocksText' => ['signatur' => $sig['text']],
     ];
 }
 
