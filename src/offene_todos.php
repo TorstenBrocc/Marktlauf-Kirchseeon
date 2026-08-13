@@ -288,8 +288,8 @@ function todosOhneReaktion(PDO $pdo): array
  * ohne Frist und Verantwortlichen fiel nie auf, wenn etwas liegen blieb.
  *
  * Frist und Verantwortlicher sind **optional** (TT 2026-08-13): schnell erfassen soll
- * möglich bleiben. `hat_termin` sagt den Verbrauchern, welcher Fall vorliegt — die Mail
- * braucht das, um terminierte von nachrichtlichen Einträgen zu unterscheiden.
+ * möglich bleiben. Ob ein Termin gesetzt ist, sagt `faellig_am` (NULL = ohne Frist) —
+ * ein zusätzliches Flag wäre nur dessen Negation und damit toter Vorrat.
  *
  * Die Gesamtzahl lässt diese Gruppe weiterhin außen vor (`offeneTodosAlle()`); ob
  * terminierte Aufgaben künftig mitzählen, ist eine offene Frage an TT.
@@ -298,7 +298,6 @@ function todosSponsorAufgaben(PDO $pdo): array
 {
     $stmt = $pdo->query("
         SELECT a.id, a.kontext_id AS sponsor_id, a.titel, a.notiz, a.faellig_am,
-               a.faellig_am IS NOT NULL AS hat_termin,
                DATEDIFF(CURDATE(), a.faellig_am) AS tage_ueberfaellig,
                s.firma, u.name AS verantwortlich_name
         FROM aufgaben a
