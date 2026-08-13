@@ -22,6 +22,7 @@ require_once __DIR__ . '/../src/sponsor_status.php';
 
 $user = getCurrentUserFromGuard();
 $isAdmin = isAdminFromGuard();
+$csrfToken = generateCsrfToken();
 
 $pdo = getDbConnection();
 $todos = offeneTodosAlle($pdo);
@@ -113,6 +114,9 @@ $rest = static function (array $liste): int {
         .hd-info { color: var(--text-light); font-style: italic; overflow-wrap: anywhere; }
         .hd-status { color: var(--text-light); }
         .hd-kontakt { white-space: nowrap; }
+        .hd-aktion { white-space: nowrap; }
+        .hd-haken { background: none; border: 1px solid var(--border); border-radius: 999px; padding: 0.1rem 0.6rem; font: inherit; font-size: 0.78rem; color: #007230; cursor: pointer; }
+        .hd-haken:hover { border-color: #007230; background: var(--success-bg); }
         .hd-dringend { color: #007230; font-weight: 700; }
         .hd-tag { color: var(--text); }
         .hd-prio { font-size: 0.66rem; font-weight: 700; text-transform: uppercase; color: #007230; border: 1px solid #007230; border-radius: 999px; padding: 0 0.35rem; white-space: nowrap; }
@@ -305,12 +309,22 @@ $rest = static function (array $liste): int {
                 <h2>Aufgaben am Sponsor <span class="hd-count"><?= count($todos['sponsor_aufgaben']) ?></span></h2>
                 <p class="hd-sub">Ohne Termin — diese Aufgaben haben kein Fälligkeitsdatum, deshalb nur nachrichtlich und nicht in der Gesamtzahl.</p>
                 <table class="hd-table">
-                    <thead><tr><th>Firma</th><th>Aufgabe</th></tr></thead>
+                    <thead><tr><th>Firma</th><th>Aufgabe</th><th>Erledigt</th></tr></thead>
                     <tbody>
                     <?php foreach (array_slice($todos['sponsor_aufgaben'], 0, TODO_LISTE_MAX) as $t): ?>
                         <tr>
                             <td class="hd-firma"><?= $firma((int) $t['sponsor_id'], (string) $t['firma']) ?></td>
                             <td class="hd-info"><?= htmlspecialchars($t['titel']) ?></td>
+                            <td class="hd-aktion">
+                                <form method="post" action="api/aufgabe_crud.php">
+                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                                    <input type="hidden" name="action" value="toggle_erledigt">
+                                    <input type="hidden" name="aufgabe_id" value="<?= (int) $t['id'] ?>">
+                                    <input type="hidden" name="sponsor_id" value="<?= (int) $t['sponsor_id'] ?>">
+                                    <input type="hidden" name="zurueck" value="todos">
+                                    <button type="submit" class="hd-haken" title="Als erledigt markieren">○ abhaken</button>
+                                </form>
+                            </td>
                         </tr>
                     <?php endforeach; ?>
                     </tbody>
