@@ -347,8 +347,17 @@ $rest = static function (array $liste): int {
             </section>
             <?php endif; ?>
 
-            <?php /* Immer sichtbar, auch wenn leer — sonst gäbe es keinen Ort zum Anlegen. */ ?>
-            <section class="hd-card ist-nachrichtlich">
+            <?php
+            /* Immer sichtbar, auch wenn leer — sonst gäbe es keinen Ort zum Anlegen.
+               Der graue „nachrichtlich"-Ton gilt nur, solange keine Aufgabe eine Frist hat:
+               terminierte zählen seit 13.08.2026 in die Gesamtzahl, und eine mitzählende
+               Gruppe darf nicht aussehen wie eine, die man auch übergehen kann. */
+            $aufgabenTerminiert = array_filter(
+                $todos['sponsor_aufgaben'],
+                static fn (array $a): bool => !empty($a['faellig_am'])
+            );
+            ?>
+            <section class="hd-card<?= $aufgabenTerminiert ? '' : ' ist-nachrichtlich' ?>">
                 <?= $kopfZeile('sponsor_aufgaben', count($todos['sponsor_aufgaben'])) ?>
                 <?php if (!empty($todos['sponsor_aufgaben'])): ?>
                 <table class="hd-table">
