@@ -46,7 +46,7 @@ return [
         // Bewusst domänenspezifisch — Helfer, Plakate usw. bekommen bei Bedarf eigene
         // Sichten nach demselben Muster. Spec: intern/offene-todos-spec.md
         'key'   => 'offene_todos',
-        'label' => 'Offene ToDos Sponsoring',
+        'label' => 'ToDos Sponsoring',
         'href'  => 'offene_todos.php',
         'kpi'   => static function (PDO $pdo): array {
             require_once __DIR__ . '/../src/offene_todos.php';
