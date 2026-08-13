@@ -26,6 +26,7 @@ $sponsorId = (int) ($_GET['id'] ?? 0);
 $isEdit = $sponsorId > 0;
 $sponsor = null;
 $aufgaben = [];
+$orgaUsers = [];
 $ansprechpartner = [];
 $driveFolderId = '';
 $driveImages = [];
@@ -44,9 +45,19 @@ if ($isEdit) {
         exit;
     }
 
-    $aufgabenStmt = $pdo->prepare('SELECT * FROM sponsor_aufgaben WHERE sponsor_id = :id ORDER BY erledigt ASC, created_at DESC');
+    // Seit Migration 063 liegen Sponsor-Aufgaben in `aufgaben` (kontext_typ='sponsor') —
+    // dieselbe Quelle, aus der die ToDo-Kachel liest. Zwei Tabellen hätten zwei Wahrheiten
+    // ergeben, sobald hier eine Frist gesetzt wird.
+    $aufgabenStmt = $pdo->prepare("
+        SELECT a.*, u.name AS verantwortlich_name
+        FROM aufgaben a
+        LEFT JOIN users u ON u.id = a.verantwortlich_user_id
+        WHERE a.kontext_typ = 'sponsor' AND a.kontext_id = :id
+        ORDER BY (a.status = 'erledigt'), (a.faellig_am IS NULL), a.faellig_am ASC, a.created_at DESC
+    ");
     $aufgabenStmt->execute(['id' => $sponsorId]);
     $aufgaben = $aufgabenStmt->fetchAll();
+    $orgaUsers = orgaUserListe($pdo);
 
     try {
         $apStmt = $pdo->prepare('SELECT * FROM sponsor_ansprechpartner WHERE sponsor_id = :id ORDER BY id ASC');
@@ -949,25 +960,39 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                     <?php else: ?>
                         <ul class="aufgaben-list">
                             <?php foreach ($aufgaben as $a): ?>
+                                <?php $erledigt = ($a['status'] === 'erledigt'); ?>
                                 <li>
-                                    <form method="post" action="api/aufgabe_crud.php" style="display:inline">
+                                    <form method="post" action="api/aufgabe_orga_crud.php" style="display:inline">
                                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                                        <input type="hidden" name="action" value="toggle_erledigt">
-                                        <input type="hidden" name="aufgabe_id" value="<?= $a['id'] ?>">
-                                        <input type="hidden" name="sponsor_id" value="<?= $sponsorId ?>">
-                                        <button type="submit" class="btn-mini <?= $a['erledigt'] ? 'btn-mini-success' : '' ?>" title="<?= $a['erledigt'] ? 'Als offen markieren' : 'Als erledigt markieren' ?>">
-                                            <?= $a['erledigt'] ? '✓' : '○' ?>
+                                        <input type="hidden" name="action" value="set_status">
+                                        <input type="hidden" name="status" value="<?= $erledigt ? 'offen' : 'erledigt' ?>">
+                                        <input type="hidden" name="aufgabe_id" value="<?= (int) $a['id'] ?>">
+                                        <input type="hidden" name="zurueck" value="sponsor">
+                                        <input type="hidden" name="kontext_id" value="<?= $sponsorId ?>">
+                                        <button type="submit" class="btn-mini <?= $erledigt ? 'btn-mini-success' : '' ?>" title="<?= $erledigt ? 'Als offen markieren' : 'Als erledigt markieren' ?>">
+                                            <?= $erledigt ? '✓' : '○' ?>
                                         </button>
                                     </form>
-                                    <span class="aufgabe-text <?= $a['erledigt'] ? 'aufgabe-erledigt' : '' ?>">
+                                    <span class="aufgabe-text <?= $erledigt ? 'aufgabe-erledigt' : '' ?>">
                                         <?= htmlspecialchars($a['titel']) ?>
+                                        <?php if (!empty($a['faellig_am']) || !empty($a['verantwortlich_name'])): ?>
+                                            <small style="color:var(--text-light)">
+                                                <?php if (!empty($a['faellig_am'])): ?>
+                                                    · bis <?= htmlspecialchars(date('d.m.Y', strtotime((string) $a['faellig_am']))) ?>
+                                                <?php endif; ?>
+                                                <?php if (!empty($a['verantwortlich_name'])): ?>
+                                                    · <?= htmlspecialchars($a['verantwortlich_name']) ?>
+                                                <?php endif; ?>
+                                            </small>
+                                        <?php endif; ?>
                                     </span>
                                     <div class="aufgabe-actions">
-                                        <form method="post" action="api/aufgabe_crud.php" style="display:inline" onsubmit="return confirm('Aufgabe löschen?');">
+                                        <form method="post" action="api/aufgabe_orga_crud.php" style="display:inline" onsubmit="return confirm('Aufgabe löschen?');">
                                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                                             <input type="hidden" name="action" value="delete">
-                                            <input type="hidden" name="aufgabe_id" value="<?= $a['id'] ?>">
-                                            <input type="hidden" name="sponsor_id" value="<?= $sponsorId ?>">
+                                            <input type="hidden" name="aufgabe_id" value="<?= (int) $a['id'] ?>">
+                                            <input type="hidden" name="zurueck" value="sponsor">
+                                            <input type="hidden" name="kontext_id" value="<?= $sponsorId ?>">
                                             <button type="submit" class="btn-mini btn-mini-danger" title="Löschen">×</button>
                                         </form>
                                     </div>
@@ -976,11 +1001,22 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                         </ul>
                     <?php endif; ?>
 
-                    <form method="post" action="api/aufgabe_crud.php" class="add-aufgabe-form">
+                    <form method="post" action="api/aufgabe_orga_crud.php" class="add-aufgabe-form">
                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                         <input type="hidden" name="action" value="create">
-                        <input type="hidden" name="sponsor_id" value="<?= $sponsorId ?>">
+                        <input type="hidden" name="kontext_typ" value="sponsor">
+                        <input type="hidden" name="kontext_id" value="<?= $sponsorId ?>">
+                        <input type="hidden" name="zurueck" value="sponsor">
                         <input type="text" name="titel" placeholder="Neue Aufgabe..." required>
+                        <?php /* Frist und Verantwortlicher sind freiwillig (TT 2026-08-13) — wer
+                                nur schnell etwas notieren will, tippt weiterhin nur den Titel. */ ?>
+                        <input type="date" name="faellig_am" title="Frist (optional)">
+                        <select name="verantwortlich_user_id" title="Verantwortlich (optional)">
+                            <option value="">– wer? –</option>
+                            <?php foreach ($orgaUsers as $ou): ?>
+                                <option value="<?= (int) $ou['id'] ?>"><?= htmlspecialchars($ou['name']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
                         <button type="submit" class="btn btn-small btn-primary">Hinzufügen</button>
                     </form>
                 </div>

@@ -217,6 +217,20 @@ function isAdmin(): bool {
     return $user !== null && $user['role'] === 'admin';
 }
 
+/**
+ * Aktive Orga-/Admin-Nutzer für Verantwortlich-Auswahlen.
+ *
+ * Dieselbe Menge, gegen die aufgabe_orga_crud.php einen gewählten Verantwortlichen prüft —
+ * damit kann kein Formular jemanden anbieten, den der Endpoint anschließend ablehnt.
+ */
+function orgaUserListe(PDO $pdo): array {
+    return $pdo->query("
+        SELECT id, name FROM users
+        WHERE role IN ('admin', 'orga') AND active = 1
+        ORDER BY name
+    ")->fetchAll();
+}
+
 function logout(): void {
     initSession();
 
