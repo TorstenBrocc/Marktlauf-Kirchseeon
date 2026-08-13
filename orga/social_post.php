@@ -79,6 +79,8 @@ try {
 
 $schrittText    = trim((string) ($post['llm_text_social'] ?? '')) !== '';
 $schrittGeprueft = $post['geprueft_am'] !== null;
+$bildPfad       = trim((string) ($post['bild_pfad'] ?? ''));
+$schrittGrafik  = $bildPfad !== '';
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -143,7 +145,7 @@ $schrittGeprueft = $post['geprueft_am'] !== null;
                 <span class="sp-step-line">—</span>
                 <span class="sp-step <?= $schrittGeprueft ? 'done' : '' ?>" id="sp-step-geprueft"><?= $schrittGeprueft ? '✓ ' : '' ?>2 Geprüft</span>
                 <span class="sp-step-line">—</span>
-                <span class="sp-step">3 Grafik</span>
+                <span class="sp-step <?= $schrittGrafik ? 'done' : '' ?>"><?= $schrittGrafik ? '✓ ' : '' ?>3 Grafik</span>
                 <span class="sp-step-line">—</span>
                 <span class="sp-step">4 Versand</span>
             </div>
@@ -206,8 +208,20 @@ $schrittGeprueft = $post['geprueft_am'] !== null;
 
         <div class="hd-card">
             <h2>3 · Grafik</h2>
-            <p class="sp-platzhalter">Kommt mit dem nächsten Bau-Schnitt (Vorlagen-Werk als Grafik-Engine).
-                Bis dahin: <a href="social_orchestrator.php?anlass=<?= rawurlencode($anlassKey) ?>">Grafik im Orchestrator erzeugen</a> (Schritt 2 dort).</p>
+            <?php if ($schrittGrafik): ?>
+            <div style="display:flex;gap:1rem;align-items:flex-start;flex-wrap:wrap">
+                <img src="../<?= htmlspecialchars($bildPfad) ?>" alt="Grafik dieses Posts"
+                     style="max-width:240px;border-radius:8px;border:1px solid var(--border)">
+                <div>
+                    <p class="sp-hinweis" style="margin:0 0 0.6rem">Grafik hängt am Post — der Versand nutzt sie.</p>
+                    <a class="btn btn-secondary btn-small" href="vorlagen.php?post=<?= (int) $postId ?>&amp;fahrplan=<?= (int) $fahrplanId ?>">Grafik ändern (Vorlagen-Werk)</a>
+                </div>
+            </div>
+            <?php else: ?>
+            <p class="sp-platzhalter" style="margin-bottom:0.7rem">Noch keine Grafik — im Vorlagen-Werk erzeugen
+                (Vorlage passend zum Thema, „Für Post übernehmen" speichert sie hier).</p>
+            <a class="btn btn-primary btn-small" href="vorlagen.php?post=<?= (int) $postId ?>&amp;fahrplan=<?= (int) $fahrplanId ?>">Grafik erstellen (Vorlagen-Werk)</a>
+            <?php endif; ?>
         </div>
 
         <div class="hd-card">
