@@ -66,7 +66,10 @@ if (($_POST['mit_merkfeld'] ?? '') === '1') {
 }
 $userInput = implode("\n\n", $parts);
 
-$article = llmGenerate(llmPromptPress(),  $userInput, $provider);
+// Presse nur, wenn gewuenscht (Post-Detail sendet das Presse-Merkmal des Anlasses mit;
+// Default 1 haelt den alten Orchestrator unveraendert)
+$mitPresse = ($_POST['mit_presse'] ?? '1') === '1';
+$article = $mitPresse ? llmGenerate(llmPromptPress(), $userInput, $provider) : '';
 $social  = llmGenerate(llmPromptSocial(), $userInput, $provider);
 
 if ($article === '' && $social === '') {
