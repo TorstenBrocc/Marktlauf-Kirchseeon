@@ -59,10 +59,24 @@ function todoNotizStand(?string $notizen): string
     if ($text === '') {
         return '';
     }
-    $absaetze = preg_split('/\R\s*\R/', $text) ?: [];
-    $letzter = trim((string) end($absaetze));
+    $absaetze = array_values(array_filter(array_map('trim', preg_split('/\R\s*\R/', $text) ?: [])));
+
+    // Datenpflege-Notizen überspringen. Die stehen zwar zuletzt im Feld, beantworten
+    // aber nicht die Frage „was ist als Nächstes zu tun" — „Firmiert als Radlarzt UG"
+    // hilft beim Anruf nicht weiter, „auf Mailbox gesprochen" schon. Gesucht ist der
+    // letzte Absatz, der KEINE Datenpflege ist; gibt es nur solche, zeigen wir eben den.
+    $istDatenpflege = static function (string $absatz): bool {
+        return (bool) preg_match('/^(Datenpflege|Recherche|Umbenannt|Import)\b/iu', $absatz);
+    };
+    $letzter = '';
+    foreach (array_reverse($absaetze) as $absatz) {
+        if (!$istDatenpflege($absatz)) {
+            $letzter = $absatz;
+            break;
+        }
+    }
     if ($letzter === '') {
-        $letzter = $text;
+        $letzter = (string) (end($absaetze) ?: $text);
     }
     $letzter = trim(preg_replace('/\s+/', ' ', $letzter) ?? $letzter);
     if (mb_strlen($letzter) > TODO_NOTIZ_LAENGE) {
