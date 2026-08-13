@@ -127,6 +127,13 @@ $readmeHtml = is_file($readmePath)
     ? ds_render_markdown((string) @file_get_contents($readmePath), 1)
     : '';
 
+// Tonalität & Voice — die EINE Marken-Stimme (src/brand/voice.md), die alle Text-Generatoren
+// speist. Injektions-Marker (<!-- voice:… -->) fürs Rendern entfernen. Spec: social-ds-voice-wp-spec.md.
+$voicePath = __DIR__ . '/../src/brand/voice.md';
+$voiceHtml = is_file($voicePath)
+    ? ds_render_markdown((string) preg_replace('/<!--.*?-->/s', '', (string) @file_get_contents($voicePath)), 1)
+    : '';
+
 // Hero-Verlauf aus Einzeltokens zusammensetzen (falls vorhanden).
 $gradient = null;
 if (isset($map['--hero-gradient-start'], $map['--hero-gradient-mid'], $map['--hero-gradient-end'])) {
@@ -143,6 +150,7 @@ $accent  = $map['--color-accent']  ?? $map['--accent']  ?? '#ff6b35';
 /** Menü der Sektionen: key => Anzeigename. */
 $menu = [
     'readme'     => 'Readme',
+    'voice'      => 'Tonalität',
     'brand'      => 'Marke',
     'colors'     => 'Farben',
     'spacing'    => 'Abstände & Maße',
@@ -605,6 +613,17 @@ function ds_render_markdown(string $md, int $headingOffset = 0): string
                             <p class="ds-empty">Keine Readme gefunden (Deployment von <code>design-system/readme.md</code> prüfen).</p>
                         <?php else: ?>
                             <div class="ds-readme"><?= $readmeHtml ?></div>
+                        <?php endif; ?>
+                    </section>
+
+                    <!-- Tonalität & Voice -->
+                    <section class="ds-section" id="ds-voice" data-section="voice">
+                        <h2>Tonalität &amp; Voice</h2>
+                        <p class="ds-lead">Die EINE Marken-Stimme, aus der Newsletter, Pressetext und Social ihre Vorgaben ziehen (harte Regeln + Kanal-Deltas). Gerendert aus <code>src/brand/voice.md</code> — hier ändern, alle Generatoren ziehen mit.</p>
+                        <?php if ($voiceHtml === ''): ?>
+                            <p class="ds-empty">Keine Voice-Datei gefunden (<code>src/brand/voice.md</code> prüfen).</p>
+                        <?php else: ?>
+                            <div class="ds-readme"><?= $voiceHtml ?></div>
                         <?php endif; ?>
                     </section>
 
