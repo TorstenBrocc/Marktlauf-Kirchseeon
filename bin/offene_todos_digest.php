@@ -92,10 +92,13 @@ try {
     // Gruppen in Bearbeitungsreihenfolge; je Gruppe der Titel und wie eine Zeile klingt.
     $gruppenDef = [
         'bestaetigung' => ['Bestätigung offen', static function (array $t): string {
-            return $t['firma'] . ' — seit ' . (int) $t['tage'] . ' Tagen zugesagt, Bestätigung noch nicht raus';
+            $tage = (int) $t['tage'];
+            return $t['firma'] . ' — ' . ($tage <= 0 ? 'heute zugesagt' : 'seit ' . $tage . ' Tagen zugesagt')
+                . ', Bestätigung noch nicht raus';
         }],
         'bedingungen' => ['Bedingungen nicht bestätigt', static function (array $t): string {
-            return $t['firma'] . ' — Bedingungen seit ' . (int) $t['tage'] . ' Tagen nicht gegengezeichnet';
+            $tage = (int) $t['tage'];
+            return $t['firma'] . ' — Bedingungen ' . ($tage <= 0 ? 'seit heute' : 'seit ' . $tage . ' Tagen') . ' nicht gegengezeichnet';
         }],
         'wiedervorlagen' => ['Wiedervorlage fällig', static function (array $t): string {
             $tage = (int) $t['tage'];
@@ -107,11 +110,12 @@ try {
             return $t['firma'] . ' — ' . ($t['fehler'] !== '' ? $t['fehler'] : 'Versand fehlgeschlagen');
         }],
         'nie_angeschrieben' => ['Noch nie angeschrieben', static function (array $t): string {
-            return $t['firma'] . ' — liegt seit ' . (int) $t['tage'] . ' Tagen unangeschrieben'
+            $tage = (int) $t['tage'];
+            return $t['firma'] . ' — ' . ($tage <= 0 ? 'heute angelegt, noch nicht angeschrieben' : 'liegt seit ' . $tage . ' Tagen unangeschrieben')
                 . (trim((string) $t['telefon']) !== '' ? ' · Tel. ' . $t['telefon'] : '');
         }],
         'ohne_reaktion' => ['Angeschrieben ohne Reaktion', static function (array $t): string {
-            return $t['firma'] . ' — seit ' . (int) $t['tage'] . ' Tagen keine Antwort'
+            return $t['firma'] . ' — seit ' . (int) $t['tage'] . ' Tagen ohne Antwort'
                 . (trim((string) $t['telefon']) !== '' ? ' · Tel. ' . $t['telefon'] : '')
                 . (todoNotizStand($t['notizen']) !== '' ? ' | ' . todoNotizStand($t['notizen']) : '');
         }],

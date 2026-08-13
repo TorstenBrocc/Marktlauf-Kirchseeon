@@ -301,7 +301,7 @@ $rest = static function (array $liste): int {
                         <span class="todo-meta">
                             <?= $prio($t['prioritaet']) ?>
                             <span class="todo-alter"><?= htmlspecialchars(sponsorStatusLabel((string) $t['status'])) ?></span>
-                            <?= $alter((int) $t['tage'], 'heute', 'seit %d Tagen offen') ?>
+                            <?= $alter((int) $t['tage'], 'seit heute', 'seit %d Tagen') ?>
                         </span>
                         <?= $kontakt($t['telefon'], $t['email']) ?>
                         <?= $notiz($t['notizen']) ?>
@@ -389,7 +389,7 @@ $rest = static function (array $liste): int {
                             <span class="todo-name"><a href="sponsor_form.php?id=<?= (int) $t['id'] ?>"><?= htmlspecialchars($t['firma']) ?></a></span>
                         <span class="todo-meta">
                             <?= $prio($t['prioritaet']) ?>
-                            <?= $alter((int) $t['tage'], 'heute', 'seit %d Tagen keine Antwort') ?>
+                            <?= $alter((int) $t['tage'], 'seit heute', 'seit %d Tagen ohne Antwort') ?>
                         </span>
                         <?= $kontakt($t['telefon'], $t['email']) ?>
                         <?= $notiz($t['notizen']) ?>
