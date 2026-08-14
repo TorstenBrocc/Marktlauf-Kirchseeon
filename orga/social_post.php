@@ -220,22 +220,28 @@ $wartetAufStichtag = ($post['status'] ?? '') === 'approved'
             <div class="sp-review-box" id="sp-review-box" <?= $post['geprueft_ergebnis'] ? 'style="display:block"' : '' ?>><?= htmlspecialchars($post['geprueft_ergebnis'] ?? '') ?></div>
         </div>
 
-        <div class="hd-card">
+        <div class="hd-card" id="sp-grafik-card">
             <h2>3 · Grafik</h2>
-            <?php if ($schrittGrafik): ?>
-            <div style="display:flex;gap:1rem;align-items:flex-start;flex-wrap:wrap">
-                <img src="../<?= htmlspecialchars($bildPfad) ?>" alt="Grafik dieses Posts"
-                     style="max-width:240px;border-radius:8px;border:1px solid var(--border)">
-                <div>
-                    <p class="sp-hinweis" style="margin:0 0 0.6rem">Grafik hängt am Post — der Versand nutzt sie.</p>
-                    <a class="btn btn-secondary btn-small" href="vorlagen.php?post=<?= (int) $postId ?>&amp;fahrplan=<?= (int) $fahrplanId ?>">Grafik ändern (Vorlagen-Werk)</a>
+            <div id="sp-grafik-status">
+                <?php if ($schrittGrafik): ?>
+                <div style="display:flex;gap:1rem;align-items:flex-start;flex-wrap:wrap">
+                    <img src="../<?= htmlspecialchars($bildPfad) ?>" alt="Grafik dieses Posts"
+                         style="max-width:240px;border-radius:8px;border:1px solid var(--border)">
+                    <p class="sp-hinweis" style="margin:0">Grafik hängt am Post — der Versand nutzt sie.</p>
                 </div>
+                <?php else: ?>
+                <p class="sp-platzhalter" style="margin:0 0 0.7rem">Noch keine Grafik — Editor öffnen, Layout ist
+                    zum Thema vorgewählt, „Für Post übernehmen" speichert sie direkt hier.</p>
+                <?php endif; ?>
             </div>
-            <?php else: ?>
-            <p class="sp-platzhalter" style="margin-bottom:0.7rem">Noch keine Grafik — im Vorlagen-Werk erzeugen
-                (Vorlage passend zum Thema, „Für Post übernehmen" speichert sie hier).</p>
-            <a class="btn btn-primary btn-small" href="vorlagen.php?post=<?= (int) $postId ?>&amp;fahrplan=<?= (int) $fahrplanId ?>">Grafik erstellen (Vorlagen-Werk)</a>
-            <?php endif; ?>
+            <div class="sp-zeile" style="margin-top:0.7rem">
+                <button type="button" class="btn btn-primary btn-small" id="sp-grafik-toggle"><?= $schrittGrafik ? 'Grafik ändern' : 'Grafik erstellen' ?></button>
+            </div>
+            <div id="sp-grafik-embed-wrap" style="display:none;margin-top:0.9rem;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--white)">
+                <iframe id="sp-grafik-embed" title="Grafik-Editor" loading="lazy"
+                        style="width:100%;border:0;display:block;min-height:640px"
+                        data-src="vorlagen.php?embed=1&amp;post=<?= (int) $postId ?>&amp;fahrplan=<?= (int) $fahrplanId ?>"></iframe>
+            </div>
         </div>
 
         <div class="hd-card">
@@ -479,6 +485,30 @@ function spCopy(id) {
 document.getElementById('sp-copy-social').addEventListener('click', () => spCopy('sp-social'));
 const copyArtikelBtn = document.getElementById('sp-copy-artikel');
 if (copyArtikelBtn) { copyArtikelBtn.addEventListener('click', () => spCopy('sp-artikel')); }
+
+// Grafik-Editor eingebettet (kein Seitenwechsel): lazy laden, Hoehe + Uebernahme via postMessage
+(function() {
+    const toggle = document.getElementById('sp-grafik-toggle');
+    const wrap   = document.getElementById('sp-grafik-embed-wrap');
+    const frame  = document.getElementById('sp-grafik-embed');
+    if (!toggle || !wrap || !frame) { return; }
+    toggle.addEventListener('click', () => {
+        const auf = wrap.style.display !== 'none';
+        if (auf) { wrap.style.display = 'none'; return; }
+        wrap.style.display = 'block';
+        if (!frame.src) { frame.src = frame.dataset.src; }  // erst beim Oeffnen laden
+        wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    window.addEventListener('message', (ev) => {
+        if (ev.origin !== location.origin || ev.source !== frame.contentWindow) { return; }
+        const d = ev.data || {};
+        if (d.type === 'vt-height' && typeof d.height === 'number') {
+            frame.style.height = Math.max(480, d.height) + 'px';
+        } else if (d.type === 'vt-uebernommen') {
+            location.reload();  // neue Grafik am Post -> Schritt 3 abgehakt
+        }
+    });
+})();
 
 // Burger-Menü (wie alle anderen Orga-Seiten)
 const burgerBtn      = document.getElementById('burger-btn');
