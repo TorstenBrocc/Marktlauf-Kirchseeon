@@ -179,9 +179,16 @@ if ($isUserScoped && $vorlage['draft'] && $vorlage['draft_ts'] !== '') {
                     <a class="fg-reiter-tab<?= $r['aktiv'] ? ' aktiv' : '' ?>" href="<?= htmlspecialchars($r['url']) ?>"><?= htmlspecialchars((string) $r['label']) ?></a>
                 <?php endforeach; ?>
             </div>
+            <?php $fgHinweis = $aktiveFg !== '' ? sponsorFoerdergruppeHinweis($aktiveFg) : ''; ?>
             <p class="brief-hint" style="margin:-0.4rem 0 1rem">
-                Wechselt Empfänger <strong>und</strong> Vorlagentext dieses Fördertopfs.
-                Status-Gruppen (z. B. „In Klärung") stehen zusätzlich unten in der Empfänger-Auswahl.
+                <?php if ($fgHinweis !== ''): ?>
+                    <strong><?= htmlspecialchars(sponsorFoerdergruppeLabel($aktiveFg)) ?>:</strong>
+                    <?= htmlspecialchars($fgHinweis) ?>
+                    <span style="opacity:.65">— der Reiter wechselt Empfänger <strong>und</strong> Vorlagentext.</span>
+                <?php else: ?>
+                    Die Reiter wechseln Empfänger und Vorlagentext je Fördertopf.
+                    Status-Gruppen (z. B. „In Klärung") stehen zusätzlich unten in der Empfänger-Auswahl.
+                <?php endif; ?>
             </p>
             <?php endif; ?>
 
