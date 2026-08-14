@@ -16,6 +16,8 @@ require_once __DIR__ . '/_auth.php';
 require_once __DIR__ . '/../../src/db.php';
 require_once __DIR__ . '/../../src/logger.php';
 require_once __DIR__ . '/../../src/social_dispatcher.php';
+require_once __DIR__ . '/../../src/social_anlaesse.php';
+require_once __DIR__ . '/../../src/channels/mail.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -107,6 +109,7 @@ if (!empty($ergebnis['fallback'])) {
 }
 
 // Versand-Log am Post + Fahrplan-Eintrag abschliessen (Wiederkehr rueckt vor)
+$fahrplanRefId = 0;
 try {
     $pdo->prepare(
         "UPDATE post_race_contents
@@ -122,6 +125,7 @@ try {
     $stmt = $pdo->prepare("SELECT id, zieldatum, frequenz_tage, ende FROM social_fahrplan WHERE post_id = :pid AND status = 'offen' LIMIT 1");
     $stmt->execute(['pid' => $postId]);
     if ($eintrag = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $fahrplanRefId = (int) $eintrag['id'];
         $vorgerueckt = false;
         if ($eintrag['frequenz_tage'] && $eintrag['zieldatum']) {
             $naechstes = (new DateTime($eintrag['zieldatum']))
@@ -140,6 +144,33 @@ try {
     }
 } catch (PDOException $e) {
     logError('post_dispatch: Log/Fahrplan-Update fehlgeschlagen: ' . $e->getMessage());
+}
+
+// "Post ist live"-Mail an alle aktiven Orga/Admins: Verstaerker-Handgriffe der
+// ersten Stunde (Inhaber-Entscheidung 2026-08-14). Fire-and-forget, Fehler nur ins Log.
+try {
+    $def   = socialAnlaesse()[(string) ($post['anlass_key'] ?? '')] ?? null;
+    $thema = $def ? $def['ui'] : 'Social-Post';
+    $textVorschau = mb_substr($text, 0, 200) . (mb_strlen($text) > 200 ? '…' : '');
+    $mailText = "Gerade veröffentlicht auf " . implode(' + ', $channels) . ": {$thema}\n\n"
+        . "„{$textVorschau}\"\n\n"
+        . "So hilfst du dem Post jetzt (erste Stunde zählt am meisten):\n"
+        . "1. Post liken und mit 1 Kommentar anschieben (Frage/Emoji reicht).\n"
+        . "2. In deine Instagram-Story teilen.\n"
+        . "3. Link an Familie/Lauffreunde weiterschicken (\"Sends\" zählen beim Algorithmus am stärksten).\n"
+        . "4. Falls du in lokalen Facebook-Gruppen bist: dort teilen (Regeln beachten, eigener Anmoderationssatz).\n"
+        . "5. Kommentare, die du siehst: kurz beantworten — schnell und freundlich.\n\n"
+        . ($fahrplanRefId > 0 ? "Post im Dashboard: https://atsv-kirchseeon-marktlauf.de/orga/social_post.php?fahrplan=" . $fahrplanRefId : "Dashboard: https://atsv-kirchseeon-marktlauf.de/orga/social_fahrplan.php");
+    $body = marktlaufMailBody($mailText);
+    $orgaMails = $pdo->query("
+        SELECT name, email FROM users
+        WHERE active = 1 AND role IN ('admin','orga') AND NULLIF(TRIM(email),'') IS NOT NULL
+    ")->fetchAll();
+    foreach ($orgaMails as $o) {
+        sendMail((string) $o['email'], 'Social-Post ist live: ' . $thema, $body['text'], $body['html']);
+    }
+} catch (Throwable $e) {
+    logError('post_dispatch: Live-Mail fehlgeschlagen: ' . $e->getMessage());
 }
 
 postDispatchJson(['ok' => true, 'message' => (string) ($ergebnis['message'] ?? 'An Make.com übergeben.')]);
