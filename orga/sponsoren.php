@@ -479,13 +479,6 @@ try {
             .kopf-fixzone {
                 position: sticky;
                 top: 0;
-                /* Auch horizontal pinnen: ist die gruppierte Tabelle breiter als der
-                   Viewport, scrollt .main-content horizontal (overflow-x wird durch das
-                   overflow-y:auto implizit zu auto). Die Kopf-Zone ist nur viewport-breit;
-                   ohne left:0 scrollt ihr Hintergrund nach links weg und legt rechts einen
-                   ungedeckten „kaputten" Streifen frei. left:0 hält sie über der vollen
-                   sichtbaren Breite, während die Tabelle darunter horizontal scrollt. */
-                left: 0;
                 z-index: 20;
                 background: var(--bg);
             }
@@ -496,7 +489,14 @@ try {
             }
         }
         .table-wrap.grouped {
-            overflow: visible;
+            /* Horizontal-Überlauf HIER einfangen: ist die Tabelle breiter als der Viewport
+               (viele Spalten / schmale Ansicht), scrollt sie innerhalb dieser Karte, statt
+               den Überlauf auf .main-content bzw. die ganze Seite zu schieben (das erzeugte
+               den „kaputten" rechten Rand, v. a. schmal < 769px ohne fixierten Kopf).
+               Trade-off: overflow-x:auto koppelt overflow-y auf auto → der vertikale
+               Sticky-Spaltenkopf (Desktop) friert nicht mehr ein. Bewusst zugunsten eines
+               an jeder Breite unkaputten Layouts. */
+            overflow-x: auto;
             box-shadow: none;
             border-radius: 0;
             background: #eceef1;
