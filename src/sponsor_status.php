@@ -63,6 +63,24 @@ function sponsorFoerdergruppeLabel(string $gruppe): string {
     return SPONSOR_FOERDERGRUPPE[$gruppe] ?? ucfirst($gruppe);
 }
 
+/**
+ * Kern-Hinweis je Fördergruppe: was macht die Gruppe im Kern aus (das „warum liegt der
+ * Kontakt hier"). Erscheint unter den Fördergruppen-Reitern der Anschreiben-Seite, damit
+ * Dashboard-Nutzer die Einordnung nachvollziehen können. Bewusst am Weg/an der Ansprache-
+ * Strategie orientiert, NICHT an der Firma — dieselbe Sparkassen-/Volksbank-Familie kann in
+ * mehreren Gruppen auftauchen (Bank = Sponsoring, Stiftung = Förderantrag, Verbund = Dritte).
+ */
+const SPONSOR_FOERDERGRUPPE_HINWEIS = [
+    'sponsoring'             => 'Kommerzieller Partner: Logo/Präsenz gegen Paketpreis — wir stellen eine Rechnung.',
+    'foerderantrag'          => 'Stiftung/Programm mit eigenem Antragsweg und Fristen. Geld als Zuschuss ohne Werbe-Gegenleistung — wir stellen selbst einen Antrag nach deren Förderleitlinien.',
+    'ueber_dritte'           => 'Kein eigener Antragsweg: die Unterstützung läuft über einen Verbund oder Mittler (z. B. BLSV, Sparkassen-/Volksbank-Verbund, Kommunalbetreuer). Wir fragen nach dem richtigen Weg und Ansprechpartner.',
+    'oeffentlichkeitsarbeit' => 'Geld-Sponsoring rechtlich ausgeschlossen (v. a. gesetzliche Krankenkassen, § 4a SGB V). Möglich ist nur Präsenz: Infostand, Beitrag im Starterbeutel, gemeinsame Botschaft.',
+];
+
+function sponsorFoerdergruppeHinweis(string $gruppe): string {
+    return SPONSOR_FOERDERGRUPPE_HINWEIS[$gruppe] ?? '';
+}
+
 /** Rückmelde-Wege für die Bestätigung der Sponsoring-Bedingungen. */
 const SPONSOR_BEDINGUNGEN_WEG = [
     'email'        => 'E-Mail-Antwort',
