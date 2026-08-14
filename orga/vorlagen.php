@@ -51,7 +51,58 @@ $rennen10 = null;
 foreach ($rr['rennen'] ?? [] as $r) {
     if (isset($r['kategorie']) && str_contains((string) $r['kategorie'], '10')) { $rennen10 = $r; break; }
 }
-$vorlageDefault = ($postKontext && $postKontext['anlass_key'] === 'renntag') ? 'renntag' : 'anmeldung';
+// Vorlagen-Vorwahl je Thema: Renntag -> Ergebnis-Card, Anmeldung -> Anmeldungs-Poster,
+// alles andere -> universelle Themen-Vorlage
+$vorlageDefault = 'anmeldung';
+if ($postKontext) {
+    $vorlageDefault = match ($postKontext['anlass_key']) {
+        'renntag'         => 'renntag',
+        'anmeldung_offen' => 'anmeldung',
+        default           => 'thema',
+    };
+}
+
+// Eckdaten fuer die Themen-Vorlage (aus den Einstellungen, wie socialEckdaten)
+$veranstaltung = 'Marktlauf Kirchseeon';
+$eyebrowDatum  = '';
+$themaDatumDefault = '';
+try {
+    $stmt = $pdo->query("SELECT `key`, `value` FROM einstellungen WHERE `key` IN ('renntag_datum', 'veranstaltungsname')");
+    $werte = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+    if (trim((string) ($werte['veranstaltungsname'] ?? '')) !== '') {
+        $veranstaltung = trim((string) $werte['veranstaltungsname']);
+    }
+    $datum = trim((string) ($werte['renntag_datum'] ?? ''));
+    if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $datum)) {
+        $wochentage = [1 => 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
+        $ts = strtotime($datum);
+        $eyebrowDatum = date('d.m.Y', $ts);
+        $themaDatumDefault = $wochentage[(int) date('N', $ts)] . ', ' . date('d.m.Y', $ts) . ' · Start ab 10:00 Uhr';
+    }
+} catch (PDOException $e) {
+    // Einstellungen evtl. leer
+}
+
+// Themen-Vorlage aus dem Anlass-Katalog vorbefuellen (Fakten-Zeilen ohne Klammer-Hinweise)
+$themaHeadline = $veranstaltung;
+$themaSub      = '';
+$themaZeilen   = ['', '', ''];
+$themaCta      = 'Jetzt anmelden!';
+if ($postKontext && isset(socialAnlaesse()[$postKontext['anlass_key']])) {
+    $def = socialAnlaesse()[$postKontext['anlass_key']];
+    $themaHeadline = trim((string) preg_replace('/\s*\(.*\)\s*$/', '', $def['ui']));
+    $zeilen = array_values(array_filter(
+        array_map('trim', explode("\n", (string) ($def['fakten'] ?? ''))),
+        static fn (string $z): bool => $z !== '' && !str_starts_with($z, '(')
+    ));
+    $themaSub    = $zeilen[0] ?? '';
+    $themaZeilen = [$zeilen[1] ?? '', $zeilen[2] ?? '', $zeilen[3] ?? ''];
+    if (in_array($postKontext['anlass_key'], ['helfer', 'helfer_gesucht'], true)) {
+        $themaCta = 'Jetzt Helfer werden!';
+    } elseif (in_array($postKontext['anlass_key'], ['danke', 'renntag', 'eventtag'], true)) {
+        $themaCta = 'Danke fürs Dabeisein!';
+    }
+}
 
 // QR-Ziele: feststehende Links als Auswahl (Inhaber 2026-08-14). Helfer-Link kommt zur
 // LAUFZEIT aus access_tokens (aktiv + nicht abgelaufen) — kein Token im Code/Repo.
@@ -242,6 +293,17 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
         .sc-card .sc-qr { display: flex; flex-direction: column; align-items: center; gap: 10px; flex: 0 0 auto; }
         .sc-card .sc-qr img { width: 200px; height: 200px; background: #fff; padding: 14px; border-radius: 16px; box-sizing: border-box; display: block; }
         .sc-card .sc-qr-label { font-family: 'Fredoka', 'Trebuchet MS', sans-serif; font-size: 24px; font-weight: 600; text-align: center; }
+        /* Themen-Vorlage: Unterzeile, Gold-Bullets, CTA-Pille, Meta-Zeilen */
+        .sc-card .sc-sub { font-size: 34px; font-weight: 500; color: #fff8dd; margin-top: 18px; line-height: 1.35; }
+        .sc-card .sc-bullets { display: flex; flex-direction: column; gap: 26px; }
+        .sc-card .sc-bullet { display: flex; align-items: flex-start; gap: 18px; font-size: 30px; font-weight: 500; line-height: 1.3; }
+        .sc-card .sc-bullet::before { content: ''; width: 14px; height: 14px; border-radius: 50%;
+            background: var(--color-accent-yellow, #f4b81e); flex-shrink: 0; margin-top: 13px; }
+        .sc-card .sc-cta { align-self: flex-start; background: var(--color-accent-yellow, #f4b81e);
+            border-radius: 18px; padding: 20px 44px; box-shadow: 0 12px 30px rgba(0,0,0,.2); }
+        .sc-card .sc-cta span { font-family: 'Fredoka', 'Trebuchet MS', sans-serif; font-weight: 700;
+            font-size: 36px; color: #1f7a3a; text-transform: uppercase; letter-spacing: .5px; }
+        .sc-card .sc-meta { font-size: 26px; font-weight: 500; opacity: 0.92; margin-top: 8px; }
         .vt-chips { display: flex; gap: 0.4rem; flex-wrap: wrap; margin: 0.5rem 0; }
         .vt-chip { display: inline-flex; align-items: center; gap: 0.35rem; background: var(--bg);
             border: 1px solid var(--border); border-radius: 12px; padding: 0.15rem 0.2rem 0.15rem 0.6rem; font-size: 0.78rem; }
@@ -282,6 +344,7 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                     <div class="vt-field">
                         <label for="vt-vorlage">Vorlage</label>
                         <select id="vt-vorlage">
+                            <option value="thema" <?= $vorlageDefault === 'thema' ? 'selected' : '' ?>>Themen-Post (universell, Formate wählbar)</option>
                             <option value="anmeldung" <?= $vorlageDefault === 'anmeldung' ? 'selected' : '' ?>>Anmeldung geöffnet (Portrait)</option>
                             <option value="renntag" <?= $vorlageDefault === 'renntag' ? 'selected' : '' ?>>Renntag-Ergebnis (Formate wählbar)</option>
                         </select>
@@ -357,16 +420,35 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                     </div>
                     </div><!-- /vt-felder-anmeldung -->
 
-                    <div id="vt-felder-renntag" style="display:none">
-                    <h3>Format</h3>
+                    <div id="vt-felder-thema" style="display:none">
+                    <h3>Kopf</h3>
                     <div class="vt-field">
-                        <select id="vt-rt-format">
-                            <option value="portrait">Portrait 1080×1350 (Feed)</option>
-                            <option value="grid34">Instagram-Grid 1080×1440 (3:4)</option>
-                            <option value="square">Quadratisch 1080×1080</option>
-                            <option value="story">Story 1080×1920</option>
-                        </select>
+                        <label for="vt-th-headline">Schlagzeile</label>
+                        <input type="text" id="vt-th-headline" maxlength="40" value="<?= htmlspecialchars($themaHeadline) ?>">
                     </div>
+                    <div class="vt-field">
+                        <label for="vt-th-sub">Unterzeile</label>
+                        <input type="text" id="vt-th-sub" maxlength="90" value="<?= htmlspecialchars($themaSub) ?>">
+                    </div>
+                    <h3>Bis zu drei Zeilen</h3>
+                    <?php foreach ($themaZeilen as $i => $zeile): ?>
+                    <div class="vt-field">
+                        <input type="text" id="vt-th-z<?= $i + 1 ?>" maxlength="80" value="<?= htmlspecialchars($zeile) ?>" aria-label="Zeile <?= $i + 1 ?>">
+                    </div>
+                    <?php endforeach; ?>
+                    <span class="vt-hint">Leere Zeilen erscheinen nicht auf der Grafik.</span>
+                    <h3>Aktion &amp; Termin</h3>
+                    <div class="vt-field">
+                        <label for="vt-th-cta">Aktions-Button (leer = kein Button)</label>
+                        <input type="text" id="vt-th-cta" maxlength="30" value="<?= htmlspecialchars($themaCta) ?>">
+                    </div>
+                    <div class="vt-field vt-two">
+                        <input type="text" id="vt-th-datum" maxlength="60" value="<?= htmlspecialchars($themaDatumDefault) ?>" aria-label="Datum-Zeile">
+                        <input type="text" id="vt-th-ort" maxlength="60" value="JEK, Westring 6, Kirchseeon" aria-label="Ort-Zeile">
+                    </div>
+                    </div><!-- /vt-felder-thema -->
+
+                    <div id="vt-felder-renntag" style="display:none">
                     <h3>Kopf</h3>
                     <div class="vt-field">
                         <label for="vt-rt-event">Kopfzeile (Event · Datum)</label>
@@ -394,6 +476,19 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                         <label for="vt-rt-highlight">Highlight (optional)</label>
                         <input type="text" id="vt-rt-highlight" maxlength="120" value="<?= htmlspecialchars((string) ($rr['highlight'] ?? '')) ?>">
                     </div>
+                    </div><!-- /vt-felder-renntag -->
+
+                    <!-- Format + Logos: gemeinsam fuer Themen-Post + Renntag-Ergebnis -->
+                    <div id="vt-felder-scard" style="display:none">
+                    <h3>Format</h3>
+                    <div class="vt-field">
+                        <select id="vt-rt-format">
+                            <option value="portrait">Portrait 1080×1350 (Feed)</option>
+                            <option value="grid34">Instagram-Grid 1080×1440 (3:4)</option>
+                            <option value="square">Quadratisch 1080×1080</option>
+                            <option value="story">Story 1080×1920</option>
+                        </select>
+                    </div>
                     <h3>Logos (tauschbar)</h3>
                     <div class="vt-row">
                         <button type="button" class="btn btn-secondary" id="vt-logo-add">Logo hinzufügen</button>
@@ -401,7 +496,7 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                     </div>
                     <div class="vt-chips" id="vt-logo-chips"></div>
                     <div class="vt-photo-picker" id="vt-logo-picker"></div>
-                    </div><!-- /vt-felder-renntag -->
+                    </div><!-- /vt-felder-scard -->
 
                     <h3>QR-Code (optional)</h3>
                     <div class="vt-field">
@@ -488,6 +583,40 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                 </div>
             </div>
 
+            <!-- Off-screen Render-Buehne: Vorlage "Themen-Post" (universell) -->
+            <div class="vt-stage" aria-hidden="true">
+                <div class="sc-card" id="vt-card3">
+                    <img class="sc-bg" id="th-bg" alt="" style="display:none">
+                    <div class="sc-overlay" id="th-overlay"></div>
+                    <div>
+                        <div class="sc-logos" id="th-logos"></div>
+                        <div class="sc-event"><?= htmlspecialchars($veranstaltung . ($eyebrowDatum !== '' ? ' · ' . $eyebrowDatum : '')) ?></div>
+                        <div class="sc-headline" id="th-headline"></div>
+                        <div class="sc-sub" id="th-sub"></div>
+                    </div>
+                    <div class="sc-bullets" id="th-bullets">
+                        <div class="sc-bullet" id="th-z1"></div>
+                        <div class="sc-bullet" id="th-z2"></div>
+                        <div class="sc-bullet" id="th-z3"></div>
+                    </div>
+                    <div class="sc-cta" id="th-cta-wrap"><span id="th-cta"></span></div>
+                    <div>
+                        <div class="sc-meta" id="th-datum"></div>
+                        <div class="sc-meta" id="th-ort"></div>
+                    </div>
+                    <div class="sc-footer">
+                        <div class="sc-footer-text">
+                            <span class="sc-wordmark">ATSV Kirchseeon</span>
+                            <span class="sc-url">atsv-kirchseeon-marktlauf.de</span>
+                        </div>
+                        <div class="sc-qr" id="th-qr" style="display:none">
+                            <img id="th-qr-img" alt="">
+                            <span class="sc-qr-label" id="th-qr-label"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Off-screen Render-Buehne: Vorlage "Renntag-Ergebnis" -->
             <div class="vt-stage" aria-hidden="true">
                 <div class="sc-card" id="vt-card2">
@@ -562,9 +691,11 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
 
         function aktiveVorlage() { return $('vt-vorlage').value; }
         function vorlageWechsel() {
-            const rt = aktiveVorlage() === 'renntag';
-            $('vt-felder-anmeldung').style.display = rt ? 'none' : 'block';
-            $('vt-felder-renntag').style.display   = rt ? 'block' : 'none';
+            const v = aktiveVorlage();
+            $('vt-felder-anmeldung').style.display = v === 'anmeldung' ? 'block' : 'none';
+            $('vt-felder-renntag').style.display   = v === 'renntag'   ? 'block' : 'none';
+            $('vt-felder-thema').style.display     = v === 'thema'     ? 'block' : 'none';
+            $('vt-felder-scard').style.display     = v === 'anmeldung' ? 'none'  : 'block';
         }
         $('vt-vorlage').addEventListener('change', vorlageWechsel);
         vorlageWechsel();
@@ -751,14 +882,62 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
             });
         }
 
+        // --- Themen-Post-Karte aus den Eingaben befuellen ---
+        const card3 = $('vt-card3');
+        function fillCard3(fmt) {
+            card3.style.width  = fmt.w + 'px';
+            card3.style.height = fmt.h + 'px';
+            $('th-headline').textContent = $('vt-th-headline').value.trim();
+            const sub = $('vt-th-sub').value.trim();
+            $('th-sub').textContent = sub;
+            $('th-sub').style.display = sub ? 'block' : 'none';
+            let zeilen = 0;
+            for (let i = 1; i <= 3; i++) {
+                const wert = $('vt-th-z' + i).value.trim();
+                $('th-z' + i).textContent = wert;
+                $('th-z' + i).style.display = wert ? 'flex' : 'none';
+                if (wert) { zeilen++; }
+            }
+            $('th-bullets').style.display = zeilen ? 'flex' : 'none';
+            const cta = $('vt-th-cta').value.trim();
+            $('th-cta').textContent = cta;
+            $('th-cta-wrap').style.display = cta ? 'block' : 'none';
+            const datum = $('vt-th-datum').value.trim();
+            const ort   = $('vt-th-ort').value.trim();
+            $('th-datum').textContent = datum ? '📅 ' + datum : '';
+            $('th-datum').style.display = datum ? 'block' : 'none';
+            $('th-ort').textContent = ort ? '📍 ' + ort : '';
+            $('th-ort').style.display = ort ? 'block' : 'none';
+
+            const box = $('th-logos');
+            box.innerHTML = '';
+            selectedLogos.forEach(l => {
+                const im = document.createElement('img'); im.src = l.url; im.alt = '';
+                box.appendChild(im);
+            });
+
+            const usePhoto = $('bg-photo').checked && selectedPhotoUrl;
+            const dark = cssVar('--color-primary-dark', '#007230');
+            if (usePhoto) {
+                $('th-bg').src = selectedPhotoUrl;
+                $('th-bg').style.display = 'block';
+                $('th-overlay').style.background = 'linear-gradient(160deg, rgba(0,0,0,0.28) 0%, ' + hexToRgba(dark, 0.78) + ' 100%)';
+            } else {
+                $('th-bg').removeAttribute('src');
+                $('th-bg').style.display = 'none';
+                $('th-overlay').style.background = heroOverlay();
+            }
+        }
+
         // --- Rendern (snapDOM, dpr:1 zwingend; Fonts eingebettet) ---
         $('vt-render').addEventListener('click', async () => {
             const btn = $('vt-render'), err = $('vt-error');
             btn.disabled = true; btn.textContent = '⏳ Rendert …'; err.style.display = 'none';
 
-            const renntag = aktiveVorlage() === 'renntag';
-            const fmt = renntag ? (RT_FORMATS[$('vt-rt-format').value] || RT_FORMATS.portrait)
-                                : { w: 1080, h: 1350, label: 'Portrait 1080×1350' };
+            const vorlage = aktiveVorlage();
+            const fmt = vorlage !== 'anmeldung'
+                ? (RT_FORMATS[$('vt-rt-format').value] || RT_FORMATS.portrait)
+                : { w: 1080, h: 1350, label: 'Portrait 1080×1350' };
 
             try {
                 await Promise.all([
@@ -769,7 +948,7 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                 await document.fonts.ready;
 
                 let ziel;
-                if (renntag) {
+                if (vorlage === 'renntag') {
                     fillCard2(fmt);
                     applyQr('rt-qr', 'rt-qr-img', 'rt-qr-label', 'flex');
                     const logoImgs = Array.from(document.querySelectorAll('#rt-logos img'));
@@ -779,6 +958,16 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                         waitImg($('rt-qr-img')),
                     ]);
                     ziel = card2;
+                } else if (vorlage === 'thema') {
+                    fillCard3(fmt);
+                    applyQr('th-qr', 'th-qr-img', 'th-qr-label', 'flex');
+                    const logoImgs = Array.from(document.querySelectorAll('#th-logos img'));
+                    await Promise.all([
+                        ...logoImgs.map(waitImg),
+                        card3.querySelector('.sc-bg').style.display === 'block' ? waitImg($('th-bg')) : Promise.resolve(),
+                        waitImg($('th-qr-img')),
+                    ]);
+                    ziel = card3;
                 } else {
                     fillCard();
                     applyQr('c-qr', 'c-qr-img', 'c-qr-label', 'block');
@@ -792,7 +981,7 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
 
                 const canvas = await snapdom.toCanvas(ziel, {
                     width: fmt.w, height: fmt.h, scale: 1, dpr: 1,
-                    backgroundColor: renntag ? cssVar('--color-primary-dark', '#007230') : '#1f7a3a',
+                    backgroundColor: vorlage !== 'anmeldung' ? cssVar('--color-primary-dark', '#007230') : '#1f7a3a',
                     embedFonts: true,
                 });
                 lastDataUrl = canvas.toDataURL('image/png');
@@ -814,7 +1003,9 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
             if (!lastDataUrl) return;
             const a = document.createElement('a');
             a.href = lastDataUrl;
-            a.download = 'marktlauf2026-' + (aktiveVorlage() === 'renntag' ? 'renntag-' + $('vt-rt-format').value : 'anmeldung-portrait') + '.png';
+            a.download = 'marktlauf2026-' + (aktiveVorlage() === 'anmeldung'
+                ? 'anmeldung-portrait'
+                : aktiveVorlage() + '-' + $('vt-rt-format').value) + '.png';
             a.click();
         });
 
