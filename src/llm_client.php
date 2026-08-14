@@ -194,12 +194,19 @@ function llmPromptSocial(): string
 {
     $task = <<<PROMPT
 AUFGABE: Verfasse einen fertigen, lebendigen Social-Media-Post (Instagram/Facebook) zum unten
-genannten Anlass. Die Fakten/Stichpunkte sind nur dein Rohmaterial — forme daraus einen echten,
-ansprechenden Post. KEINE Aneinanderreihung oder Aufzählung der Fakten, kein Datenblatt.
-- Erste Zeile = ein starker Hook, der zum Weiterlesen zieht (keine Überschrift, kein „Anlass: …").
+genannten Anlass. Emotion vor Fakten, weniger ist mehr: trag einen menschlichen Moment oder ein
+Gefühl, kein Datenblatt. Die Fakten/Stichpunkte sind nur dein Rohmaterial — forme daraus einen
+echten Post. KEINE Aneinanderreihung oder Aufzählung der Fakten.
+- Erste Zeile = ein starker Hook von höchstens ~125 Zeichen, der zum Weiterlesen zieht; er steht
+  ganz vorn (keine Überschrift, kein „Anlass: …"). Nur die ersten ~125 Zeichen zeigt die App vor
+  dem „… mehr" — die erste Zeile entscheidet über das Weiterlesen.
 - Danach flüssiger Fließtext in der Vereins-Stimme, der die Fakten natürlich einwebt.
-- Schließe mit einem klaren Handlungsaufruf, gern als Frage oder Einladung (z. B. mitlaufen,
-  anmelden, den Beitrag teilen/speichern, Freunde in den Kommentaren markieren).
+- Schließe mit GENAU EINEM zum Anlass passenden Handlungsaufruf, natürlich eingewoben — nicht
+  stapeln, kein Baukasten-Anhängsel. Wähle den einen, der hier am stärksten zieht (z. B. anmelden,
+  mitlaufen, teilen, speichern, in den Kommentaren markieren).
+- Benenne einen Link kanal-bewusst: die Instagram-Caption ist nicht klickbar, Facebook schon.
+  Nenne deshalb das Ziel sprachlich (z. B. „Anmeldung auf atsv-kirchseeon-marktlauf.de", „Link in
+  der Bio" oder „QR-Code auf dem Bild") statt „klick hier/oben".
 Beachte zusätzliche Anweisungen des Nutzers, falls vorhanden. Beginne direkt mit dem Post-Text,
 ohne Einleitung oder Erklärung. Schreibe KEINE Hashtags — sie werden separat ergänzt. Erfinde
 keine Daten, Uhrzeiten oder Orte: nutze ausschließlich die Angaben aus Eckdaten und Fakten; fehlt

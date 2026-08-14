@@ -39,10 +39,13 @@ Pressetext: neutral-journalistisch, kurze Sätze, keine Werbung, keine Ausrufeze
 <!-- /voice:channel:presse -->
 
 <!-- voice:channel:social -->
-Social-Post (Instagram/Facebook): kurz, max. ~5 Sätze / ~80 Wörter. **Emoji nur aus der Erlaubt-Liste, höchstens 1–2, funktional (z. B. 📅/📍) — keine Deko-Emojis.**
+Social-Post (Instagram/Facebook): kurz, max. ~5 Sätze / ~80 Wörter. **Emotion vor Fakten, weniger ist mehr** — ein menschlicher Moment oder ein Gefühl trägt den Post, kein Datenblatt.
+**Erste Zeile = Hook (max. ~125 Zeichen)**, ganz vorn, zieht zum Weiterlesen — nur die ersten ~125 Zeichen zeigt die App vor dem „… mehr". Kein „Anlass: …", keine Aufzählung.
+**Genau EIN Handlungsaufruf**, natürlich eingewoben und zum Anlass passend — nicht stapeln, kein Baukasten-Anhängsel; die Stimme wählt den einen, der hier am stärksten zieht.
+**Emoji nur aus der Erlaubt-Liste, höchstens 1–2, funktional (z. B. 📅/📍) — keine Deko-Emojis.**
 Hashtags nicht anhängen (werden separat ergänzt). Schreibe die Caption so, dass sie **ohne** klickbaren
-Link funktioniert (Instagram-Feed erlaubt keinen klickbaren Caption-Link → auf „Link in Bio" verweisen);
-auf Facebook darf ein Link stehen. Instagram braucht immer ein Bild.
+Link funktioniert (Instagram-Feed erlaubt keinen klickbaren Caption-Link → das Ziel sprachlich nennen,
+„Link in Bio" oder QR-Code auf dem Bild, nie „klick hier"); auf Facebook darf ein Link stehen. Instagram braucht immer ein Bild.
 <!-- /voice:channel:social -->
 
 **Format-Notiz (Grafik, nicht Text):** IG-Feed 4:5 (1080×1350) oder 3:4 (1080×1440, Grid seit 01/2026),
