@@ -1,0 +1,50 @@
+name: DB-Migration
+
+# Führt den Migrations-Runner (bin/migrate.php) per SSH auf Strato aus — ein Klick
+# im Actions-Tab statt Shell-Zugang. Bewusst NUR manuell (workflow_dispatch) und NICHT
+# an den Deploy gekoppelt: DDL committet auf MySQL implizit ohne Auto-Rollback (siehe
+# bin/migrate.php), deshalb bleibt Migrieren eine bewusste Handlung. Gleiche Secrets/
+# SSH-Strecke wie Deploy und Versand-Queue.
+#
+# Ablauf: erst 'status' (zeigt offene Migrationen), dann je nach Auswahl 'migrate'.
+# Default = migrate. Für einen Trockenlauf 'befehl' auf 'status' stellen.
+
+on:
+  workflow_dispatch:
+    inputs:
+      befehl:
+        description: 'status = nur anzeigen, migrate = anwenden'
+        required: true
+        default: 'migrate'
+        type: choice
+        options:
+          - migrate
+          - status
+
+# Nie zwei Migrationsläufe gleichzeitig.
+concurrency:
+  group: db-migration
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    name: Migrationen ausführen
+    runs-on: ubuntu-latest
+    steps:
+      - name: Runner per SSH aufrufen
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SFTP_HOST }}
+          username: ${{ secrets.SFTP_USERNAME }}
+          key: ${{ secrets.SFTP_SSH_KEY }}
+          command_timeout: 15m
+          script: |
+            cd ${{ secrets.SFTP_REMOTE_PATH }}
+            echo "== Offene Migrationen vor dem Lauf =="
+            MARKTLAUF_CLI=1 /bin/php bin/migrate.php status
+            if [ "${{ github.event.inputs.befehl }}" = "migrate" ]; then
+              echo "== Anwenden =="
+              MARKTLAUF_CLI=1 /bin/php bin/migrate.php migrate
+              echo "== Stand danach =="
+              MARKTLAUF_CLI=1 /bin/php bin/migrate.php status
+            fi
