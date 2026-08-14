@@ -237,6 +237,28 @@ $makeWebhookSecret = (string) ($config['make_webhook_secret'] ?? '');
                 <div class="settings-section" id="social-section">
                     <h2>Social Media</h2>
                     <p class="settings-hint">Vereinsweite Vorgaben für den Social-Fahrplan und das Post-Detail.</p>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1rem;margin-bottom:1rem">
+                        <div style="border:1px solid var(--border);border-radius:8px;padding:0.8rem 1rem">
+                            <p style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-light);margin:0 0 0.5rem">Beste Sendezeiten (Studien 2025/26)</p>
+                            <ul style="list-style:none;padding:0;margin:0;font-size:0.85rem;line-height:1.9">
+                                <li><strong>Instagram:</strong> Mi 12:00 · Do 8:30 · So 20:00</li>
+                                <li><strong>Facebook:</strong> Di 12:30 · (Test: Do 6:30)</li>
+                                <li><strong>Kernzeit:</strong> Di–Do, mittags 12–14 &amp; abends 18–21 Uhr</li>
+                                <li><strong>Meiden:</strong> Fr-Abend, Samstag, nachts</li>
+                                <li>Nach 4–6 Wochen gegen die eigenen Insights halten<br><span style="color:var(--text-light)">(Meta Business Suite → „Aktivste Zeiten")</span></li>
+                            </ul>
+                        </div>
+                        <div style="border:1px solid var(--border);border-radius:8px;padding:0.8rem 1rem">
+                            <p style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-light);margin:0 0 0.5rem">Nach dem Posten (erste Stunde)</p>
+                            <ul style="list-style:none;padding:0;margin:0;font-size:0.85rem;line-height:1.9">
+                                <li>1 · Jeden Kommentar schnell beantworten</li>
+                                <li>2 · Post in die eigene Story teilen</li>
+                                <li>3 · Mitglieder anstupsen: Like + 1 Kommentar + Teilen</li>
+                                <li>4 · Getaggte Partner per DM bitten, in Story zu teilen</li>
+                                <li>5 · Meilensteine über 2–3 Tage in lokale FB-Gruppen</li>
+                            </ul>
+                        </div>
+                    </div>
                     <div class="form-row single">
                         <div class="form-group">
                             <label for="social_hashtags">Standard-Hashtags (werden an jeden Social-Post gehängt)</label>
