@@ -46,7 +46,8 @@ $trelloUrl = $settings['trello_board_url'] ?? '';
 $onedriveUrl = $settings['onedrive_url'] ?? '';
 $stravaUrl = $settings['strava_url'] ?? '';
 
-$socialHashtags   = $settings['social_hashtags'] ?? '';
+require_once __DIR__ . '/../src/social_anlaesse.php';
+$socialHashtags   = trim((string) ($settings['social_hashtags'] ?? '')) ?: socialHashtagsDefault();
 $raceresultApiUrl = $settings['raceresult_api_url'] ?? '';
 $raceresultHinweis = $settings['raceresult_hinweis'] ?? '';
 $trelloHinweis = $settings['trello_hinweis'] ?? '';
