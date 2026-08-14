@@ -479,6 +479,13 @@ try {
             .kopf-fixzone {
                 position: sticky;
                 top: 0;
+                /* Auch horizontal pinnen: ist die gruppierte Tabelle breiter als der
+                   Viewport, scrollt .main-content horizontal (overflow-x wird durch das
+                   overflow-y:auto implizit zu auto). Die Kopf-Zone ist nur viewport-breit;
+                   ohne left:0 scrollt ihr Hintergrund nach links weg und legt rechts einen
+                   ungedeckten „kaputten" Streifen frei. left:0 hält sie über der vollen
+                   sichtbaren Breite, während die Tabelle darunter horizontal scrollt. */
+                left: 0;
                 z-index: 20;
                 background: var(--bg);
             }
