@@ -45,6 +45,12 @@ $userPrompt  = trim($_POST['prompt'] ?? '');
 $hashtags    = trim($_POST['hashtags'] ?? '');
 
 $parts = ['Anlass: ' . $anlaesse[$anlass]['prompt']];
+// Themen-Ausschluss (Post-Wirkung-Spec 5.D) als harte Negativ-Regel — verhindert
+// Verwaesserung (z. B. kein „Anmelden" auf Nachlauf-Themen).
+$ausschluss = trim((string) ($anlaesse[$anlass]['ausschluss'] ?? ''));
+if ($ausschluss !== '') {
+    $parts[] = "NICHT in den Post aufnehmen (strikt einhalten):\n" . $ausschluss;
+}
 // Verbindliche Eckdaten aus den Einstellungen — verhindert halluzinierte Daten
 // (Vorfall 2026-08-14: LLM erfand "21. September" bei leerem Fakten-Feld)
 $eckdaten = socialEckdaten(getDbConnection());
