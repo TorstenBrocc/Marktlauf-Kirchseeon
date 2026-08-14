@@ -317,6 +317,18 @@ if (($_POST['action'] ?? '') === 'field_update') {
             exit;
         }
 
+        // foerdergruppe: gegen erlaubte Werte prüfen (Spalte ist NOT NULL, Default 'sponsoring').
+        if ($field === 'foerdergruppe') {
+            if (!isset(SPONSOR_FOERDERGRUPPE[(string) $rawValue])) {
+                echo json_encode(['ok' => false, 'message' => 'Ungültige Fördergruppe.']);
+                exit;
+            }
+            $pdo->prepare('UPDATE sponsors SET foerdergruppe = :v WHERE id = :id')
+                ->execute(['v' => (string) $rawValue, 'id' => $sponsorId]);
+            echo json_encode(['ok' => true]);
+            exit;
+        }
+
         // summe: freie Zahl, 0/leer -> NULL.
         if ($field === 'summe') {
             $summe = (float) $rawValue ?: null;
@@ -458,12 +470,13 @@ try {
             $gruppeId = sponsorGruppeIdFromPost($pdo, $_POST['gruppe_name'] ?? '');
 
             $stmt = $pdo->prepare('
-                INSERT INTO sponsors (firma, paket, prioritaet, ort, summe, status, kein_kontakt, kein_kontakt_grund, kein_kontakt_wer, kein_kontakt_datum, notizen, wiedervorlage, gruppe_id, rechnung_firma, rechnung_strasse, rechnung_plz, rechnung_ort, rechnung_email, rechnung_leistung, leistung_zeitraum, rechnung_betrag_brutto, branche, foerderprogramm, kontaktweg, website, quellenurl, weitere_links, ansprache, bedingungen_bestaetigt_am, bedingungen_weg, bedingungen_beleg)
-                VALUES (:firma, :paket, :prioritaet, :ort, :summe, :status, :kein_kontakt, :kein_kontakt_grund, :kein_kontakt_wer, :kein_kontakt_datum, :notizen, :wiedervorlage, :gruppe_id, :rechnung_firma, :rechnung_strasse, :rechnung_plz, :rechnung_ort, :rechnung_email, :rechnung_leistung, :leistung_zeitraum, :rechnung_betrag_brutto, :branche, :foerderprogramm, :kontaktweg, :website, :quellenurl, :weitere_links, :ansprache, :bedingungen_bestaetigt_am, :bedingungen_weg, :bedingungen_beleg)
+                INSERT INTO sponsors (firma, paket, foerdergruppe, prioritaet, ort, summe, status, kein_kontakt, kein_kontakt_grund, kein_kontakt_wer, kein_kontakt_datum, notizen, wiedervorlage, gruppe_id, rechnung_firma, rechnung_strasse, rechnung_plz, rechnung_ort, rechnung_email, rechnung_leistung, leistung_zeitraum, rechnung_betrag_brutto, branche, foerderprogramm, kontaktweg, website, quellenurl, weitere_links, ansprache, bedingungen_bestaetigt_am, bedingungen_weg, bedingungen_beleg)
+                VALUES (:firma, :paket, :foerdergruppe, :prioritaet, :ort, :summe, :status, :kein_kontakt, :kein_kontakt_grund, :kein_kontakt_wer, :kein_kontakt_datum, :notizen, :wiedervorlage, :gruppe_id, :rechnung_firma, :rechnung_strasse, :rechnung_plz, :rechnung_ort, :rechnung_email, :rechnung_leistung, :leistung_zeitraum, :rechnung_betrag_brutto, :branche, :foerderprogramm, :kontaktweg, :website, :quellenurl, :weitere_links, :ansprache, :bedingungen_bestaetigt_am, :bedingungen_weg, :bedingungen_beleg)
             ');
             $stmt->execute([
                 'firma'              => $firma,
                 'paket'              => $_POST['paket'] ?: null,
+                'foerdergruppe'      => isset(SPONSOR_FOERDERGRUPPE[(string) ($_POST['foerdergruppe'] ?? '')]) ? (string) $_POST['foerdergruppe'] : 'sponsoring',
                 'prioritaet'         => sponsorPrioritaetFromPost($_POST['prioritaet'] ?? ''),
                 'ort'                => trim($_POST['ort'] ?? '') ?: null,
                 'summe'              => (float) ($_POST['summe'] ?? 0) ?: null,
@@ -560,6 +573,7 @@ try {
                 UPDATE sponsors SET
                     firma = :firma,
                     paket = :paket,
+                    foerdergruppe = :foerdergruppe,
                     prioritaet = :prioritaet,
                     ort = :ort,
                     summe = :summe,
@@ -594,6 +608,7 @@ try {
             $stmt->execute([
                 'firma'              => $firma,
                 'paket'              => $_POST['paket'] ?: null,
+                'foerdergruppe'      => isset(SPONSOR_FOERDERGRUPPE[(string) ($_POST['foerdergruppe'] ?? '')]) ? (string) $_POST['foerdergruppe'] : 'sponsoring',
                 'prioritaet'         => sponsorPrioritaetFromPost($_POST['prioritaet'] ?? ''),
                 'ort'                => trim($_POST['ort'] ?? '') ?: null,
                 'summe'              => (float) ($_POST['summe'] ?? 0) ?: null,
