@@ -507,8 +507,11 @@ try {
         .status-angefragt-row { background: rgba(43, 125, 233, 0.12); }
         /* Branche-Karten (nur gruppiert): weiße Karten auf grauem Grund */
         @media (min-width: 769px) {
-            /* Feste Höhe macht den Inhaltsbereich zum Scroll-Container -> der Kopf bleibt beim Scrollen stehen */
+            /* App-Shell: Layout auf Fensterhöhe fixieren, Inhaltsbereich scrollt intern ->
+               der Tabellenkopf bleibt beim Scrollen stehen (sonst scrollt die ganze Seite). */
+            .dashboard-layout { height: 100vh; overflow: hidden; }
             .main-content { height: 100vh; }
+            .sidebar { overflow-y: auto; }
         }
         .table-wrap.grouped {
             overflow: visible;
@@ -542,7 +545,7 @@ try {
             border-bottom-color: #eee;
             border-top-left-radius: 12px;
             border-top-right-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+            box-shadow: -6px 0 9px -6px rgba(0, 0, 0, 0.16), 6px 0 9px -6px rgba(0, 0, 0, 0.16), 0 -2px 6px -4px rgba(0, 0, 0, 0.06);
             cursor: pointer;
             user-select: none;
         }
@@ -550,13 +553,13 @@ try {
         .branche-heading-count { color: #8a8a8a; font-weight: 400; font-size: 0.85rem; }
         .branche-caret { display: inline-block; width: 0.9em; color: #9a9a9a; font-size: 0.8rem; transition: transform 0.12s; }
         .branche-heading-row.collapsed .branche-caret { transform: rotate(-90deg); }
-        /* Kachel-Körper: weiße Zeilen, Seitenrahmen, unten abgerundet */
+        /* Kachel-Körper: weiße Zeilen, Seitenrahmen + Schatten, unten abgerundet */
         .data-table.grouped tr.branche-row { background: #fff; }
-        .branche-row td:first-child { border-left: 1px solid var(--border); }
-        .branche-row td:last-child  { border-right: 1px solid var(--border); }
-        .branche-row-last td { border-bottom: 1px solid var(--border); }
-        .branche-row-last td:first-child { border-bottom-left-radius: 12px; }
-        .branche-row-last td:last-child  { border-bottom-right-radius: 12px; }
+        .branche-row td:first-child { border-left: 1px solid var(--border); box-shadow: -6px 0 9px -6px rgba(0, 0, 0, 0.16); }
+        .branche-row td:last-child  { border-right: 1px solid var(--border); box-shadow: 6px 0 9px -6px rgba(0, 0, 0, 0.16); }
+        .branche-row-last td { border-bottom: 1px solid var(--border); box-shadow: 0 8px 10px -6px rgba(0, 0, 0, 0.18); }
+        .branche-row-last td:first-child { border-bottom-left-radius: 12px; box-shadow: -6px 7px 10px -6px rgba(0, 0, 0, 0.17); }
+        .branche-row-last td:last-child  { border-bottom-right-radius: 12px; box-shadow: 6px 7px 10px -6px rgba(0, 0, 0, 0.17); }
         /* Status-/Kein-Kontakt-Tönung behält Vorrang vor dem Kartenweiß */
         .data-table.grouped tr.status-zugesagt-row    { background: rgba(76, 175, 80, 0.12); }
         .data-table.grouped tr.status-abgelehnt-row   { background: rgba(211, 47, 47, 0.12); }
