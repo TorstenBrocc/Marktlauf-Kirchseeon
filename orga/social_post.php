@@ -77,6 +77,14 @@ try {
     // Einstellungen evtl. leer
 }
 
+// Vorbelegung: gespeicherte Nutzerwerte gewinnen, sonst die Fakten-Defaults des Anlass-Katalogs
+if (trim($fakten) === '') {
+    $fakten = (string) ($anlassDef['fakten'] ?? '');
+}
+if (trim($hashtags) === '') {
+    $hashtags = socialHashtagsDefault();
+}
+
 $schrittText    = trim((string) ($post['llm_text_social'] ?? '')) !== '';
 $schrittGeprueft = $post['geprueft_am'] !== null;
 $bildPfad       = trim((string) ($post['bild_pfad'] ?? ''));
@@ -177,6 +185,9 @@ $wartetAufStichtag = ($post['status'] ?? '') === 'approved'
                 </select>
                 <span class="sp-hinweis" id="sp-spinner" style="display:none">⏳ KI läuft …</span>
             </div>
+            <p class="sp-hinweis" style="margin:0 0 0.9rem">Hashtags (werden automatisch angehängt):
+                <code style="background:var(--bg);padding:0.1rem 0.4rem;border-radius:4px"><?= htmlspecialchars($hashtags) ?></code>
+                · <a href="einstellungen.php#social-section" style="color:var(--primary-dark)">ändern</a></p>
             <div class="sp-msg" id="sp-fehler" style="color:#dc2626"></div>
             <div class="<?= $mitPresse ? 'sp-grid2' : '' ?>">
                 <div class="sp-feld">
