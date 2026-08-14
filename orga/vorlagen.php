@@ -15,6 +15,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/api/_auth.php';
 require_once __DIR__ . '/../src/db.php';
 require_once __DIR__ . '/../src/social_anlaesse.php';
+require_once __DIR__ . '/../src/social_grafik_defaults.php';
 require_once __DIR__ . '/../src/raceresult_client.php';
 
 $user    = getCurrentUserFromGuard();
@@ -57,14 +58,7 @@ foreach ($rr['rennen'] ?? [] as $r) {
 }
 // Vorlagen-Vorwahl je Thema: Renntag -> Ergebnis-Card, Anmeldung -> Anmeldungs-Poster,
 // alles andere -> universelle Themen-Vorlage
-$vorlageDefault = 'anmeldung';
-if ($postKontext) {
-    $vorlageDefault = match ($postKontext['anlass_key']) {
-        'renntag'         => 'renntag',
-        'anmeldung_offen' => 'anmeldung',
-        default           => 'thema',
-    };
-}
+$vorlageDefault = $postKontext ? socialLayoutKey($postKontext['anlass_key']) : 'anmeldung';
 
 // Eckdaten fuer die Themen-Vorlage (aus den Einstellungen, wie socialEckdaten)
 $veranstaltung = 'Marktlauf Kirchseeon';
@@ -101,11 +95,7 @@ if ($postKontext && isset(socialAnlaesse()[$postKontext['anlass_key']])) {
     ));
     $themaSub    = $zeilen[0] ?? '';
     $themaZeilen = [$zeilen[1] ?? '', $zeilen[2] ?? '', $zeilen[3] ?? ''];
-    if (in_array($postKontext['anlass_key'], ['helfer', 'helfer_gesucht'], true)) {
-        $themaCta = 'Jetzt Helfer werden!';
-    } elseif (in_array($postKontext['anlass_key'], ['danke', 'renntag', 'eventtag'], true)) {
-        $themaCta = 'Danke fürs Dabeisein!';
-    }
+    $themaCta    = socialCtaDefault($postKontext['anlass_key']);
 }
 
 // QR-Ziele: feststehende Links als Auswahl (Inhaber 2026-08-14). Helfer-Link kommt zur
@@ -127,14 +117,7 @@ try {
 $qrZiele['eigen'] = ['label' => 'Eigener Link …', 'url' => ''];
 
 // Vorwahl passend zum Post-Thema
-$qrDefault = 'anmeldung';
-if ($postKontext) {
-    $qrDefault = match ($postKontext['anlass_key']) {
-        'helfer', 'helfer_gesucht'      => isset($qrZiele['helfer']) ? 'helfer' : 'website',
-        'renntag', 'danke', 'eventtag'  => 'website',
-        default                         => 'anmeldung',
-    };
-}
+$qrDefault = $postKontext ? socialQrKey($postKontext['anlass_key'], isset($qrZiele['helfer'])) : 'anmeldung';
 
 // Repo-Logos fuer tauschbare Logo-Slots der Renntag-Vorlage (Scan wie Orchestrator)
 $repoAssets = [];
