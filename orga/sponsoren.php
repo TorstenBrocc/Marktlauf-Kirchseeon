@@ -25,8 +25,9 @@ $filterPaket = $_GET['paket'] ?? '';
 $filterZustaendig = $_GET['zustaendig'] ?? '';
 
 // Fördergruppen-Reiter im Kopf (TT 2026-08-14): Standard = klassisches Sponsoring.
+// 'alle' = alle Fördergruppen zusammen (kein foerdergruppe-Filter).
 $filterFg = (string) ($_GET['fg'] ?? 'sponsoring');
-if (!in_array($filterFg, sponsorFoerdergruppeKeys(), true)) {
+if ($filterFg !== 'alle' && !in_array($filterFg, sponsorFoerdergruppeKeys(), true)) {
     $filterFg = 'sponsoring';
 }
 $filterBranchen = array_values(array_filter((array) ($_GET['branchen'] ?? [])));
@@ -110,8 +111,8 @@ if ($filterPaket !== '' && in_array($filterPaket, ['hauptsponsor', 'gold', 'silb
     $params['paket'] = $filterPaket;
 }
 
-// Fördergruppen-Reiter: jede Ansicht zeigt genau eine Gruppe.
-if ($hasFoerdergruppe) {
+// Fördergruppen-Reiter: jede Ansicht zeigt genau eine Gruppe ('alle' = ohne Filter).
+if ($hasFoerdergruppe && $filterFg !== 'alle') {
     $where[] = 'foerdergruppe = :fg';
     $params['fg'] = $filterFg;
 }
@@ -171,14 +172,6 @@ $totalCount = (int) $countStmt->fetchColumn();
 $summeStmt = $pdo->query('SELECT SUM(summe) FROM sponsors WHERE status IN ("zugesagt", "bestaetigt", "abgerechnet", "bezahlt")');
 $gesamtSumme = (float) $summeStmt->fetchColumn();
 
-$merkfeld = '';
-try {
-    $merkStmt = $pdo->prepare('SELECT `value` FROM einstellungen WHERE `key` = :key');
-    $merkStmt->execute(['key' => 'sponsor_merkfeld']);
-    $merkfeld = (string) ($merkStmt->fetchColumn() ?: '');
-} catch (PDOException $e) {
-    // Table may not exist yet
-}
 
 $branchen = [];
 try {
@@ -209,83 +202,18 @@ try {
             flex-wrap: wrap;
             gap: 1.25rem;
             margin-top: 1.5rem;
-            margin-bottom: 1.5rem;
-            /* Oberste Ebene der fixierten Kopf-Zone: Titel bleibt beim Scrollen oben stehen.
-               Solider Grund (= Seitenfarbe, in Ruhe unsichtbar) + höchster z-index, damit
-               die scrollenden Filter/Karten sauber dahinter verschwinden. */
-            position: sticky;
-            top: 0;
-            z-index: 21;
-            background: var(--bg);
+            margin-bottom: 1.25rem;
         }
         /* Top-Polsterung des Scroll-Containers auf 0 (Abstand wandert in .page-header oben),
            damit die fixierte Kopf-Zone bündig am oberen Rand andockt statt an der Polsterkante —
-           sonst schöben Karten durch den 1,5rem-Streifen ÜBER dem Titel. */
+           sonst schöbe Inhalt durch den 1,5rem-Streifen ÜBER dem Titel. */
         .main-content { padding-top: 0; }
         .filter-bar {
             display: flex;
             gap: 1rem;
-            margin-bottom: 0;
+            margin-bottom: 1rem;
             flex-wrap: wrap;
             align-items: flex-end;
-        }
-        /* Filter+Stats links, Merkfeld rechts (gleich hohe Spalten) */
-        .filter-merk-row {
-            display: flex;
-            gap: 1.25rem;
-            align-items: stretch;
-            flex-wrap: wrap;
-            margin-bottom: 1.25rem;
-        }
-        /* Linke Spalte trägt Aktionsleiste + Filter + Stats und füllt die freie Breite;
-           das Merkfeld rechts wird per JS auf ihre Höhe gezogen. So bleibt neben dem
-           Notizfeld kein toter Raum stehen. */
-        .filter-col {
-            display: flex;
-            flex-direction: column;
-            gap: 0.85rem;
-            flex: 1 1 26rem;
-            min-width: 0;
-        }
-        .filter-col .action-bar {
-            margin-bottom: 0;
-        }
-        .filter-col .stats {
-            margin-bottom: 0;
-        }
-        .merkfeld-card {
-            display: flex;
-            flex: 0 1 22rem;
-            min-width: 16rem;
-            max-width: 26rem;
-            margin-left: auto;
-        }
-        .merkfeld-card textarea {
-            width: 100%;
-            box-sizing: border-box;
-            font-family: inherit;
-            font-size: 0.8rem;
-            line-height: 1.45;
-            padding: 0.5rem;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            resize: none;
-            /* Neben der linken Spalte auf deren Höhe gedeckelt — längerer Text scrollt im
-               Feld, statt die Zeile aufzublähen und links ein Loch zu hinterlassen. */
-            overflow-y: auto;
-        }
-        .merkfeld-card.locked textarea {
-            background: #f6f6f4;
-            color: var(--text);
-            cursor: default;
-        }
-        @media (max-width: 860px) {
-            .merkfeld-card {
-                flex-basis: 100%;
-                min-width: 0;
-                max-width: none;
-                margin-left: 0;
-            }
         }
         .filter-bar .form-group {
             margin-bottom: 0;
@@ -413,12 +341,13 @@ try {
         .ampel-gruen .ampel-dot { background: var(--primary); }
         .ampel-rot   .ampel-dot { background: var(--error); }
         /* Kompakte Aktionsleiste (Import/Export + Absprünge in die Anschreiben) */
+        /* CSV-Import/Export sitzt am Seitenende unter der Tabelle (TT 2026-08-14). */
         .action-bar {
             display: flex;
             flex-wrap: wrap;
             gap: 0.5rem 1.25rem;
             align-items: center;
-            margin-bottom: 1.25rem;
+            margin-top: 1.5rem;
             padding: 0.6rem 0.875rem;
             background: var(--white);
             border: 1px solid var(--border);
@@ -539,10 +468,25 @@ try {
         /* Branche-Karten (nur gruppiert): weiße Karten auf grauem Grund */
         @media (min-width: 769px) {
             /* App-Shell: Layout auf Fensterhöhe fixieren, Inhaltsbereich scrollt intern ->
-               der Tabellenkopf bleibt beim Scrollen stehen (sonst scrollt die ganze Seite). */
+               der Kopf bleibt beim Scrollen stehen (sonst scrollt die ganze Seite). */
             .dashboard-layout { height: 100vh; overflow: hidden; }
             .main-content { height: 100vh; }
             .sidebar { overflow-y: auto; }
+            /* Fixierte Kopf-Zone (nur Desktop): Titel + Filter + Stats + Reiter bleiben als
+               EIN Block oben stehen, der Spaltenkopf dockt exakt darunter an. --fixzone-h =
+               per JS gemessene Blockhöhe. Auf dem Handy (< 769px) ist nichts fixiert, die
+               ganze Seite scrollt normal -> die Liste bleibt sichtbar. */
+            .kopf-fixzone {
+                position: sticky;
+                top: 0;
+                z-index: 20;
+                background: var(--bg);
+            }
+            .data-table thead th {
+                position: sticky;
+                top: var(--fixzone-h, 0px);
+                z-index: 5;
+            }
         }
         .table-wrap.grouped {
             overflow: visible;
@@ -559,19 +503,18 @@ try {
             border-radius: 0;
             overflow: visible;
         }
-        /* Fixierte Kopf-Zone: Titel + Fördergruppen-Reiter + Spaltenkopf bleiben beim Scrollen
-           als eine graue Einheit oben stehen; die Branche-Karten scrollen sauber dahinter
-           durch (solider Grund + z-index über den Karten). --ph-h = Titelhöhe, --kopf-h =
-           Reiter-Bandhöhe (beide per JS gemessen), damit jede Ebene lückenlos anschließt. */
+        /* Reiter-Band (Fördergruppen): grauer Grund wie die Kartenzone, verbindet optisch mit
+           dem Spaltenkopf. Zentriert; passt der Reiter nicht auf schmale Schirme, scrollt er
+           horizontal (safe center: bei Überlauf linksbündig, damit nichts abgeschnitten wird),
+           statt umzubrechen. */
         .kopf-sticky {
-            position: sticky;
-            top: var(--ph-h, 0px);
-            z-index: 20;
+            display: flex;
+            justify-content: safe center;
+            overflow-x: auto;
             background: #eceef1;
-            padding: 0.75rem 0;
+            padding: 0.75rem 14px;
         }
-        /* Spaltenkopf klebt direkt unter Titel + Reiter (nicht am Viewport-Rand) */
-        .data-table thead th { position: sticky; top: calc(var(--ph-h, 0px) + var(--kopf-h, 0px)); z-index: 5; }
+        .kopf-sticky .ansicht-toggle { flex: 0 0 auto; }
         .data-table.grouped thead th {
             background: #eceef1;
             border-bottom: none;
@@ -716,50 +659,12 @@ try {
 <?php $activeNav = 'sponsoren'; require __DIR__ . '/_sidebar.php'; ?>
 
         <main class="main-content">
-            <div class="page-header">
-                <h1>Sponsoren-Übersicht</h1>
-                <a href="sponsor_form.php" class="btn btn-primary btn-small">+ Neu anlegen</a>
-            </div>
-
-            <?php if ($flashSuccess): ?>
-                <div class="alert alert-success"><?= htmlspecialchars($flashSuccess) ?></div>
-            <?php endif; ?>
-
-            <?php if ($flashError): ?>
-                <div class="alert alert-error"><?= htmlspecialchars($flashError) ?></div>
-            <?php endif; ?>
-
-            <?php if (!empty($importReport)): ?>
-                <div class="import-report">
-                    <strong>Import-Hinweise:</strong>
-                    <ul>
-                        <?php foreach ($importReport as $line): ?>
-                            <li><?= htmlspecialchars($line) ?></li>
-                        <?php endforeach; ?>
-                    </ul>
+            <div class="kopf-fixzone">
+                <div class="page-header">
+                    <h1>Sponsoren-Übersicht</h1>
+                    <a href="sponsor_form.php" class="btn btn-primary btn-small">+ Neu anlegen</a>
                 </div>
-            <?php endif; ?>
 
-            <div class="filter-merk-row">
-                <div class="filter-col">
-                <?php $exportQuery = http_build_query(array_filter(['status' => $filterStatus, 'paket' => $filterPaket])); ?>
-                <div class="action-bar">
-                    <form method="post" action="api/sponsor_import.php" enctype="multipart/form-data"
-                          onsubmit="return confirm('CSV jetzt importieren? Dubletten (Firma + E-Mail) werden übersprungen.');">
-                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                        <label for="csv_datei">CSV-Import</label>
-                        <input type="file" id="csv_datei" name="csv_datei" accept=".csv,text/csv" required>
-                        <button type="submit" class="btn btn-small btn-secondary">Importieren</button>
-                    </form>
-                    <div class="action-bar-sep"></div>
-                    <a href="api/sponsor_export.php<?= $exportQuery ? '?' . $exportQuery : '' ?>" class="btn btn-small btn-secondary">
-                        CSV-Export<?= ($filterStatus || $filterPaket) ? ' (gefiltert)' : '' ?>
-                    </a>
-                    <a href="api/sponsor_vcard_export.php<?= $exportQuery ? '?' . $exportQuery : '' ?>" class="btn btn-small btn-secondary"
-                       title="Ansprechpartner als vCard (.vcf) für die Handy-Kontakte">
-                        vCard-Export<?= ($filterStatus || $filterPaket) ? ' (gefiltert)' : '' ?>
-                    </a>
-                </div>
                 <form method="get" class="filter-bar">
                     <div class="form-group">
                         <label>Status</label>
@@ -822,33 +727,49 @@ try {
                     <?php endif; ?>
                 </form>
 
-                    <div class="stats">
-                        <span><?= count($sponsoren) ?> von <?= $totalCount ?> Sponsoren</span>
-                        <span>Zusagen gesamt: <span class="stat-value"><?= number_format($gesamtSumme, 2, ',', '.') ?> €</span></span>
-                    </div>
+                <div class="stats">
+                    <span><?= count($sponsoren) ?> von <?= $totalCount ?> Sponsoren</span>
+                    <span>Zusagen gesamt: <span class="stat-value"><?= number_format($gesamtSumme, 2, ',', '.') ?> €</span></span>
                 </div>
 
-                <div class="merkfeld-card" id="merkfeld-wrap">
-                    <textarea id="merkfeld-text" rows="6" data-csrf="<?= htmlspecialchars($csrfToken) ?>"
-                              placeholder="📌 Merkfeld — Bankverbindung, Vereins-/Steuernummer …&#10;Doppelklick sperrt &amp; speichert, erneuter Doppelklick entsperrt."><?= htmlspecialchars($merkfeld) ?></textarea>
-                </div>
-            </div>
-
-            <?php
+                <?php
             // Fördergruppen-Reiter im Kopf (TT 2026-08-14). Die frühere Liste/Branche-Umschaltung
             // ist entfernt — die Branche-Gruppierung ist die einzige Darstellung, deshalb entfällt
             // die Branche-Spalte immer.
             $colCount--;
             $qsFg = $_GET;
             ?>
-            <div class="kopf-sticky">
-                <div class="ansicht-toggle" style="display:inline-flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;font-size:0.85rem">
-                    <?php $fgFirst = true; foreach (SPONSOR_FOERDERGRUPPE as $fgKey => $fgLabel): $qsFg['fg'] = $fgKey; ?>
+                <div class="kopf-sticky">
+                    <div class="ansicht-toggle" style="display:inline-flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;font-size:0.85rem">
+                        <?php $fgFirst = true; foreach (SPONSOR_FOERDERGRUPPE as $fgKey => $fgLabel): $qsFg['fg'] = $fgKey; ?>
+                            <a href="?<?= htmlspecialchars(http_build_query($qsFg)) ?>"
+                               style="padding:0.4rem 0.85rem;text-decoration:none;<?= $fgFirst ? '' : 'border-left:1px solid var(--border);' ?><?= $filterFg === $fgKey ? 'background:var(--primary);color:#fff' : 'color:var(--text)' ?>"><?= htmlspecialchars($fgLabel) ?></a>
+                        <?php $fgFirst = false; endforeach; ?>
+                        <?php $qsFg['fg'] = 'alle'; ?>
                         <a href="?<?= htmlspecialchars(http_build_query($qsFg)) ?>"
-                           style="padding:0.4rem 0.85rem;text-decoration:none;<?= $fgFirst ? '' : 'border-left:1px solid var(--border);' ?><?= $filterFg === $fgKey ? 'background:var(--primary);color:#fff' : 'color:var(--text)' ?>"><?= htmlspecialchars($fgLabel) ?></a>
-                    <?php $fgFirst = false; endforeach; ?>
+                           style="padding:0.4rem 0.85rem;text-decoration:none;border-left:1px solid var(--border);<?= $filterFg === 'alle' ? 'background:var(--primary);color:#fff' : 'color:var(--text)' ?>">Alle</a>
+                    </div>
                 </div>
-            </div>
+            </div><!-- /kopf-fixzone -->
+
+            <?php if ($flashSuccess): ?>
+                <div class="alert alert-success"><?= htmlspecialchars($flashSuccess) ?></div>
+            <?php endif; ?>
+
+            <?php if ($flashError): ?>
+                <div class="alert alert-error"><?= htmlspecialchars($flashError) ?></div>
+            <?php endif; ?>
+
+            <?php if (!empty($importReport)): ?>
+                <div class="import-report">
+                    <strong>Import-Hinweise:</strong>
+                    <ul>
+                        <?php foreach ($importReport as $line): ?>
+                            <li><?= htmlspecialchars($line) ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            <?php endif; ?>
 
             <div class="table-wrap grouped">
                 <table class="data-table grouped">
@@ -1085,81 +1006,28 @@ try {
                     </tbody>
                 </table>
             </div>
+
+            <?php $exportQuery = http_build_query(array_filter(['status' => $filterStatus, 'paket' => $filterPaket])); ?>
+            <div class="action-bar">
+                <form method="post" action="api/sponsor_import.php" enctype="multipart/form-data"
+                      onsubmit="return confirm('CSV jetzt importieren? Dubletten (Firma + E-Mail) werden übersprungen.');">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                    <label for="csv_datei">CSV-Import</label>
+                    <input type="file" id="csv_datei" name="csv_datei" accept=".csv,text/csv" required>
+                    <button type="submit" class="btn btn-small btn-secondary">Importieren</button>
+                </form>
+                <div class="action-bar-sep"></div>
+                <a href="api/sponsor_export.php<?= $exportQuery ? '?' . $exportQuery : '' ?>" class="btn btn-small btn-secondary">
+                    CSV-Export<?= ($filterStatus || $filterPaket) ? ' (gefiltert)' : '' ?>
+                </a>
+                <a href="api/sponsor_vcard_export.php<?= $exportQuery ? '?' . $exportQuery : '' ?>" class="btn btn-small btn-secondary"
+                   title="Ansprechpartner als vCard (.vcf) für die Handy-Kontakte">
+                    vCard-Export<?= ($filterStatus || $filterPaket) ? ' (gefiltert)' : '' ?>
+                </a>
+            </div>
         </main>
     </div>
     <script>
-    // Merkfeld: Doppelklick sperrt & speichert, erneuter Doppelklick entsperrt
-    (function() {
-        const wrap = document.getElementById('merkfeld-wrap');
-        if (!wrap) return;
-        const ta = document.getElementById('merkfeld-text');
-        const leftCol = document.querySelector('.filter-col');
-        const csrf = ta.dataset.csrf;
-        let locked = false;
-
-        // Höhe: nebeneinander genau so hoch wie die linke Spalte (Aktionsleiste + Filter +
-        // Stats), damit neben dem Feld kein toter Raum steht. Längerer Text scrollt im Feld,
-        // statt die Zeile aufzublähen. Untergrenze, damit es bei kurzer linker Spalte nicht
-        // zum Schlitz zusammenfällt. Gestapelt (mobil) wächst es wie bisher mit dem Inhalt.
-        const MIN_HOEHE = 9 * 16; // 9rem — vier, fünf Zeilen bleiben immer lesbar
-        function autosize() {
-            ta.style.height = 'auto';
-            let h = ta.scrollHeight;
-            if (leftCol && window.matchMedia('(min-width: 861px)').matches) {
-                h = Math.max(leftCol.offsetHeight, MIN_HOEHE);
-            }
-            ta.style.height = h + 'px';
-        }
-
-        function setLocked(v) {
-            locked = v;
-            ta.readOnly = v;
-            wrap.classList.toggle('locked', v);
-            ta.title = v
-                ? '🔒 gesperrt — Doppelklick zum Bearbeiten'
-                : '✏️ Doppelklick sperrt & speichert';
-            autosize();
-        }
-
-        function save() {
-            const body = new URLSearchParams();
-            body.set('csrf_token', csrf);
-            body.set('merkfeld', ta.value);
-            ta.title = '… speichern';
-            fetch('api/sponsor_merkfeld.php', {
-                method: 'POST',
-                headers: { 'X-Requested-With': 'fetch' },
-                body: body
-            })
-                .then(function(r) { return r.json(); })
-                .then(function(d) {
-                    if (d && d.ok) {
-                        setLocked(true);
-                        ta.title = '🔒 gespeichert';
-                    } else {
-                        ta.title = '⚠️ ' + ((d && d.message) || 'Fehler beim Speichern');
-                    }
-                })
-                .catch(function() { ta.title = '⚠️ Fehler beim Speichern'; });
-        }
-
-        ta.addEventListener('dblclick', function() {
-            if (locked) {
-                setLocked(false);
-                ta.focus();
-            } else {
-                save();
-            }
-        });
-
-        ta.addEventListener('input', autosize);
-        window.addEventListener('resize', autosize);
-
-        // Startzustand: mit Inhalt = gesperrt, leer = direkt beschreibbar
-        setLocked(ta.value.trim() !== '');
-        autosize();
-    })();
-
     // Inline-Dropdowns: Paket/Status direkt aus der Übersicht speichern
     (function() {
         const csrf = <?= json_encode($csrfToken) ?>;
@@ -1317,17 +1185,14 @@ try {
         });
     })();
 
-    // Fixierte Kopf-Zone: Titel- und Reiter-Bandhöhe messen und als --ph-h / --kopf-h
-    // veröffentlichen, damit Reiter und Spaltenkopf lückenlos darunter andocken
-    // (robust bei Umbruch/Resize).
+    // Fixierte Kopf-Zone (Desktop): Blockhöhe messen und als --fixzone-h veröffentlichen,
+    // damit der Spaltenkopf lückenlos darunter andockt (robust bei Umbruch/Resize).
     (function () {
-        var header = document.querySelector('.page-header');
-        var band = document.querySelector('.kopf-sticky');
-        if (!band) { return; }
+        var fixzone = document.querySelector('.kopf-fixzone');
+        if (!fixzone) { return; }
         var root = document.documentElement;
         function sync() {
-            if (header) { root.style.setProperty('--ph-h', header.offsetHeight + 'px'); }
-            root.style.setProperty('--kopf-h', band.offsetHeight + 'px');
+            root.style.setProperty('--fixzone-h', fixzone.offsetHeight + 'px');
         }
         sync();
         window.addEventListener('resize', sync);
