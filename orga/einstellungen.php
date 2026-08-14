@@ -46,6 +46,7 @@ $trelloUrl = $settings['trello_board_url'] ?? '';
 $onedriveUrl = $settings['onedrive_url'] ?? '';
 $stravaUrl = $settings['strava_url'] ?? '';
 $metaBusinessUrl = $settings['meta_business_url'] ?? '';
+$sponsorMerkfeld = $settings['sponsor_merkfeld'] ?? '';
 
 require_once __DIR__ . '/../src/social_anlaesse.php';
 $socialHashtags   = trim((string) ($settings['social_hashtags'] ?? '')) ?: socialHashtagsDefault();
@@ -235,6 +236,17 @@ $makeWebhookSecret = (string) ($config['make_webhook_secret'] ?? '');
                             <label for="drive_root_helfer_id">Drive-Wurzel „Helfer" (Ordner-ID)</label>
                             <input type="text" id="drive_root_helfer_id" name="drive_root_helfer_id" value="<?= htmlspecialchars($driveRootHelfer) ?>" placeholder="leer = Ordner „Helfer" im Laufwerk">
                             <small style="color:var(--text-light)">Einstieg des „Helfer"-Tabs. Leer = automatisch „Helfer".</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h2>Sponsoren</h2>
+                    <div class="form-row single">
+                        <div class="form-group">
+                            <label for="sponsor_merkfeld">Merkfeld (Bankverbindung, Vereins-/Steuernummer …)</label>
+                            <textarea id="sponsor_merkfeld" name="sponsor_merkfeld" rows="6" maxlength="5000" placeholder="Bankverbindung, Vereins-/Steuernummer, Notizen zur Sponsoren-Abwicklung …"><?= htmlspecialchars($sponsorMerkfeld) ?></textarea>
+                            <small style="color:var(--text-light)">Freitext, nur für die Orga sichtbar. Wird in der Sponsoren-Übersicht nicht mehr angezeigt.</small>
                         </div>
                     </div>
                 </div>

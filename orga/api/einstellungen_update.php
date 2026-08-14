@@ -49,6 +49,7 @@ $allowedKeys = [
     'drive_root_helfer_id',
     'social_hashtags',
     'raceresult_api_url',
+    'sponsor_merkfeld',
 ];
 
 $renntag = trim($_POST['renntag_datum'] ?? '');
@@ -65,6 +66,9 @@ $driveRootHelfer = trim((string) ($_POST['drive_root_helfer_id'] ?? ''));
 // Social Media (umgezogen aus dem Orchestrator, Schnitt 5 Redesign-Spec)
 $socialHashtags   = mb_substr(trim((string) ($_POST['social_hashtags'] ?? '')), 0, 500);
 $raceresultApiUrl = trim((string) ($_POST['raceresult_api_url'] ?? ''));
+
+// Sponsoren-Merkfeld (Bank-/Vereinsdaten), umgezogen aus der Sponsoren-Übersicht.
+$sponsorMerkfeld = mb_substr(trim((string) ($_POST['sponsor_merkfeld'] ?? '')), 0, 5000);
 
 // Zugangsdaten-Notizen (Freitext, nur Admin sichtbar) — auf 2000 Zeichen gekappt.
 $raceresultHinweis = mb_substr(trim($_POST['raceresult_hinweis'] ?? ''), 0, 2000);
@@ -167,6 +171,7 @@ try {
         'drive_root_helfer_id'      => $driveRootHelfer ?: null,
         'social_hashtags'           => $socialHashtags ?: null,
         'raceresult_api_url'        => $raceresultApiUrl ?: null,
+        'sponsor_merkfeld'          => $sponsorMerkfeld ?: null,
     ];
 
     $stmt = $pdo->prepare('INSERT INTO einstellungen (`key`, `value`) VALUES (:key, :value) ON DUPLICATE KEY UPDATE `value` = :value2');
