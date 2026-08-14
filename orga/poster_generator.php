@@ -146,7 +146,7 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
             <p class="content-subtitle">Einzelne Elemente · Icons/Logos tauschbar · Kachel-Hintergrund an/aus · Zoom · Arbeitsfläche · Verlauf · PNG-Export</p>
         </header>
 
-        <p style="margin:0 0 1rem"><a href="social_orchestrator.php">&larr; zur Social-Media-Seite</a>
+        <p style="margin:0 0 1rem"><a href="social_fahrplan.php">&larr; zum Social-Fahrplan</a>
             <a href="../docs/poster-generator.md" target="_blank" rel="noopener" style="margin-left:1rem">ℹ️ Doku &amp; Ausbaustufen</a></p>
         <p class="pg-hint" style="max-width:860px;margin-bottom:1.25rem">
             <strong>Element anklicken</strong> → im Panel links erscheinen die passenden Optionen (Icon/Bild tauschen, skalieren, <strong>Kachel-Hintergrund an/aus</strong> = Schrift &amp; Kachel trennen).

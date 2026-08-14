@@ -46,6 +46,8 @@ $trelloUrl = $settings['trello_board_url'] ?? '';
 $onedriveUrl = $settings['onedrive_url'] ?? '';
 $stravaUrl = $settings['strava_url'] ?? '';
 
+$socialHashtags   = $settings['social_hashtags'] ?? '';
+$raceresultApiUrl = $settings['raceresult_api_url'] ?? '';
 $raceresultHinweis = $settings['raceresult_hinweis'] ?? '';
 $trelloHinweis = $settings['trello_hinweis'] ?? '';
 $onedriveHinweis = $settings['onedrive_hinweis'] ?? '';
@@ -228,6 +230,22 @@ $makeWebhookSecret = (string) ($config['make_webhook_secret'] ?? '');
                             <label for="drive_root_helfer_id">Drive-Wurzel „Helfer" (Ordner-ID)</label>
                             <input type="text" id="drive_root_helfer_id" name="drive_root_helfer_id" value="<?= htmlspecialchars($driveRootHelfer) ?>" placeholder="leer = Ordner „Helfer" im Laufwerk">
                             <small style="color:var(--text-light)">Einstieg des „Helfer"-Tabs. Leer = automatisch „Helfer".</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-section" id="social-section">
+                    <h2>Social Media</h2>
+                    <p class="settings-hint">Vereinsweite Vorgaben für den Social-Fahrplan und das Post-Detail.</p>
+                    <div class="form-row single">
+                        <div class="form-group">
+                            <label for="social_hashtags">Standard-Hashtags (werden an jeden Social-Post gehängt)</label>
+                            <textarea id="social_hashtags" name="social_hashtags" rows="2" placeholder="#marktlauf #kirchseeon #atsv"><?= htmlspecialchars($socialHashtags) ?></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="raceresult_api_url">RaceResult SimpleAPI-Link (Datenquelle „Renntag-Nachbericht")</label>
+                            <input type="url" id="raceresult_api_url" name="raceresult_api_url" value="<?= htmlspecialchars($raceresultApiUrl) ?>" placeholder="https://my.raceresult.com/377952/RRPublish/data/list?...">
+                            <p class="settings-hint" style="margin:0.3rem 0 0">In RaceResult unter „Zugriffsrechte/Freigabe → Freigabe (SimpleAPI)", Typ „Liste" anlegen. Ohne Link werden Beispiel-Daten verwendet.</p>
                         </div>
                     </div>
                 </div>

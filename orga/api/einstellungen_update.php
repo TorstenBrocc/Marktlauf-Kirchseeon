@@ -45,6 +45,8 @@ $allowedKeys = [
     'llm_provider',
     'drive_root_orga_id',
     'drive_root_helfer_id',
+    'social_hashtags',
+    'raceresult_api_url',
 ];
 
 $renntag = trim($_POST['renntag_datum'] ?? '');
@@ -56,6 +58,10 @@ $onedriveUrl = trim($_POST['onedrive_url'] ?? '');
 $stravaUrl = trim($_POST['strava_url'] ?? '');
 $driveRootOrga   = trim((string) ($_POST['drive_root_orga_id'] ?? ''));
 $driveRootHelfer = trim((string) ($_POST['drive_root_helfer_id'] ?? ''));
+
+// Social Media (umgezogen aus dem Orchestrator, Schnitt 5 Redesign-Spec)
+$socialHashtags   = mb_substr(trim((string) ($_POST['social_hashtags'] ?? '')), 0, 500);
+$raceresultApiUrl = trim((string) ($_POST['raceresult_api_url'] ?? ''));
 
 // Zugangsdaten-Notizen (Freitext, nur Admin sichtbar) — auf 2000 Zeichen gekappt.
 $raceresultHinweis = mb_substr(trim($_POST['raceresult_hinweis'] ?? ''), 0, 2000);
@@ -113,6 +119,12 @@ if ($stravaUrl !== '' && !filter_var($stravaUrl, FILTER_VALIDATE_URL)) {
     exit;
 }
 
+if ($raceresultApiUrl !== '' && !filter_var($raceresultApiUrl, FILTER_VALIDATE_URL)) {
+    $_SESSION['flash_error'] = 'Ungültiger RaceResult-SimpleAPI-Link.';
+    header('Location: ../einstellungen.php');
+    exit;
+}
+
 if ($briefEventDatum !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $briefEventDatum)) {
     $_SESSION['flash_error'] = 'Ungültiges Event-Datum.';
     header('Location: ../einstellungen.php');
@@ -141,6 +153,8 @@ try {
         'strava_hinweis'            => $stravaHinweis ?: null,
         'drive_root_orga_id'        => $driveRootOrga ?: null,
         'drive_root_helfer_id'      => $driveRootHelfer ?: null,
+        'social_hashtags'           => $socialHashtags ?: null,
+        'raceresult_api_url'        => $raceresultApiUrl ?: null,
     ];
 
     $stmt = $pdo->prepare('INSERT INTO einstellungen (`key`, `value`) VALUES (:key, :value) ON DUPLICATE KEY UPDATE `value` = :value2');
