@@ -101,6 +101,11 @@ Der Runner verwaltet eine `schema_migrations`-Tabelle — es ist jederzeit
 nachvollziehbar, welche Migrationen bereits gefahren wurden. Migrationen niemals
 manuell per MySQL-Client ausführen.
 
+**Ohne SSH-Zugang** (z. B. aus einer Web-Session) laufen Migrationen per Knopf:
+GitHub → **Actions** → Workflow **„DB-Migration"** → **Run workflow** (`befehl` =
+`status` oder `migrate`). Das ruft `bin/migrate.php` per SSH auf Strato auf — bewusst
+nur manuell, nicht an den Deploy gekoppelt (DDL committet ohne Auto-Rollback).
+
 ## ⚙️ Entwicklung & Deployment
 
 - **Konfiguration:** Server-Zugangsdaten liegen in `storage/config.php`, das
