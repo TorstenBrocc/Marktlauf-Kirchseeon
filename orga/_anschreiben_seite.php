@@ -57,14 +57,15 @@ $versandfaehig = [];
 
 $pdo         = getDbConnection();
 
-// Fördergruppen-Umschaltung im Erstanschreiben: ist eine Fördergruppen-Zielgruppe gewählt
-// (fg_<gruppe>) und gibt es dafür eine eigene Vorlagen-Variante, bearbeitet die Seite deren
-// Text ($textSlug — eigener Master/Entwurf/Default). Der strukturelle $slug (Versand-Typ,
-// Anhänge, Anhang-Abwahl) bleibt die Basis. So passt der Editor zum Versand, der die Variante
-// ohnehin anhand der Fördergruppe des Empfängers wählt (sponsorBriefEffektiverSlug()).
+// Fördergruppen-Umschaltung (Erst- + Folgeanschreiben): ist eine Fördergruppen-Zielgruppe
+// gewählt (fg_<gruppe>) und gibt es dafür eine eigene Vorlagen-Variante, bearbeitet die Seite
+// deren Text ($textSlug). Der strukturelle $slug (Versand-Typ, Anhänge, Anhang-Abwahl) bleibt
+// die Basis; der Versand wählt die Variante ohnehin anhand der Fördergruppe des Empfängers
+// (sponsorBriefEffektiverSlug()). Reiter nur auf den Seiten mit Fördergruppen-Varianten.
+$hatFoerderReiter = in_array($slug, ['erstanschreiben', 'folgejahr'], true);
 $zgWahl   = (string) ($_GET['zielgruppe'] ?? '');
 $textSlug = $slug;
-if ($slug === 'erstanschreiben' && SPONSOR_BRIEF_VARIANTEN !== [] && str_starts_with($zgWahl, 'fg_')) {
+if ($hatFoerderReiter && SPONSOR_BRIEF_VARIANTEN !== [] && str_starts_with($zgWahl, 'fg_')) {
     $variante = sponsorBriefVarianteFuer($slug, substr($zgWahl, 3));
     if ($variante !== '') {
         $textSlug = $variante;
@@ -77,11 +78,12 @@ $default     = $defaults[$textSlug] ?? $defaults[$slug];
 $platzhalter = sponsorBriefPlatzhalterHilfe($slug);
 $seite       = basename($_SERVER['PHP_SELF'] ?? '');
 
-// Sichtbare Fördergruppen-Reiter über dem Brief (nur Erstanschreiben): schalten Empfänger UND
-// Vorlagentext gemeinsam um — dieselben vier Töpfe wie die Reiter in den Stammdaten. Die
-// Status-Gruppen („In Klärung", „Wiedervorlage") bleiben zusätzlich im Empfänger-Kopf unten.
+// Sichtbare Fördergruppen-Reiter über dem Brief: schalten Empfänger UND Vorlagentext gemeinsam
+// um — dieselben vier Töpfe wie die Reiter in den Stammdaten. Die Status-Gruppen („In Klärung",
+// „Wiedervorlage", „Bestandssponsoren") bleiben zusätzlich im Empfänger-Kopf unten.
 $foerderReiter = [];
-if ($slug === 'erstanschreiben') {
+$aktiveFg = '';
+if ($hatFoerderReiter) {
     $aktiveFg = str_starts_with($zgWahl, 'fg_')
         ? substr($zgWahl, 3)
         : ($zgWahl === '' ? (string) array_key_first(SPONSOR_FOERDERGRUPPE) : '');
@@ -132,6 +134,8 @@ if ($isUserScoped && $vorlage['draft'] && $vorlage['draft_ts'] !== '') {
         .fg-reiter-tab { padding: 0.45rem 0.9rem; border: 1px solid var(--border); border-radius: 6px; background: #fff; color: var(--text); text-decoration: none; font-size: 0.9rem; font-weight: 600; white-space: nowrap; }
         .fg-reiter-tab:hover { background: var(--bg); }
         .fg-reiter-tab.aktiv { background: var(--primary); border-color: var(--primary); color: #fff; }
+        .fg-hinweis { margin: 0 0 1rem; padding: 0.6rem 0.8rem; background: rgba(0,150,64,0.07); border-left: 3px solid var(--primary); border-radius: 4px; font-size: 0.85rem; line-height: 1.5; color: var(--text); }
+        .fg-hinweis-meta { display: block; margin-top: 0.25rem; font-size: 0.8rem; color: var(--text-light); }
         .versand-card { border: 1px solid var(--primary); }
         .versand-warn { font-size: 0.85rem; color: var(--text); background: rgba(255,193,7,0.15); border: 1px solid rgba(255,193,7,0.55); border-radius: 6px; padding: 0.6rem 0.8rem; margin: 0 0 1rem; line-height: 1.5; }
     </style>
@@ -180,16 +184,16 @@ if ($isUserScoped && $vorlage['draft'] && $vorlage['draft_ts'] !== '') {
                 <?php endforeach; ?>
             </div>
             <?php $fgHinweis = $aktiveFg !== '' ? sponsorFoerdergruppeHinweis($aktiveFg) : ''; ?>
-            <p class="brief-hint" style="margin:-0.4rem 0 1rem">
+            <div class="fg-hinweis">
                 <?php if ($fgHinweis !== ''): ?>
                     <strong><?= htmlspecialchars(sponsorFoerdergruppeLabel($aktiveFg)) ?>:</strong>
                     <?= htmlspecialchars($fgHinweis) ?>
-                    <span style="opacity:.65">— der Reiter wechselt Empfänger <strong>und</strong> Vorlagentext.</span>
+                    <span class="fg-hinweis-meta">Der Reiter wechselt Empfänger <strong>und</strong> Vorlagentext.</span>
                 <?php else: ?>
                     Die Reiter wechseln Empfänger und Vorlagentext je Fördertopf.
                     Status-Gruppen (z. B. „In Klärung") stehen zusätzlich unten in der Empfänger-Auswahl.
                 <?php endif; ?>
-            </p>
+            </div>
             <?php endif; ?>
 
             <form method="post" action="api/sponsor_brief_save.php" id="brief-form">

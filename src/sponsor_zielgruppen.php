@@ -57,20 +57,28 @@ function sponsorZielgruppen(string $slug): array {
             ];
             return $gruppen;
         })(),
-        'folgejahr' => [
-            // Definition TT (2026-08-10): Bestandssponsor ist prinzipiell jeder Sponsor, der
-            // nicht generell gesagt hat, dass er keinen Kontakt mehr will. Eine Absage in
-            // einem Jahr schließt also nicht aus, im nächsten wieder gefragt zu werden —
-            // nur das ausdrückliche „kein Kontakt" tut das.
-            'bestand' => [
+        // Folgeanschreiben: dieselbe Fördergruppen-Umschaltung wie das Erstanschreiben (Reiter
+        // oben), damit auch Bestands-Förderpartner den passenden Wiederansprache-Text bekommen.
+        // Darunter die bisherigen status-basierten Gruppen. Bestandssponsor = jeder ohne
+        // ausdrückliches „kein Kontakt" (TT 2026-08-10).
+        'folgejahr' => (static function (): array {
+            $gruppen = [];
+            foreach (SPONSOR_FOERDERGRUPPE as $key => $label) {
+                $gruppen['fg_' . $key] = [
+                    'label' => $label . ' — Bestand',
+                    'where' => "s.kein_kontakt = 0 AND s.foerdergruppe = '" . $key . "'",
+                ];
+            }
+            $gruppen['bestand'] = [
                 'label' => 'Bestandssponsoren — alle ohne „Kein Kontakt"',
                 'where' => 's.kein_kontakt = 0',
-            ],
-            'zugesagt_frueher' => [
+            ];
+            $gruppen['zugesagt_frueher'] = [
                 'label' => 'Nur frühere Zusagen',
                 'where' => "s.status IN ('zugesagt','bestaetigt','abgerechnet','bezahlt')",
-            ],
-        ],
+            ];
+            return $gruppen;
+        })(),
         'bestaetigung' => [
             'zugesagt' => [
                 'label' => 'Zugesagt — Bestätigung offen',

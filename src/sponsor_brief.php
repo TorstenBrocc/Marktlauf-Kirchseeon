@@ -64,6 +64,18 @@ const SPONSOR_BRIEF_VARIANTEN = [
         'basis'         => 'erstanschreiben',
         'foerdergruppe' => 'oeffentlichkeitsarbeit',
     ],
+    'folgejahr_foerderantrag' => [
+        'basis'         => 'folgejahr',
+        'foerdergruppe' => 'foerderantrag',
+    ],
+    'folgejahr_ueber_dritte' => [
+        'basis'         => 'folgejahr',
+        'foerdergruppe' => 'ueber_dritte',
+    ],
+    'folgejahr_oeffentlichkeitsarbeit' => [
+        'basis'         => 'folgejahr',
+        'foerdergruppe' => 'oeffentlichkeitsarbeit',
+    ],
 ];
 
 /** Gültige Vorlagen-Slugs (= Anschreiben-Typen) inkl. Fördergruppen-Varianten. */
@@ -124,6 +136,9 @@ function sponsorBriefEffektiverSlug(PDO $pdo, string $basisSlug, int $sponsorId)
  * zurückspringen, fragen hier nach dem Ziel statt einen Sammel-Editor anzunehmen.
  */
 function sponsorBriefSeite(string $slug): string {
+    // Fördergruppen-Varianten teilen die Seite ihres Basis-Slugs (z. B. folgejahr_foerderantrag
+    // -> folgeanschreiben.php), damit der Rücksprung nach dem Speichern stimmt.
+    $slug = sponsorBriefBasisSlug($slug);
     return match ($slug) {
         'folgejahr'    => 'folgeanschreiben.php',
         'frei'         => 'freier_brief.php',
@@ -254,6 +269,46 @@ Herzliche Grüße
 {{signatur}}
 MD;
 
+    // Folgeanschreiben-Varianten je Fördergruppe (Bestands-/Wiederansprache) — Ton „erneut",
+    // jährlich wiederkehrend. Parallel zu den Erstanschreiben-Varianten.
+    $folgeFoerderantrag = <<<MD
+{{anrede}}
+
+im vergangenen Jahr durften wir Ihnen den Marktlauf Kirchseeon vorstellen – dieses Jahr geht er am **{{event_datum}}** in die nächste Runde. Als **jährlich wiederkehrende** Veranstaltung mit Kinder- und Jugendläufen wächst er weiter und erreicht immer mehr Familien aus der Region.
+
+Wir würden gern erneut prüfen, ob eine Förderung durch Ihr Haus möglich ist. Könnten Sie uns die aktuellen **Förderleitlinien, das Antragsformular** sowie die **Fristen/Vergabetermine** für dieses Jahr zukommen lassen?
+
+Über eine kurze Rückmeldung freuen wir uns sehr.
+
+Herzlichen Dank und freundliche Grüße
+
+{{signatur}}
+MD;
+
+    $folgeUeberDritte = <<<MD
+{{anrede}}
+
+der Marktlauf Kirchseeon geht am **{{event_datum}}** in die nächste Runde – als **jährlich wiederkehrende** Veranstaltung mit Schwerpunkt auf Kinder- und Jugendläufen.
+
+Wie schon im vergangenen Jahr würden wir gern mit Ihnen klären, über welchen Weg – Verbund, gemeinsame Aktion oder den zuständigen Betreuer – eine Unterstützung dieses Jahr möglich wäre. Über einen kurzen Hinweis auf den richtigen Ansprechpartner freuen wir uns.
+
+Herzliche Grüße
+
+{{signatur}}
+MD;
+
+    $folgeOeffentlichkeit = <<<MD
+{{anrede}}
+
+der Marktlauf Kirchseeon geht am **{{event_datum}}** in die nächste Runde – **jährlich wiederkehrend**, mit Kinder- und Jugendläufen und einem Fokus auf Bewegung und Gesundheit.
+
+Gern würden wir – wie im vergangenen Jahr – erneut eine Präsenz im Sinne der **Gesundheitsförderung** anbieten: Infostand, Beitrag in den Starterbeuteln oder eine gemeinsame Botschaft. Hätten Sie dieses Jahr wieder Interesse?
+
+Herzliche Grüße
+
+{{signatur}}
+MD;
+
     $frei = <<<MD
 {{anrede}}
 
@@ -311,6 +366,21 @@ MD;
             'name'       => 'Folgejahr / Bestandssponsor',
             'betreff'    => 'Auch 2026 wieder dabei? Marktlauf Kirchseeon – {{firma}}',
             'koerper_md' => $folge,
+        ],
+        'folgejahr_foerderantrag' => [
+            'name'       => 'Folgejahr — Förderanträge',
+            'betreff'    => 'Förderung erneut möglich? Marktlauf Kirchseeon – Kinder- und Jugendläufe',
+            'koerper_md' => $folgeFoerderantrag,
+        ],
+        'folgejahr_ueber_dritte' => [
+            'name'       => 'Folgejahr — Über Dritte',
+            'betreff'    => 'Marktlauf Kirchseeon – erneut über welchen Weg möglich?',
+            'koerper_md' => $folgeUeberDritte,
+        ],
+        'folgejahr_oeffentlichkeitsarbeit' => [
+            'name'       => 'Folgejahr — Öffentlichkeitsarbeit',
+            'betreff'    => 'Auch dieses Jahr präsent? Marktlauf Kirchseeon',
+            'koerper_md' => $folgeOeffentlichkeit,
         ],
         'frei' => [
             'name'       => 'Freier Brief',
