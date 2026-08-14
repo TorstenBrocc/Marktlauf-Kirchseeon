@@ -139,16 +139,10 @@ if ($raceresultApiUrl !== '' && !filter_var($raceresultApiUrl, FILTER_VALIDATE_U
     exit;
 }
 
-if ($briefEventDatum !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $briefEventDatum)) {
-    $_SESSION['flash_error'] = 'Ungültiges Event-Datum.';
-    header('Location: ../einstellungen.php');
-    exit;
-}
-if ($briefAntwortBis !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $briefAntwortBis)) {
-    $_SESSION['flash_error'] = 'Ungültige Rückmeldefrist.';
-    header('Location: ../einstellungen.php');
-    exit;
-}
+// Hinweis: Die früheren Validierungen für sponsor_brief_event_datum / sponsor_brief_antwort_bis
+// standen hier auf nie gesetzten Variablen (die Reads wurden mit dem Datenverlust-Fix entfernt)
+// und ließen jedes Speichern fehlschlagen. Diese Keys gehören zur Anschreiben-Seite und werden
+// ausschließlich von sponsor_brief_settings_save.php gelesen, validiert und geschrieben.
 
 try {
     $pdo = getDbConnection();
