@@ -76,14 +76,16 @@ Angewandte Migrationen: **073** (KJR), **074** (BSJ + Strategie-Notizen an 75/78
 **075** (Konzern-Tag „Kreissparkasse (KSK)").
 
 Erledigt in der lokalen DB-Session am 2026-08-14:
-- **UI-Bug rechter Rand — behoben & live.** Ursache im Browser belegt: `.main-content` ist
-  `overflow-y:auto` → die Spec macht `overflow-x` implizit zu `auto`; ist die gruppierte
-  Tabelle breiter als der Viewport, scrollt main-content horizontal und die nur viewport-breite
-  sticky `.kopf-fixzone` legt rechts einen ungedeckten Streifen frei. Fix: `.kopf-fixzone
-  { left: 0; }` im Desktop-Media-Query (`orga/sponsoren.php` ~479) — Kopf-Zone horizontal
-  gepinnt, deckt die volle sichtbare Breite. Bewusst NICHT die Tabelle auf `overflow-x:auto`
-  gestellt (das hätte per Spec `overflow-y:auto` erzwungen und den vertikalen Sticky-Kopf
-  zerschossen). Verifiziert an originalgetreuem Mockup (beide Achsen), deployt (Branch-Dispatch).
+- **UI-Bug rechter Rand — behoben & live (von TT an der echten Seite bestätigt).** Echte
+  DevTools-Messung war entscheidend: `.table-wrap.grouped` stand auf `overflow:visible` und fing
+  die breite Tabelle NICHT ein → der Überlauf landete auf `.main-content`/der Seite (kaputter
+  rechter Rand, v. a. schmal < 769px ohne fixierten Kopf). Fix: `.table-wrap.grouped
+  { overflow-x: auto }` (`orga/sponsoren.php` ~498) — die Tabelle scrollt in ihrer Karte, Kopf/
+  Filter/Reiter bleiben voll breit; wirkt an allen Breiten. **Lehre:** der frühere `left:0`-Ansatz
+  war nur im Desktop-Media-Query aktiv und wurde nur am Mockup „verifiziert" → bei schmaler Ansicht
+  wirkungslos; nie wieder Optik ohne Blick auf die ECHTE Seite als erledigt melden. Trade-off
+  bewusst akzeptiert (TT ok): der desktop-vertikale Sticky-Spaltenkopf friert nicht mehr ein
+  (`overflow-x:auto` koppelt `overflow-y` auf auto). Bei Bedarf per Scroll-Box-Muster nachrüstbar.
 - **Kontakt-Audit (107 Sponsoren, direkt aus der DB).** Verteilung: sponsoring 80 · foerderantrag 7
   · ueber_dritte 7 · oeffentlichkeitsarbeit 13. Flags: Test-Datensätze `98 _torsten`, `65 Testfirma`,
   `102 _Anja Jost GmbH` (Cleanup destruktiv → offen); mögliche Dublette `30` vs `80` (Allianz
