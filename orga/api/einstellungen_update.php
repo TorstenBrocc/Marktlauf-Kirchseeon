@@ -39,6 +39,8 @@ $allowedKeys = [
     'trello_hinweis',
     'onedrive_hinweis',
     'strava_hinweis',
+    'meta_business_url',
+    'meta_business_hinweis',
     'sponsor_brief_event_datum',
     'sponsor_brief_antwort_bis',
     'sponsoring_pakete',
@@ -56,6 +58,7 @@ $raceresultUrl = trim($_POST['raceresult_url'] ?? '');
 $trelloUrl = trim($_POST['trello_board_url'] ?? '');
 $onedriveUrl = trim($_POST['onedrive_url'] ?? '');
 $stravaUrl = trim($_POST['strava_url'] ?? '');
+$metaBusinessUrl = trim($_POST['meta_business_url'] ?? '');
 $driveRootOrga   = trim((string) ($_POST['drive_root_orga_id'] ?? ''));
 $driveRootHelfer = trim((string) ($_POST['drive_root_helfer_id'] ?? ''));
 
@@ -68,6 +71,7 @@ $raceresultHinweis = mb_substr(trim($_POST['raceresult_hinweis'] ?? ''), 0, 2000
 $trelloHinweis     = mb_substr(trim($_POST['trello_hinweis'] ?? ''), 0, 2000);
 $onedriveHinweis   = mb_substr(trim($_POST['onedrive_hinweis'] ?? ''), 0, 2000);
 $stravaHinweis     = mb_substr(trim($_POST['strava_hinweis'] ?? ''), 0, 2000);
+$metaBusinessHinweis = mb_substr(trim($_POST['meta_business_hinweis'] ?? ''), 0, 2000);
 
 // ACHTUNG, hier lag ein Datenverlust: Dieser Endpoint hat früher zusätzlich
 // `sponsor_brief_event_datum`, `sponsor_brief_antwort_bis` und `sponsoring_pakete` geschrieben —
@@ -119,6 +123,12 @@ if ($stravaUrl !== '' && !filter_var($stravaUrl, FILTER_VALIDATE_URL)) {
     exit;
 }
 
+if ($metaBusinessUrl !== '' && !filter_var($metaBusinessUrl, FILTER_VALIDATE_URL)) {
+    $_SESSION['flash_error'] = 'Ungültige Meta-Business-URL.';
+    header('Location: ../einstellungen.php');
+    exit;
+}
+
 if ($raceresultApiUrl !== '' && !filter_var($raceresultApiUrl, FILTER_VALIDATE_URL)) {
     $_SESSION['flash_error'] = 'Ungültiger RaceResult-SimpleAPI-Link.';
     header('Location: ../einstellungen.php');
@@ -151,6 +161,8 @@ try {
         'trello_hinweis'            => $trelloHinweis ?: null,
         'onedrive_hinweis'          => $onedriveHinweis ?: null,
         'strava_hinweis'            => $stravaHinweis ?: null,
+        'meta_business_url'         => $metaBusinessUrl ?: null,
+        'meta_business_hinweis'     => $metaBusinessHinweis ?: null,
         'drive_root_orga_id'        => $driveRootOrga ?: null,
         'drive_root_helfer_id'      => $driveRootHelfer ?: null,
         'social_hashtags'           => $socialHashtags ?: null,

@@ -138,11 +138,20 @@ try {
     // Table may not exist yet
 }
 
+$metaBusinessUrl = '';
+try {
+    $metaBusinessStmt = $pdo->prepare('SELECT `value` FROM einstellungen WHERE `key` = :key');
+    $metaBusinessStmt->execute(['key' => 'meta_business_url']);
+    $metaBusinessUrl = $metaBusinessStmt->fetchColumn() ?: '';
+} catch (PDOException $e) {
+    // Table may not exist yet
+}
+
 // Zugangsdaten-Hinweise je Button — NUR für Admins, Klartext bleibt DB-intern.
 $linkHinweise = [];
 if ($isAdmin) {
     try {
-        $hinweisStmt = $pdo->query("SELECT `key`, `value` FROM einstellungen WHERE `key` IN ('raceresult_hinweis','trello_hinweis','onedrive_hinweis','strava_hinweis')");
+        $hinweisStmt = $pdo->query("SELECT `key`, `value` FROM einstellungen WHERE `key` IN ('raceresult_hinweis','trello_hinweis','onedrive_hinweis','strava_hinweis','meta_business_hinweis')");
         foreach ($hinweisStmt as $row) {
             $linkHinweise[$row['key']] = $row['value'];
         }
@@ -391,6 +400,7 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                         <?php if ($stravaUrl): ?>
                         <li><a href="<?= htmlspecialchars($stravaUrl) ?>" target="_blank" rel="noopener" class="btn-brand btn-brand-strava">Strava</a><?= $renderHinweis('strava_hinweis') ?></li>
                         <?php endif; ?>
+                        <li><a href="<?= htmlspecialchars($metaBusinessUrl ?: 'https://business.facebook.com/latest/home?nav_ref=bm_home_redirect&asset_id=1236742862857199') ?>" target="_blank" rel="noopener" class="btn-brand btn-brand-meta">Meta Business</a><?= $renderHinweis('meta_business_hinweis') ?></li>
                     </ul>
                 </article>
                 </div>

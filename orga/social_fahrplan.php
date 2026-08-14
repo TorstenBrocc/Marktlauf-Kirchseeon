@@ -245,7 +245,7 @@ foreach ($eintraege as $e) {
                    href="<?= htmlspecialchars($stravaUrl) ?>" target="_blank" rel="noopener">Strava öffnen</a>
                 <?php endif; ?>
                 <input type="text" id="fp-merkfeld" value="<?= htmlspecialchars($merkfeld) ?>" style="flex:1 1 260px"
-                       placeholder="Notiz (Merkfeld) — speichert beim Verlassen des Feldes">
+                       placeholder="Arbeitsnotiz — keine Zugangsdaten (die gehören in Einstellungen → Meta Business)">
             </div>
         </div>
     </main>

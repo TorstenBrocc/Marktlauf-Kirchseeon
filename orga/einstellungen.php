@@ -45,6 +45,7 @@ $raceresultUrl = $settings['raceresult_url'] ?? '';
 $trelloUrl = $settings['trello_board_url'] ?? '';
 $onedriveUrl = $settings['onedrive_url'] ?? '';
 $stravaUrl = $settings['strava_url'] ?? '';
+$metaBusinessUrl = $settings['meta_business_url'] ?? '';
 
 require_once __DIR__ . '/../src/social_anlaesse.php';
 $socialHashtags   = trim((string) ($settings['social_hashtags'] ?? '')) ?: socialHashtagsDefault();
@@ -53,6 +54,7 @@ $raceresultHinweis = $settings['raceresult_hinweis'] ?? '';
 $trelloHinweis = $settings['trello_hinweis'] ?? '';
 $onedriveHinweis = $settings['onedrive_hinweis'] ?? '';
 $stravaHinweis = $settings['strava_hinweis'] ?? '';
+$metaBusinessHinweis = $settings['meta_business_hinweis'] ?? '';
 
 // Vorbelegung: geteilter Vereins-Account. Erste Zeile = Login, zweite Zeile = Passwort.
 $loginDefault = "info@atsv-kirchseeon-marktlauf.de\n";
@@ -60,6 +62,7 @@ $raceresultHinweisVal = $raceresultHinweis !== '' ? $raceresultHinweis : $loginD
 $trelloHinweisVal     = $trelloHinweis !== ''     ? $trelloHinweis     : $loginDefault;
 $onedriveHinweisVal   = $onedriveHinweis !== ''   ? $onedriveHinweis   : $loginDefault;
 $stravaHinweisVal     = $stravaHinweis !== ''     ? $stravaHinweis     : $loginDefault;
+$metaBusinessHinweisVal = $metaBusinessHinweis !== '' ? $metaBusinessHinweis : $loginDefault;
 
 $smtpHost = $config['smtp_host'] ?? '–';
 $smtpPort = $config['smtp_port'] ?? '–';
@@ -124,6 +127,7 @@ $makeWebhookSecret = (string) ($config['make_webhook_secret'] ?? '');
         .link-pill-trello     { background: #0079BF; }
         .link-pill-onedrive   { background: #6264A7; }
         .link-pill-strava     { background: #FC4C02; }
+        .link-pill-meta       { background: #0866FF; }
         .form-group input,
         .form-group textarea {
             padding: 0.5rem;
@@ -318,6 +322,17 @@ $makeWebhookSecret = (string) ($config['make_webhook_secret'] ?? '');
                         <div class="form-group">
                             <label for="strava_hinweis">Zugangsdaten / Notiz (nur Admin)</label>
                             <textarea id="strava_hinweis" name="strava_hinweis" rows="3"><?= htmlspecialchars($stravaHinweisVal) ?></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-row single" id="link-meta_business_hinweis">
+                        <div class="form-group">
+                            <label for="meta_business_url" class="link-pill link-pill-meta">Meta Business</label>
+                            <input type="url" id="meta_business_url" name="meta_business_url" value="<?= htmlspecialchars($metaBusinessUrl) ?>" placeholder="https://business.facebook.com/...">
+                        </div>
+                        <div class="form-group">
+                            <label for="meta_business_hinweis">Zugangsdaten / Notiz (nur Admin)</label>
+                            <textarea id="meta_business_hinweis" name="meta_business_hinweis" rows="3"><?= htmlspecialchars($metaBusinessHinweisVal) ?></textarea>
                         </div>
                     </div>
                 </div>
