@@ -116,11 +116,6 @@ foreach ($eintraege as $e) {
         <header class="content-header">
             <h1>Social-Fahrplan</h1>
             <p class="content-subtitle">Terminierter Contentplan — Thema öffnen, Entwürfe erzeugen, veröffentlichen</p>
-            <?php if ($stravaUrl): ?>
-            <ul class="quick-links" style="margin-top:0.75rem;padding:0;">
-                <li style="border:none;padding:0;"><a href="<?= htmlspecialchars($stravaUrl) ?>" target="_blank" rel="noopener" class="btn-brand btn-brand-strava">Strava öffnen</a></li>
-            </ul>
-            <?php endif; ?>
         </header>
 
         <div class="hd-card">
@@ -245,6 +240,10 @@ foreach ($eintraege as $e) {
                 <a class="btn btn-small" style="background:#1877F2;color:#fff;white-space:nowrap"
                    href="https://business.facebook.com/latest/home?nav_ref=bm_home_redirect&amp;asset_id=1236742862857199"
                    target="_blank" rel="noopener noreferrer">Meta Business Account öffnen ↗</a>
+                <?php if ($stravaUrl): ?>
+                <a class="btn-brand btn-brand-strava" style="white-space:nowrap"
+                   href="<?= htmlspecialchars($stravaUrl) ?>" target="_blank" rel="noopener">Strava öffnen</a>
+                <?php endif; ?>
                 <input type="text" id="fp-merkfeld" value="<?= htmlspecialchars($merkfeld) ?>" style="flex:1 1 260px"
                        placeholder="Notiz (Merkfeld) — speichert beim Verlassen des Feldes">
             </div>

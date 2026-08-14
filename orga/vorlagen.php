@@ -32,6 +32,10 @@ $runner        = '../assets/images/laeufer.png';
 $postKontext = null;
 $postId      = (int) ($_GET['post'] ?? 0);
 $fahrplanId  = (int) ($_GET['fahrplan'] ?? 0);
+// Embed-Modus (?embed=1): ohne Sidebar/Header/Intro, eingebettet im Grafik-Schritt des
+// Post-Details. "Fuer Post uebernehmen" meldet per postMessage an die Elternseite (kein
+// Seitenwechsel). Nur sinnvoll mit Post-Kontext.
+$embed = ((int) ($_GET['embed'] ?? 0)) === 1 && $postId > 0;
 if ($postId > 0) {
     $stmt = $pdo->prepare('SELECT id, anlass_key FROM post_race_contents WHERE id = :id');
     $stmt->execute(['id' => $postId]);
@@ -311,13 +315,29 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
         .vt-kontext { background: #eef7f0; border: 1px solid #bfe3c8; border-radius: 8px;
             padding: 0.6rem 0.9rem; font-size: 0.88rem; margin-bottom: 1rem; }
         .vt-kontext a { color: var(--primary-dark); }
+
+        /* --- Embed-Modus (?embed=1): im Grafik-Schritt des Post-Details eingebettet --- */
+        body.vt-embed { background: var(--white); }
+        body.vt-embed .main-content { margin: 0; padding: 0.25rem 0.25rem 0.75rem; max-width: none; }
+        body.vt-embed .vt-preview-wrap { position: static; }
+        body.vt-embed #vt-card-img { max-height: none; }
+        /* Layout-Wechsler als kompakter Nebenweg statt prominenter erster Schritt */
+        .vt-layout-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+            margin-bottom: 0.85rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border); }
+        .vt-layout-row label { font-size: 0.82rem; color: var(--text-light); margin: 0; }
+        .vt-layout-row select { width: auto; min-width: 220px; padding: var(--control-pad-y) var(--control-pad-x);
+            border: 1px solid var(--border); border-radius: var(--radius); font-size: 0.88rem; font-family: inherit; background: var(--white); }
+        .vt-layout-auto { font-size: 0.76rem; color: var(--text-light); }
     </style>
     <link rel="stylesheet" href="../design-system/tokens/colors.css?v=<?= @filemtime(__DIR__ . '/../design-system/tokens/colors.css') ?>">
 </head>
-<body>
+<body class="<?= $embed ? 'vt-embed' : '' ?>">
+<?php if (!$embed): ?>
 <?php $activeNav = 'vorlagen'; require __DIR__ . '/_sidebar.php'; ?>
+<?php endif; ?>
 
         <main class="main-content">
+            <?php if (!$embed): ?>
             <header class="content-header">
                 <h1>Grafik-Vorlagen</h1>
             </header>
@@ -330,25 +350,30 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
             </div>
             <?php endif; ?>
             <p class="vt-hint" style="margin-bottom:1rem;max-width:760px;">
-                Fertige Vorlage befuellen &amp; als Bild exportieren &mdash; ohne Design-Kenntnisse.
-                Vorlagen: <strong>&bdquo;Anmeldung geoeffnet&ldquo;</strong> (Portrait 1080&times;1350) und
+                Fertiges Layout befuellen &amp; als Bild exportieren &mdash; ohne Design-Kenntnisse.
+                Layouts: <strong>&bdquo;Themen-Post&ldquo;</strong> (universell, Formate waehlbar),
+                <strong>&bdquo;Anmeldung geoeffnet&ldquo;</strong> (Portrait 1080&times;1350) und
                 <strong>&bdquo;Renntag-Ergebnis&ldquo;</strong> (Formate waehlbar).
                 Fuer freie Plakate bleibt der <a href="poster_generator.php">Plakat-Generator</a>.
             </p>
+            <?php endif; ?>
 
             <div class="vt-split">
                 <!-- ============ Steuerung ============ -->
                 <div class="vt-panel">
-                    <h2>1 &middot; Vorlage befuellen</h2>
-
-                    <div class="vt-field">
-                        <label for="vt-vorlage">Vorlage</label>
+                    <div class="vt-layout-row">
+                        <label for="vt-vorlage">Layout</label>
                         <select id="vt-vorlage">
                             <option value="thema" <?= $vorlageDefault === 'thema' ? 'selected' : '' ?>>Themen-Post (universell, Formate wählbar)</option>
                             <option value="anmeldung" <?= $vorlageDefault === 'anmeldung' ? 'selected' : '' ?>>Anmeldung geöffnet (Portrait)</option>
                             <option value="renntag" <?= $vorlageDefault === 'renntag' ? 'selected' : '' ?>>Renntag-Ergebnis (Formate wählbar)</option>
                         </select>
+                        <?php if ($postKontext): ?>
+                        <span class="vt-layout-auto">automatisch zum Thema gewählt — bei Bedarf wechseln</span>
+                        <?php endif; ?>
                     </div>
+
+                    <h2>1 &middot; Inhalt befuellen</h2>
 
                     <div class="vt-field">
                         <label>Hintergrund</label>
@@ -665,7 +690,9 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                 </div>
             </div>
         </main>
+<?php if (!$embed): ?>
     </div>
+<?php endif; ?>
     <script src="../assets/js/snapdom.js"></script>
     <script src="../assets/js/qrcode.js"></script>
     <script>
@@ -679,6 +706,7 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
         const csrf        = <?= json_encode($csrfToken) ?>;
         const postKontext = <?= json_encode($postKontext) ?>;
         const fahrplanId  = <?= (int) $fahrplanId ?>;
+        const embed       = <?= $embed ? 'true' : 'false' ?>;
         const repoAssets  = <?= json_encode($repoAssets, JSON_UNESCAPED_UNICODE) ?>;
         const DEFAULT_LOGO = '<?= htmlspecialchars($logoAtsv) ?>';
         const RT_FORMATS = {
@@ -1023,7 +1051,12 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                     const r = await fetch('api/post_bild.php', { method: 'POST', body });
                     const d = await r.json();
                     if (d.ok) {
-                        window.location.href = 'social_post.php?fahrplan=' + fahrplanId;
+                        if (embed && window.parent !== window) {
+                            // Kein Seitenwechsel: Elternseite (Post-Detail) neu laden lassen
+                            window.parent.postMessage({ type: 'vt-uebernommen', fahrplanId: fahrplanId }, location.origin);
+                        } else {
+                            window.location.href = 'social_post.php?fahrplan=' + fahrplanId;
+                        }
                         return;
                     }
                     err.textContent = '⚠️ ' + (d.message || 'Speichern fehlgeschlagen.');
@@ -1036,12 +1069,24 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                 }
             });
         }
+
+        // --- Embed: eigene Hoehe an die Elternseite melden (kein innerer Scrollbalken) ---
+        if (embed && window.parent !== window) {
+            const meldeHoehe = () => {
+                const h = Math.ceil(document.body.scrollHeight);
+                window.parent.postMessage({ type: 'vt-height', height: h }, location.origin);
+            };
+            window.addEventListener('load', meldeHoehe);
+            if (window.ResizeObserver) { new ResizeObserver(meldeHoehe).observe(document.body); }
+            meldeHoehe();
+        }
     })();
 
     (function() {
         const burger = document.getElementById('burger-btn');
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('sidebar-overlay');
+        if (!burger || !sidebar || !overlay) { return; }  // Embed-Modus: keine Sidebar
         function closeSidebar() { sidebar.classList.remove('open'); overlay.classList.remove('open'); document.body.style.overflow = ''; }
         burger.addEventListener('click', function() { sidebar.classList.add('open'); overlay.classList.add('open'); document.body.style.overflow = 'hidden'; });
         overlay.addEventListener('click', closeSidebar);
