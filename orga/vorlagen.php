@@ -16,6 +16,7 @@ require_once __DIR__ . '/api/_auth.php';
 require_once __DIR__ . '/../src/db.php';
 require_once __DIR__ . '/../src/social_anlaesse.php';
 require_once __DIR__ . '/../src/social_grafik_defaults.php';
+require_once __DIR__ . '/../src/social_sponsoren.php';
 require_once __DIR__ . '/../src/raceresult_client.php';
 
 $user    = getCurrentUserFromGuard();
@@ -134,6 +135,14 @@ $logoFuehrungAssets = array_values(array_filter(array_map(
     static fn (string $k): ?array => $logoKatalog[$k] ?? null,
     $logoFuehrung
 )));
+// Logo-Quelle „Sponsoren" (S5): bestaetigte Sponsoren mit Logo -> waehlbar im Logo-Picker.
+// SSOT = sponsors.logo_web_asset (dieselbe Datei wie die Website-Rotation).
+$sponsorLogos = [];
+foreach (socialSponsoren($pdo) as $s) {
+    if (!empty($s['logo'])) {
+        $sponsorLogos[] = ['url' => '../' . $s['logo'], 'label' => $s['firma']];
+    }
+}
 
 // Repo-Logos fuer tauschbare Logo-Slots der Renntag-Vorlage (Scan wie Orchestrator)
 $repoAssets = [];
@@ -711,6 +720,7 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
         const fahrplanId  = <?= (int) $fahrplanId ?>;
         const embed       = <?= $embed ? 'true' : 'false' ?>;
         const repoAssets  = <?= json_encode($repoAssets, JSON_UNESCAPED_UNICODE) ?>;
+        const sponsorLogos = <?= json_encode($sponsorLogos, JSON_UNESCAPED_UNICODE) ?>;
         const DEFAULT_LOGO = '<?= htmlspecialchars($logoAtsv) ?>';
         const RT_FORMATS = {
             portrait: { w: 1080, h: 1350, label: 'Portrait 1080×1350' },
@@ -855,7 +865,8 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
             const panel = $('vt-logo-picker');
             if (panel.style.display === 'flex') { panel.style.display = 'none'; return; }
             panel.innerHTML = ''; panel.style.display = 'flex';
-            repoAssets.forEach(asset => {
+            // Logo-Quellen: Repo-Assets + bestaetigte Sponsoren (S5). Deckel 3 greift beim Klick.
+            repoAssets.concat(sponsorLogos).forEach(asset => {
                 const t = document.createElement('div'); t.className = 'vt-thumb';
                 const im = document.createElement('img'); im.src = asset.url; im.alt = '';
                 const nm = document.createElement('span'); nm.textContent = asset.label;
