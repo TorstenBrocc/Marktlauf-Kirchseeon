@@ -13,6 +13,7 @@ require_once __DIR__ . '/../../src/logger.php';
 require_once __DIR__ . '/../../src/raceresult_client.php';
 require_once __DIR__ . '/../../src/llm_client.php';
 require_once __DIR__ . '/../../src/social_anlaesse.php';
+require_once __DIR__ . '/../../src/social_sponsoren.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -59,6 +60,14 @@ if ($eckdaten !== '') {
 }
 if ($anlass === 'renntag') {
     $parts[] = "Ergebnisdaten:\n" . raceResultToPromptText(raceResultData(getDbConnection()));
+}
+// Sponsor-Kopplung (Post-Wirkung-Spec S5): auf Sponsoren-Themen die bestaetigten
+// Sponsoren als Fakt in den Prompt geben (Namen aus `sponsors`, Bezug macht die KI).
+if (in_array($anlass, ['sponsoren_dank', 'sponsorenvorstellung'], true)) {
+    $sponsorBlock = socialSponsorenPromptBlock(getDbConnection(), $anlass);
+    if ($sponsorBlock !== '') {
+        $parts[] = $sponsorBlock;
+    }
 }
 if ($stichpunkte !== '') {
     $parts[] = "Fakten/Stichpunkte:\n" . $stichpunkte;
