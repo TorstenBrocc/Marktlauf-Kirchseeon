@@ -175,7 +175,7 @@ $wartetAufStichtag = ($post['status'] ?? '') === 'approved'
                 </div>
             </div>
             <div class="sp-zeile" style="margin-bottom:0.9rem">
-                <button class="btn btn-primary" id="sp-generieren">Entwürfe generieren</button>
+                <button class="btn btn-primary" id="sp-generieren"><?= $schrittText ? 'Neu formulieren' : 'Entwürfe generieren' ?></button>
                 <label class="sp-hinweis" style="display:inline-flex;align-items:center;gap:0.35rem">
                     <input type="checkbox" id="sp-mit-merkfeld"> Notiz (Merkfeld) mitgeben
                 </label>
@@ -343,9 +343,10 @@ function persistAnlassFeld(feld, wert, msgId) {
 document.getElementById('sp-fakten').addEventListener('blur', ev => persistAnlassFeld('fakten', ev.target.value, 'sp-ft-msg'));
 document.getElementById('sp-prompt').addEventListener('blur', ev => persistAnlassFeld('prompt', ev.target.value, 'sp-pr-msg'));
 
-// Entwuerfe generieren
-document.getElementById('sp-generieren').addEventListener('click', async (ev) => {
-    const btn = ev.currentTarget;
+// Entwuerfe generieren — als Funktion, damit sie auch beim ersten Oeffnen automatisch laeuft.
+// auto=true: still (keine Fehler-Toasts) + Entwurf direkt als draft sichern.
+async function generiereEntwuerfe(auto) {
+    const btn = document.getElementById('sp-generieren');
     btn.disabled = true;
     document.getElementById('sp-spinner').style.display = 'inline';
     try {
@@ -364,20 +365,31 @@ document.getElementById('sp-generieren').addEventListener('click', async (ev) =>
         });
         const d = await r.json();
         if (d.error) {
-            zeige('sp-fehler', d.error, '#dc2626');
-        } else {
-            document.getElementById('sp-social').value = d.social;
-            if (mitPresse && document.getElementById('sp-artikel')) {
-                document.getElementById('sp-artikel').value = d.article;
-            }
+            if (!auto) { zeige('sp-fehler', d.error, '#dc2626'); }
+            return false;
         }
+        document.getElementById('sp-social').value = d.social;
+        if (mitPresse && document.getElementById('sp-artikel')) {
+            document.getElementById('sp-artikel').value = d.article;
+        }
+        btn.textContent = 'Neu formulieren';
+        if (auto) { speichern('draft'); }  // still sichern -> erneutes Oeffnen generiert nicht neu
+        return true;
     } catch (e) {
-        zeige('sp-fehler', 'Netzwerkfehler.', '#dc2626');
+        if (!auto) { zeige('sp-fehler', 'Netzwerkfehler.', '#dc2626'); }
+        return false;
     } finally {
         btn.disabled = false;
         document.getElementById('sp-spinner').style.display = 'none';
     }
-});
+}
+document.getElementById('sp-generieren').addEventListener('click', () => generiereEntwuerfe(false));
+
+// Auto-Generieren beim ersten Oeffnen: liegt noch kein Social-Entwurf vor, sofort einen erzeugen,
+// damit im Text-Schritt gleich ein fertiger Post steht (kein blosses Fakten-Echo).
+if (document.getElementById('sp-social').value.trim() === '') {
+    generiereEntwuerfe(true);
+}
 
 // Speichern / Freigeben (Post-Objekt)
 function speichern(status) {
