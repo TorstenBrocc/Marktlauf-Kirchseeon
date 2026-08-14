@@ -119,6 +119,22 @@ $qrZiele['eigen'] = ['label' => 'Eigener Link …', 'url' => ''];
 // Vorwahl passend zum Post-Thema
 $qrDefault = $postKontext ? socialQrKey($postKontext['anlass_key'], isset($qrZiele['helfer'])) : 'anmeldung';
 
+// Grafik-Regeln je Thema (Post-Wirkung-Spec S4): Format-Vorwahl, Foto/Grafik-Default,
+// Logo-Fuehrung. Ohne Post-Kontext neutrale Defaults (Portrait, Grafik, ATSV-Fuehrung).
+$formatDefault = $postKontext ? socialFormatDefault($postKontext['anlass_key']) : 'portrait';
+$bildDefault   = $postKontext ? socialBildDefault($postKontext['anlass_key'])   : 'grafik';
+$logoFuehrung  = $postKontext ? socialLogoFuehrung($postKontext['anlass_key'])  : ['marktlauf', 'atsv'];
+// Feste Logos fuer die Fuehrung -> {url,label} (Sponsor-Logos folgen in S5)
+$logoKatalog = [
+    'marktlauf' => ['url' => $logoWortmarke, 'label' => 'Marktlauf'],
+    'atsv'      => ['url' => $logoAtsv,      'label' => 'ATSV-Logo'],
+    'gemeinde'  => ['url' => $logoGemeinde,  'label' => 'Gemeinde'],
+];
+$logoFuehrungAssets = array_values(array_filter(array_map(
+    static fn (string $k): ?array => $logoKatalog[$k] ?? null,
+    $logoFuehrung
+)));
+
 // Repo-Logos fuer tauschbare Logo-Slots der Renntag-Vorlage (Scan wie Orchestrator)
 $repoAssets = [];
 $assetsRoot = realpath(__DIR__ . '/../assets/images');
@@ -255,6 +271,8 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
         .sc-card > *:not(.sc-bg):not(.sc-overlay) { position: relative; z-index: 2; }
         .sc-card .sc-logos { display: flex; flex-wrap: wrap; gap: 40px; align-items: center; margin-bottom: 24px; }
         .sc-card .sc-logos img { height: 96px; width: auto; max-width: 340px; object-fit: contain; }
+        /* Gruene-Logo-Platte (Spec 5.C.11): helle Unterlegplatte, wenn Logos auf dunklem Foto liegen */
+        .sc-card .sc-logos.on-photo { background: rgba(255,255,255,0.92); border-radius: 20px; padding: 18px 26px; gap: 30px; align-self: flex-start; box-shadow: 0 6px 18px rgba(0,0,0,0.18); }
         .sc-card .sc-event { display: flex; align-items: center; gap: 14px; font-size: 24px; font-weight: 600;
             letter-spacing: 0.16em; text-transform: uppercase; color: #fff8dd; margin-bottom: 20px; }
         .sc-card .sc-event::before { content: ''; width: 44px; height: 4px; border-radius: 2px;
@@ -361,11 +379,12 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                     <div class="vt-field">
                         <label>Hintergrund</label>
                         <div class="vt-seg" id="vt-bg-mode">
-                            <input type="radio" name="bgmode" id="bg-gradient" value="gradient" checked>
+                            <input type="radio" name="bgmode" id="bg-gradient" value="gradient" <?= $bildDefault === 'grafik' ? 'checked' : '' ?>>
                             <label for="bg-gradient">Grafik (Verlauf + L&auml;ufer)</label>
-                            <input type="radio" name="bgmode" id="bg-photo" value="photo">
+                            <input type="radio" name="bgmode" id="bg-photo" value="photo" <?= $bildDefault === 'foto' ? 'checked' : '' ?>>
                             <label for="bg-photo">Foto</label>
                         </div>
+                        <?php if ($postKontext && $bildDefault === 'foto'): ?><span class="vt-hint">Dieses Thema lebt vom echten Foto — bitte ein Foto aus der Ablage wählen.</span><?php endif; ?>
                         <div id="vt-photo-block" style="display:none;margin-top:0.5rem;">
                             <div class="vt-row">
                                 <button type="button" class="btn btn-secondary" id="vt-pick-photo">Foto aus Ablage waehlen</button>
@@ -491,11 +510,12 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                     <h3>Format</h3>
                     <div class="vt-field">
                         <select id="vt-rt-format">
-                            <option value="portrait">Portrait 1080×1350 (Feed)</option>
-                            <option value="grid34">Instagram-Grid 1080×1440 (3:4)</option>
-                            <option value="square">Quadratisch 1080×1080</option>
-                            <option value="story">Story 1080×1920</option>
+                            <option value="portrait" <?= $formatDefault === 'portrait' ? 'selected' : '' ?>>Portrait 1080×1350 (Feed)</option>
+                            <option value="grid34" <?= $formatDefault === 'grid34' ? 'selected' : '' ?>>Instagram-Grid 1080×1440 (3:4)</option>
+                            <option value="square" <?= $formatDefault === 'square' ? 'selected' : '' ?>>Quadratisch 1080×1080</option>
+                            <option value="story" <?= $formatDefault === 'story' ? 'selected' : '' ?>>Story 1080×1920</option>
                         </select>
+                        <?php if ($postKontext): ?><span class="vt-hint">zum Thema vorgewählt — bei Bedarf wechseln</span><?php endif; ?>
                     </div>
                     <h3>Logos (tauschbar)</h3>
                     <div class="vt-row">
@@ -698,7 +718,10 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
             square:   { w: 1080, h: 1080, label: 'Quadratisch 1080×1080' },
             story:    { w: 1080, h: 1920, label: 'Story 1080×1920' },
         };
-        let selectedLogos = [{ url: DEFAULT_LOGO, label: 'ATSV-Logo' }];
+        // Logo-Fuehrung je Thema (S4): serverseitig vorgewaehlt aus den festen Logos.
+        const LOGO_FUEHRUNG = <?= json_encode($logoFuehrungAssets, JSON_UNESCAPED_UNICODE) ?>;
+        const LOGO_DECKEL = 3;  // max Logos in der Leiste (Spec 5.C.12: Marktlauf + ATSV + 1 Partner)
+        let selectedLogos = (LOGO_FUEHRUNG.length ? LOGO_FUEHRUNG : [{ url: DEFAULT_LOGO, label: 'ATSV-Logo' }]).slice(0, LOGO_DECKEL);
 
         function aktiveVorlage() { return $('vt-vorlage').value; }
         function vorlageWechsel() {
@@ -732,6 +755,8 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
         document.querySelectorAll('input[name="bgmode"]').forEach(r => {
             r.addEventListener('change', () => { $('vt-photo-block').style.display = $('bg-photo').checked ? 'block' : 'none'; });
         });
+        // Initialzustand: bei Foto-Default (S4) den Foto-Block gleich aufklappen
+        $('vt-photo-block').style.display = $('bg-photo').checked ? 'block' : 'none';
 
         // --- Foto-Picker aus der Datei-Ablage (same-origin -> snapDOM-tauglich) ---
         const picker = $('vt-photo-picker');
@@ -836,6 +861,10 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                 const nm = document.createElement('span'); nm.textContent = asset.label;
                 t.appendChild(im); t.appendChild(nm);
                 t.addEventListener('click', () => {
+                    if (selectedLogos.length >= LOGO_DECKEL) {
+                        alert('Höchstens ' + LOGO_DECKEL + ' Logos in der Leiste (weniger ist mehr). Mehr Sponsoren → eigenes Thema/Carousel.');
+                        return;
+                    }
                     if (!selectedLogos.some(l => l.url === asset.url)) {
                         selectedLogos.push({ url: asset.url, label: asset.label });
                         renderLogoChips();
@@ -874,6 +903,7 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
             });
 
             const usePhoto = $('bg-photo').checked && selectedPhotoUrl;
+            $('rt-logos').classList.toggle('on-photo', !!usePhoto);
             const dark = cssVar('--color-primary-dark', '#007230');
             if (usePhoto) {
                 $('rt-bg').src = selectedPhotoUrl;
@@ -928,6 +958,7 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
             });
 
             const usePhoto = $('bg-photo').checked && selectedPhotoUrl;
+            $('th-logos').classList.toggle('on-photo', !!usePhoto);
             const dark = cssVar('--color-primary-dark', '#007230');
             if (usePhoto) {
                 $('th-bg').src = selectedPhotoUrl;
