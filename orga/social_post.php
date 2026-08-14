@@ -15,6 +15,7 @@ require_once __DIR__ . '/../src/auth.php';
 require_once __DIR__ . '/../src/llm_client.php';
 require_once __DIR__ . '/../src/social_anlaesse.php';
 require_once __DIR__ . '/../src/social_grafik_defaults.php';
+require_once __DIR__ . '/../src/social_verstaerker.php';
 
 $user    = getCurrentUserFromGuard();
 $isAdmin = isAdminFromGuard();
@@ -313,13 +314,11 @@ $wartetAufStichtag = ($post['status'] ?? '') === 'approved'
             </p>
             <div style="background:#eef7f0;border:1px solid #bfe3c8;border-radius:8px;padding:0.7rem 1rem;margin:0 0 0.9rem">
                 <p style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#065f46;margin:0 0 0.4rem">Jetzt zählt die erste Stunde</p>
-                <ul style="list-style:none;padding:0;margin:0;font-size:0.85rem;line-height:1.8">
-                    <li>1 · Jeden Kommentar schnell beantworten</li>
-                    <li>2 · Post in die eigene Story teilen</li>
-                    <li>3 · Mitglieder anstupsen: Like + 1 Kommentar + Teilen (Mail ist raus)</li>
-                    <li>4 · Getaggte Partner per DM bitten, in Story zu teilen</li>
-                    <li>5 · Meilensteine über 2–3 Tage in lokale FB-Gruppen</li>
-                </ul>
+                <ol style="padding:0 0 0 1.1rem;margin:0;font-size:0.85rem;line-height:1.8">
+                    <?php foreach (socialVerstaerkerErsteStunde() as $handgriff): ?>
+                    <li><?= htmlspecialchars($handgriff) ?></li>
+                    <?php endforeach; ?>
+                </ol>
             </div>
             <?php elseif ($wartetAufStichtag): ?>
             <p class="sp-hinweis" style="margin:0 0 0.8rem">
@@ -340,6 +339,17 @@ $wartetAufStichtag = ($post['status'] ?? '') === 'approved'
                 <span class="sp-hinweis" id="sp-send-spinner" style="display:none">⏳ sendet …</span>
             </div>
             <p class="sp-msg" id="sp-send-msg" style="margin:0 0 0.9rem"></p>
+            <details class="sp-ausbau" style="border-top:1px solid var(--border);padding-top:0.8rem">
+                <summary style="cursor:pointer;font-size:0.88rem;color:var(--primary-dark)">Reichweite ausbauen — so holst du mehr raus</summary>
+                <ul class="sp-hinweis" style="margin:0.6rem 0 0.3rem 1.1rem;line-height:1.6">
+                    <?php foreach (socialVerstaerkerAusbau() as $handgriff): ?>
+                    <li><?= htmlspecialchars($handgriff) ?></li>
+                    <?php endforeach; ?>
+                    <?php foreach (socialVerstaerkerSponsorTags($pdo, $anlassKey) as $tag): ?>
+                    <li><strong><?= htmlspecialchars($tag) ?></strong></li>
+                    <?php endforeach; ?>
+                </ul>
+            </details>
             <details class="sp-manuell" style="border-top:1px solid var(--border);padding-top:0.8rem">
                 <summary style="cursor:pointer;font-size:0.88rem;color:var(--text-light)">Manuell posten (Fallback) — Text, Bild &amp; Anleitung</summary>
                 <div class="sp-zeile" style="margin:0.7rem 0">

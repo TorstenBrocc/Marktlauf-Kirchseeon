@@ -17,6 +17,7 @@ require_once __DIR__ . '/../../src/db.php';
 require_once __DIR__ . '/../../src/logger.php';
 require_once __DIR__ . '/../../src/social_dispatcher.php';
 require_once __DIR__ . '/../../src/social_anlaesse.php';
+require_once __DIR__ . '/../../src/social_verstaerker.php';
 require_once __DIR__ . '/../../src/channels/mail.php';
 
 header('Content-Type: application/json; charset=utf-8');
@@ -152,15 +153,19 @@ try {
     $def   = socialAnlaesse()[(string) ($post['anlass_key'] ?? '')] ?? null;
     $thema = $def ? $def['ui'] : 'Social-Post';
     $textVorschau = mb_substr($text, 0, 200) . (mb_strlen($text) > 200 ? '…' : '');
+    // Verstaerker-Handgriffe aus der EINEN Quelle (src/social_verstaerker.php)
+    $ersteStunde = '';
+    foreach (socialVerstaerkerErsteStunde() as $i => $handgriff) {
+        $ersteStunde .= ($i + 1) . '. ' . $handgriff . "\n";
+    }
+    $sponsorTags = socialVerstaerkerSponsorTags($pdo, (string) ($post['anlass_key'] ?? ''));
+    $sponsorBlock = $sponsorTags === [] ? '' : "\nSponsoren nicht vergessen:\n- " . implode("\n- ", $sponsorTags) . "\n";
     $mailText = "Gerade veröffentlicht auf " . implode(' + ', $channels) . ": {$thema}\n\n"
         . "„{$textVorschau}\"\n\n"
         . "So hilfst du dem Post jetzt (erste Stunde zählt am meisten):\n"
-        . "1. Post liken und mit 1 Kommentar anschieben (Frage/Emoji reicht).\n"
-        . "2. In deine Instagram-Story teilen.\n"
-        . "3. Link an Familie/Lauffreunde weiterschicken (\"Sends\" zählen beim Algorithmus am stärksten).\n"
-        . "4. Falls du in lokalen Facebook-Gruppen bist: dort teilen (Regeln beachten, eigener Anmoderationssatz).\n"
-        . "5. Kommentare, die du siehst: kurz beantworten — schnell und freundlich.\n\n"
-        . ($fahrplanRefId > 0 ? "Post im Dashboard: https://atsv-kirchseeon-marktlauf.de/orga/social_post.php?fahrplan=" . $fahrplanRefId : "Dashboard: https://atsv-kirchseeon-marktlauf.de/orga/social_fahrplan.php");
+        . $ersteStunde
+        . $sponsorBlock
+        . "\n" . ($fahrplanRefId > 0 ? "Post im Dashboard: https://atsv-kirchseeon-marktlauf.de/orga/social_post.php?fahrplan=" . $fahrplanRefId : "Dashboard: https://atsv-kirchseeon-marktlauf.de/orga/social_fahrplan.php");
     $body = marktlaufMailBody($mailText);
     $orgaMails = $pdo->query("
         SELECT name, email FROM users
