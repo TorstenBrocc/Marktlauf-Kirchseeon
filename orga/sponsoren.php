@@ -675,7 +675,6 @@ try {
                 <div class="page-header">
                     <h1>Sponsoren-Übersicht</h1>
                     <a href="sponsor_form.php" class="btn btn-primary btn-small">+ Neu anlegen</a>
-                    <a href="api/sponsor_export.php" class="btn btn-small btn-secondary" title="Alle Sponsoren als CSV exportieren (UTF-8, ;-getrennt)">CSV-Export (alle)</a>
                 </div>
 
                 <form method="get" class="filter-bar">
