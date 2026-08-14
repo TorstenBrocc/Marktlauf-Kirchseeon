@@ -23,6 +23,12 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error'], $_SESSION['import_re
 $filterStatus = $_GET['status'] ?? '';
 $filterPaket = $_GET['paket'] ?? '';
 $filterZustaendig = $_GET['zustaendig'] ?? '';
+
+// Fördergruppen-Reiter im Kopf (TT 2026-08-14): Standard = klassisches Sponsoring.
+$filterFg = (string) ($_GET['fg'] ?? 'sponsoring');
+if (!in_array($filterFg, sponsorFoerdergruppeKeys(), true)) {
+    $filterFg = 'sponsoring';
+}
 $filterBranchen = array_values(array_filter((array) ($_GET['branchen'] ?? [])));
 
 $pdo = getDbConnection();
@@ -71,6 +77,13 @@ try {
     // ignore
 }
 
+$hasFoerdergruppe = false;
+try {
+    $hasFoerdergruppe = (bool) $pdo->query("SHOW COLUMNS FROM sponsors LIKE 'foerdergruppe'")->fetchColumn();
+} catch (PDOException $e) {
+    // ignore
+}
+
 $colCount = 9;
 if ($hasZustaendig) {
     $colCount++;
@@ -95,6 +108,12 @@ if ($filterStatus !== '' && sponsorStatusValid($filterStatus)) {
 if ($filterPaket !== '' && in_array($filterPaket, ['hauptsponsor', 'gold', 'silber', 'bronze', 'sachsponsor'], true)) {
     $where[] = 'paket = :paket';
     $params['paket'] = $filterPaket;
+}
+
+// Fördergruppen-Reiter: jede Ansicht zeigt genau eine Gruppe.
+if ($hasFoerdergruppe) {
+    $where[] = 'foerdergruppe = :fg';
+    $params['fg'] = $filterFg;
 }
 
 // Zuständigkeit: "mine" = eigene Einträge, sonst konkrete User-ID
@@ -793,25 +812,25 @@ try {
             </div>
 
             <?php
-            $groupByBranche = (($_GET['gruppe'] ?? 'branche') !== 'liste'); // Standard: nach Branche gruppiert
-            $qsGroup = $_GET; unset($qsGroup['gruppe']);
-            $qsFlat = $_GET; $qsFlat['gruppe'] = 'liste';
-            $urlGroup = '?' . http_build_query($qsGroup);
-            $urlFlat = '?' . http_build_query($qsFlat);
-            if ($groupByBranche) { $colCount--; } // Branche-Spalte entfällt in der Gruppierung
+            // Fördergruppen-Reiter im Kopf (TT 2026-08-14). Die frühere Liste/Branche-Umschaltung
+            // ist entfernt — die Branche-Gruppierung ist die einzige Darstellung, deshalb entfällt
+            // die Branche-Spalte immer.
+            $colCount--;
+            $qsFg = $_GET;
             ?>
             <div class="ansicht-toggle" style="margin-bottom:0.75rem;display:inline-flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;font-size:0.85rem">
-                <a href="<?= htmlspecialchars($urlFlat) ?>" style="padding:0.4rem 0.85rem;text-decoration:none;<?= !$groupByBranche ? 'background:var(--primary);color:#fff' : 'color:var(--text)' ?>">Liste</a>
-                <a href="<?= htmlspecialchars($urlGroup) ?>" style="padding:0.4rem 0.85rem;text-decoration:none;border-left:1px solid var(--border);<?= $groupByBranche ? 'background:var(--primary);color:#fff' : 'color:var(--text)' ?>">Nach Branche</a>
+                <?php $fgFirst = true; foreach (SPONSOR_FOERDERGRUPPE as $fgKey => $fgLabel): $qsFg['fg'] = $fgKey; ?>
+                    <a href="?<?= htmlspecialchars(http_build_query($qsFg)) ?>"
+                       style="padding:0.4rem 0.85rem;text-decoration:none;<?= $fgFirst ? '' : 'border-left:1px solid var(--border);' ?><?= $filterFg === $fgKey ? 'background:var(--primary);color:#fff' : 'color:var(--text)' ?>"><?= htmlspecialchars($fgLabel) ?></a>
+                <?php $fgFirst = false; endforeach; ?>
             </div>
 
-            <div class="table-wrap<?= $groupByBranche ? ' grouped' : '' ?>">
-                <table class="data-table<?= $groupByBranche ? ' grouped' : '' ?>">
+            <div class="table-wrap grouped">
+                <table class="data-table grouped">
                     <thead>
                         <tr>
                             <th>Firma</th>
                             <th>Ansprechpartner</th>
-                            <?php if (!$groupByBranche): ?><th>Branche</th><?php endif; ?>
                             <th>Paket</th>
                             <th>Summe</th>
                             <th>Status</th>
@@ -835,10 +854,10 @@ try {
                                 $d = json_decode($s['branche'], true);
                                 return is_array($d) ? $d : [$s['branche']];
                             };
-                            // Anzeige-Reihenfolge: flach oder nach Branche gruppiert. Ein Sponsor erscheint
+                            // Anzeige-Reihenfolge: nach Branche gruppiert. Ein Sponsor erscheint
                             // unter jeder seiner Branchen; „Ohne Branche" kommt ans Ende.
                             $sequence = [];
-                            if ($groupByBranche) {
+                            {
                                 // Gruppen-Namen = Einstellungs-Liste + alle real vergebenen Branchen,
                                 // damit auch Sponsoren mit „unbekannter" Branche eine Überschrift bekommen.
                                 $groupNames = $branchen;
@@ -874,8 +893,6 @@ try {
                                         $sequence[] = ['sponsor' => $g, 'gi' => $gi, 'last' => ($k === $n - 1)];
                                     }
                                 }
-                            } else {
-                                foreach ($sponsoren as $s) { $sequence[] = ['sponsor' => $s]; }
                             }
                             ?>
                             <?php foreach ($sequence as $item): ?>
@@ -947,28 +964,6 @@ try {
                                             –
                                         <?php endif; ?>
                                     </td>
-                                    <?php if (!$groupByBranche): ?>
-                                    <td>
-                                        <?php
-                                        $bArr = [];
-                                        if (!empty($s['branche'])) {
-                                            $dec = json_decode($s['branche'], true);
-                                            $bArr = is_array($dec) ? $dec : [$s['branche']];
-                                        }
-                                        $bFirst = $bArr[0] ?? '';
-                                        ?>
-                                        <select class="inline-select branche-select"
-                                                data-id="<?= $s['id'] ?>" data-field="branche" title="Branche ändern">
-                                            <option value="" <?= $bFirst === '' ? 'selected' : '' ?>>–</option>
-                                            <?php foreach ($branchen as $b): ?>
-                                                <option value="<?= htmlspecialchars($b) ?>" <?= $bFirst === $b ? 'selected' : '' ?>><?= htmlspecialchars($b) ?></option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                        <?php if (count($bArr) > 1): ?>
-                                            <div style="font-size:0.7rem;color:var(--text-light);margin-top:0.2rem">+<?= count($bArr) - 1 ?> weitere</div>
-                                        <?php endif; ?>
-                                    </td>
-                                    <?php endif; ?>
                                     <td>
                                         <select class="inline-select paket-select paket-<?= $s['paket'] ?: 'none' ?>"
                                                 data-id="<?= $s['id'] ?>" data-field="paket" title="Paket ändern">
