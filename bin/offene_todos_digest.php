@@ -44,6 +44,7 @@ require_once __DIR__ . '/../src/offene_todos.php';
 require_once __DIR__ . '/../src/channels/mail.php';
 require_once __DIR__ . '/../src/logger.php';
 require_once __DIR__ . '/../src/sponsor_status.php';  // sponsorStatusLabel() für die Status-Spalte
+require_once __DIR__ . '/../src/social_anlaesse.php'; // Themen-Labels für den Social-Fahrplan-Abschnitt
 
 $argumente = $argv ?? [];
 $dryRun = in_array('--dry-run', $argumente, true);
@@ -117,6 +118,11 @@ try {
     // Quelle wie die Seite. Hier stehen nur noch Spaltenköpfe und der Zeilenbau, denn beides
     // ist medienabhängig: die Seite hat eine Erledigt-Spalte mit Formular, die Mail nicht.
     $meta = todoGruppenMeta();
+    // Social-Fahrplan ist kein Sponsoring-Thema — Meta hier lokal, nicht in offene_todos.php
+    $meta['social_fahrplan'] = [
+        'titel' => 'Social-Fahrplan — fällige Themen',
+        'sub'   => 'Posts erstellen, prüfen und senden: Dashboard → Social-Fahrplan.',
+    ];
     $vier = ['Firma', 'Info', 'Status / Frist', 'Kontakt'];
     // Frist-Text für Aufgaben: überfällig, heute, oder Vorausschau.
     $fristText = static function (?int $tage): string {
@@ -194,7 +200,39 @@ try {
                         ['t' => $statusText($t, (int) $t['tage'] . ' Tage ohne Antwort', false), 'k' => 'status'],
                         ['t' => $kontaktWert($t), 'k' => 'kontakt']];
             }, 'zustaendig_user_id', false],
+        // Social-Fahrplan (Schnitt 4, social-fahrplan-redesign-spec.md): fällige Themen mit
+        // Vorausschau — 'immer', damit Fristen nicht am Wochentag hängen (wie sponsor_aufgaben).
+        'social_fahrplan' => [
+            ['Thema', 'Stand', 'Frist'],
+            static function (array $t) use ($fristText): array {
+                $def   = socialAnlaesse()[$t['anlass_key']] ?? null;
+                $stand = 'kein Entwurf';
+                if (($t['post_status'] ?? '') === 'approved') {
+                    $stand = 'freigegeben — senden';
+                } elseif (trim((string) ($t['post_social'] ?? '')) !== '') {
+                    $stand = 'Entwurf';
+                }
+                return [['t' => $def ? $def['ui'] : (string) $t['anlass_key'], 'k' => 'firma'],
+                        ['t' => $stand, 'k' => 'plain'],
+                        ['t' => $fristText((int) $t['tage_ueberfaellig']), 'k' => 'status']];
+            },
+            'zustaendig_user_id',
+            true,
+        ],
     ];
+
+    // Social-Fahrplan-Zeilen in denselben Fluss geben (offene, terminierte Einträge
+    // im Vorschaufenster; gesendete Einträge sind bereits 'erledigt' und fallen raus)
+    $todos['social_fahrplan'] = $pdo->query("
+        SELECT f.anlass_key, f.zustaendig_user_id,
+               DATEDIFF(CURDATE(), f.zieldatum) AS tage_ueberfaellig,
+               p.status AS post_status, p.llm_text_social AS post_social
+          FROM social_fahrplan f
+     LEFT JOIN post_race_contents p ON p.id = f.post_id
+         WHERE f.status = 'offen' AND f.zieldatum IS NOT NULL
+           AND DATEDIFF(CURDATE(), f.zieldatum) >= -" . TODO_FRIST_VORSCHAU_TAGE . "
+      ORDER BY f.zieldatum
+    ")->fetchAll();
 
     // Zeilen nach Zuständigem einsortieren. 0 = ohne Zuständigen.
     $proUser = [];

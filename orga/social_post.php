@@ -81,6 +81,9 @@ $schrittText    = trim((string) ($post['llm_text_social'] ?? '')) !== '';
 $schrittGeprueft = $post['geprueft_am'] !== null;
 $bildPfad       = trim((string) ($post['bild_pfad'] ?? ''));
 $schrittGrafik  = $bildPfad !== '';
+$schrittVersand = ($post['status'] ?? '') === 'gesendet';
+$wartetAufStichtag = ($post['status'] ?? '') === 'approved'
+    && $eintrag['zieldatum'] !== null && $eintrag['zieldatum'] > date('Y-m-d');
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -147,7 +150,7 @@ $schrittGrafik  = $bildPfad !== '';
                 <span class="sp-step-line">—</span>
                 <span class="sp-step <?= $schrittGrafik ? 'done' : '' ?>"><?= $schrittGrafik ? '✓ ' : '' ?>3 Grafik</span>
                 <span class="sp-step-line">—</span>
-                <span class="sp-step">4 Versand</span>
+                <span class="sp-step <?= $schrittVersand ? 'done' : '' ?>"><?= $schrittVersand ? '✓ ' : '' ?>4 Versand</span>
             </div>
         </header>
 
@@ -226,8 +229,47 @@ $schrittGrafik  = $bildPfad !== '';
 
         <div class="hd-card">
             <h2>4 · Versand</h2>
-            <p class="sp-platzhalter">Kommt mit Bau-Schnitt 4 (Make.com-Versand mit Log + Stichtag-Status).
-                Bis dahin: <a href="social_orchestrator.php?anlass=<?= rawurlencode($anlassKey) ?>">Veröffentlichen im Orchestrator</a> (Schritt 3 dort).</p>
+            <?php if ($schrittVersand): ?>
+            <p class="sp-hinweis" style="color:#065f46;margin:0 0 0.8rem">
+                ✓ Gesendet <?= htmlspecialchars(date('d.m.Y H:i', strtotime($post['gesendet_am']))) ?>
+                an <?= htmlspecialchars(str_replace(',', ' + ', (string) $post['gesendet_kanaele'])) ?>
+                — <?= htmlspecialchars((string) $post['gesendet_ergebnis']) ?>
+            </p>
+            <?php elseif ($wartetAufStichtag): ?>
+            <p class="sp-hinweis" style="margin:0 0 0.8rem">
+                Freigegeben — <strong>wartet auf den Stichtag <?= htmlspecialchars(date('d.m.Y', strtotime($eintrag['zieldatum']))) ?></strong>.
+                Die tägliche Mail erinnert bei Fälligkeit; gesendet wird per Klick (Auto-Versand folgt später).
+            </p>
+            <?php endif; ?>
+            <div class="sp-zeile" style="margin-bottom:0.9rem">
+                <label style="display:inline-flex;align-items:center;gap:0.35rem;font-size:0.9rem">
+                    <input type="checkbox" id="sp-ch-ig" checked> Instagram
+                </label>
+                <label style="display:inline-flex;align-items:center;gap:0.35rem;font-size:0.9rem">
+                    <input type="checkbox" id="sp-ch-fb" checked> Facebook
+                </label>
+                <button class="btn btn-primary" id="sp-senden"><?= $schrittVersand ? 'Erneut senden (Make.com)' : 'Jetzt senden (Make.com)' ?></button>
+                <span class="sp-hinweis" id="sp-send-spinner" style="display:none">⏳ sendet …</span>
+            </div>
+            <p class="sp-msg" id="sp-send-msg" style="margin:0 0 0.9rem"></p>
+            <details class="sp-manuell" style="border-top:1px solid var(--border);padding-top:0.8rem">
+                <summary style="cursor:pointer;font-size:0.88rem;color:var(--text-light)">Manuell posten (Fallback) — Text, Bild &amp; Anleitung</summary>
+                <div class="sp-zeile" style="margin:0.7rem 0">
+                    <button class="btn btn-small btn-secondary" id="sp-copy-social">Social-Text kopieren</button>
+                    <?php if ($mitPresse): ?>
+                    <button class="btn btn-small btn-secondary" id="sp-copy-artikel">Presse-Text kopieren</button>
+                    <?php endif; ?>
+                    <?php if ($schrittGrafik): ?>
+                    <a class="btn btn-small btn-secondary" href="../<?= htmlspecialchars($bildPfad) ?>" download>Bild herunterladen</a>
+                    <?php endif; ?>
+                    <a class="btn btn-small" style="background:#1877F2;color:#fff" href="https://business.facebook.com/latest/home?nav_ref=bm_home_redirect&amp;asset_id=1236742862857199" target="_blank" rel="noopener noreferrer">Meta Business Account öffnen ↗</a>
+                </div>
+                <ul class="sp-hinweis" style="margin:0 0 0.3rem 1.1rem;line-height:1.5">
+                    <li>Meta Business Suite → „Beiträge &amp; Reels" → Beitrag erstellen → Kanäle IG + FB anhaken.</li>
+                    <li>Bild hochladen, Social-Text als Caption einfügen, Vorschau prüfen → veröffentlichen oder terminieren.</li>
+                    <li>Instagram-Feed: kein klickbarer Caption-Link → „Link in Bio". Facebook: Link klickbar.</li>
+                </ul>
+            </details>
         </div>
     </main>
 </div>
@@ -364,6 +406,56 @@ document.getElementById('sp-pruefen').addEventListener('click', async (ev) => {
         document.getElementById('sp-pruef-spinner').style.display = 'none';
     }
 });
+
+// Versand ueber Make.com (post_dispatch: Log am Post, Fahrplan rueckt vor/erledigt)
+document.getElementById('sp-senden').addEventListener('click', async (ev) => {
+    const btn = ev.currentTarget;
+    const msg = document.getElementById('sp-send-msg');
+    const channels = [];
+    if (document.getElementById('sp-ch-ig').checked) channels.push('instagram');
+    if (document.getElementById('sp-ch-fb').checked) channels.push('facebook');
+    msg.style.display = 'none';
+    if (!channels.length) {
+        msg.textContent = '⚠️ Bitte mindestens einen Kanal wählen.';
+        msg.style.color = '#dc2626'; msg.style.display = 'block';
+        return;
+    }
+    if (!confirm('Veröffentlicht den Post sofort öffentlich auf: ' + channels.join(' + ') + '. Fortfahren?')) {
+        return;
+    }
+    btn.disabled = true;
+    document.getElementById('sp-send-spinner').style.display = 'inline';
+    try {
+        const body = new URLSearchParams();
+        body.set('csrf_token', csrf);
+        body.set('post_id', postId);
+        channels.forEach(c => body.append('channels[]', c));
+        const r = await fetch('api/post_dispatch.php', { method: 'POST', body });
+        const d = await r.json();
+        if (d.ok) {
+            location.reload();
+            return;
+        }
+        msg.textContent = '⚠️ ' + (d.message || 'Versand fehlgeschlagen — bitte manuell posten (Fallback unten).');
+        msg.style.color = '#dc2626'; msg.style.display = 'block';
+    } catch (e) {
+        msg.textContent = '⚠️ Netzwerkfehler — bitte manuell posten (Fallback unten).';
+        msg.style.color = '#dc2626'; msg.style.display = 'block';
+    } finally {
+        btn.disabled = false;
+        document.getElementById('sp-send-spinner').style.display = 'none';
+    }
+});
+
+// Manuelles Posten: Texte kopieren
+function spCopy(id) {
+    const el = document.getElementById(id);
+    if (!el || !el.value) return;
+    navigator.clipboard.writeText(el.value).catch(() => {});
+}
+document.getElementById('sp-copy-social').addEventListener('click', () => spCopy('sp-social'));
+const copyArtikelBtn = document.getElementById('sp-copy-artikel');
+if (copyArtikelBtn) { copyArtikelBtn.addEventListener('click', () => spCopy('sp-artikel')); }
 
 // Burger-Menü (wie alle anderen Orga-Seiten)
 const burgerBtn      = document.getElementById('burger-btn');
