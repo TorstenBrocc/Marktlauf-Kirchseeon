@@ -3,7 +3,7 @@
  * SocialDispatcher — Auto-Posting an Instagram/Facebook über Make.com.
  *
  * Datenfluss: Dashboard rendert die PNG-Grafik (Modul 3) → legt sie über
- * orga/api/social_dispatch.php unter einer öffentlichen HTTPS-URL ab →
+ * orga/api/post_dispatch.php unter einer öffentlichen HTTPS-URL ab →
  * socialDispatch() schickt {text, image_url, channels, secret} per Webhook an
  * ein Make.com-Szenario, das an IG/FB postet.
  *
@@ -13,7 +13,7 @@
  * jeder Fehler wird über logError() protokolliert.
  *
  * Instagram akzeptiert kein Base64 — deshalb wird eine öffentliche Bild-URL
- * übergeben, nicht der Blob (Ablage: assets/social/, siehe social_dispatch.php).
+ * übergeben, nicht der Blob (Ablage: assets/social/, siehe post_dispatch.php).
  */
 
 declare(strict_types=1);

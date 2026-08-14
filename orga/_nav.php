@@ -316,20 +316,6 @@ return [
         },
     ],
     [
-        'key'     => 'social_media',
-        'label'   => 'Social-Media',
-        'section' => 'KOMMUNIKATION',
-        'href'    => 'social_orchestrator.php',
-        'kpi'   => static function (PDO $pdo): array {
-            $entwuerfe = (int) $pdo->query("SELECT COUNT(*) FROM post_race_contents WHERE status = 'draft'")->fetchColumn();
-            return [
-                'value'  => (string) $entwuerfe,
-                'label'  => 'Entwürfe',
-                'signal' => $entwuerfe > 0 ? 'attention' : 'ok',
-            ];
-        },
-    ],
-    [
         'key'     => 'newsletter',
         'label'   => 'Newsletter',
         'section' => 'KOMMUNIKATION',

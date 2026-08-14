@@ -3,7 +3,7 @@
  * Social-Media-Merkfeld speichern (POST + CSRF)
  * Vereinsweites Referenz-Freitextfeld auf der Social-Media-Seite.
  * Speicherung in einstellungen (Key social_merkfeld).
- * Antwortet als JSON (fetch aus social_orchestrator.php).
+ * Antwortet als JSON (fetch aus social_fahrplan.php).
  */
 
 declare(strict_types=1);
