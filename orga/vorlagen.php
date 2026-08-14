@@ -53,6 +53,34 @@ foreach ($rr['rennen'] ?? [] as $r) {
 }
 $vorlageDefault = ($postKontext && $postKontext['anlass_key'] === 'renntag') ? 'renntag' : 'anmeldung';
 
+// QR-Ziele: feststehende Links als Auswahl (Inhaber 2026-08-14). Helfer-Link kommt zur
+// LAUFZEIT aus access_tokens (aktiv + nicht abgelaufen) — kein Token im Code/Repo.
+$appUrl = rtrim((string) (getConfig()['app']['url'] ?? 'https://atsv-kirchseeon-marktlauf.de'), '/');
+$qrZiele = [
+    'anmeldung'     => ['label' => 'Anmeldung (Website)', 'url' => $appUrl . '/#anmeldung'],
+    'registrierung' => ['label' => 'RaceResult-Registrierung', 'url' => 'https://my.raceresult.com/412617/registration'],
+    'website'       => ['label' => 'Website-Startseite', 'url' => $appUrl],
+];
+try {
+    $tok = $pdo->query("SELECT token FROM access_tokens WHERE active = 1 AND expires_at > NOW() ORDER BY id DESC LIMIT 1")->fetchColumn();
+    if ($tok) {
+        $qrZiele['helfer'] = ['label' => 'Helfer-Anmeldung (Token-Link)', 'url' => $appUrl . '/helfer-anmeldung.php?token=' . rawurlencode((string) $tok)];
+    }
+} catch (PDOException $e) {
+    // Tabelle fehlt/leer -> Preset entfaellt
+}
+$qrZiele['eigen'] = ['label' => 'Eigener Link …', 'url' => ''];
+
+// Vorwahl passend zum Post-Thema
+$qrDefault = 'anmeldung';
+if ($postKontext) {
+    $qrDefault = match ($postKontext['anlass_key']) {
+        'helfer', 'helfer_gesucht'      => isset($qrZiele['helfer']) ? 'helfer' : 'website',
+        'renntag', 'danke', 'eventtag'  => 'website',
+        default                         => 'anmeldung',
+    };
+}
+
 // Repo-Logos fuer tauschbare Logo-Slots der Renntag-Vorlage (Scan wie Orchestrator)
 $repoAssets = [];
 $assetsRoot = realpath(__DIR__ . '/../assets/images');
@@ -94,7 +122,8 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
             width: 100%; padding: var(--control-pad-y) var(--control-pad-x); border: 1px solid var(--border);
             border-radius: var(--radius); font-size: 0.9rem; box-sizing: border-box; font-family: inherit;
         }
-        .vt-two { display: grid; grid-template-columns: 74px 1fr; gap: 0.5rem; align-items: start; }
+        /* Beide Spalten muessen ihren Inhalt zeigen (Inhaber 2026-08-14: keine abgeschnittenen Felder) */
+        .vt-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); gap: 0.5rem; align-items: start; }
         .vt-hint { font-size: 0.78rem; color: var(--text-light); margin: 0.2rem 0 0; line-height: 1.45; }
         .vt-row { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
         .vt-seg { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
@@ -376,9 +405,18 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
 
                     <h3>QR-Code (optional)</h3>
                     <div class="vt-field">
-                        <label for="vt-qr-url">Ziel-Link (z. B. Anmeldeseite)</label>
+                        <label for="vt-qr-ziel">QR-Ziel</label>
+                        <select id="vt-qr-ziel">
+                            <option value="">— kein QR-Code —</option>
+                            <?php foreach ($qrZiele as $zielKey => $ziel): ?>
+                            <option value="<?= htmlspecialchars($zielKey) ?>" data-url="<?= htmlspecialchars($ziel['url']) ?>" <?= $zielKey === $qrDefault ? 'selected' : '' ?>><?= htmlspecialchars($ziel['label']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <span class="vt-hint">Feststehende Ziele sind hinterlegt; der Helfer-Link kommt immer aktuell aus der Token-Verwaltung.</span>
+                    </div>
+                    <div class="vt-field" id="vt-qr-eigen-feld" style="display:none">
+                        <label for="vt-qr-url">Eigener Ziel-Link</label>
                         <input type="text" id="vt-qr-url" placeholder="https://…">
-                        <span class="vt-hint">Leer lassen = keine QR-Karte auf der Grafik.</span>
                     </div>
                     <div class="vt-field">
                         <label for="vt-qr-label">QR-Beschriftung</label>
@@ -603,9 +641,20 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
             if (usePhoto) { $('vt-bg').src = selectedPhotoUrl; } else { $('vt-bg').removeAttribute('src'); }
         }
 
+        // --- QR-Ziel aus der Auswahl (feststehende Links) oder dem Eigener-Link-Feld ---
+        function qrZielUrl() {
+            const sel = $('vt-qr-ziel');
+            if (!sel.value) { return ''; }
+            if (sel.value === 'eigen') { return $('vt-qr-url').value.trim(); }
+            return (sel.options[sel.selectedIndex].dataset.url || '').trim();
+        }
+        $('vt-qr-ziel').addEventListener('change', () => {
+            $('vt-qr-eigen-feld').style.display = $('vt-qr-ziel').value === 'eigen' ? 'block' : 'none';
+        });
+
         // --- QR erzeugen (self-hosted qrcode.js) — je Vorlage eigenes Ziel ---
         function applyQr(wrapId, imgId, labelId, anzeige) {
-            const url = $('vt-qr-url').value.trim();
+            const url = qrZielUrl();
             const wrap = $(wrapId), img = $(imgId);
             if (!url || typeof qrcode !== 'function') { wrap.style.display = 'none'; return; }
             try {
