@@ -343,9 +343,10 @@ function persistAnlassFeld(feld, wert, msgId) {
 document.getElementById('sp-fakten').addEventListener('blur', ev => persistAnlassFeld('fakten', ev.target.value, 'sp-ft-msg'));
 document.getElementById('sp-prompt').addEventListener('blur', ev => persistAnlassFeld('prompt', ev.target.value, 'sp-pr-msg'));
 
-// Entwuerfe generieren — als Funktion, damit sie auch beim ersten Oeffnen automatisch laeuft.
-// auto=true: still (keine Fehler-Toasts) + Entwurf direkt als draft sichern.
-async function generiereEntwuerfe(auto) {
+// Entwuerfe generieren (manueller Klick). Auto-Feuern beim Oeffnen ist bewusst GEGATED
+// (Inhaber 2026-08-14) bis zur "Thema zuerst"-IA — der geschaerfte Prompt (llmPromptSocial)
+// bleibt aber aktiv, der Klick erzeugt also weiterhin einen wirksamen Post, kein Fakten-Echo.
+async function generiereEntwuerfe() {
     const btn = document.getElementById('sp-generieren');
     btn.disabled = true;
     document.getElementById('sp-spinner').style.display = 'inline';
@@ -365,31 +366,22 @@ async function generiereEntwuerfe(auto) {
         });
         const d = await r.json();
         if (d.error) {
-            if (!auto) { zeige('sp-fehler', d.error, '#dc2626'); }
-            return false;
+            zeige('sp-fehler', d.error, '#dc2626');
+            return;
         }
         document.getElementById('sp-social').value = d.social;
         if (mitPresse && document.getElementById('sp-artikel')) {
             document.getElementById('sp-artikel').value = d.article;
         }
         btn.textContent = 'Neu formulieren';
-        if (auto) { speichern('draft'); }  // still sichern -> erneutes Oeffnen generiert nicht neu
-        return true;
     } catch (e) {
-        if (!auto) { zeige('sp-fehler', 'Netzwerkfehler.', '#dc2626'); }
-        return false;
+        zeige('sp-fehler', 'Netzwerkfehler.', '#dc2626');
     } finally {
         btn.disabled = false;
         document.getElementById('sp-spinner').style.display = 'none';
     }
 }
-document.getElementById('sp-generieren').addEventListener('click', () => generiereEntwuerfe(false));
-
-// Auto-Generieren beim ersten Oeffnen: liegt noch kein Social-Entwurf vor, sofort einen erzeugen,
-// damit im Text-Schritt gleich ein fertiger Post steht (kein blosses Fakten-Echo).
-if (document.getElementById('sp-social').value.trim() === '') {
-    generiereEntwuerfe(true);
-}
+document.getElementById('sp-generieren').addEventListener('click', generiereEntwuerfe);
 
 // Speichern / Freigeben (Post-Objekt)
 function speichern(status) {
