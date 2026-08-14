@@ -505,16 +505,26 @@ try {
         .status-in_klaerung-row { background: rgba(244, 180, 0, 0.16); }
         /* Angeschrieben: ganze Zeile hell transparent blau (Ampel-Blau) */
         .status-angefragt-row { background: rgba(43, 125, 233, 0.12); }
+        /* Branche-Kacheln: jede Gruppe ein abgesetzter Block mit Rahmen, weiße Lücke dazwischen */
         .branche-heading-row td {
-            background: var(--white);
+            background: var(--bg);
             font-weight: 600;
             font-size: 1.05rem;
-            padding: 0.6rem 0.75rem 0.5rem;
-            border-bottom: 2px solid var(--border);
+            padding: 0.55rem 0.75rem;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            user-select: none;
         }
+        .branche-heading-row:hover td { background: #eee; }
         .branche-heading-count { color: var(--text-light); font-weight: 400; font-size: 0.85rem; }
-        /* Graue Lückenzeile setzt die Branchen-Gruppen als Kacheln voneinander ab */
-        .branche-gap td { padding: 0; height: 14px; background: var(--bg); border: none; }
+        .branche-caret { display: inline-block; width: 0.9em; color: var(--text-light); transition: transform 0.12s; }
+        .branche-heading-row.collapsed .branche-caret { transform: rotate(-90deg); }
+        .branche-row td:first-child { border-left: 1px solid var(--border); }
+        .branche-row td:last-child  { border-right: 1px solid var(--border); }
+        .branche-row-last td { border-bottom: 1px solid var(--border); }
+        /* Weiße Lücke zwischen den Kacheln (kein grauer Streifen) */
+        .branche-gap td { padding: 0; height: 12px; background: var(--white); border: none; }
+        .branche-gap:hover td { background: var(--white); }
         .kein-kontakt-row {
             background: #f9f9f9;
         }
@@ -744,6 +754,7 @@ try {
             $qsFlat = $_GET; $qsFlat['gruppe'] = 'liste';
             $urlGroup = '?' . http_build_query($qsGroup);
             $urlFlat = '?' . http_build_query($qsFlat);
+            if ($groupByBranche) { $colCount--; } // Branche-Spalte entfällt in der Gruppierung
             ?>
             <div class="ansicht-toggle" style="margin-bottom:0.75rem;display:inline-flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;font-size:0.85rem">
                 <a href="<?= htmlspecialchars($urlFlat) ?>" style="padding:0.4rem 0.85rem;text-decoration:none;<?= !$groupByBranche ? 'background:var(--primary);color:#fff' : 'color:var(--text)' ?>">Liste</a>
@@ -756,7 +767,7 @@ try {
                         <tr>
                             <th>Firma</th>
                             <th>Ansprechpartner</th>
-                            <th>Branche</th>
+                            <?php if (!$groupByBranche): ?><th>Branche</th><?php endif; ?>
                             <th>Paket</th>
                             <th>Summe</th>
                             <th>Status</th>
@@ -792,14 +803,19 @@ try {
                                         if ($bv !== '' && !in_array($bv, $groupNames, true)) { $groupNames[] = $bv; }
                                     }
                                 }
+                                $gi = 0;
                                 foreach ($groupNames as $bName) {
                                     $grp = [];
                                     foreach ($sponsoren as $s) {
                                         if (in_array($bName, $brancheArr($s), true)) { $grp[] = $s; }
                                     }
                                     if ($grp) {
-                                        $sequence[] = ['heading' => $bName, 'count' => count($grp)];
-                                        foreach ($grp as $g) { $sequence[] = ['sponsor' => $g]; }
+                                        $gi++;
+                                        $sequence[] = ['heading' => $bName, 'count' => count($grp), 'gi' => $gi];
+                                        $n = count($grp);
+                                        foreach (array_values($grp) as $k => $g) {
+                                            $sequence[] = ['sponsor' => $g, 'gi' => $gi, 'last' => ($k === $n - 1)];
+                                        }
                                     }
                                 }
                                 $ohne = [];
@@ -807,8 +823,12 @@ try {
                                     if (!$brancheArr($s)) { $ohne[] = $s; }
                                 }
                                 if ($ohne) {
-                                    $sequence[] = ['heading' => 'Ohne Branche', 'count' => count($ohne)];
-                                    foreach ($ohne as $g) { $sequence[] = ['sponsor' => $g]; }
+                                    $gi++;
+                                    $sequence[] = ['heading' => 'Ohne Branche', 'count' => count($ohne), 'gi' => $gi, 'noedit' => true];
+                                    $n = count($ohne);
+                                    foreach (array_values($ohne) as $k => $g) {
+                                        $sequence[] = ['sponsor' => $g, 'gi' => $gi, 'last' => ($k === $n - 1)];
+                                    }
                                 }
                             } else {
                                 foreach ($sponsoren as $s) { $sequence[] = ['sponsor' => $s]; }
@@ -817,7 +837,9 @@ try {
                             <?php foreach ($sequence as $item): ?>
                                 <?php if (isset($item['heading'])): ?>
                                     <?php if (!empty($headingSeen)): ?><tr class="branche-gap"><td colspan="<?= $colCount ?>"></td></tr><?php endif; $headingSeen = true; ?>
-                                    <tr class="branche-heading-row"><td colspan="<?= $colCount ?>"><?= htmlspecialchars($item['heading']) ?> <span class="branche-heading-count">(<?= (int) $item['count'] ?>)</span></td></tr>
+                                    <tr class="branche-heading-row" data-group="<?= (int) $item['gi'] ?>" data-branche="<?= htmlspecialchars($item['heading']) ?>"<?= empty($item['noedit']) ? '' : ' data-noedit="1"' ?>>
+                                        <td colspan="<?= $colCount ?>"><span class="branche-caret" aria-hidden="true">▾</span> <span class="branche-title"><?= htmlspecialchars($item['heading']) ?></span> <span class="branche-heading-count">(<?= (int) $item['count'] ?>)</span></td>
+                                    </tr>
                                 <?php else: ?>
                                 <?php
                                 $s = $item['sponsor'];
@@ -838,7 +860,7 @@ try {
                                     $rowClass = 'status-angefragt-row';
                                 }
                                 ?>
-                                <tr class="<?= $rowClass ?>">
+                                <tr class="<?= $rowClass ?><?= isset($item['gi']) ? ' branche-row' . (!empty($item['last']) ? ' branche-row-last' : '') : '' ?>"<?= isset($item['gi']) ? ' data-group="' . (int) $item['gi'] . '"' : '' ?>>
                                     <td class="firma-cell">
                                         <a href="sponsor_form.php?id=<?= $s['id'] ?>">
                                             <strong><?= htmlspecialchars($s['firma']) ?></strong>
@@ -881,6 +903,7 @@ try {
                                             –
                                         <?php endif; ?>
                                     </td>
+                                    <?php if (!$groupByBranche): ?>
                                     <td>
                                         <?php
                                         $bArr = [];
@@ -901,6 +924,7 @@ try {
                                             <div style="font-size:0.7rem;color:var(--text-light);margin-top:0.2rem">+<?= count($bArr) - 1 ?> weitere</div>
                                         <?php endif; ?>
                                     </td>
+                                    <?php endif; ?>
                                     <td>
                                         <select class="inline-select paket-select paket-<?= $s['paket'] ?: 'none' ?>"
                                                 data-id="<?= $s['id'] ?>" data-field="paket" title="Paket ändern">
@@ -1178,6 +1202,56 @@ try {
             document.getElementById('branche-dd-panel').classList.remove('open');
         }
     });
+
+    // ── Branche-Kacheln: Einfachklick klappt ein/aus, Doppelklick benennt um ──
+    (function () {
+        var CSRF = <?= json_encode($csrfToken) ?>;
+        var IS_ADMIN = <?= $isAdmin ? 'true' : 'false' ?>;
+        var headings = document.querySelectorAll('.branche-heading-row');
+        if (!headings.length) return;
+
+        function rowsOf(gi) { return document.querySelectorAll('tr[data-group="' + gi + '"]:not(.branche-heading-row)'); }
+
+        function toggle(head) {
+            var gi = head.dataset.group;
+            var collapse = !head.classList.contains('collapsed');
+            head.classList.toggle('collapsed', collapse);
+            rowsOf(gi).forEach(function (r) { r.style.display = collapse ? 'none' : ''; });
+        }
+
+        function rename(head) {
+            if (!IS_ADMIN) { return; }
+            if (head.dataset.noedit) { return; } // „Ohne Branche" nicht umbenennbar
+            var alt = head.dataset.branche;
+            var neu = window.prompt('Branche umbenennen — betrifft alle Sponsoren dieser Gruppe:', alt);
+            if (neu === null) { return; }
+            neu = neu.trim();
+            if (neu === '' || neu === alt) { return; }
+            var body = new URLSearchParams();
+            body.set('csrf_token', CSRF);
+            body.set('old', alt);
+            body.set('new', neu);
+            fetch('api/branche_rename.php', { method: 'POST', headers: { 'X-Requested-With': 'fetch' }, body: body })
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    if (d && d.ok) { location.reload(); }
+                    else { alert((d && d.message) || 'Umbenennen fehlgeschlagen.'); }
+                })
+                .catch(function () { alert('Netzwerkfehler beim Umbenennen.'); });
+        }
+
+        headings.forEach(function (head) {
+            var clickTimer = null;
+            head.addEventListener('click', function () {
+                if (clickTimer) { return; }
+                clickTimer = setTimeout(function () { clickTimer = null; toggle(head); }, 220);
+            });
+            head.addEventListener('dblclick', function () {
+                if (clickTimer) { clearTimeout(clickTimer); clickTimer = null; }
+                rename(head);
+            });
+        });
+    })();
     </script>
 </body>
 </html>
