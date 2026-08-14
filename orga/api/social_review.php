@@ -74,6 +74,10 @@ $system = implode("\n\n", $sysParts);
 
 // Nutzer-Kontext + Entwuerfe
 $parts = [];
+$eckdaten = socialEckdaten($pdo ?? getDbConnection());
+if ($eckdaten !== '') {
+    $parts[] = "Verbindliche Eckdaten (Abweichungen sind Fehler und müssen beanstandet werden):\n" . $eckdaten;
+}
 $anlaesse = socialAnlaesse();
 $anlass = $_POST['anlass'] ?? '';
 if (isset($anlaesse[$anlass])) {

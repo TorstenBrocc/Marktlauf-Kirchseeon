@@ -45,6 +45,12 @@ $userPrompt  = trim($_POST['prompt'] ?? '');
 $hashtags    = trim($_POST['hashtags'] ?? '');
 
 $parts = ['Anlass: ' . $anlaesse[$anlass]['prompt']];
+// Verbindliche Eckdaten aus den Einstellungen — verhindert halluzinierte Daten
+// (Vorfall 2026-08-14: LLM erfand "21. September" bei leerem Fakten-Feld)
+$eckdaten = socialEckdaten(getDbConnection());
+if ($eckdaten !== '') {
+    $parts[] = "Verbindliche Eckdaten (exakt so verwenden, nicht abwandeln):\n" . $eckdaten;
+}
 if ($anlass === 'renntag') {
     $parts[] = "Ergebnisdaten:\n" . raceResultToPromptText(raceResultData(getDbConnection()));
 }

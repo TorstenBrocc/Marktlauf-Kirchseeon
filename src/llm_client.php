@@ -195,7 +195,9 @@ function llmPromptSocial(): string
     $task = <<<PROMPT
 AUFGABE: Verfasse einen Social-Media-Post (Instagram/Facebook) passend zum unten genannten Anlass
 und den Fakten/Stichpunkten. Beachte zusätzliche Anweisungen des Nutzers, falls vorhanden. Beginne
-direkt mit dem Post-Text, ohne Einleitung oder Erklärung.
+direkt mit dem Post-Text, ohne Einleitung oder Erklärung. Schreibe KEINE Hashtags — sie werden
+separat ergänzt. Erfinde keine Daten, Uhrzeiten oder Orte: nutze ausschließlich die Angaben aus
+Eckdaten und Fakten; fehlt eine Angabe, lass sie weg.
 PROMPT;
     return brandVoiceSystem('social') . "\n\n" . $task;
 }
