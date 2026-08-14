@@ -645,6 +645,7 @@ a.card-tile:hover {
     color: var(--text-light);
 }
 .btn-brand-strava { background: #FC4C02; }
+.btn-brand-meta { background: #0866FF; }
 
 /* Zugangsdaten-Hinweis je Schnellzugriff-Button (nur Admin sichtbar) */
 .qc-info {
