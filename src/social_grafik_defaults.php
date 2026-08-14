@@ -65,3 +65,45 @@ function socialQrLabel(string $qrKey): string
         default         => 'Website',
     };
 }
+
+/**
+ * Format-Vorwahl je Thema (Post-Wirkung-Spec 5.B/5.D): Story 9:16 fuer die klaren
+ * Story-Themen (Reminder/Live), sonst Portrait 4:5 als Standard-Feed. Quadrat bleibt
+ * manueller Fallback. Rueckgabe = Key aus RT_FORMATS (portrait|grid34|square|story).
+ */
+function socialFormatDefault(string $anlassKey): string
+{
+    return match ($anlassKey) {
+        'countdown_7', 'morgen', 'eventtag' => 'story',
+        default                             => 'portrait',
+    };
+}
+
+/**
+ * Bild-Default je Thema (Post-Wirkung-Spec 5.C.10): 'foto' fuer Stimmungs-/Beweis-Themen
+ * (echtes Foto traegt den Post), 'grafik' fuer Termin-/Fakten-Themen (Grafik allein).
+ */
+function socialBildDefault(string $anlassKey): string
+{
+    return in_array($anlassKey, ['renntag', 'danke', 'eventtag', 'strecke'], true) ? 'foto' : 'grafik';
+}
+
+/**
+ * Logo-Fuehrung je Thema (Post-Wirkung-Spec 5.C.11): welche der festen Logos die Grafik
+ * fuehren. Rueckgabe = Keys aus {marktlauf, atsv, gemeinde}, Reihenfolge = Fuehrung.
+ * Sponsor-Logos kommen separat (S5, nur auf Sponsoren-Themen). Deckel 3 (5.C.12) greift
+ * zusaetzlich in der Bedienung.
+ *  - Gemeinde nur im Kooperations-Kontext (Ankuendigung, Nachhaltigkeit, Energie-&-Umwelttag).
+ *  - ATSV fuehrt allein auf Vereins-/Danke-/Helfer-/Sponsoren-Themen.
+ *  - sonst Marktlauf-Wortmarke + ATSV (Event-/Termin-Grafiken).
+ */
+function socialLogoFuehrung(string $anlassKey): array
+{
+    if (in_array($anlassKey, ['ankuendigung', 'nachhaltigkeit', 'energie_umwelttag'], true)) {
+        return ['marktlauf', 'atsv', 'gemeinde'];
+    }
+    if (in_array($anlassKey, ['helfer', 'helfer_gesucht', 'sponsoren_dank', 'renntag', 'sponsorenvorstellung', 'eventtag', 'danke'], true)) {
+        return ['atsv'];
+    }
+    return ['marktlauf', 'atsv'];
+}
