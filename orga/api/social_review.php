@@ -82,6 +82,10 @@ $anlaesse = socialAnlaesse();
 $anlass = $_POST['anlass'] ?? '';
 if (isset($anlaesse[$anlass])) {
     $parts[] = 'Kontext — Anlass: ' . $anlaesse[$anlass]['prompt'];
+    $ausschluss = trim((string) ($anlaesse[$anlass]['ausschluss'] ?? ''));
+    if ($ausschluss !== '') {
+        $parts[] = "Kontext — was NICHT rein darf (Verstoß beanstanden):\n" . $ausschluss;
+    }
 }
 $stichpunkte = trim($_POST['stichpunkte'] ?? '');
 if ($stichpunkte !== '') {

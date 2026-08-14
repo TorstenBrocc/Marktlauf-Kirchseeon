@@ -5,6 +5,11 @@
  * rendern hieraus, social_generate.php nimmt die Prompt-Beschreibung,
  * social_prompt.php validiert gegen die Keys, der Digest nimmt die UI-Labels.
  * 'presse' => true markiert pressefaehige Anlaesse (Presse-Feld + Presse-LLM-Call).
+ * 'prompt' = Winkel als imperativer Prompt (Post-Wirkung-Spec 5.A/5.D) — kein Etikett,
+ * sondern echte Anweisung an die KI, damit die Ausgabe nicht ausfranst.
+ * 'ausschluss' = „darf NICHT rein" je Thema (5.D): wird von social_generate.php und
+ * social_review.php als harte Negativ-Regel in den Prompt gehoben (Anti-Verwaesserung,
+ * z. B. kein „Anmelden" auf Nachlauf-Themen).
  * 'fakten' = editierbare Vorbelegung der Fakten/Stichpunkte im Post-Detail —
  * gespeicherte Nutzerwerte (einstellungen.social_prompts) gewinnen immer.
  * Neue Anlaesse nur hier ergaenzen.
@@ -46,7 +51,7 @@ function socialEckdaten(PDO $pdo): string
 }
 
 /**
- * @return array<string, array{gruppe: string, ui: string, prompt: string, fakten: string, presse?: bool}>
+ * @return array<string, array{gruppe: string, ui: string, prompt: string, ausschluss: string, fakten: string, presse?: bool}>
  */
 function socialAnlaesse(): array
 {
@@ -56,126 +61,146 @@ function socialAnlaesse(): array
             'presse' => true,
             'gruppe' => 'Standard',
             'ui'     => 'Allgemeiner Beitrag',
-            'prompt' => 'Allgemeiner Vereins-/Event-Beitrag',
+            'prompt' => 'Vermittle einen herzlichen Gesamteindruck vom Marktlauf als Lauffest. Finde einen menschlichen Aufhänger, kein Datenblatt.',
+            'ausschluss' => 'Keine Vollzähligkeit aller Startzeiten aufzählen. Keine Sponsoren-Liste.',
             'fakten' => "Marktlauf Kirchseeon · Sonntag, 20. September 2026 · Start ab 10:00 Uhr\nStart & Ziel: JEK, Westring 6, Kirchseeon\nLäufe: Bambini 500 m · Schüler 1 & 2 km · 5 km & 10 km\nAnmeldung: atsv-kirchseeon-marktlauf.de",
         ],
         'ankuendigung' => [
             'presse' => true,
             'gruppe' => 'Standard',
             'ui'     => 'Ankündigung des Events',
-            'prompt' => 'Ankündigung des Events (Vorschau, Aufruf zur Anmeldung)',
+            'prompt' => 'Kündige den Marktlauf an, wecke Vorfreude und rufe zur Anmeldung auf. Erwähne in einem Satz den Energie- & Umwelttag als Rahmen.',
+            'ausschluss' => 'Nichts Rückblickartiges. Nicht überladen — nicht jedes Detail aufzählen.',
             'fakten' => "Marktlauf Kirchseeon · Sonntag, 20. September 2026 · Start ab 10:00 Uhr\nStart & Ziel: JEK, Westring 6, Kirchseeon\nBambini 500 m (10:00) · Schüler 1 & 2 km (10:30) · 5 & 10 km (11:00)\nTeil des Energie- & Umwelttags 2026 · Medaillen & Urkunden für alle Finisher\nAnmeldung: atsv-kirchseeon-marktlauf.de",
         ],
         'countdown' => [
             'gruppe' => 'Standard',
             'ui'     => 'Countdown / Vorfreude',
-            'prompt' => 'Countdown / Vorfreude vor dem Event',
+            'prompt' => 'Schreibe einen kurzen Vorfreude-Post mit knackigem Hook und klarer Einladung zur Anmeldung.',
+            'ausschluss' => 'Keine volle Distanz- oder Startzeitliste. Keine Sponsoren.',
             'fakten' => "Renntag: Sonntag, 20.09.2026, Start ab 10:00 Uhr\nAlle Distanzen: 500 m bis 10 km\nJetzt anmelden: atsv-kirchseeon-marktlauf.de",
         ],
         'sponsoren_dank' => [
             'gruppe' => 'Standard',
             'ui'     => 'Dank an Sponsoren & Partner',
-            'prompt' => 'Dank an Sponsoren und Partner',
+            'prompt' => 'Bedanke dich einheitlich-warm bei Sponsoren und Partnern, ohne Stufen-Titel. Bring in einem emotionalen Satz rüber, was sie ermöglichen.',
+            'ausschluss' => 'Keine Stufen-Titel (kein „Gold-/Silber-Sponsor"). Kein Anmelde-Hard-Sell. Nicht überladen.',
             'fakten' => "Dank an alle Sponsoren & Partner des Marktlaufs 2026\nSie machen Medaillen, Urkunden und Verpflegung möglich\n(konkrete Sponsorennamen hier einsetzen und im Bild taggen)",
         ],
         'helfer' => [
             'gruppe' => 'Standard',
             'ui'     => 'Helfer-Aufruf / -Dank',
-            'prompt' => 'Helfer-Aufruf / Dank an Helfer',
+            'prompt' => 'Sprich Helferinnen und Helfer direkt und ehrenamtsnah an — als Aufruf oder als Dank — mit einem konkreten nächsten Schritt.',
+            'ausschluss' => 'Nicht mit der Läufer-Anmeldung vermischen. Keine Sponsoren.',
             'fakten' => "Helfer für den Renntag 20.09.2026 gesucht\nEinsatzbereiche: Streckenposten, Start & Ziel, Verpflegung, Auf- & Abbau\nMelden über atsv-kirchseeon-marktlauf.de oder direkt bei der Orga",
         ],
         'renntag' => [
             'presse' => true,
             'gruppe' => 'Standard',
             'ui'     => 'Renntag-Nachbericht (nutzt RaceResult-Daten)',
-            'prompt' => 'Nachbericht zum Renntag (Ergebnisdaten siehe unten)',
+            'prompt' => 'Erzähl den Renntag lebendig — Stimmung, Wetter, Momente, Dank. Verweb die Ergebnisdaten als Erzählung, nicht als Tabelle.',
+            'ausschluss' => 'Keine Anmeldung (Event ist gelaufen). Keine Countdown-Sprache. Keine Roh-Tabelle mit Zeiten.',
             'fakten' => "(Ergebnisdaten kommen automatisch aus RaceResult)\nHier ergänzen: Wetter, Stimmung, besondere Momente, Dank an Helfer/Sponsoren",
         ],
         // Contentplan 2026
         'save_the_date' => [
             'gruppe' => 'Contentplan 2026',
             'ui'     => 'Save the Date',
-            'prompt' => 'Save the Date — Termin des Marktlaufs ankündigen, Vorfreude wecken',
+            'prompt' => 'Save-the-Date: Bring die Leser dazu, sich den Termin zu merken. Wecke Vorfreude, halte es knapp und einladend.',
+            'ausschluss' => 'Keine Detailzeiten. Kein Anmelde-Druck. Keine Sponsoren.',
             'fakten' => "Save the Date: Marktlauf Kirchseeon am Sonntag, 20. September 2026\nJEK, Westring 6, Kirchseeon · Start ab 10:00 Uhr\nLäufe für alle: Bambini bis 10 km",
         ],
         'warum_mitlaufen' => [
             'gruppe' => 'Contentplan 2026',
             'ui'     => 'Warum mitlaufen? (5 Gründe)',
-            'prompt' => 'Warum mitlaufen? Fünf gute Gründe für die Teilnahme nennen',
+            'prompt' => 'Nenne fünf gute Gründe fürs Mitlaufen — emotional erzählt, keine trockene Liste. Sprich alle Altersklassen und Familien an.',
+            'ausschluss' => 'Kein Datenblatt. Keine Sponsoren.',
             'fakten' => "Für alle Altersklassen: Bambini, Schüler, Jugend, Erwachsene\nDistanzen 500 m bis 10 km — jeder findet seine Strecke\nMedaillen & Urkunden für alle Finisher\nTeil des Energie- & Umwelttags: Sport und Umwelt an einem Tag\nLauffest mitten in Kirchseeon — Anmeldung: atsv-kirchseeon-marktlauf.de",
         ],
         'strecke' => [
             'gruppe' => 'Contentplan 2026',
             'ui'     => 'Strecke entdecken',
-            'prompt' => 'Strecke entdecken — Streckenverlauf und Besonderheiten vorstellen',
+            'prompt' => 'Stell die Strecke vor — Verlauf und Besonderheiten — und mach Lust darauf, hier vor Ort zu laufen.',
+            'ausschluss' => 'Keine Countdown- oder Ergebnis-Sprache. Keine Sponsoren.',
             'fakten' => "Start & Ziel: JEK, Westring 6, Kirchseeon\nStreckenverlauf & Karte: atsv-kirchseeon-marktlauf.de\n(Besonderheiten ergänzen: Runden, Untergrund, Highlights am Weg)",
         ],
         'nachhaltigkeit' => [
             'gruppe' => 'Contentplan 2026',
             'ui'     => 'Nachhaltig laufen',
-            'prompt' => 'Nachhaltig laufen — Umwelt- und Nachhaltigkeitsaspekte des Events',
+            'prompt' => 'Beleuchte die Nachhaltigkeits-Seite im Rahmen des Energie- & Umwelttags — glaubwürdig und konkret, ohne Greenwashing.',
+            'ausschluss' => 'Keine Öko-Floskeln oder Superlative. Nichts Unbelegtes behaupten.',
             'fakten' => "Der Marktlauf ist Teil des Energie- & Umwelttags 2026\n(konkrete Punkte ergänzen: Anreise zu Fuß/Rad, regionale Verpflegung, Müllvermeidung)",
         ],
         'anmeldung_offen' => [
             'gruppe' => 'Contentplan 2026',
             'ui'     => 'Anmeldung geöffnet',
-            'prompt' => 'Anmeldung geöffnet — Aufruf, sich jetzt anzumelden',
+            'prompt' => 'Verkünde, dass die Anmeldung offen ist — mit einem klaren, freundlichen Aufruf.',
+            'ausschluss' => 'Keine Rückblick- oder Countdown-Sprache. Keine Sponsoren.',
             'fakten' => "Die Anmeldung läuft: atsv-kirchseeon-marktlauf.de\nSonntag, 20.09.2026 · Start ab 10:00 Uhr · JEK, Westring 6, Kirchseeon\nBambini 500 m (10:00) · Schüler 1 & 2 km (10:30) · 5 & 10 km (11:00)",
         ],
         'helfer_gesucht' => [
             'gruppe' => 'Contentplan 2026',
             'ui'     => 'Helfer gesucht',
-            'prompt' => 'Helfer gesucht — Aufruf, sich als Helfer für das Event zu melden',
+            'prompt' => 'Rufe gezielt Helfer auf — ehrenamtsnah und herzlich. Mach den nächsten Schritt leicht.',
+            'ausschluss' => 'Nicht mit der Läufer-Anmeldung vermischen. Keine Sponsoren.',
             'fakten' => "Für den Renntag am Sonntag, 20.09.2026 suchen wir Helfer\nEinsatzbereiche: Streckenposten, Start & Ziel, Verpflegung, Auf- & Abbau\nSchichten am Renntag, Auf-/Abbau am Tag selbst\nMelden über atsv-kirchseeon-marktlauf.de oder direkt bei der Orga\nAls Dankeschön: gemeinsamer Ausklang nach dem Lauf",
         ],
         'sponsorenvorstellung' => [
             'gruppe' => 'Contentplan 2026',
             'ui'     => 'Sponsorenvorstellung',
-            'prompt' => 'Sponsorenvorstellung — einen Sponsor/Partner des Events vorstellen',
+            'prompt' => 'Stell EINEN Sponsor herzlich vor und stelle selbst den Bezug seiner Kernkompetenz zum Marktlauf her (z. B. „bringt die Brezn ins Ziel"). Einheitlich-warm, ohne Stufen-Titel.',
+            'ausschluss' => 'Keine Stufen-Titel oder Paket-Sprache. Keine mehreren Sponsoren in einem Post.',
             'fakten' => "(Sponsor-Name, was er macht, was er beim Marktlauf unterstützt — hier einsetzen)\nDanke für die Unterstützung des Marktlaufs 2026\nTipp: Sponsor im Bild taggen oder als Instagram-Collab einladen",
         ],
         'countdown_30' => [
             'gruppe' => 'Contentplan 2026',
             'ui'     => '30-Tage-Countdown',
-            'prompt' => '30-Tage-Countdown — noch 30 Tage bis zum Event',
+            'prompt' => 'Noch 30 Tage: Transportiere Countdown-Energie und eine klare Einladung zur Anmeldung.',
+            'ausschluss' => 'Keine Distanzliste. Keine Sponsoren.',
             'fakten' => "Noch 30 Tage bis zum Marktlauf: Sonntag, 20.09.2026, Start ab 10:00 Uhr\nJetzt anmelden: atsv-kirchseeon-marktlauf.de",
         ],
         'trainingstipp' => [
             'gruppe' => 'Contentplan 2026',
             'ui'     => 'Trainingstipp',
-            'prompt' => 'Trainingstipp für die Vorbereitung auf den Lauf',
+            'prompt' => 'Gib einen konkreten, machbaren Trainingstipp — nahbar und ermutigend, für 5 oder 10 km.',
+            'ausschluss' => 'Keine medizinischen Versprechen oder Superlative. Keine Sponsoren.',
             'fakten' => "(Konkreten Tipp einsetzen: z. B. Tempoläufe, langer Lauf am Wochenende, Regeneration)\nZiel: fit für 5 oder 10 km am 20.09.2026\nNoch nicht angemeldet? atsv-kirchseeon-marktlauf.de",
         ],
         'energie_umwelttag' => [
             'presse' => true,
             'gruppe' => 'Contentplan 2026',
             'ui'     => 'Energie- & Umwelttag',
-            'prompt' => 'Energie- & Umwelttag — Hinweis auf den Aktionstag rund um das Event',
+            'prompt' => 'Weise auf den Energie- & Umwelttag als Rahmen hin — Sport und Umwelt an einem Tag — und nenne konkrete Programmpunkte.',
+            'ausschluss' => 'Keine Superlative. Nicht ohne konkrete Programmpunkte posten.',
             'fakten' => "Der Marktlauf ist Teil des Energie- & Umwelttags 2026 in Kirchseeon\nSport + Umwelt an einem Tag — Programm rund um den Lauf\n(Programmpunkte des Aktionstags hier ergänzen)",
         ],
         'countdown_7' => [
             'gruppe' => 'Contentplan 2026',
             'ui'     => '7-Tage-Countdown',
-            'prompt' => '7-Tage-Countdown — noch eine Woche bis zum Event',
+            'prompt' => 'Noch eine Woche: Mach die Vorfreude spürbar und lade ein letztes Mal zur Anmeldung ein.',
+            'ausschluss' => 'Keine Detail-Distanzliste. Keine Sponsoren.',
             'fakten' => "Noch 1 Woche: Marktlauf am Sonntag, 20.09.2026\nStart ab 10:00 Uhr · JEK, Westring 6, Kirchseeon\nLetzte Chance zur Anmeldung: atsv-kirchseeon-marktlauf.de",
         ],
         'morgen' => [
             'gruppe' => 'Contentplan 2026',
             'ui'     => 'Morgen geht\'s los',
-            'prompt' => 'Morgen geht es los — letzter Aufruf am Vortag des Events',
+            'prompt' => 'Letzter Aufruf am Vortag: Vorfreude plus praktische Infos für morgen.',
+            'ausschluss' => 'Nichts zu Parken oder Nachmeldung erfinden — nur wenn es in den Fakten steht. Keine Sponsoren.',
             'fakten' => "Morgen ist Renntag: Sonntag, 20.09.2026\nBambini 500 m (10:00) · Schüler 1 & 2 km (10:30) · 5 & 10 km (11:00)\nStart & Ziel: JEK, Westring 6, Kirchseeon\n(ergänzen: Startnummernausgabe, Parken, Nachmeldung möglich?)",
         ],
         'eventtag' => [
             'gruppe' => 'Contentplan 2026',
             'ui'     => 'Eventtag (live)',
-            'prompt' => 'Eventtag — Live-Beitrag vom Renntag selbst',
+            'prompt' => 'Live vom Renntag: Fang einen echten Moment ein, kurze Stimmung — authentisch statt poliert.',
+            'ausschluss' => 'Keine Anmeldung. Keine langen Texte. Kein Datenblatt.',
             'fakten' => "Heute läuft der Marktlauf Kirchseeon!\n(Live-Eindruck: Foto + 1–2 Sätze zur Stimmung vor Ort)\nErgebnisse später auf atsv-kirchseeon-marktlauf.de",
         ],
         'danke' => [
             'presse' => true,
             'gruppe' => 'Contentplan 2026',
             'ui'     => 'Danke / Rückblick',
-            'prompt' => 'Danke & Rückblick nach dem Event',
+            'prompt' => 'Sag Danke und blick warm zurück — Menschen vor Zahlen. Dank an Läufer, Helfer, Sponsoren und Zuschauer.',
+            'ausschluss' => 'Keine Anmeldung (Event ist vorbei). Keine Countdown-Sprache.',
             'fakten' => "Danke an alle Läuferinnen und Läufer, Helfer, Sponsoren und Zuschauer\n(Teilnehmerzahl/Highlights einsetzen — oder Anlass Renntag-Nachbericht mit RaceResult-Daten nutzen)\nErgebnisse: atsv-kirchseeon-marktlauf.de",
         ],
     ];
