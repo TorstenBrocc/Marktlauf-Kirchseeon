@@ -187,6 +187,10 @@ $makeWebhookSecret = (string) ($config['make_webhook_secret'] ?? '');
                 grid-template-columns: 1fr;
             }
         }
+        /* Autosave-Status statt Speicher-Button — dezent, nur kurz farbig bei Erfolg/Fehler. */
+        .autosave-status { font-size: 0.85rem; color: var(--text-light); transition: color 0.2s; }
+        .autosave-status.ok { color: var(--primary); font-weight: 600; }
+        .autosave-status.err { color: var(--error); font-weight: 600; }
     </style>
 </head>
 <body>
@@ -351,7 +355,7 @@ $makeWebhookSecret = (string) ($config['make_webhook_secret'] ?? '');
 
                 <div class="settings-section">
                     <div class="btn-row">
-                        <button type="submit" class="btn btn-primary">Speichern</button>
+                        <span id="autosave-status" class="autosave-status">Änderungen werden automatisch gespeichert.</span>
                     </div>
                 </div>
             </form>
@@ -417,6 +421,42 @@ $makeWebhookSecret = (string) ($config['make_webhook_secret'] ?? '');
         </main>
     </div>
     <script>
+    // Autosave: Einstellungen speichern automatisch (kein Speicher-Button mehr). Tippen ->
+    // entprellt (700 ms), Feld verlassen / Auswahl -> sofort. Das ganze Formular wird gepostet
+    // (der Endpoint schreibt nur die gerenderten Keys -> kein Datenverlust).
+    (function () {
+        const form = document.querySelector('form[action="api/einstellungen_update.php"]');
+        if (!form) { return; }
+        const statusEl = document.getElementById('autosave-status');
+        let timer = null;
+
+        function setStatus(text, cls) {
+            if (!statusEl) { return; }
+            statusEl.textContent = text;
+            statusEl.className = 'autosave-status' + (cls ? ' ' + cls : '');
+        }
+
+        function save() {
+            clearTimeout(timer); timer = null;
+            setStatus('Speichern …', '');
+            fetch(form.action, {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'fetch' },
+                body: new FormData(form)
+            })
+                .then(function (r) { return r.json().catch(function () { return { ok: false, message: 'Unerwartete Antwort.' }; }); })
+                .then(function (d) {
+                    if (d && d.ok) { setStatus('✓ Gespeichert', 'ok'); }
+                    else { setStatus('⚠ ' + ((d && d.message) || 'Nicht gespeichert'), 'err'); }
+                })
+                .catch(function () { setStatus('⚠ Netzwerkfehler — nicht gespeichert', 'err'); });
+        }
+
+        form.addEventListener('input', function () { clearTimeout(timer); timer = setTimeout(save, 700); });
+        form.addEventListener('change', save);
+        form.addEventListener('submit', function (e) { e.preventDefault(); save(); });
+    })();
+
     (function() {
         const burger = document.getElementById('burger-btn');
         const sidebar = document.getElementById('sidebar');

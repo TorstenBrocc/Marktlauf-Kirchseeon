@@ -9,22 +9,33 @@ require_once __DIR__ . '/_auth.php';
 require_once __DIR__ . '/../../src/db.php';
 require_once __DIR__ . '/../../src/logger.php';
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: ../einstellungen.php');
+// Autosave (fetch mit X-Requested-With) bekommt JSON statt Redirect+Flash; ein klassisches
+// Formular-Submit ohne den Header läuft weiterhin über Redirect mit Flash (No-JS-Fallback).
+$isAjax = ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') !== '';
+function ein_respond(bool $ok, string $message, string $redirect = '../einstellungen.php'): void {
+    global $isAjax;
+    if ($isAjax) {
+        header('Content-Type: application/json; charset=utf-8');
+        if (!$ok) { http_response_code(422); }
+        echo json_encode(['ok' => $ok, 'message' => $message]);
+        exit;
+    }
+    $_SESSION[$ok ? 'flash_success' : 'flash_error'] = $message;
+    header('Location: ' . $redirect);
     exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    ein_respond(false, 'Methode nicht erlaubt.');
 }
 
 $csrfToken = $_POST['csrf_token'] ?? '';
 if (!verifyCsrfToken($csrfToken)) {
-    $_SESSION['flash_error'] = 'Ungültige Anfrage.';
-    header('Location: ../einstellungen.php');
-    exit;
+    ein_respond(false, 'Ungültige Anfrage.');
 }
 
 if (!isAdminFromGuard()) {
-    $_SESSION['flash_error'] = 'Nur Admins können Einstellungen ändern.';
-    header('Location: ../index.php');
-    exit;
+    ein_respond(false, 'Nur Admins können Einstellungen ändern.', '../index.php');
 }
 
 $allowedKeys = [
@@ -86,57 +97,25 @@ $metaBusinessHinweis = mb_substr(trim($_POST['meta_business_hinweis'] ?? ''), 0,
 // `api/sponsor_brief_settings_save.php` geschrieben. Ein Endpoint je Datensatz.
 
 if ($veranstaltungsname !== '' && mb_strlen($veranstaltungsname) > 200) {
-    $_SESSION['flash_error'] = 'Veranstaltungsname zu lang (max. 200 Zeichen).';
-    header('Location: ../einstellungen.php');
-    exit;
+    ein_respond(false, 'Veranstaltungsname zu lang (max. 200 Zeichen).');
 }
-
 if ($kontaktEmail !== '' && !filter_var($kontaktEmail, FILTER_VALIDATE_EMAIL)) {
-    $_SESSION['flash_error'] = 'Ungültige Kontakt-E-Mail-Adresse.';
-    header('Location: ../einstellungen.php');
-    exit;
+    ein_respond(false, 'Ungültige Kontakt-E-Mail-Adresse.');
 }
-
 if ($renntag !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $renntag)) {
-    $_SESSION['flash_error'] = 'Ungültiges Datumsformat.';
-    header('Location: ../einstellungen.php');
-    exit;
+    ein_respond(false, 'Ungültiges Datumsformat.');
 }
-
-if ($raceresultUrl !== '' && !filter_var($raceresultUrl, FILTER_VALIDATE_URL)) {
-    $_SESSION['flash_error'] = 'Ungültige Race-Result-URL.';
-    header('Location: ../einstellungen.php');
-    exit;
-}
-
-if ($trelloUrl !== '' && !filter_var($trelloUrl, FILTER_VALIDATE_URL)) {
-    $_SESSION['flash_error'] = 'Ungültige Trello-Board-URL.';
-    header('Location: ../einstellungen.php');
-    exit;
-}
-
-if ($onedriveUrl !== '' && !filter_var($onedriveUrl, FILTER_VALIDATE_URL)) {
-    $_SESSION['flash_error'] = 'Ungültige OneDrive-URL.';
-    header('Location: ../einstellungen.php');
-    exit;
-}
-
-if ($stravaUrl !== '' && !filter_var($stravaUrl, FILTER_VALIDATE_URL)) {
-    $_SESSION['flash_error'] = 'Ungültige Strava-URL.';
-    header('Location: ../einstellungen.php');
-    exit;
-}
-
-if ($metaBusinessUrl !== '' && !filter_var($metaBusinessUrl, FILTER_VALIDATE_URL)) {
-    $_SESSION['flash_error'] = 'Ungültige Meta-Business-URL.';
-    header('Location: ../einstellungen.php');
-    exit;
-}
-
-if ($raceresultApiUrl !== '' && !filter_var($raceresultApiUrl, FILTER_VALIDATE_URL)) {
-    $_SESSION['flash_error'] = 'Ungültiger RaceResult-SimpleAPI-Link.';
-    header('Location: ../einstellungen.php');
-    exit;
+foreach ([
+    [$raceresultUrl,    'Ungültige Race-Result-URL.'],
+    [$trelloUrl,        'Ungültige Trello-Board-URL.'],
+    [$onedriveUrl,      'Ungültige OneDrive-URL.'],
+    [$stravaUrl,        'Ungültige Strava-URL.'],
+    [$metaBusinessUrl,  'Ungültige Meta-Business-URL.'],
+    [$raceresultApiUrl, 'Ungültiger RaceResult-SimpleAPI-Link.'],
+] as [$urlVal, $urlMsg]) {
+    if ($urlVal !== '' && !filter_var($urlVal, FILTER_VALIDATE_URL)) {
+        ein_respond(false, $urlMsg);
+    }
 }
 
 // Hinweis: Die früheren Validierungen für sponsor_brief_event_datum / sponsor_brief_antwort_bis
@@ -174,13 +153,9 @@ try {
         $stmt->execute(['key' => $key, 'value' => $value, 'value2' => $value]);
     }
 
-    $_SESSION['flash_success'] = 'Einstellungen gespeichert.';
-    header('Location: ../einstellungen.php');
-    exit;
+    ein_respond(true, 'Einstellungen gespeichert.');
 
 } catch (PDOException $e) {
     logError('Einstellungen update error: ' . $e->getMessage());
-    $_SESSION['flash_error'] = 'Datenbankfehler.';
-    header('Location: ../einstellungen.php');
-    exit;
+    ein_respond(false, 'Datenbankfehler.');
 }
