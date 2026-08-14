@@ -55,9 +55,26 @@ $hinweisHtml   = $hinweisHtml   ?? '';
 $versandfaehig = [];
 
 $pdo         = getDbConnection();
-$vorlage     = sponsorBriefLoad($pdo, $slug, (int) $user['id']);
+
+// Fördergruppen-Umschaltung im Erstanschreiben: ist eine Fördergruppen-Zielgruppe gewählt
+// (fg_<gruppe>) und gibt es dafür eine eigene Vorlagen-Variante, bearbeitet die Seite deren
+// Text ($textSlug — eigener Master/Entwurf/Default). Der strukturelle $slug (Versand-Typ,
+// Anhänge, Anhang-Abwahl) bleibt die Basis. So passt der Editor zum Versand, der die Variante
+// ohnehin anhand der Fördergruppe des Empfängers wählt (sponsorBriefEffektiverSlug()).
+$textSlug = $slug;
+if ($slug === 'erstanschreiben' && SPONSOR_BRIEF_VARIANTEN !== []) {
+    $zgWahl = (string) ($_GET['zielgruppe'] ?? '');
+    if (str_starts_with($zgWahl, 'fg_')) {
+        $variante = sponsorBriefVarianteFuer($slug, substr($zgWahl, 3));
+        if ($variante !== '') {
+            $textSlug = $variante;
+        }
+    }
+}
+
 $defaults    = sponsorBriefDefaults();
-$default     = $defaults[$slug];
+$vorlage     = sponsorBriefLoad($pdo, $textSlug, (int) $user['id']);
+$default     = $defaults[$textSlug] ?? $defaults[$slug];
 $platzhalter = sponsorBriefPlatzhalterHilfe($slug);
 $seite       = basename($_SERVER['PHP_SELF'] ?? '');
 
@@ -138,7 +155,7 @@ if ($isUserScoped && $vorlage['draft'] && $vorlage['draft_ts'] !== '') {
 
             <form method="post" action="api/sponsor_brief_save.php" id="brief-form">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                <input type="hidden" name="slug" value="<?= htmlspecialchars($slug) ?>">
+                <input type="hidden" name="slug" value="<?= htmlspecialchars($textSlug) ?>">
 
                 <div class="brief-card">
                     <label for="betreff"><strong>Betreff</strong></label>
@@ -223,7 +240,7 @@ if ($isUserScoped && $vorlage['draft'] && $vorlage['draft_ts'] !== '') {
     <script>
     (function() {
         const csrf = <?= json_encode($csrfToken) ?>;
-        const slug = <?= json_encode($slug) ?>;
+        const slug = <?= json_encode($textSlug) ?>;
         const defaultText = <?= json_encode($default['koerper_md']) ?>;
         const defaultBetreff = <?= json_encode($default['betreff']) ?>;
         const ta = document.getElementById('koerper_md');
