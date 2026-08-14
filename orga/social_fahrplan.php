@@ -123,11 +123,6 @@ foreach ($eintraege as $e) {
             <?php endif; ?>
         </header>
 
-        <div class="hd-card fp-notiz">
-            <input type="text" id="fp-merkfeld" value="<?= htmlspecialchars($merkfeld) ?>"
-                   placeholder="Notiz (Merkfeld) — speichert beim Verlassen des Feldes">
-        </div>
-
         <div class="hd-card">
             <div class="fp-kopfzeile">
                 <div class="fp-filter">
@@ -241,6 +236,18 @@ foreach ($eintraege as $e) {
                 </tbody>
             </table>
             <?php endif; ?>
+        </div>
+
+        <!-- Werkzeuge & Notizen — bewusst unten, nicht im Kopf (Inhaber 2026-08-14) -->
+        <div class="hd-card fp-notiz">
+            <h2 style="font-size:0.95rem;margin:0 0 0.7rem">Werkzeuge &amp; Notizen</h2>
+            <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap">
+                <a class="btn btn-small" style="background:#1877F2;color:#fff;white-space:nowrap"
+                   href="https://business.facebook.com/latest/home?nav_ref=bm_home_redirect&amp;asset_id=1236742862857199"
+                   target="_blank" rel="noopener noreferrer">Meta Business Account öffnen ↗</a>
+                <input type="text" id="fp-merkfeld" value="<?= htmlspecialchars($merkfeld) ?>" style="flex:1 1 260px"
+                       placeholder="Notiz (Merkfeld) — speichert beim Verlassen des Feldes">
+            </div>
         </div>
     </main>
 </div>
