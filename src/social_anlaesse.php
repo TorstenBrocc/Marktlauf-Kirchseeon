@@ -12,10 +12,14 @@
 
 declare(strict_types=1);
 
-/** Default-Hashtags (3–5, lokal + thematisch, Recherche 2026-08-14), solange keine eigenen gespeichert sind. */
+/**
+ * Default-Hashtags — gegrillter 5er-Satz (Inhaber-Go 2026-08-14, Recherche best-hashtags):
+ * 1 Marken-Tag (Wiedererkennung) + 2 lokale (Sweetspots) + 2 thematische.
+ * Anlassbezogen darf Platz 5 tauschen (#bambinilauf, #energieumwelttag).
+ */
 function socialHashtagsDefault(): string
 {
-    return '#marktlauf #kirchseeon #atsv #laufen #landkreisebersberg';
+    return '#marktlaufkirchseeon #kirchseeon #ebersberg #volkslauf #laufenverbindet';
 }
 
 /**
