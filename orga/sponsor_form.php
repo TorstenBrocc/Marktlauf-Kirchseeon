@@ -836,6 +836,23 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
 
                         <div class="form-row">
                             <div class="form-group">
+                                <label for="foerdergruppe">Fördergruppe</label>
+                                <select id="foerdergruppe" name="foerdergruppe">
+                                    <?php $curFg = $sponsor['foerdergruppe'] ?? 'sponsoring'; ?>
+                                    <?php foreach (SPONSOR_FOERDERGRUPPE as $fgKey => $fgLabel): ?>
+                                        <option value="<?= $fgKey ?>" <?= $curFg === $fgKey ? 'selected' : '' ?>><?= htmlspecialchars($fgLabel) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="form-group"></div>
+                        </div>
+                        <p style="font-size:0.85rem; color: var(--text-light); margin:0.2rem 0 0.5rem;">
+                            <strong>Sponsoring</strong>: Paket gegen Leistung · <strong>Förderanträge</strong>: Stiftung/Programm mit Antragsweg ·
+                            <strong>Über Dritte</strong>: läuft über Verbund/Dritte · <strong>Öffentlichkeitsarbeit</strong>: kein Geld möglich, nur Präsenz.
+                        </p>
+
+                        <div class="form-row">
+                            <div class="form-group">
                                 <label for="prioritaet">Priorität</label>
                                 <select id="prioritaet" name="prioritaet">
                                     <option value="" <?= ($sponsor['prioritaet'] ?? null) === null ? 'selected' : '' ?>>– Keine –</option>
@@ -1539,7 +1556,7 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
 
         // Erlaubte Felder (Spiegel der Backend-Whitelist in api/sponsor_crud.php).
         var FIELDS = {
-            firma: 1, gruppe_name: 1, ansprache: 1, paket: 1, summe: 1, prioritaet: 1,
+            firma: 1, gruppe_name: 1, ansprache: 1, paket: 1, foerdergruppe: 1, summe: 1, prioritaet: 1,
             ort: 1, status: 1, wiedervorlage: 1, bedingungen_bestaetigt_am: 1,
             bedingungen_weg: 1, bedingungen_beleg: 1, rechnung_firma: 1, rechnung_email: 1,
             rechnung_strasse: 1, rechnung_plz: 1, rechnung_ort: 1, rechnung_betrag_brutto: 1,

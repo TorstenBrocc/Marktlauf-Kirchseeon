@@ -40,6 +40,29 @@ function sponsorStatusAmpel(string $status): string {
     return SPONSOR_STATUS[$status]['ampel'] ?? 'grau';
 }
 
+/**
+ * Fördergruppe: auf welchem Weg kommt die Unterstützung zustande (TT 2026-08-14).
+ * Reihenfolge = Reiter-Reihenfolge im Kopf der Sponsoren-Übersicht.
+ *   sponsoring             = klassisches Paket gegen Leistung (Default)
+ *   foerderantrag          = Stiftung/Programm mit Antragsweg + Fristen
+ *   ueber_dritte           = läuft über Verbund/Dritte, kein eigener Antragsweg
+ *   oeffentlichkeitsarbeit = kein Geld möglich (z. B. gesetzl. Krankenkassen), nur Präsenz
+ */
+const SPONSOR_FOERDERGRUPPE = [
+    'sponsoring'             => 'Sponsoring',
+    'foerderantrag'          => 'Förderanträge',
+    'ueber_dritte'           => 'Über Dritte',
+    'oeffentlichkeitsarbeit' => 'Öffentlichkeitsarbeit',
+];
+
+function sponsorFoerdergruppeKeys(): array {
+    return array_keys(SPONSOR_FOERDERGRUPPE);
+}
+
+function sponsorFoerdergruppeLabel(string $gruppe): string {
+    return SPONSOR_FOERDERGRUPPE[$gruppe] ?? ucfirst($gruppe);
+}
+
 /** Rückmelde-Wege für die Bestätigung der Sponsoring-Bedingungen. */
 const SPONSOR_BEDINGUNGEN_WEG = [
     'email'        => 'E-Mail-Antwort',
