@@ -34,6 +34,7 @@ require_once __DIR__ . '/api/_auth.php';
 require_once __DIR__ . '/../src/db.php';
 require_once __DIR__ . '/../src/sponsor_brief.php';
 require_once __DIR__ . '/../src/sponsor_anhaenge.php';
+require_once __DIR__ . '/../src/sponsor_status.php';
 require_once __DIR__ . '/../src/channels/mail.php';
 
 $user      = getCurrentUserFromGuard();
@@ -61,14 +62,12 @@ $pdo         = getDbConnection();
 // Text ($textSlug — eigener Master/Entwurf/Default). Der strukturelle $slug (Versand-Typ,
 // Anhänge, Anhang-Abwahl) bleibt die Basis. So passt der Editor zum Versand, der die Variante
 // ohnehin anhand der Fördergruppe des Empfängers wählt (sponsorBriefEffektiverSlug()).
+$zgWahl   = (string) ($_GET['zielgruppe'] ?? '');
 $textSlug = $slug;
-if ($slug === 'erstanschreiben' && SPONSOR_BRIEF_VARIANTEN !== []) {
-    $zgWahl = (string) ($_GET['zielgruppe'] ?? '');
-    if (str_starts_with($zgWahl, 'fg_')) {
-        $variante = sponsorBriefVarianteFuer($slug, substr($zgWahl, 3));
-        if ($variante !== '') {
-            $textSlug = $variante;
-        }
+if ($slug === 'erstanschreiben' && SPONSOR_BRIEF_VARIANTEN !== [] && str_starts_with($zgWahl, 'fg_')) {
+    $variante = sponsorBriefVarianteFuer($slug, substr($zgWahl, 3));
+    if ($variante !== '') {
+        $textSlug = $variante;
     }
 }
 
@@ -77,6 +76,23 @@ $vorlage     = sponsorBriefLoad($pdo, $textSlug, (int) $user['id']);
 $default     = $defaults[$textSlug] ?? $defaults[$slug];
 $platzhalter = sponsorBriefPlatzhalterHilfe($slug);
 $seite       = basename($_SERVER['PHP_SELF'] ?? '');
+
+// Sichtbare Fördergruppen-Reiter über dem Brief (nur Erstanschreiben): schalten Empfänger UND
+// Vorlagentext gemeinsam um — dieselben vier Töpfe wie die Reiter in den Stammdaten. Die
+// Status-Gruppen („In Klärung", „Wiedervorlage") bleiben zusätzlich im Empfänger-Kopf unten.
+$foerderReiter = [];
+if ($slug === 'erstanschreiben') {
+    $aktiveFg = str_starts_with($zgWahl, 'fg_')
+        ? substr($zgWahl, 3)
+        : ($zgWahl === '' ? (string) array_key_first(SPONSOR_FOERDERGRUPPE) : '');
+    foreach (SPONSOR_FOERDERGRUPPE as $fgKey => $fgLabel) {
+        $foerderReiter[] = [
+            'label' => $fgLabel,
+            'url'   => $seite . '?zielgruppe=fg_' . rawurlencode((string) $fgKey),
+            'aktiv' => $fgKey === $aktiveFg,
+        ];
+    }
+}
 
 // Geteilt vs. persönlich: Erstanschreiben und Nachreich-Mail sind Team-Texte (Master in der
 // DB), Folgeanschreiben und Freier Brief gehören dem Verfasser (persönlicher Entwurf).
@@ -112,6 +128,10 @@ if ($isUserScoped && $vorlage['draft'] && $vorlage['draft_ts'] !== '') {
         #koerper_md { width: 100%; min-height: 420px; padding: 0.75rem; border: 1px solid var(--border); border-radius: 4px; font-family: monospace; font-size: 0.85rem; line-height: 1.5; box-sizing: border-box; resize: vertical; }
         #preview-frame { width: 100%; height: 420px; border: 1px solid var(--border); border-radius: 4px; background: #fff; box-sizing: border-box; }
         .brief-actions { display: flex; gap: 1rem; margin-top: 1.25rem; align-items: center; flex-wrap: wrap; }
+        .fg-reiter { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0 0 0.85rem; }
+        .fg-reiter-tab { padding: 0.45rem 0.9rem; border: 1px solid var(--border); border-radius: 6px; background: #fff; color: var(--text); text-decoration: none; font-size: 0.9rem; font-weight: 600; white-space: nowrap; }
+        .fg-reiter-tab:hover { background: var(--bg); }
+        .fg-reiter-tab.aktiv { background: var(--primary); border-color: var(--primary); color: #fff; }
         .versand-card { border: 1px solid var(--primary); }
         .versand-warn { font-size: 0.85rem; color: var(--text); background: rgba(255,193,7,0.15); border: 1px solid rgba(255,193,7,0.55); border-radius: 6px; padding: 0.6rem 0.8rem; margin: 0 0 1rem; line-height: 1.5; }
     </style>
@@ -152,6 +172,18 @@ if ($isUserScoped && $vorlage['draft'] && $vorlage['draft_ts'] !== '') {
                 $empfBlockHtml = ob_get_clean();
             }
             ?>
+
+            <?php if ($foerderReiter): ?>
+            <div class="fg-reiter" role="tablist" aria-label="Fördergruppe">
+                <?php foreach ($foerderReiter as $r): ?>
+                    <a class="fg-reiter-tab<?= $r['aktiv'] ? ' aktiv' : '' ?>" href="<?= htmlspecialchars($r['url']) ?>"><?= htmlspecialchars((string) $r['label']) ?></a>
+                <?php endforeach; ?>
+            </div>
+            <p class="brief-hint" style="margin:-0.4rem 0 1rem">
+                Wechselt Empfänger <strong>und</strong> Vorlagentext dieses Fördertopfs.
+                Status-Gruppen (z. B. „In Klärung") stehen zusätzlich unten in der Empfänger-Auswahl.
+            </p>
+            <?php endif; ?>
 
             <form method="post" action="api/sponsor_brief_save.php" id="brief-form">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
