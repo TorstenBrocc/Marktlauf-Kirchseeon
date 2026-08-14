@@ -60,3 +60,6 @@ scripts/
 
 # --- Debug-Dateien (temporär, nie committen) ---
 whoami_ip.php
+
+# Interne Specs gehören NICHT ins öffentliche Repo (Vault-seitig gepflegt)
+intern/
