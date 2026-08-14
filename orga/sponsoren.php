@@ -515,6 +515,18 @@ try {
             padding: 0.75rem 14px;
         }
         .kopf-sticky .ansicht-toggle { flex: 0 0 auto; }
+        /* Kern-Hinweis unter den Fördergruppen-Reitern: was macht die Gruppe im Kern aus
+           (Nachvollziehbarkeit der Einordnung). Setzt das graue Reiter-Band nach unten fort. */
+        .fg-kern-hinweis {
+            background: #eceef1;
+            padding: 0 14px 0.7rem;
+            margin: 0;
+            font-size: 0.82rem;
+            line-height: 1.45;
+            color: var(--text);
+            text-align: center;
+        }
+        .fg-kern-hinweis strong { color: var(--primary); }
         .data-table.grouped thead th {
             background: #eceef1;
             border-bottom: none;
@@ -663,6 +675,7 @@ try {
                 <div class="page-header">
                     <h1>Sponsoren-Übersicht</h1>
                     <a href="sponsor_form.php" class="btn btn-primary btn-small">+ Neu anlegen</a>
+                    <a href="api/sponsor_export.php" class="btn btn-small btn-secondary" title="Alle Sponsoren als CSV exportieren (UTF-8, ;-getrennt)">CSV-Export (alle)</a>
                 </div>
 
                 <form method="get" class="filter-bar">
@@ -750,6 +763,10 @@ try {
                            style="padding:0.4rem 0.85rem;text-decoration:none;border-left:1px solid var(--border);<?= $filterFg === 'alle' ? 'background:var(--primary);color:#fff' : 'color:var(--text)' ?>">Alle</a>
                     </div>
                 </div>
+                <?php $fgKern = ($filterFg !== 'alle') ? sponsorFoerdergruppeHinweis((string) $filterFg) : ''; ?>
+                <?php if ($fgKern !== ''): ?>
+                <div class="fg-kern-hinweis"><strong><?= htmlspecialchars(sponsorFoerdergruppeLabel((string) $filterFg)) ?>:</strong> <?= htmlspecialchars($fgKern) ?></div>
+                <?php endif; ?>
             </div><!-- /kopf-fixzone -->
 
             <?php if ($flashSuccess): ?>

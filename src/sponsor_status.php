@@ -51,7 +51,7 @@ function sponsorStatusAmpel(string $status): string {
 const SPONSOR_FOERDERGRUPPE = [
     'sponsoring'             => 'Sponsoring',
     'foerderantrag'          => 'Förderanträge',
-    'ueber_dritte'           => 'Über Dritte',
+    'ueber_dritte'           => 'Über Verbund/Dritte',
     'oeffentlichkeitsarbeit' => 'Öffentlichkeitsarbeit',
 ];
 
