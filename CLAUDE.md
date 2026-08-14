@@ -97,13 +97,17 @@ Erledigt in der lokalen DB-Session am 2026-08-14:
 - **104 KSK-Stiftung ↔ Bank — Konzern-Tag verifiziert:** Gruppe `[6] Kreissparkasse (KSK)`;
   Bank `id 8` und Stiftung `id 104` hängen beide an `gruppe_id=6`. 075-Verknüpfung greift,
   kein Handnachziehen nötig.
+- **76 DSGV — Fördergruppe korrigiert (Migration 076, angewandt):** zurück auf `ueber_dritte`
+  (gegroundet gegen die Gruppen-Vorgaben: kein eigener Antragsweg, läuft über den
+  Sparkassen-Verbund/die KSK — so auch 072). Ist-Wert `foerderantrag` kam aus manueller Bearbeitung.
 
 Noch offen (dein Ok nötig):
 - **Kern-Hinweis Live-Pixel:** Code deployt + im Mockup bestätigt, aber ohne Admin-Login nicht
   am Live-Pixel geprüft. Fehlt er auf der echten Seite: OPcache-Reset (aktuell keine OPcache-SAPI
   nachweisbar + Datei frisch gestempelt → sehr wahrscheinlich sichtbar).
-- **Test-Datensätze löschen** (98/65/102) — destruktiv, daher Rückfrage.
-- **76 DSGV Fördergruppen-Einordnung** (foerderantrag vs. ueber_dritte) — von dir vorbehalten.
+- **Test-Datensätze** `98 _torsten`, `102 _Anja Jost GmbH` (beide angefragt, in der Übersicht
+  sichtbar) sowie `65 Testfirma` (abgelehnt → nur bei Status-Filter „Abgelehnt" sichtbar) —
+  Löschen ist destruktiv, daher Rückfrage.
 - **78 VK-Stiftung:** Hebel = Ehrenamtspreis (kein Sport-Projektantrag). **112 Sportjugendstiftung:**
   nur überregional → jährlich/regionsübergreifend argumentieren. **BSJ/BLSV** (074):
   `jugendfoerderung@blsv.de`.
