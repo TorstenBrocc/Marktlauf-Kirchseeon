@@ -56,6 +56,14 @@ const SPONSOR_BRIEF_VARIANTEN = [
         'basis'         => 'erstanschreiben',
         'foerdergruppe' => 'foerderantrag',
     ],
+    'erstanschreiben_ueber_dritte' => [
+        'basis'         => 'erstanschreiben',
+        'foerdergruppe' => 'ueber_dritte',
+    ],
+    'erstanschreiben_oeffentlichkeitsarbeit' => [
+        'basis'         => 'erstanschreiben',
+        'foerdergruppe' => 'oeffentlichkeitsarbeit',
+    ],
 ];
 
 /** Gültige Vorlagen-Slugs (= Anschreiben-Typen) inkl. Fördergruppen-Varianten. */
@@ -169,6 +177,8 @@ MD;
 
 der ATSV Kirchseeon 1906 e.V. richtet am **{{event_datum}}** den **2. Marktlauf Kirchseeon** aus – ein Breitensport-Laufevent gemeinsam mit der Gemeinde Kirchseeon, mit rund 300 Läuferinnen und Läufern und etwa 900 Gästen. Ein zentraler Baustein sind die Kinder- und Jugendläufe: der Bambini-Lauf (500 m, bis 6 Jahre) und die Schülerläufe, mit denen wir Kinder aus der ganzen Region für Bewegung begeistern.
 
+Der Marktlauf ist **keine einmalige Aktion, sondern als jährlich wiederkehrende Veranstaltung angelegt** – 2026 findet er zum zweiten Mal statt und soll sich als feste Größe für Bewegung und Begegnung in der Region etablieren. Eine Förderung wirkt damit nachhaltig und über das einzelne Jahr hinaus.
+
 Da Ihr Haus die Breitensport- und Jugendarbeit fördert – insbesondere die Freude an Bewegung –, würden wir gern prüfen, ob unser Vorhaben zu Ihren Förderleitlinien passt.
 
 Dürfen wir Sie um Folgendes bitten:
@@ -180,6 +190,38 @@ Dürfen wir Sie um Folgendes bitten:
 Gerne stellen wir Ihnen unser Konzept vorab auch ausführlicher zusammen. Über eine kurze Rückmeldung freuen wir uns sehr.
 
 Herzlichen Dank und freundliche Grüße
+
+{{signatur}}
+MD;
+
+    // Erstanschreiben-Variante „Über Dritte" (Fördergruppe 'ueber_dritte'): kein eigener
+    // Antragsweg — wir fragen den Verbund/Mittler nach dem richtigen Weg + Ansprechpartner.
+    $erstUeberDritte = <<<MD
+{{anrede}}
+
+der ATSV Kirchseeon 1906 e.V. richtet am **{{event_datum}}** den **2. Marktlauf Kirchseeon** aus – ein Breitensport- und Familienfest mit rund 300 Läuferinnen und Läufern und etwa 900 Gästen, mit einem Schwerpunkt auf Kinder- und Jugendläufen. Der Marktlauf ist als **jährlich wiederkehrende Veranstaltung** angelegt und soll sich als feste Größe in der Region etablieren.
+
+Uns ist bewusst, dass eine Unterstützung bei Ihnen häufig nicht als direkter Antrag, sondern über Ihren Verbund, eine gemeinsame Aktion oder den zuständigen Betreuer läuft. Genau deshalb kommen wir auf Sie zu: Könnten Sie uns den **richtigen Weg und die passende Ansprechperson** nennen, über die eine Unterstützung des Marktlaufs möglich wäre?
+
+Über einen kurzen Hinweis freuen wir uns sehr.
+
+Herzliche Grüße
+
+{{signatur}}
+MD;
+
+    // Erstanschreiben-Variante „Öffentlichkeitsarbeit" (Fördergruppe 'oeffentlichkeitsarbeit'):
+    // Geld-Sponsoring rechtlich ausgeschlossen (z. B. gesetzl. Krankenkassen) — wir bieten Präsenz.
+    $erstOeffentlichkeit = <<<MD
+{{anrede}}
+
+der ATSV Kirchseeon 1906 e.V. richtet am **{{event_datum}}** den **2. Marktlauf Kirchseeon** aus – ein Breitensport- und Familienfest mit rund 300 Läuferinnen und Läufern und etwa 900 Gästen, mit Kinder- und Jugendläufen. Der Marktlauf ist als **jährlich wiederkehrende Veranstaltung** angelegt und wächst Jahr für Jahr.
+
+Uns ist bewusst, dass ein klassisches Geld-Sponsoring für gesetzliche Krankenkassen nicht in Frage kommt. Gut vorstellbar ist für uns aber eine Zusammenarbeit im Sinne der **Gesundheitsförderung**: ein **Infostand** am Veranstaltungstag, ein **Beitrag in den Starterbeuteln** oder eine gemeinsame Botschaft rund um Bewegung und Prävention.
+
+Hätten Sie Interesse, mit einem solchen Beitrag präsent zu sein? Über eine kurze Rückmeldung freuen wir uns.
+
+Herzliche Grüße
 
 {{signatur}}
 MD;
@@ -254,6 +296,16 @@ MD;
             'name'       => 'Erstanschreiben — Förderanträge',
             'betreff'    => 'Förderanfrage Kinder- und Jugendläufe – 2. Marktlauf Kirchseeon',
             'koerper_md' => $erstFoerderantrag,
+        ],
+        'erstanschreiben_ueber_dritte' => [
+            'name'       => 'Erstanschreiben — Über Dritte',
+            'betreff'    => 'Marktlauf Kirchseeon – über welchen Weg wäre eine Unterstützung möglich?',
+            'koerper_md' => $erstUeberDritte,
+        ],
+        'erstanschreiben_oeffentlichkeitsarbeit' => [
+            'name'       => 'Erstanschreiben — Öffentlichkeitsarbeit',
+            'betreff'    => 'Gesund in Bewegung – Präsenz beim 2. Marktlauf Kirchseeon',
+            'koerper_md' => $erstOeffentlichkeit,
         ],
         'folgejahr' => [
             'name'       => 'Folgejahr / Bestandssponsor',
