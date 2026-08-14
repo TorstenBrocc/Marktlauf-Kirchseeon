@@ -14,26 +14,49 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/sponsor_status.php';
+
 /**
  * @return array<string, array{label:string, where:string, hinweis?:string}>
  *         Erster Eintrag = Vorauswahl der Seite.
  */
 function sponsorZielgruppen(string $slug): array {
     return match ($slug) {
-        'erstanschreiben' => [
-            'neu' => [
-                'label' => 'Neu — noch nicht angeschrieben',
+        // Erstkontakt läuft je Fördertopf anders (Sponsoring-Paket vs. Förderantrag vs. über
+        // Dritte vs. reine Öffentlichkeitsarbeit). Erste Umschalt-Stufe der Anschreiben-
+        // Oberflächen ist deshalb die Fördergruppe — dieselben vier Töpfe wie die Reiter in
+        // den Stammdaten (SPONSOR_FOERDERGRUPPE, src/sponsor_status.php). Bewusst nur der
+        // Empfänger-Filter: der passende Vorlagentext je Topf ist der nächste Schritt und
+        // hier noch nicht verdrahtet. Die alten status-basierten Gruppen bleiben darunter
+        // erhalten (Re-Kontakt „In Klärung"/„Wiedervorlage", topfübergreifend „Alle neuen").
+        'erstanschreiben' => (static function (): array {
+            $gruppen = [];
+            foreach (SPONSOR_FOERDERGRUPPE as $key => $label) {
+                $gruppen['fg_' . $key] = [
+                    'label' => $label . ' — noch nicht angeschrieben',
+                    // $key stammt aus einer Code-Konstante (Enum-Werte), kein Nutzereingabe.
+                    'where' => "s.status = 'neu' AND s.foerdergruppe = '" . $key . "'",
+                ];
+            }
+            if (isset($gruppen['fg_foerderantrag'])) {
+                $gruppen['fg_foerderantrag']['hinweis'] =
+                    'Fördermittelgeber/Kooperationspartner — kein Sponsoring-Paket. '
+                    . 'Standardtext bitte entsprechend anpassen (eigene Vorlage je Fördergruppe folgt).';
+            }
+            $gruppen['neu'] = [
+                'label' => 'Alle neuen — Fördergruppe egal',
                 'where' => "s.status = 'neu'",
-            ],
-            'in_klaerung' => [
+            ];
+            $gruppen['in_klaerung'] = [
                 'label' => 'In Klärung',
                 'where' => "s.status = 'in_klaerung'",
-            ],
-            'wiedervorlage' => [
+            ];
+            $gruppen['wiedervorlage'] = [
                 'label' => 'Wiedervorlage fällig',
                 'where' => "s.wiedervorlage IS NOT NULL AND s.wiedervorlage <= CURDATE()",
-            ],
-        ],
+            ];
+            return $gruppen;
+        })(),
         'folgejahr' => [
             // Definition TT (2026-08-10): Bestandssponsor ist prinzipiell jeder Sponsor, der
             // nicht generell gesagt hat, dass er keinen Kontakt mehr will. Eine Absage in
