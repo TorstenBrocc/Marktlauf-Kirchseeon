@@ -210,10 +210,17 @@ try {
             gap: 1.25rem;
             margin-top: 1.5rem;
             margin-bottom: 1.5rem;
+            /* Oberste Ebene der fixierten Kopf-Zone: Titel bleibt beim Scrollen oben stehen.
+               Solider Grund (= Seitenfarbe, in Ruhe unsichtbar) + höchster z-index, damit
+               die scrollenden Filter/Karten sauber dahinter verschwinden. */
+            position: sticky;
+            top: 0;
+            z-index: 21;
+            background: var(--bg);
         }
         /* Top-Polsterung des Scroll-Containers auf 0 (Abstand wandert in .page-header oben),
            damit die fixierte Kopf-Zone bündig am oberen Rand andockt statt an der Polsterkante —
-           sonst schöben Karten durch den 1,5rem-Streifen ÜBER dem Reiter. */
+           sonst schöben Karten durch den 1,5rem-Streifen ÜBER dem Titel. */
         .main-content { padding-top: 0; }
         .filter-bar {
             display: flex;
@@ -552,19 +559,19 @@ try {
             border-radius: 0;
             overflow: visible;
         }
-        /* Fixierte Kopf-Zone: Fördergruppen-Reiter + Spaltenkopf bleiben beim Scrollen
+        /* Fixierte Kopf-Zone: Titel + Fördergruppen-Reiter + Spaltenkopf bleiben beim Scrollen
            als eine graue Einheit oben stehen; die Branche-Karten scrollen sauber dahinter
-           durch (solider Grund + z-index über den Karten). --kopf-h = gemessene Bandhöhe,
-           per JS gesetzt, damit der Spaltenkopf lückenlos unter dem Reiter andockt. */
+           durch (solider Grund + z-index über den Karten). --ph-h = Titelhöhe, --kopf-h =
+           Reiter-Bandhöhe (beide per JS gemessen), damit jede Ebene lückenlos anschließt. */
         .kopf-sticky {
             position: sticky;
-            top: 0;
+            top: var(--ph-h, 0px);
             z-index: 20;
             background: #eceef1;
             padding: 0.75rem 0;
         }
-        /* Spaltenkopf klebt direkt unter dem Reiter-Band (nicht am Viewport-Rand) */
-        .data-table thead th { position: sticky; top: var(--kopf-h, 0px); z-index: 5; }
+        /* Spaltenkopf klebt direkt unter Titel + Reiter (nicht am Viewport-Rand) */
+        .data-table thead th { position: sticky; top: calc(var(--ph-h, 0px) + var(--kopf-h, 0px)); z-index: 5; }
         .data-table.grouped thead th {
             background: #eceef1;
             border-bottom: none;
@@ -1310,13 +1317,17 @@ try {
         });
     })();
 
-    // Fixierte Kopf-Zone: Spaltenkopf exakt unter den Reiter docken. Bandhöhe messen und
-    // als --kopf-h veröffentlichen, damit thead lückenlos anschließt (robust bei Umbruch/Resize).
+    // Fixierte Kopf-Zone: Titel- und Reiter-Bandhöhe messen und als --ph-h / --kopf-h
+    // veröffentlichen, damit Reiter und Spaltenkopf lückenlos darunter andocken
+    // (robust bei Umbruch/Resize).
     (function () {
+        var header = document.querySelector('.page-header');
         var band = document.querySelector('.kopf-sticky');
         if (!band) { return; }
+        var root = document.documentElement;
         function sync() {
-            document.documentElement.style.setProperty('--kopf-h', band.offsetHeight + 'px');
+            if (header) { root.style.setProperty('--ph-h', header.offsetHeight + 'px'); }
+            root.style.setProperty('--kopf-h', band.offsetHeight + 'px');
         }
         sync();
         window.addEventListener('resize', sync);
