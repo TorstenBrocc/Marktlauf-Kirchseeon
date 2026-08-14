@@ -235,12 +235,24 @@ $wartetAufStichtag = ($post['status'] ?? '') === 'approved'
                 an <?= htmlspecialchars(str_replace(',', ' + ', (string) $post['gesendet_kanaele'])) ?>
                 — <?= htmlspecialchars((string) $post['gesendet_ergebnis']) ?>
             </p>
+            <div style="background:#eef7f0;border:1px solid #bfe3c8;border-radius:8px;padding:0.7rem 1rem;margin:0 0 0.9rem">
+                <p style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#065f46;margin:0 0 0.4rem">Jetzt zählt die erste Stunde</p>
+                <ul style="list-style:none;padding:0;margin:0;font-size:0.85rem;line-height:1.8">
+                    <li>1 · Jeden Kommentar schnell beantworten</li>
+                    <li>2 · Post in die eigene Story teilen</li>
+                    <li>3 · Mitglieder anstupsen: Like + 1 Kommentar + Teilen (Mail ist raus)</li>
+                    <li>4 · Getaggte Partner per DM bitten, in Story zu teilen</li>
+                    <li>5 · Meilensteine über 2–3 Tage in lokale FB-Gruppen</li>
+                </ul>
+            </div>
             <?php elseif ($wartetAufStichtag): ?>
             <p class="sp-hinweis" style="margin:0 0 0.8rem">
                 Freigegeben — <strong>wartet auf den Stichtag <?= htmlspecialchars(date('d.m.Y', strtotime($eintrag['zieldatum']))) ?></strong>.
                 Die tägliche Mail erinnert bei Fälligkeit; gesendet wird per Klick (Auto-Versand folgt später).
             </p>
             <?php endif; ?>
+            <p class="sp-hinweis" style="margin:0 0 0.7rem">Gute Slots: <strong>Di–Do</strong> · mittags 12–14 &amp; abends 18–21 Uhr
+                (IG: Mi 12:00 / Do 8:30 · FB: Di 12:30) — Details in den <a href="einstellungen.php#social-section" style="color:var(--primary-dark)">Einstellungen</a>.</p>
             <div class="sp-zeile" style="margin-bottom:0.9rem">
                 <label style="display:inline-flex;align-items:center;gap:0.35rem;font-size:0.9rem">
                     <input type="checkbox" id="sp-ch-ig" checked> Instagram
