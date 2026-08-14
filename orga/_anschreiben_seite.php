@@ -135,7 +135,6 @@ if ($isUserScoped && $vorlage['draft'] && $vorlage['draft_ts'] !== '') {
         .fg-reiter-tab:hover { background: var(--bg); }
         .fg-reiter-tab.aktiv { background: var(--primary); border-color: var(--primary); color: #fff; }
         .fg-hinweis { margin: 0 0 1rem; padding: 0.6rem 0.8rem; background: rgba(0,150,64,0.07); border-left: 3px solid var(--primary); border-radius: 4px; font-size: 0.85rem; line-height: 1.5; color: var(--text); }
-        .fg-hinweis-meta { display: block; margin-top: 0.25rem; font-size: 0.8rem; color: var(--text-light); }
         .versand-card { border: 1px solid var(--primary); }
         .versand-warn { font-size: 0.85rem; color: var(--text); background: rgba(255,193,7,0.15); border: 1px solid rgba(255,193,7,0.55); border-radius: 6px; padding: 0.6rem 0.8rem; margin: 0 0 1rem; line-height: 1.5; }
     </style>
@@ -188,7 +187,6 @@ if ($isUserScoped && $vorlage['draft'] && $vorlage['draft_ts'] !== '') {
                 <?php if ($fgHinweis !== ''): ?>
                     <strong><?= htmlspecialchars(sponsorFoerdergruppeLabel($aktiveFg)) ?>:</strong>
                     <?= htmlspecialchars($fgHinweis) ?>
-                    <span class="fg-hinweis-meta">Der Reiter wechselt Empfänger <strong>und</strong> Vorlagentext.</span>
                 <?php else: ?>
                     Die Reiter wechseln Empfänger und Vorlagentext je Fördertopf.
                     Status-Gruppen (z. B. „In Klärung") stehen zusätzlich unten in der Empfänger-Auswahl.
