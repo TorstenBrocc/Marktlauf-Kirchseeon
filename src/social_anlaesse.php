@@ -1,9 +1,11 @@
 <?php
 /**
  * Anlaesse/Themen der Social-Media-Strecke — EINE Quelle fuer Maske und APIs.
- * Die Maske (orga/social_orchestrator.php) rendert ihr Select hieraus,
- * social_generate.php nimmt die Prompt-Beschreibung, social_prompt.php
- * validiert gegen die Keys. Neue Anlaesse nur hier ergaenzen.
+ * Fahrplan (orga/social_fahrplan.php) und Post-Detail (orga/social_post.php)
+ * rendern hieraus, social_generate.php nimmt die Prompt-Beschreibung,
+ * social_prompt.php validiert gegen die Keys, der Digest nimmt die UI-Labels.
+ * 'presse' => true markiert pressefaehige Anlaesse (Presse-Feld + Presse-LLM-Call).
+ * Neue Anlaesse nur hier ergaenzen.
  */
 
 declare(strict_types=1);
