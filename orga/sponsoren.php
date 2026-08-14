@@ -208,8 +208,13 @@ try {
             align-items: center;
             flex-wrap: wrap;
             gap: 1.25rem;
+            margin-top: 1.5rem;
             margin-bottom: 1.5rem;
         }
+        /* Top-Polsterung des Scroll-Containers auf 0 (Abstand wandert in .page-header oben),
+           damit die fixierte Kopf-Zone bündig am oberen Rand andockt statt an der Polsterkante —
+           sonst schöben Karten durch den 1,5rem-Streifen ÜBER dem Reiter. */
+        .main-content { padding-top: 0; }
         .filter-bar {
             display: flex;
             gap: 1rem;
@@ -547,8 +552,19 @@ try {
             border-radius: 0;
             overflow: visible;
         }
-        /* Kopfzeile bleibt beim Scrollen stehen */
-        .data-table thead th { position: sticky; top: 0; z-index: 5; }
+        /* Fixierte Kopf-Zone: Fördergruppen-Reiter + Spaltenkopf bleiben beim Scrollen
+           als eine graue Einheit oben stehen; die Branche-Karten scrollen sauber dahinter
+           durch (solider Grund + z-index über den Karten). --kopf-h = gemessene Bandhöhe,
+           per JS gesetzt, damit der Spaltenkopf lückenlos unter dem Reiter andockt. */
+        .kopf-sticky {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            background: #eceef1;
+            padding: 0.75rem 0;
+        }
+        /* Spaltenkopf klebt direkt unter dem Reiter-Band (nicht am Viewport-Rand) */
+        .data-table thead th { position: sticky; top: var(--kopf-h, 0px); z-index: 5; }
         .data-table.grouped thead th {
             background: #eceef1;
             border-bottom: none;
@@ -818,11 +834,13 @@ try {
             $colCount--;
             $qsFg = $_GET;
             ?>
-            <div class="ansicht-toggle" style="margin-bottom:0.75rem;display:inline-flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;font-size:0.85rem">
-                <?php $fgFirst = true; foreach (SPONSOR_FOERDERGRUPPE as $fgKey => $fgLabel): $qsFg['fg'] = $fgKey; ?>
-                    <a href="?<?= htmlspecialchars(http_build_query($qsFg)) ?>"
-                       style="padding:0.4rem 0.85rem;text-decoration:none;<?= $fgFirst ? '' : 'border-left:1px solid var(--border);' ?><?= $filterFg === $fgKey ? 'background:var(--primary);color:#fff' : 'color:var(--text)' ?>"><?= htmlspecialchars($fgLabel) ?></a>
-                <?php $fgFirst = false; endforeach; ?>
+            <div class="kopf-sticky">
+                <div class="ansicht-toggle" style="display:inline-flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;font-size:0.85rem">
+                    <?php $fgFirst = true; foreach (SPONSOR_FOERDERGRUPPE as $fgKey => $fgLabel): $qsFg['fg'] = $fgKey; ?>
+                        <a href="?<?= htmlspecialchars(http_build_query($qsFg)) ?>"
+                           style="padding:0.4rem 0.85rem;text-decoration:none;<?= $fgFirst ? '' : 'border-left:1px solid var(--border);' ?><?= $filterFg === $fgKey ? 'background:var(--primary);color:#fff' : 'color:var(--text)' ?>"><?= htmlspecialchars($fgLabel) ?></a>
+                    <?php $fgFirst = false; endforeach; ?>
+                </div>
             </div>
 
             <div class="table-wrap grouped">
@@ -1290,6 +1308,18 @@ try {
                 rename(head);
             });
         });
+    })();
+
+    // Fixierte Kopf-Zone: Spaltenkopf exakt unter den Reiter docken. Bandhöhe messen und
+    // als --kopf-h veröffentlichen, damit thead lückenlos anschließt (robust bei Umbruch/Resize).
+    (function () {
+        var band = document.querySelector('.kopf-sticky');
+        if (!band) { return; }
+        function sync() {
+            document.documentElement.style.setProperty('--kopf-h', band.offsetHeight + 'px');
+        }
+        sync();
+        window.addEventListener('resize', sync);
     })();
     </script>
 </body>
