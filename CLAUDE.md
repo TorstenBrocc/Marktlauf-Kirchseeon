@@ -76,8 +76,14 @@ Angewandte Migrationen: **073** (KJR), **074** (BSJ + Strategie-Notizen an 75/78
 **075** (Konzern-Tag „Kreissparkasse (KSK)").
 
 Offene Punkte — am besten aus einer **lokalen** Session mit DB-Zugriff (`storage/config.php`):
-- **Kontakt-Audit:** Stammdaten (~107 Sponsoren) Zeile für Zeile prüfen. Export oben in der
-  Übersicht („CSV-Export (alle)").
+- **Kontakt-Audit:** Stammdaten (~107 Sponsoren) Zeile für Zeile prüfen. **Der bestehende
+  CSV-Export (`orga/api/sponsor_export.php`) reicht dafür NICHT** — er enthält nur den ersten
+  Ansprechpartner und keine Fördergruppe/Vorname/Funktion/Adresse. Für einen echten Audit
+  direkt aus der DB lesen (lokale Session) oder den Export erst erweitern.
+- **Kern-Hinweis in der Sponsoren-Übersicht:** ist deployt (unter den Fördergruppen-Reitern,
+  `orga/sponsoren.php`, Quelle `sponsorFoerdergruppeHinweis()`), aus der Web-Session aber
+  **nicht visuell bestätigt**. Bitte im Browser prüfen. Erscheint eine deployte PHP-Änderung
+  nicht: **PHP-OPcache auf Strato** verdächtigen (Bytecode-Cache) — ggf. Reset/Abwarten.
 - **75 „VR-Förderpreis":** vermutlich „Sterne des Sports" (Volksbanken/Raiffeisen + DOSB),
   direkte Bewerbung über die lokale Volksbank. 2026-Frist (30.06.) vorbei → Ziel 2027
   (~Apr–Jun). Identität am Datensatz bestätigen.
