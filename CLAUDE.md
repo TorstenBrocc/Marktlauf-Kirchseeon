@@ -75,28 +75,35 @@ Varianten im **Erst- und Folgeanschreiben**, Kern-Hinweis je Gruppe unter den Re
 Angewandte Migrationen: **073** (KJR), **074** (BSJ + Strategie-Notizen an 75/78/104/112),
 **075** (Konzern-Tag „Kreissparkasse (KSK)").
 
-Offene Punkte — am besten aus einer **lokalen** Session mit DB-Zugriff (`storage/config.php`):
-- **Kontakt-Audit:** Stammdaten (~107 Sponsoren) Zeile für Zeile prüfen. **Der bestehende
-  CSV-Export (`orga/api/sponsor_export.php`) reicht dafür NICHT** — er enthält nur den ersten
-  Ansprechpartner und keine Fördergruppe/Vorname/Funktion/Adresse. Für einen echten Audit
-  direkt aus der DB lesen (lokale Session) oder den Export erst erweitern.
-- **Kern-Hinweis in der Sponsoren-Übersicht:** ist deployt (unter den Fördergruppen-Reitern,
-  `orga/sponsoren.php`, Quelle `sponsorFoerdergruppeHinweis()`), aus der Web-Session aber
-  **nicht visuell bestätigt**. Bitte im Browser prüfen. Erscheint eine deployte PHP-Änderung
-  nicht: **PHP-OPcache auf Strato** verdächtigen (Bytecode-Cache) — ggf. Reset/Abwarten.
-- **75 „VR-Förderpreis":** vermutlich „Sterne des Sports" (Volksbanken/Raiffeisen + DOSB),
-  direkte Bewerbung über die lokale Volksbank. 2026-Frist (30.06.) vorbei → Ziel 2027
-  (~Apr–Jun). Identität am Datensatz bestätigen.
-- **78 VK-Stiftung:** kein Sport-Projektantrag; Hebel = Ehrenamtspreis.
-- **104 KSK-Stiftung Ebersberg:** lokal, beste Passung; 2027 früh Antrag
-  (stiftungen@kskmse.de). Konzern-Tag verknüpft Bank + Stiftung — Bank ggf. manuell taggen,
-  falls ihr Firmenname nicht mit „Kreissparkasse" beginnt.
-- **112 Sportjugendstiftung:** nur überregional förderfähig → jährlich/regionsübergreifend
-  argumentieren.
-- **BSJ/BLSV** (Migration 074): direkter Jugendsport-Weg, `jugendfoerderung@blsv.de`.
-- **Bekannter UI-Bug:** Sponsoren-Übersicht rechts „kaputt" (horizontaler Überlauf). Verdacht:
-  die gruppierte Tabelle (`.table-wrap.grouped` / `.data-table.grouped` = `overflow:visible`)
-  wird breiter als der Viewport → die sticky `.kopf-fixzone` deckt den rechten Bereich nicht.
-  Im Browser (DevTools) prüfen, wer den horizontalen Überlauf erzeugt, dann entweder die
-  gruppierte Tabelle horizontal scrollen lassen oder die Kopf-Zone auf volle Breite bringen.
-  Datei: `orga/sponsoren.php` (Sticky-CSS ~475–520). Blind nicht gefixt (Regressionsrisiko).
+Erledigt in der lokalen DB-Session am 2026-08-14:
+- **UI-Bug rechter Rand — behoben & live.** Ursache im Browser belegt: `.main-content` ist
+  `overflow-y:auto` → die Spec macht `overflow-x` implizit zu `auto`; ist die gruppierte
+  Tabelle breiter als der Viewport, scrollt main-content horizontal und die nur viewport-breite
+  sticky `.kopf-fixzone` legt rechts einen ungedeckten Streifen frei. Fix: `.kopf-fixzone
+  { left: 0; }` im Desktop-Media-Query (`orga/sponsoren.php` ~479) — Kopf-Zone horizontal
+  gepinnt, deckt die volle sichtbare Breite. Bewusst NICHT die Tabelle auf `overflow-x:auto`
+  gestellt (das hätte per Spec `overflow-y:auto` erzwungen und den vertikalen Sticky-Kopf
+  zerschossen). Verifiziert an originalgetreuem Mockup (beide Achsen), deployt (Branch-Dispatch).
+- **Kontakt-Audit (107 Sponsoren, direkt aus der DB).** Verteilung: sponsoring 80 · foerderantrag 7
+  · ueber_dritte 7 · oeffentlichkeitsarbeit 13. Flags: Test-Datensätze `98 _torsten`, `65 Testfirma`,
+  `102 _Anja Jost GmbH` (Cleanup destruktiv → offen); mögliche Dublette `30` vs `80` (Allianz
+  Waldhör/Schrödinger); 9 ohne Ansprechpartner + 13 ohne E-Mail (fast nur die institutionellen
+  Förder-Programme — erwartbar). Zeilen-Detail bleibt außerhalb des Repos (CRM/DSGVO).
+- **75 „VR-Förderpreis" — Identität recherchiert:** „VR-Förderpreis" und „Sterne des Sports"
+  sind zwei verschiedene VR-Programme; für den Sportverein passt „Sterne des Sports" (DOSB +
+  Volksbanken, Bewerbung 1.4.–30.6., lokal bis 1.500 €, Vereine unter Landessportbund → ATSV
+  via BLSV), Weg über Raiffeisen-Volksbank Ebersberg (id 7). Ziel 2027. Notiz am Datensatz noch
+  „vermutlich" — auf „bestätigt" nachziehen (Prod-Write, offen).
+- **104 KSK-Stiftung ↔ Bank — Konzern-Tag verifiziert:** Gruppe `[6] Kreissparkasse (KSK)`;
+  Bank `id 8` und Stiftung `id 104` hängen beide an `gruppe_id=6`. 075-Verknüpfung greift,
+  kein Handnachziehen nötig.
+
+Noch offen (dein Ok nötig):
+- **Kern-Hinweis Live-Pixel:** Code deployt + im Mockup bestätigt, aber ohne Admin-Login nicht
+  am Live-Pixel geprüft. Fehlt er auf der echten Seite: OPcache-Reset (aktuell keine OPcache-SAPI
+  nachweisbar + Datei frisch gestempelt → sehr wahrscheinlich sichtbar).
+- **Test-Datensätze löschen** (98/65/102) — destruktiv, daher Rückfrage.
+- **76 DSGV Fördergruppen-Einordnung** (foerderantrag vs. ueber_dritte) — von dir vorbehalten.
+- **78 VK-Stiftung:** Hebel = Ehrenamtspreis (kein Sport-Projektantrag). **112 Sportjugendstiftung:**
+  nur überregional → jährlich/regionsübergreifend argumentieren. **BSJ/BLSV** (074):
+  `jugendfoerderung@blsv.de`.
