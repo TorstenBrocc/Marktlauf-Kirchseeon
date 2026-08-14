@@ -14,6 +14,7 @@ require_once __DIR__ . '/../src/db.php';
 require_once __DIR__ . '/../src/auth.php';
 require_once __DIR__ . '/../src/llm_client.php';
 require_once __DIR__ . '/../src/social_anlaesse.php';
+require_once __DIR__ . '/../src/social_grafik_defaults.php';
 
 $user    = getCurrentUserFromGuard();
 $isAdmin = isAdminFromGuard();
@@ -85,6 +86,15 @@ if (trim($hashtags) === '') {
     $hashtags = socialHashtagsDefault();
 }
 
+// Kaskade aus dem Thema (Schritt-0-Thema-Karte, Post-Wirkung-Spec 5.A): was aus der
+// Themenwahl folgt — nur Anzeige, liest dieselben Ableitungen wie das Grafik-Werk.
+$kbKern       = trim((string) ($anlassDef['prompt'] ?? ''));
+$kbAusschluss = trim((string) ($anlassDef['ausschluss'] ?? ''));
+$kbLayout     = socialLayoutLabel(socialLayoutKey($anlassKey));
+$kbCta        = socialCtaDefault($anlassKey);
+$kbQr         = socialQrLabel(socialQrKey($anlassKey, true));
+$kbFaktenZeilen = count(array_filter(array_map('trim', explode("\n", $fakten)), static fn (string $z): bool => $z !== ''));
+
 $schrittText    = trim((string) ($post['llm_text_social'] ?? '')) !== '';
 $schrittGeprueft = $post['geprueft_am'] !== null;
 $bildPfad       = trim((string) ($post['bild_pfad'] ?? ''));
@@ -137,6 +147,26 @@ $wartetAufStichtag = ($post['status'] ?? '') === 'approved'
         .sp-msg { display: none; font-size: 0.85rem; }
         .sp-platzhalter { font-size: 0.88rem; color: var(--text-light); }
         .sp-platzhalter a { color: var(--primary-dark); }
+        /* Schritt-0-Thema-Karte: die fuehrende Erst-Entscheidung sichtbar machen */
+        .sp-thema { border-left: 4px solid var(--primary); }
+        .sp-thema-kopf { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; }
+        .sp-thema-eyebrow { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--primary-dark); }
+        .sp-thema h2 { margin: 0.15rem 0 0.4rem; }
+        .sp-thema-kern { font-size: 0.92rem; line-height: 1.5; margin: 0 0 0.3rem; }
+        .sp-thema-nicht { font-size: 0.82rem; color: var(--text-light); margin: 0 0 0.8rem; }
+        .sp-kaskade { list-style: none; display: flex; flex-wrap: wrap; gap: 0.4rem 0.5rem; padding: 0; margin: 0.2rem 0 0; }
+        .sp-kaskade li {
+            font-size: 0.78rem; background: var(--bg); border: 1px solid var(--border);
+            border-radius: 999px; padding: 0.2rem 0.65rem; color: var(--text);
+        }
+        .sp-kaskade li b { font-weight: 600; color: var(--primary-dark); }
+        .sp-thema-wechsel { font-size: 0.82rem; color: var(--primary-dark); text-decoration: none; white-space: nowrap; }
+        .sp-thema-wechsel:hover { text-decoration: underline; }
+        /* Progressive Offenlegung: Inhalt zurueckgenommen, bis die Vorstufe erledigt ist */
+        .sp-locked .sp-body { display: none; }
+        .sp-lockhint { display: none; font-size: 0.85rem; color: var(--text-light); margin: 0; }
+        .sp-locked .sp-lockhint { display: block; }
+        .sp-locked h2 { color: var(--text-light); }
     </style>
 </head>
 <body>
@@ -152,6 +182,8 @@ $wartetAufStichtag = ($post['status'] ?? '') === 'approved'
                 <?php if ($post['status'] === 'approved'): ?> · <strong style="color:#065f46">freigegeben</strong><?php endif; ?>
             </p>
             <div class="sp-stepper">
+                <span class="sp-step done">✓ Thema</span>
+                <span class="sp-step-line">—</span>
                 <span class="sp-step <?= $schrittText ? 'done' : '' ?>" id="sp-step-text"><?= $schrittText ? '✓ ' : '' ?>1 Text</span>
                 <span class="sp-step-line">—</span>
                 <span class="sp-step <?= $schrittGeprueft ? 'done' : '' ?>" id="sp-step-geprueft"><?= $schrittGeprueft ? '✓ ' : '' ?>2 Geprüft</span>
@@ -161,6 +193,25 @@ $wartetAufStichtag = ($post['status'] ?? '') === 'approved'
                 <span class="sp-step <?= $schrittVersand ? 'done' : '' ?>"><?= $schrittVersand ? '✓ ' : '' ?>4 Versand</span>
             </div>
         </header>
+
+        <div class="hd-card sp-thema">
+            <div class="sp-thema-kopf">
+                <div>
+                    <div class="sp-thema-eyebrow">Thema dieses Posts</div>
+                    <h2><?= htmlspecialchars($anlassDef['ui']) ?></h2>
+                </div>
+                <a class="sp-thema-wechsel" href="social_fahrplan.php">Thema im Fahrplan ändern</a>
+            </div>
+            <?php if ($kbKern !== ''): ?><p class="sp-thema-kern"><?= htmlspecialchars($kbKern) ?></p><?php endif; ?>
+            <?php if ($kbAusschluss !== ''): ?><p class="sp-thema-nicht"><strong>Nicht rein:</strong> <?= htmlspecialchars($kbAusschluss) ?></p><?php endif; ?>
+            <ul class="sp-kaskade">
+                <li><b>Fakten</b> vorbelegt<?= $kbFaktenZeilen > 0 ? ' (' . $kbFaktenZeilen . ' Zeilen)' : '' ?></li>
+                <li><b>Layout</b> <?= htmlspecialchars($kbLayout) ?></li>
+                <li><b>CTA</b> <?= htmlspecialchars($kbCta) ?></li>
+                <li><b>QR-Ziel</b> <?= htmlspecialchars($kbQr) ?></li>
+                <li><b>Presse</b> <?= $mitPresse ? 'ja' : 'nein' ?></li>
+            </ul>
+        </div>
 
         <div class="hd-card">
             <h2>1 · Text</h2>
@@ -208,8 +259,10 @@ $wartetAufStichtag = ($post['status'] ?? '') === 'approved'
             </div>
         </div>
 
-        <div class="hd-card">
+        <div class="hd-card <?= $schrittText ? '' : 'sp-locked' ?>" id="sp-card-2">
             <h2>2 · Gegenprüfung</h2>
+            <p class="sp-lockhint">Erst den Text in Schritt 1 erstellen.</p>
+            <div class="sp-body">
             <div class="sp-zeile">
                 <button class="btn btn-secondary" id="sp-pruefen">Mit KI gegenprüfen</button>
                 <span class="sp-hinweis" id="sp-pruef-spinner" style="display:none">⏳ prüft …</span>
@@ -218,10 +271,13 @@ $wartetAufStichtag = ($post['status'] ?? '') === 'approved'
                 <?php endif; ?>
             </div>
             <div class="sp-review-box" id="sp-review-box" <?= $post['geprueft_ergebnis'] ? 'style="display:block"' : '' ?>><?= htmlspecialchars($post['geprueft_ergebnis'] ?? '') ?></div>
+            </div>
         </div>
 
-        <div class="hd-card" id="sp-grafik-card">
+        <div class="hd-card <?= $schrittText ? '' : 'sp-locked' ?>" id="sp-grafik-card">
             <h2>3 · Grafik</h2>
+            <p class="sp-lockhint">Erst den Text in Schritt 1 erstellen.</p>
+            <div class="sp-body">
             <div id="sp-grafik-status">
                 <?php if ($schrittGrafik): ?>
                 <div style="display:flex;gap:1rem;align-items:flex-start;flex-wrap:wrap">
@@ -242,10 +298,13 @@ $wartetAufStichtag = ($post['status'] ?? '') === 'approved'
                         style="width:100%;border:0;display:block;min-height:640px"
                         data-src="vorlagen.php?embed=1&amp;post=<?= (int) $postId ?>&amp;fahrplan=<?= (int) $fahrplanId ?>"></iframe>
             </div>
+            </div>
         </div>
 
-        <div class="hd-card">
+        <div class="hd-card <?= $schrittGrafik ? '' : 'sp-locked' ?>" id="sp-card-4">
             <h2>4 · Versand</h2>
+            <p class="sp-lockhint">Erst eine Grafik in Schritt 3 erstellen — Instagram braucht ein Bild.</p>
+            <div class="sp-body">
             <?php if ($schrittVersand): ?>
             <p class="sp-hinweis" style="color:#065f46;margin:0 0 0.8rem">
                 ✓ Gesendet <?= htmlspecialchars(date('d.m.Y H:i', strtotime($post['gesendet_am']))) ?>
@@ -299,6 +358,7 @@ $wartetAufStichtag = ($post['status'] ?? '') === 'approved'
                     <li>Instagram-Feed: kein klickbarer Caption-Link → „Link in Bio". Facebook: Link klickbar.</li>
                 </ul>
             </details>
+            </div>
         </div>
     </main>
 </div>
@@ -321,6 +381,15 @@ function stepDone(id, label) {
     const el = document.getElementById(id);
     el.classList.add('done');
     el.textContent = '✓ ' + label;
+}
+function unlock(id) {
+    const el = document.getElementById(id);
+    if (el) { el.classList.remove('sp-locked'); }
+}
+// Sobald ein Text-Entwurf existiert (auto/manuell/gespeichert): Schritt 2 + 3 freigeben.
+function markTextVorhanden() {
+    unlock('sp-card-2');
+    unlock('sp-grafik-card');
 }
 
 // Provider-Wechsel speichern (vereinsweit, wie Orchestrator)
@@ -373,6 +442,7 @@ async function generiereEntwuerfe() {
         if (mitPresse && document.getElementById('sp-artikel')) {
             document.getElementById('sp-artikel').value = d.article;
         }
+        if ((d.social || '').trim() !== '') { markTextVorhanden(); }
         btn.textContent = 'Neu formulieren';
     } catch (e) {
         zeige('sp-fehler', 'Netzwerkfehler.', '#dc2626');
@@ -382,6 +452,15 @@ async function generiereEntwuerfe() {
     }
 }
 document.getElementById('sp-generieren').addEventListener('click', generiereEntwuerfe);
+
+// Auto-Entwurf beim ersten Oeffnen — ent-gatet (Post-Wirkung-Spec S3/A.2). Feuert erst
+// nach dem Rendern (window load), also NACH sichtbarer Thema-Karte + Fakten: der Text
+// entsteht erkennbar "aus Thema X + diesen Fakten" (heilt den §2-Kernbefund). Nur wenn
+// noch kein Entwurf existiert.
+const autoEntwurf = <?= $schrittText ? 'false' : 'true' ?>;
+if (autoEntwurf) {
+    window.addEventListener('load', () => { generiereEntwuerfe(); });
+}
 
 // Speichern / Freigeben (Post-Objekt)
 function speichern(status) {
@@ -398,7 +477,7 @@ function speichern(status) {
         .then(d => {
             if (d.ok) {
                 zeige('sp-save-msg', status === 'approved' ? 'Freigegeben.' : 'Gespeichert.', '#16a34a');
-                if (document.getElementById('sp-social').value.trim() !== '') { stepDone('sp-step-text', '1 Text'); }
+                if (document.getElementById('sp-social').value.trim() !== '') { stepDone('sp-step-text', '1 Text'); markTextVorhanden(); }
             } else {
                 zeige('sp-save-msg', '⚠️ ' + (d.error || 'Fehler'), '#dc2626');
             }
