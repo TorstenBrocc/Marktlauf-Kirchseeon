@@ -505,26 +505,45 @@ try {
         .status-in_klaerung-row { background: rgba(244, 180, 0, 0.16); }
         /* Angeschrieben: ganze Zeile hell transparent blau (Ampel-Blau) */
         .status-angefragt-row { background: rgba(43, 125, 233, 0.12); }
-        /* Branche-Kacheln: jede Gruppe ein abgesetzter Block mit Rahmen, weiße Lücke dazwischen */
+        /* Branche-Kacheln (nur in der Gruppierung): jede Gruppe eine abgesetzte Karte */
+        .data-table.grouped {
+            border-collapse: separate;
+            border-spacing: 0;
+            box-shadow: none;
+            border-radius: 0;
+            overflow: visible;
+        }
+        .table-wrap.grouped { overflow: visible; box-shadow: none; border-radius: 0; }
+        /* Kopfzeile bleibt beim Scrollen stehen (wirkt in der Gruppierung, da kein overflow-Container) */
+        .data-table thead th { position: sticky; top: 0; z-index: 5; }
+        .data-table.grouped thead th { box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06); }
+        /* Kachel-Kopf: klickbar (einklappen), Doppelklick benennt um */
         .branche-heading-row td {
-            background: var(--bg);
+            background: #f4f6f8;
             font-weight: 600;
             font-size: 1.05rem;
-            padding: 0.55rem 0.75rem;
-            border: 1px solid var(--border);
+            padding: 0.6rem 0.9rem;
+            border-top: 1px solid var(--border);
+            border-left: 1px solid var(--border);
+            border-right: 1px solid var(--border);
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
             cursor: pointer;
             user-select: none;
         }
-        .branche-heading-row:hover td { background: #eee; }
-        .branche-heading-count { color: var(--text-light); font-weight: 400; font-size: 0.85rem; }
-        .branche-caret { display: inline-block; width: 0.9em; color: var(--text-light); transition: transform 0.12s; }
+        .branche-heading-row:hover td { background: #eef1f4; }
+        .branche-heading-count { color: #8a8a8a; font-weight: 400; font-size: 0.85rem; }
+        .branche-caret { display: inline-block; width: 0.9em; color: #9a9a9a; font-size: 0.8rem; transition: transform 0.12s; }
         .branche-heading-row.collapsed .branche-caret { transform: rotate(-90deg); }
+        /* Kachel-Körper: Seitenrahmen + abgerundete untere Ecken */
         .branche-row td:first-child { border-left: 1px solid var(--border); }
         .branche-row td:last-child  { border-right: 1px solid var(--border); }
         .branche-row-last td { border-bottom: 1px solid var(--border); }
-        /* Weiße Lücke zwischen den Kacheln (kein grauer Streifen) */
-        .branche-gap td { padding: 0; height: 12px; background: var(--white); border: none; }
-        .branche-gap:hover td { background: var(--white); }
+        .branche-row-last td:first-child { border-bottom-left-radius: 10px; }
+        .branche-row-last td:last-child  { border-bottom-right-radius: 10px; }
+        /* Grauer Zwischenraum trennt die Karten */
+        .branche-gap td { padding: 0; height: 16px; background: #e9ebee; border: none; }
+        .branche-gap:hover td { background: #e9ebee; }
         .kein-kontakt-row {
             background: #f9f9f9;
         }
@@ -761,8 +780,8 @@ try {
                 <a href="<?= htmlspecialchars($urlGroup) ?>" style="padding:0.4rem 0.85rem;text-decoration:none;border-left:1px solid var(--border);<?= $groupByBranche ? 'background:var(--primary);color:#fff' : 'color:var(--text)' ?>">Nach Branche</a>
             </div>
 
-            <div class="table-wrap">
-                <table class="data-table">
+            <div class="table-wrap<?= $groupByBranche ? ' grouped' : '' ?>">
+                <table class="data-table<?= $groupByBranche ? ' grouped' : '' ?>">
                     <thead>
                         <tr>
                             <th>Firma</th>
