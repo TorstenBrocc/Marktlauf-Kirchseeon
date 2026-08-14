@@ -39,13 +39,75 @@ function sponsorFormatDatum(string $ymd, string $fallback): string {
     return (int)$d->format('j') . '. ' . $months[(int)$d->format('n') - 1] . ' ' . $d->format('Y');
 }
 
-/** Gültige Vorlagen-Slugs (= Anschreiben-Typen). */
+/**
+ * Vorlagen-Varianten je Fördergruppe (TT 2026-08-14). Erste Umschalt-Stufe der
+ * Anschreiben-Oberflächen: das Erstanschreiben bekommt für Förderanträge einen eigenen
+ * Text — Fördermittelgeber/Kooperationspartner werden nicht wie Sponsoren mit Paket
+ * angeschrieben. Schlüssel = eigener Vorlagen-Slug (eigener Master in sponsor_briefvorlagen,
+ * eigener Entwurf, eigener Code-Default). Werte = Basis-Slug + zugehörige Fördergruppe
+ * (Enum-Werte aus SPONSOR_FOERDERGRUPPE).
+ *
+ * Bewusst getrennt vom Versand-Typ (`anschreiben_typ`, ein ENUM): der Versand bleibt Typ
+ * 'erstanschreiben', nur der Vorlagentext richtet sich nach der Fördergruppe des Empfängers.
+ * Weitere Töpfe (ueber_dritte, oeffentlichkeitsarbeit) bekommen später eigene Einträge.
+ */
+const SPONSOR_BRIEF_VARIANTEN = [
+    'erstanschreiben_foerderantrag' => [
+        'basis'         => 'erstanschreiben',
+        'foerdergruppe' => 'foerderantrag',
+    ],
+];
+
+/** Gültige Vorlagen-Slugs (= Anschreiben-Typen) inkl. Fördergruppen-Varianten. */
 function sponsorBriefSlugs(): array {
-    return ['erstanschreiben', 'folgejahr', 'frei', 'bestaetigung', 'rechnung', 'bedingungen'];
+    return array_merge(
+        ['erstanschreiben', 'folgejahr', 'frei', 'bestaetigung', 'rechnung', 'bedingungen'],
+        array_keys(SPONSOR_BRIEF_VARIANTEN)
+    );
 }
 
 function sponsorBriefSlugValid(string $slug): bool {
     return in_array($slug, sponsorBriefSlugs(), true);
+}
+
+/** Basis-Slug einer Variante (oder der Slug selbst, wenn keine Variante). */
+function sponsorBriefBasisSlug(string $slug): string {
+    return SPONSOR_BRIEF_VARIANTEN[$slug]['basis'] ?? $slug;
+}
+
+/** Variante eines Basis-Slugs für eine Fördergruppe — '' wenn es keine gibt. */
+function sponsorBriefVarianteFuer(string $basisSlug, string $foerdergruppe): string {
+    foreach (SPONSOR_BRIEF_VARIANTEN as $variante => $def) {
+        if ($def['basis'] === $basisSlug && $def['foerdergruppe'] === $foerdergruppe) {
+            return $variante;
+        }
+    }
+    return '';
+}
+
+/**
+ * Effektiver Vorlagen-Slug für einen konkreten Sponsor: die Fördergruppen-Variante des
+ * Basis-Slugs, sofern es eine gibt — sonst der Basis-Slug. Damit bekommt z. B. ein
+ * Förderantrags-Empfänger automatisch den Förderantrags-Text, egal über welche Zielgruppe
+ * er ausgewählt wurde. Fällt bei fehlender Spalte/fehlendem Sponsor sicher auf den
+ * Basis-Slug zurück (Feature-Detection auf `foerdergruppe`, wie sponsorAnspracheForm()).
+ */
+function sponsorBriefEffektiverSlug(PDO $pdo, string $basisSlug, int $sponsorId): string {
+    if ($sponsorId <= 0 || SPONSOR_BRIEF_VARIANTEN === []) {
+        return $basisSlug;
+    }
+    try {
+        if (!$pdo->query("SHOW COLUMNS FROM sponsors LIKE 'foerdergruppe'")->fetch()) {
+            return $basisSlug;
+        }
+        $stmt = $pdo->prepare('SELECT foerdergruppe FROM sponsors WHERE id = :id');
+        $stmt->execute(['id' => $sponsorId]);
+        $fg = (string) $stmt->fetchColumn();
+    } catch (PDOException $e) {
+        return $basisSlug;
+    }
+    $variante = $fg !== '' ? sponsorBriefVarianteFuer($basisSlug, $fg) : '';
+    return $variante !== '' ? $variante : $basisSlug;
 }
 
 /**
@@ -93,6 +155,31 @@ Grundlage einer möglichen Zusammenarbeit sind unsere beiliegenden Sponsoring-Be
 Ich freue mich auf Ihre Rückmeldung und darauf, Sie am 20. September persönlich begrüßen zu dürfen.
 
 Herzliche Grüße
+
+{{signatur}}
+MD;
+
+    // Erstanschreiben-Variante für Förderanträge (Fördergruppe 'foerderantrag'):
+    // Fördermittelgeber werden nicht mit einem Sponsoring-Paket angeschrieben, sondern nach
+    // Förderleitlinien/Antragsweg/Fristen gefragt. Grundlage ist der reale (noch nicht
+    // versandte) Entwurf an die Sportjugendstiftung; org-spezifische Sätze (z. B. „X ist
+    // bereits Gold-Sponsor") gehören je Empfänger in den Editor, nicht in den Master.
+    $erstFoerderantrag = <<<MD
+{{anrede}}
+
+der ATSV Kirchseeon 1906 e.V. richtet am **{{event_datum}}** den **2. Marktlauf Kirchseeon** aus – ein Breitensport-Laufevent gemeinsam mit der Gemeinde Kirchseeon, mit rund 300 Läuferinnen und Läufern und etwa 900 Gästen. Ein zentraler Baustein sind die Kinder- und Jugendläufe: der Bambini-Lauf (500 m, bis 6 Jahre) und die Schülerläufe, mit denen wir Kinder aus der ganzen Region für Bewegung begeistern.
+
+Da Ihr Haus die Breitensport- und Jugendarbeit fördert – insbesondere die Freude an Bewegung –, würden wir gern prüfen, ob unser Vorhaben zu Ihren Förderleitlinien passt.
+
+Dürfen wir Sie um Folgendes bitten:
+
+- Ihre Förderleitlinien und das Antragsformular,
+- eine kurze Einschätzung, ob ein Vereins-Laufevent mit Kinder- und Jugendläufen grundsätzlich antragsfähig ist,
+- Hinweise zu Fristen bzw. Vergabeterminen.
+
+Gerne stellen wir Ihnen unser Konzept vorab auch ausführlicher zusammen. Über eine kurze Rückmeldung freuen wir uns sehr.
+
+Herzlichen Dank und freundliche Grüße
 
 {{signatur}}
 MD;
@@ -162,6 +249,11 @@ MD;
             'name'       => 'Erstanschreiben',
             'betreff'    => 'Gemeinsam für Kirchseeon: Sponsoring-Chance für {{firma}}',
             'koerper_md' => $erst,
+        ],
+        'erstanschreiben_foerderantrag' => [
+            'name'       => 'Erstanschreiben — Förderanträge',
+            'betreff'    => 'Förderanfrage Kinder- und Jugendläufe – 2. Marktlauf Kirchseeon',
+            'koerper_md' => $erstFoerderantrag,
         ],
         'folgejahr' => [
             'name'       => 'Folgejahr / Bestandssponsor',
