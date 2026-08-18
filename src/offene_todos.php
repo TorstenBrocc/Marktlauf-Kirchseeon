@@ -62,42 +62,68 @@ const TODO_WOCHENTAG_VOLL = 5;
 const TODO_HERRENLOS_EMPFAENGER_EMAIL = 't.tyras@atsv-kirchseeon-marktlauf.de';
 
 /**
- * Auswahl für die Versandtage des ToDo-Digests (einstellungen.reminder_frequenz):
- * Schlüssel => UI-Label. Gepflegt im Orga-UI (Einstellungen), gelesen von
- * reminderVersandtagHeute(). Freitag bleibt in jeder Variante der volle Überblick.
+ * Wochentags-Labels für die Versandtage-Schalter (ISO: 1 = Montag … 7 = Sonntag).
+ * Gepflegt im Orga-UI (Einstellungen → Erinnerungs-Mails), gelesen von
+ * reminderVersandtagHeute(). Freitag bleibt in jeder Kombination der volle Überblick.
  */
-const REMINDER_FREQUENZ_OPTIONEN = [
-    'taeglich' => 'Täglich',
-    'werktags' => 'Nur werktags (Mo–Fr)',
-    'di_fr'    => 'Dienstag + Freitag',
-    'freitags' => 'Nur freitags (voller Überblick)',
+const REMINDER_TAGE_LABELS = [1 => 'Mo', 2 => 'Di', 3 => 'Mi', 4 => 'Do', 5 => 'Fr', 6 => 'Sa', 7 => 'So'];
+
+/**
+ * Schnellwahl-Presets fürs UI: Label => Tagesliste. Reine Vorbelegung der Schalter
+ * (Muster „Preset über Feinsteuerung", vgl. GitHub Scheduled Reminders / Slack-Modi) —
+ * gespeichert wird immer nur die Tagesliste, nie der Preset-Name.
+ */
+const REMINDER_TAGE_PRESETS = [
+    'Täglich'   => [1, 2, 3, 4, 5, 6, 7],
+    'Werktags'  => [1, 2, 3, 4, 5],
+    'Di + Fr'   => [2, 5],
+    'Nur Fr'    => [5],
 ];
 
 /**
- * Ist heute laut Einstellung `reminder_frequenz` ein Versandtag für den ToDo-Digest?
+ * Gespeicherte Versandtage als Liste von ISO-Wochentagen.
+ *
+ * Wertelogik von `reminder_versandtage`: fehlt der Key oder ist der Inhalt unlesbar
+ * => alle Tage (eine kaputte Einstellung darf Erinnerungen nie stumm schalten).
+ * Der Sonderwert 'keine' (bewusst alle Schalter aus) => leere Liste = Digest aus.
+ */
+function reminderVersandtage(?string $wert): array
+{
+    $wert = trim((string) $wert);
+    if ($wert === 'keine') {
+        return [];
+    }
+    $tage = array_values(array_unique(array_filter(
+        array_map('intval', explode(',', $wert)),
+        static fn (int $t): bool => $t >= 1 && $t <= 7
+    )));
+    return $tage !== [] ? $tage : array_keys(REMINDER_TAGE_LABELS);
+}
+
+/**
+ * Ist heute laut Einstellungen ein Versandtag für den ToDo-Digest?
  *
  * Der Cron im Workflow läuft weiterhin täglich; gedrosselt wird hier im Skript, damit
- * die Frequenz ohne Repo-Änderung im Orga-UI umstellbar ist. Leer/unbekannt/DB-Fehler
- * => täglich: eine kaputte Einstellung darf Erinnerungen nie stumm schalten.
- * An Nicht-Versandtagen Neues geht nicht verloren — spätestens der volle
- * Freitags-Überblick (TODO_WOCHENTAG_VOLL) listet alles Offene.
+ * der Zeitplan ohne Repo-Änderung im Orga-UI umstellbar ist. Zwei Stellschrauben:
+ *   - `reminder_versandtage`  Wochentagsliste (siehe reminderVersandtage())
+ *   - `reminder_pause_bis`    Urlaubs-Pause, einschließlich dieses Datums (leer = aktiv)
+ * DB-Fehler => senden. An Nicht-Versandtagen geht Neues nicht verloren — spätestens
+ * der volle Freitags-Überblick (TODO_WOCHENTAG_VOLL) listet alles Offene.
  */
 function reminderVersandtagHeute(PDO $pdo): bool
 {
     try {
-        $stmt = $pdo->prepare("SELECT `value` FROM einstellungen WHERE `key` = 'reminder_frequenz'");
-        $stmt->execute();
-        $wert = trim((string) $stmt->fetchColumn());
+        $stmt = $pdo->query("SELECT `key`, `value` FROM einstellungen
+                             WHERE `key` IN ('reminder_versandtage', 'reminder_pause_bis')");
+        $werte = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
     } catch (PDOException $e) {
         return true;
     }
-    $heute = (int) date('N');
-    return match ($wert) {
-        'werktags' => $heute <= 5,
-        'di_fr'    => $heute === 2 || $heute === TODO_WOCHENTAG_VOLL,
-        'freitags' => $heute === TODO_WOCHENTAG_VOLL,
-        default    => true,
-    };
+    $pauseBis = trim((string) ($werte['reminder_pause_bis'] ?? ''));
+    if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $pauseBis) && date('Y-m-d') <= $pauseBis) {
+        return false;
+    }
+    return in_array((int) date('N'), reminderVersandtage($werte['reminder_versandtage'] ?? null), true);
 }
 
 /**

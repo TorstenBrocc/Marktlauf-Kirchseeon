@@ -49,8 +49,9 @@ $metaBusinessUrl = $settings['meta_business_url'] ?? '';
 $sponsorMerkfeld = $settings['sponsor_merkfeld'] ?? '';
 
 require_once __DIR__ . '/../src/social_anlaesse.php';
-require_once __DIR__ . '/../src/offene_todos.php'; // REMINDER_FREQUENZ_OPTIONEN
-$reminderFrequenz = trim((string) ($settings['reminder_frequenz'] ?? '')) ?: 'taeglich';
+require_once __DIR__ . '/../src/offene_todos.php'; // REMINDER_TAGE_LABELS/_PRESETS, reminderVersandtage()
+$reminderVersandtage = reminderVersandtage($settings['reminder_versandtage'] ?? null);
+$reminderPauseBis    = trim((string) ($settings['reminder_pause_bis'] ?? ''));
 $socialHashtags   = trim((string) ($settings['social_hashtags'] ?? '')) ?: socialHashtagsDefault();
 $raceresultApiUrl = $settings['raceresult_api_url'] ?? '';
 $raceresultHinweis = $settings['raceresult_hinweis'] ?? '';
@@ -193,6 +194,49 @@ $makeWebhookSecret = (string) ($config['make_webhook_secret'] ?? '');
         .autosave-status { font-size: 0.85rem; color: var(--text-light); transition: color 0.2s; }
         .autosave-status.ok { color: var(--primary); font-weight: 600; }
         .autosave-status.err { color: var(--error); font-weight: 600; }
+        /* Versandtage: 7 Wochentags-Schalter als Pillen (Checkbox versteckt, Zustand am Rahmen). */
+        .reminder-tage {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+        }
+        .reminder-tag input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .reminder-tag span {
+            display: inline-block;
+            min-width: 2.6rem;
+            text-align: center;
+            padding: 0.35rem 0.6rem;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            user-select: none;
+            color: var(--text-light);
+            background: var(--bg);
+        }
+        .reminder-tag input:checked + span {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: #fff;
+            font-weight: 600;
+        }
+        .reminder-tag input:focus-visible + span {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+        .reminder-presets {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.4rem;
+            margin-top: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--text-light);
+        }
     </style>
 </head>
 <body>
@@ -250,13 +294,33 @@ $makeWebhookSecret = (string) ($config['make_webhook_secret'] ?? '');
                     <h2>Erinnerungs-Mails</h2>
                     <div class="form-row single">
                         <div class="form-group">
-                            <label for="reminder_frequenz">Versandtage des ToDo-Digests</label>
-                            <select id="reminder_frequenz" name="reminder_frequenz">
-                                <?php foreach (REMINDER_FREQUENZ_OPTIONEN as $wert => $label): ?>
-                                    <option value="<?= htmlspecialchars($wert) ?>" <?= $wert === $reminderFrequenz ? 'selected' : '' ?>><?= htmlspecialchars($label) ?></option>
+                            <label>Versandtage des ToDo-Digests</label>
+                            <div class="reminder-tage">
+                                <?php foreach (REMINDER_TAGE_LABELS as $tag => $tagLabel): ?>
+                                    <label class="reminder-tag">
+                                        <input type="checkbox" name="reminder_versandtage[]" value="<?= $tag ?>" <?= in_array($tag, $reminderVersandtage, true) ? 'checked' : '' ?>>
+                                        <span><?= $tagLabel ?></span>
+                                    </label>
                                 <?php endforeach; ?>
-                            </select>
-                            <small style="color:var(--text-light)">Gilt für die Sammel-Mail „Offene ToDos Sponsoring" (inkl. Social-Fahrplan). Freitags kommt in jeder Variante der volle Überblick. Einzel-Erinnerungen zu heute fälligen Orga-Aufgaben kommen unabhängig davon am Fälligkeitstag.</small>
+                                <?php /* Marker that the checkbox group was rendered — without it an
+                                        all-unchecked group would simply be absent from the POST and
+                                        the endpoint could not tell "off" from "field not on page". */ ?>
+                                <input type="hidden" name="reminder_versandtage_gesendet" value="1">
+                            </div>
+                            <div class="reminder-presets">
+                                Schnellwahl:
+                                <?php foreach (REMINDER_TAGE_PRESETS as $presetLabel => $presetTage): ?>
+                                    <button type="button" class="btn btn-small btn-secondary reminder-preset" data-tage="<?= implode(',', $presetTage) ?>"><?= htmlspecialchars($presetLabel) ?></button>
+                                <?php endforeach; ?>
+                            </div>
+                            <small style="color:var(--text-light)">Gilt für die Sammel-Mail „Offene ToDos Sponsoring" (inkl. Social-Fahrplan). Freitags kommt der volle Überblick, an anderen Tagen nur Neues. Alle Tage aus = Digest aus. Einzel-Erinnerungen zu heute fälligen Orga-Aufgaben kommen unabhängig davon am Fälligkeitstag.</small>
+                        </div>
+                    </div>
+                    <div class="form-row single">
+                        <div class="form-group">
+                            <label for="reminder_pause_bis">Pausiert bis einschließlich</label>
+                            <input type="date" id="reminder_pause_bis" name="reminder_pause_bis" value="<?= htmlspecialchars($reminderPauseBis) ?>">
+                            <small style="color:var(--text-light)">Für Urlaub o. Ä.: bis zu diesem Datum (einschließlich) wird kein Digest verschickt, danach geht es automatisch weiter. Leer = aktiv.</small>
                         </div>
                     </div>
                 </div>
@@ -472,6 +536,18 @@ $makeWebhookSecret = (string) ($config['make_webhook_secret'] ?? '');
         form.addEventListener('input', function () { clearTimeout(timer); timer = setTimeout(save, 700); });
         form.addEventListener('change', save);
         form.addEventListener('submit', function (e) { e.preventDefault(); save(); });
+
+        // Schnellwahl-Presets: Wochentags-Schalter vorbelegen. Programmatic checks fire no
+        // events, so trigger the form's change handler explicitly to autosave the preset.
+        document.querySelectorAll('.reminder-preset').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const tage = btn.dataset.tage.split(',');
+                document.querySelectorAll('input[name="reminder_versandtage[]"]').forEach(function (cb) {
+                    cb.checked = tage.indexOf(cb.value) !== -1;
+                });
+                save();
+            });
+        });
     })();
 
     (function() {
