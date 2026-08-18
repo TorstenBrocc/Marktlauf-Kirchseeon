@@ -79,11 +79,19 @@ Erledigt am 2026-08-18 (lokale Session, alles auf `main` deployt):
   `TODO_HERRENLOS_EMPFAENGER_EMAIL` (TT; `src/offene_todos.php`), nicht mehr an alle
   Admins. Zugewiesene Einträge unverändert an die Person; info@ liest jede Mail per
   BCC mit (`mailBccAddress()`).
-- **Reminder-Frequenz einstellbar:** Einstellungen → „Erinnerungs-Mails" →
-  `reminder_frequenz` (täglich/werktags/Di+Fr/freitags; Default täglich). Gate
-  `reminderVersandtagHeute()` greift nur im `--modus=auto` des Digests; der Cron im
-  Workflow bleibt täglich. `bin/aufgaben_erinnerung.php` bleibt BEWUSST täglich
-  (feuert nur exakt am Fälligkeitstag — Drosselung würde Erinnerungen verschlucken).
+- **Reminder-Zeitplan einstellbar (v2, gleicher Tag):** Einstellungen → „Erinnerungs-Mails" →
+  Wochentags-Pillen Mo–So (`reminder_versandtage`, ISO-Tagesliste als CSV; Sonderwert
+  `keine` = bewusst aus; Key fehlt/kaputt = täglich) + Schnellwahl-Presets (reine
+  Checkbox-Vorbelegung, `REMINDER_TAGE_PRESETS`) + „Pausiert bis einschließlich"
+  (`reminder_pause_bis`, Urlaubs-Pause). Gate `reminderVersandtagHeute()` greift nur im
+  `--modus=auto` des Digests; Cron bleibt täglich ~08:00. Das v1-Dropdown
+  (`reminder_frequenz`) ist ERSETZT; Migration **078** überführt den alten Wert in die
+  Tagesliste und löscht den Key. UI-Muster gegroundet an GitHub Scheduled Reminders /
+  Slack-DND (Wochentage + Pause-bis; Uhrzeit bewusst weggelassen — bräuchte stündlichen
+  Cron). ACHTUNG Endpoint-Muster: unangehakte Checkbox-Gruppen fehlen im POST komplett —
+  deshalb Marker-Feld `reminder_versandtage_gesendet`, ohne das der Key nicht geschrieben
+  wird. `bin/aufgaben_erinnerung.php` bleibt BEWUSST täglich (feuert nur exakt am
+  Fälligkeitstag — Drosselung würde Erinnerungen verschlucken).
 - **Branch-Aufräumung:** Die 6 fertigen Commits des Session-Branches
   `claude/sponsor-seite-vorbereiten-yay6o0` (Überlauf-Fix sponsoren.php, Migration 076,
   Doku) waren NICHT auf `main` — jeder main-Deploy hat den TT-bestätigten Live-Fix
