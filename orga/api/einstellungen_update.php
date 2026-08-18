@@ -62,7 +62,8 @@ $allowedKeys = [
     'social_hashtags',
     'raceresult_api_url',
     'sponsor_merkfeld',
-    'reminder_frequenz',
+    'reminder_versandtage',
+    'reminder_pause_bis',
 ];
 
 $renntag = trim($_POST['renntag_datum'] ?? '');
@@ -83,10 +84,26 @@ $raceresultApiUrl = trim((string) ($_POST['raceresult_api_url'] ?? ''));
 // Sponsoren-Merkfeld (Bank-/Vereinsdaten), umgezogen aus der Sponsoren-Übersicht.
 $sponsorMerkfeld = mb_substr(trim((string) ($_POST['sponsor_merkfeld'] ?? '')), 0, 5000);
 
-// Versandtage des ToDo-Digests — nur Werte aus der festen Auswahl (src/offene_todos.php).
-$reminderFrequenz = trim((string) ($_POST['reminder_frequenz'] ?? ''));
-if ($reminderFrequenz !== '' && !array_key_exists($reminderFrequenz, REMINDER_FREQUENZ_OPTIONEN)) {
-    ein_respond(false, 'Ungültige Reminder-Frequenz.');
+// Versandtage des ToDo-Digests: Checkbox-Gruppe Mo–So. Ein leeres Set ist eine gültige
+// Wahl (Digest aus) und wird als Sonderwert 'keine' gespeichert — unterscheidbar vom
+// fehlenden Key (= Default: alle Tage). Der Marker reminder_versandtage_gesendet zeigt,
+// dass die Gruppe auf der Seite stand; ohne ihn wird der Key nicht angefasst (sonst
+// würde jeder fremde POST ohne die Checkboxen den Zeitplan auf 'keine' kippen).
+$versandtageGesendet = ($_POST['reminder_versandtage_gesendet'] ?? '') === '1';
+$reminderVersandtage = null;
+if ($versandtageGesendet) {
+    $tage = array_values(array_unique(array_filter(
+        array_map('intval', (array) ($_POST['reminder_versandtage'] ?? [])),
+        static fn (int $t): bool => $t >= 1 && $t <= 7
+    )));
+    sort($tage);
+    $reminderVersandtage = $tage === [] ? 'keine' : implode(',', $tage);
+}
+
+// Urlaubs-Pause des Digests (einschließlich; leer = aktiv).
+$reminderPauseBis = trim((string) ($_POST['reminder_pause_bis'] ?? ''));
+if ($reminderPauseBis !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $reminderPauseBis)) {
+    ein_respond(false, 'Ungültiges Datum bei „Pausiert bis".');
 }
 
 // Zugangsdaten-Notizen (Freitext, nur Admin sichtbar) — auf 2000 Zeichen gekappt.
@@ -153,8 +170,12 @@ try {
         'social_hashtags'           => $socialHashtags ?: null,
         'raceresult_api_url'        => $raceresultApiUrl ?: null,
         'sponsor_merkfeld'          => $sponsorMerkfeld ?: null,
-        'reminder_frequenz'         => $reminderFrequenz ?: null,
+        'reminder_pause_bis'        => $reminderPauseBis ?: null,
     ];
+    // Nur schreiben, wenn die Checkbox-Gruppe wirklich im POST stand (Marker, s. o.).
+    if ($reminderVersandtage !== null) {
+        $settings['reminder_versandtage'] = $reminderVersandtage;
+    }
 
     $stmt = $pdo->prepare('INSERT INTO einstellungen (`key`, `value`) VALUES (:key, :value) ON DUPLICATE KEY UPDATE `value` = :value2');
 

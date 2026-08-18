@@ -21,9 +21,10 @@
  * vorher: alle Admins) — sichtbar als eigener Abschnitt, damit sie zugeordnet werden,
  * statt still liegenzubleiben. info@ liest jede Mail per BCC mit (mailBccAddress()).
  *
- * FREQUENZ: Im Modus `auto` prüft das Skript die Orga-Einstellung `reminder_frequenz`
- * (reminderVersandtagHeute()) und schweigt an Nicht-Versandtagen. Manuelle Aufrufe
- * (--modus=voll|neu, --dry-run) laufen immer.
+ * FREQUENZ: Im Modus `auto` prüft das Skript die Orga-Einstellungen `reminder_versandtage`
+ * (Wochentagsliste) und `reminder_pause_bis` (Urlaubs-Pause) via reminderVersandtagHeute()
+ * und schweigt an Nicht-Versandtagen. Manuelle Aufrufe (--modus=voll|neu, --dry-run)
+ * laufen immer.
  *
  * Verhältnis zu bin/aufgaben_erinnerung.php: Das dortige Skript verschickt Einzelmails für
  * HEUTE fällige Orga-Aufgaben und hat dafür ein eigenes Flag. Hier geht es ausschließlich
@@ -99,7 +100,7 @@ try {
 
     // Frequenz-Drossel nur für den automatischen Lauf — manuelle Aufrufe bleiben ungebremst.
     if ($modusWarAuto && !reminderVersandtagHeute($pdo)) {
-        echo "Heute kein Versandtag (Einstellung reminder_frequenz) — keine Mail verschickt.\n";
+        echo "Heute kein Versandtag (Versandtage/Pause in den Orga-Einstellungen) — keine Mail verschickt.\n";
         exit(0);
     }
 
