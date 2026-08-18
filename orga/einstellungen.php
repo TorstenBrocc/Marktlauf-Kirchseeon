@@ -49,6 +49,8 @@ $metaBusinessUrl = $settings['meta_business_url'] ?? '';
 $sponsorMerkfeld = $settings['sponsor_merkfeld'] ?? '';
 
 require_once __DIR__ . '/../src/social_anlaesse.php';
+require_once __DIR__ . '/../src/offene_todos.php'; // REMINDER_FREQUENZ_OPTIONEN
+$reminderFrequenz = trim((string) ($settings['reminder_frequenz'] ?? '')) ?: 'taeglich';
 $socialHashtags   = trim((string) ($settings['social_hashtags'] ?? '')) ?: socialHashtagsDefault();
 $raceresultApiUrl = $settings['raceresult_api_url'] ?? '';
 $raceresultHinweis = $settings['raceresult_hinweis'] ?? '';
@@ -240,6 +242,21 @@ $makeWebhookSecret = (string) ($config['make_webhook_secret'] ?? '');
                             <label for="drive_root_helfer_id">Drive-Wurzel „Helfer" (Ordner-ID)</label>
                             <input type="text" id="drive_root_helfer_id" name="drive_root_helfer_id" value="<?= htmlspecialchars($driveRootHelfer) ?>" placeholder="leer = Ordner „Helfer" im Laufwerk">
                             <small style="color:var(--text-light)">Einstieg des „Helfer"-Tabs. Leer = automatisch „Helfer".</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h2>Erinnerungs-Mails</h2>
+                    <div class="form-row single">
+                        <div class="form-group">
+                            <label for="reminder_frequenz">Versandtage des ToDo-Digests</label>
+                            <select id="reminder_frequenz" name="reminder_frequenz">
+                                <?php foreach (REMINDER_FREQUENZ_OPTIONEN as $wert => $label): ?>
+                                    <option value="<?= htmlspecialchars($wert) ?>" <?= $wert === $reminderFrequenz ? 'selected' : '' ?>><?= htmlspecialchars($label) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <small style="color:var(--text-light)">Gilt für die Sammel-Mail „Offene ToDos Sponsoring" (inkl. Social-Fahrplan). Freitags kommt in jeder Variante der volle Überblick. Einzel-Erinnerungen zu heute fälligen Orga-Aufgaben kommen unabhängig davon am Fälligkeitstag.</small>
                         </div>
                     </div>
                 </div>

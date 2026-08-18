@@ -53,6 +53,54 @@ const TODO_FRIST_VORSCHAU_TAGE = 2;
 const TODO_WOCHENTAG_VOLL = 5;
 
 /**
+ * Empfänger der Digest-Einträge OHNE Zuständigen (TT, 2026-08-18): genau eine Person
+ * statt aller Admins — die tägliche Sammel-Mail an den ganzen Admin-Kreis war Rauschen.
+ * Wer namentlich zuständig ist, bekommt seine Einträge unverändert selbst; info@ liest
+ * ohnehin jede Mail mit (BCC-Kette in src/channels/mail.php, mailBccAddress()).
+ * Bewusst eine Konstante (Login-Mail des users-Eintrags), keine DB-Einstellung.
+ */
+const TODO_HERRENLOS_EMPFAENGER_EMAIL = 't.tyras@atsv-kirchseeon-marktlauf.de';
+
+/**
+ * Auswahl für die Versandtage des ToDo-Digests (einstellungen.reminder_frequenz):
+ * Schlüssel => UI-Label. Gepflegt im Orga-UI (Einstellungen), gelesen von
+ * reminderVersandtagHeute(). Freitag bleibt in jeder Variante der volle Überblick.
+ */
+const REMINDER_FREQUENZ_OPTIONEN = [
+    'taeglich' => 'Täglich',
+    'werktags' => 'Nur werktags (Mo–Fr)',
+    'di_fr'    => 'Dienstag + Freitag',
+    'freitags' => 'Nur freitags (voller Überblick)',
+];
+
+/**
+ * Ist heute laut Einstellung `reminder_frequenz` ein Versandtag für den ToDo-Digest?
+ *
+ * Der Cron im Workflow läuft weiterhin täglich; gedrosselt wird hier im Skript, damit
+ * die Frequenz ohne Repo-Änderung im Orga-UI umstellbar ist. Leer/unbekannt/DB-Fehler
+ * => täglich: eine kaputte Einstellung darf Erinnerungen nie stumm schalten.
+ * An Nicht-Versandtagen Neues geht nicht verloren — spätestens der volle
+ * Freitags-Überblick (TODO_WOCHENTAG_VOLL) listet alles Offene.
+ */
+function reminderVersandtagHeute(PDO $pdo): bool
+{
+    try {
+        $stmt = $pdo->prepare("SELECT `value` FROM einstellungen WHERE `key` = 'reminder_frequenz'");
+        $stmt->execute();
+        $wert = trim((string) $stmt->fetchColumn());
+    } catch (PDOException $e) {
+        return true;
+    }
+    $heute = (int) date('N');
+    return match ($wert) {
+        'werktags' => $heute <= 5,
+        'di_fr'    => $heute === 2 || $heute === TODO_WOCHENTAG_VOLL,
+        'freitags' => $heute === TODO_WOCHENTAG_VOLL,
+        default    => true,
+    };
+}
+
+/**
  * Status, die kein ToDo mehr erzeugen. `bestaetigt` fehlt hier bewusst nicht —
  * ab dort übernimmt die Rechnungs-/Abrechnungsstrecke.
  */

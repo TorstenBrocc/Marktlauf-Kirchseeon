@@ -17,8 +17,13 @@
  * sonst gepflegt und aufgeräumt werden müsste.
  *
  * ROUTING: Jeder bekommt nur, wofür er zuständig ist (sponsors.zustaendig_user_id).
- * Einträge ohne Zuständigen gehen an alle Admins — sichtbar als eigener Abschnitt, damit
- * sie zugeordnet werden, statt still liegenzubleiben.
+ * Einträge ohne Zuständigen gehen NUR an TODO_HERRENLOS_EMPFAENGER_EMAIL (TT, 2026-08-18;
+ * vorher: alle Admins) — sichtbar als eigener Abschnitt, damit sie zugeordnet werden,
+ * statt still liegenzubleiben. info@ liest jede Mail per BCC mit (mailBccAddress()).
+ *
+ * FREQUENZ: Im Modus `auto` prüft das Skript die Orga-Einstellung `reminder_frequenz`
+ * (reminderVersandtagHeute()) und schweigt an Nicht-Versandtagen. Manuelle Aufrufe
+ * (--modus=voll|neu, --dry-run) laufen immer.
  *
  * Verhältnis zu bin/aufgaben_erinnerung.php: Das dortige Skript verschickt Einzelmails für
  * HEUTE fällige Orga-Aufgaben und hat dafür ein eigenes Flag. Hier geht es ausschließlich
@@ -62,6 +67,7 @@ foreach ($argumente as $arg) {
 if (!in_array($modus, ['voll', 'neu', 'auto'], true)) {
     exit("ABBRUCH: --modus muss voll, neu oder auto sein.\n");
 }
+$modusWarAuto = ($modus === 'auto');
 if ($modus === 'auto') {
     // 5 = Freitag (TT, 2026-08-13): der volle Überblick kommt zum Wochenausklang,
     // wenn Zeit fürs Nacharbeiten ist. An den anderen Tagen nur Neues.
@@ -90,6 +96,13 @@ function todoIstNeu(string $gruppe, array $zeile): bool
 
 try {
     $pdo = getDbConnection();
+
+    // Frequenz-Drossel nur für den automatischen Lauf — manuelle Aufrufe bleiben ungebremst.
+    if ($modusWarAuto && !reminderVersandtagHeute($pdo)) {
+        echo "Heute kein Versandtag (Einstellung reminder_frequenz) — keine Mail verschickt.\n";
+        exit(0);
+    }
+
     $todos = offeneTodosAlle($pdo);
 
     // Gruppen in Bearbeitungsreihenfolge; je Gruppe der Titel und wie eine Zeile klingt.
@@ -269,8 +282,9 @@ try {
         ORDER BY name
     ")->fetchAll();
 
-    // Einträge ohne Zuständigen gehen an alle Admins — als eigener Abschnitt, damit sie
-    // zugeordnet werden statt still liegenzubleiben.
+    // Einträge ohne Zuständigen gehen als eigener Abschnitt an genau eine Person
+    // (TODO_HERRENLOS_EMPFAENGER_EMAIL) — damit sie zugeordnet werden statt still
+    // liegenzubleiben, aber ohne den ganzen Admin-Kreis täglich zu fluten.
     $herrenlos = $proUser[0] ?? [];
     unset($proUser[0]);
 
@@ -292,7 +306,7 @@ try {
     foreach ($empfaenger as $e) {
         $uid = (int) $e['id'];
         $meine = $proUser[$uid] ?? [];
-        $istAdmin = ($e['role'] === 'admin');
+        $bekommtHerrenlose = (strcasecmp(trim((string) $e['email']), TODO_HERRENLOS_EMPFAENGER_EMAIL) === 0);
 
         // Gruppen in definierter Reihenfolge zusammenbauen
         $gruppen = [];
@@ -309,7 +323,7 @@ try {
                 ];
             }
         }
-        if ($istAdmin && $herrenlos !== []) {
+        if ($bekommtHerrenlose && $herrenlos !== []) {
             foreach ($gruppenDef as $key => [$kopf, $_, $__, $___]) {
                 if (!empty($herrenlos[$key])) {
                     $anzahl += count($herrenlos[$key]);
