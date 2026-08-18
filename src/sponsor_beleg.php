@@ -40,7 +40,8 @@ function archiveSponsorBestaetigung(PDO $pdo, int $sponsorId, int $userId = 0): 
         $userId = (int) ($_SESSION['user_id'] ?? 0);
     }
 
-    $vorlage  = sponsorBriefLoad($pdo, 'bestaetigung', $userId);
+    // sponsorId durchreichen, damit der Beleg denselben pro-Sponsor-Stand zeigt wie Mail/Vorschau.
+    $vorlage  = sponsorBriefLoad($pdo, 'bestaetigung', $userId, $sponsorId);
     // Repräsentativer Ansprechpartner + Sponsor-Platzhalter kommen aus der gemeinsamen Quelle,
     // damit Beleg-PDF, Live-Vorschau und Mail denselben Empfänger und dieselben Werte sehen.
     $ctx      = sponsorBriefKontextFuerSponsor($pdo, $sponsorId, $userId);

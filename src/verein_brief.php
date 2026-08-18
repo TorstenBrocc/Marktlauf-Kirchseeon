@@ -100,6 +100,8 @@ function vereinBriefPlatzhalterHilfe(): array {
                              . "• Verein ohne Kontakt → \"Liebe Sportfreundinnen und Sportfreunde des TSV …,\"\n"
                              . "• Laufevent ohne Kontakt → \"Liebe Laufsport-Kolleginnen und -Kollegen vom …,\"",
         '{{vorname}}'     => 'Vorname des Ansprechpartners',
+        '{{nachname}}'    => "Anrede + Nachname des Ansprechpartners, z. B. \"Herr Müller\" / \"Frau Müller\".\n"
+                             . "Ohne hinterlegte Anrede (oder „Divers“) bleibt nur der Nachname stehen.",
         '{{name}}'        => 'Name des Vereins bzw. des Laufevents',
         '{{event_datum}}' => 'Datum des Marktlaufs (aus Einstellungen, sonst 20. September 2026)',
         '{{signatur}}'    => "Signatur-Block (Name, Aufgabe, Telefon, E-Mail, Social-Media-Logos)\n"
@@ -249,6 +251,7 @@ function vereinBriefContext(PDO $pdo, int $userId, string $kategorie, string $an
         'inline' => [
             '{{anrede}}'      => vereinAnrede($kategorie, $anrede, $nachname, $name),
             '{{vorname}}'     => trim($vorname),
+            '{{nachname}}'    => sponsorNachnameMitAnrede($anrede, $nachname),
             '{{name}}'        => trim($name) !== '' ? trim($name) : 'Eurem Verein',
             '{{event_datum}}' => vereinEventDatum($pdo),
         ],

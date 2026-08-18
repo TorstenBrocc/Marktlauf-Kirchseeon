@@ -277,7 +277,9 @@ function sendSponsorAnschreiben(
     // Förderantrags-Text) — Versand-Typ, Anhänge und `anschreiben_typ` bleiben davon
     // unberührt. Ohne passende Variante bleibt es beim Basis-Slug ($typ).
     $textSlug    = sponsorBriefEffektiverSlug($pdo, $typ, $sponsorId);
-    $vorlage     = sponsorBriefLoad($pdo, $textSlug, $userId);
+    // sponsorId durchreichen: bei der Bestätigung greift so der pro-Sponsor gespeicherte Stand
+    // (sonst identisch, weil nur die Bestätigung pro-Sponsor-Entwürfe anlegt) — „gesehen = gesendet".
+    $vorlage     = sponsorBriefLoad($pdo, $textSlug, $userId, $sponsorId);
     $ctx         = sponsorBriefContext($pdo, $userId, $anrede, $vorname, $nachname, $firma, $paket, $sponsorId);
     $subject     = sponsorBriefBetreff($vorlage['betreff'], $ctx);
     $htmlBody    = sponsorBriefRenderHtml($vorlage['koerper_md'], $ctx);

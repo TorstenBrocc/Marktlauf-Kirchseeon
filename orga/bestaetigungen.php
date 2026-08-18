@@ -142,6 +142,9 @@ $typLabel = static fn (?string $p): string => match ($p) {
             // arbeitet damit (Startplätze, Code, weiche Warnung vor dem Senden).
             if ($gewaehlt !== null) {
                 $gewaehlt = array_merge($gewaehlt, $gutscheinDaten($pdo, $gewaehlt));
+                // Text/Betreff pro Sponsor laden: der zuletzt gespeicherte Stand DIESES Sponsors
+                // gewinnt, sonst Fallback auf die allgemeine Vorlage (siehe sponsorBriefLoad()).
+                $vorlage = sponsorBriefLoad($pdo, 'bestaetigung', (int) $user['id'], (int) $gewaehlt['id']);
             }
             ?>
 
@@ -214,7 +217,7 @@ $typLabel = static fn (?string $p): string => match ($p) {
 
                 <div class="best-split">
                     <div>
-                        <h3>Markdown</h3>
+                        <h3>Markdown <span id="save-status" style="font-weight:400;color:var(--text-light);font-size:0.78rem;margin-left:0.4rem"></span></h3>
                         <textarea id="koerper_md"><?= htmlspecialchars($vorlage['koerper_md']) ?></textarea>
                     </div>
                     <div>
@@ -287,6 +290,30 @@ $typLabel = static fn (?string $p): string => match ($p) {
         ta.addEventListener('input', schedule);
         renderPreview();
 
+        // Autosave pro Sponsor: kurze Verzögerung nach dem Tippen sichert Text + Betreff für
+        // GENAU diesen Sponsor (draft_save mit sponsor_id). Beim nächsten Öffnen lädt die Seite
+        // diesen Stand wieder; Versand und Beleg-PDF lesen ihn ebenfalls.
+        const saveStatus = document.getElementById('save-status');
+        let saveTimer = null;
+        function setSaveStatus(txt) { if (saveStatus) saveStatus.textContent = txt; }
+        function saveDraft() {
+            setSaveStatus('Speichert…');
+            const body = new URLSearchParams();
+            body.set('csrf_token', csrf);
+            body.set('vorlage_art', 'sponsor');
+            body.set('slug', 'bestaetigung');
+            body.set('sponsor_id', String(sponsorId));
+            body.set('betreff', betreff.value);
+            body.set('koerper_md', ta.value);
+            fetch('api/draft_save.php', { method: 'POST', headers: { 'X-Requested-With': 'fetch' }, body: body })
+                .then(function(r) { return r.json(); })
+                .then(function(d) { setSaveStatus(d.ok ? 'Gespeichert ✓' : ('Nicht gespeichert: ' + (d.error || 'Fehler'))); })
+                .catch(function() { setSaveStatus('Nicht gespeichert – bitte erneut versuchen.'); });
+        }
+        function scheduleSave() { clearTimeout(saveTimer); setSaveStatus(''); saveTimer = setTimeout(saveDraft, 900); }
+        ta.addEventListener('input', scheduleSave);
+        betreff.addEventListener('input', scheduleSave);
+
         document.querySelectorAll('.ph-chip').forEach(function(chip) {
             chip.addEventListener('click', function() {
                 const ph = chip.dataset.ph;
@@ -295,6 +322,7 @@ $typLabel = static fn (?string $p): string => match ($p) {
                 ta.focus();
                 ta.selectionStart = ta.selectionEnd = start + ph.length;
                 schedule();
+                scheduleSave();
             });
         });
 
@@ -319,6 +347,7 @@ $typLabel = static fn (?string $p): string => match ($p) {
             parts.push(OUTRO);
             ta.value = parts.join('\n\n');
             renderPreview();
+            scheduleSave();
         });
 
         // Senden: weiche Prüfung → Text als Entwurf sichern → erst dann abschicken.
@@ -353,6 +382,7 @@ $typLabel = static fn (?string $p): string => match ($p) {
                 body.set('csrf_token', csrf);
                 body.set('vorlage_art', 'sponsor');
                 body.set('slug', 'bestaetigung');
+                body.set('sponsor_id', String(sponsorId));
                 body.set('betreff', betreff.value);
                 body.set('koerper_md', ta.value);
                 fetch('api/draft_save.php', { method: 'POST', headers: { 'X-Requested-With': 'fetch' }, body: body })
