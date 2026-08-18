@@ -70,6 +70,16 @@ neuer Lauf / ein vergleichbarer Workstream direkt wirksam arbeiten kann.
 ## Aktueller Stand / Übergabe (Stand 2026-08-18)
 
 Erledigt am 2026-08-18 (lokale Session, alles auf `main` deployt):
+- **Ansprechpartner per Drag-and-Drop sortierbar** (Migration **079**, PR #34). Neue Spalte
+  `sponsor_ansprechpartner.sortierung` (additiv, Backfill `= id` → heutige Ordnung bleibt; ohne
+  Window-Funktion, damit versionsunabhängig). `orga/sponsor_form.php` lädt jetzt
+  `ORDER BY sortierung ASC, id ASC`; je Kontaktkarte ein Griff `.ap-drag` (nur der Griff ist
+  `draggable`, nicht die ganze Karte — sonst Konflikt mit Doppelklick-Edit), natives HTML5-DnD mit
+  Live-Umsortierung, Persist per neuem `action=reorder` in `orga/api/ansprechpartner_save.php`
+  (Transaktion, Ownership per `sponsor_id`, normalisiert 1..n). Neuanlage hängt ans Ende (`max+1`).
+  Grenze: natives DnD greift nicht auf Touch/Mobil (wie der Datei-Baum in `dateien.php`) — Sortieren
+  ist ein Desktop-Vorgang. Reihenfolge beim Livegang eingehalten: Merge → Migration 079 gefahren →
+  verifiziert (0 offen).
 - **Sponsor-Aufgaben bearbeitbar:** ✎-Button je Aufgabe in der Sponsor-Maske klappt ein
   vorausgefülltes Edit-Formular auf (`orga/sponsor_form.php`), nutzt den vorhandenen
   `action=update` in `orga/api/aufgabe_orga_crud.php`. ACHTUNG Muster: `update` schreibt
