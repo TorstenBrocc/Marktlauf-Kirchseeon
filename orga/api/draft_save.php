@@ -42,6 +42,8 @@ if (!$slugGueltig) {
 
 $betreff = mb_substr(trim((string) ($_POST['betreff'] ?? '')), 0, 255);
 $koerper = mb_substr(trim((string) ($_POST['koerper_md'] ?? '')), 0, 20000);
+// sponsor_id > 0 = pro-Sponsor-Entwurf (nur Bestätigung), 0 = allgemeine Vorlage.
+$sponsorId = max(0, (int) ($_POST['sponsor_id'] ?? 0));
 $userId  = (int) (getCurrentUserFromGuard()['id'] ?? 0);
 
 if ($userId <= 0) {
@@ -52,8 +54,8 @@ if ($userId <= 0) {
 try {
     $pdo = getDbConnection();
     $stmt = $pdo->prepare('
-        INSERT INTO briefvorlagen_entwurf (user_id, vorlage_art, slug, betreff, koerper_md, gespeichert_am)
-        VALUES (:uid, :art, :slug, :betreff, :koerper, NOW())
+        INSERT INTO briefvorlagen_entwurf (user_id, vorlage_art, slug, sponsor_id, betreff, koerper_md, gespeichert_am)
+        VALUES (:uid, :art, :slug, :sid, :betreff, :koerper, NOW())
         ON DUPLICATE KEY UPDATE
             betreff        = :betreff2,
             koerper_md     = :koerper2,
@@ -63,13 +65,14 @@ try {
         'uid'      => $userId,
         'art'      => $vorlageArt,
         'slug'     => $slug,
+        'sid'      => $sponsorId,
         'betreff'  => $betreff !== '' ? $betreff : null,
         'koerper'  => $koerper !== '' ? $koerper : null,
         'betreff2' => $betreff !== '' ? $betreff : null,
         'koerper2' => $koerper !== '' ? $koerper : null,
     ]);
-    $stmt2 = $pdo->prepare('SELECT gespeichert_am FROM briefvorlagen_entwurf WHERE user_id = :uid AND vorlage_art = :art AND slug = :slug');
-    $stmt2->execute(['uid' => $userId, 'art' => $vorlageArt, 'slug' => $slug]);
+    $stmt2 = $pdo->prepare('SELECT gespeichert_am FROM briefvorlagen_entwurf WHERE user_id = :uid AND vorlage_art = :art AND slug = :slug AND sponsor_id = :sid');
+    $stmt2->execute(['uid' => $userId, 'art' => $vorlageArt, 'slug' => $slug, 'sid' => $sponsorId]);
     $ts = (string) ($stmt2->fetchColumn() ?: date('Y-m-d H:i:s'));
     echo json_encode(['ok' => true, 'gespeichert_am' => $ts]);
 } catch (PDOException $e) {
