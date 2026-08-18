@@ -579,6 +579,8 @@ function sponsorBriefPlatzhalterHilfe(string $slug = ''): array {
                                . "• kein Nachname + Firma → \"Sehr geehrte Damen und Herren der Muster GmbH,\"\n"
                                . "• sonst → \"Sehr geehrte Damen und Herren,\"",
         '{{vorname}}'       => 'Vorname des Ansprechpartners',
+        '{{nachname}}'      => "Anrede + Nachname des Ansprechpartners, z. B. \"Herr Müller\" / \"Frau Müller\".\n"
+                               . "Ohne hinterlegte Anrede (oder „Divers“) bleibt nur der Nachname stehen.",
         '{{firma}}'         => 'Firmenname des Sponsors',
         '{{paket_text}}'    => 'Paketname (Hauptsponsor / Gold-Sponsor / Silber-Sponsor / Bronze-Sponsor / Sachsponsor)',
         '{{paket_tabelle}}' => 'Tabelle aller Sponsoring-Pakete mit Preisen und Highlights',
@@ -611,6 +613,7 @@ function sponsorBriefPlatzhalterQuelle(): array {
     return [
         '{{anrede}}'          => ['quelle' => 'Ansprechpartner des Sponsors (Anrede + Nachname, sonst Firma)', 'ziel' => 'sponsoren.php'],
         '{{vorname}}'         => ['quelle' => 'Ansprechpartner des Sponsors',                                  'ziel' => 'sponsoren.php'],
+        '{{nachname}}'        => ['quelle' => 'Ansprechpartner des Sponsors (Anrede + Nachname)',              'ziel' => 'sponsoren.php'],
         '{{firma}}'           => ['quelle' => 'Sponsor-Stammdaten',                                            'ziel' => 'sponsoren.php'],
         '{{paket_text}}'      => ['quelle' => 'Paket-Feld des Sponsors',                                       'ziel' => 'sponsoren.php'],
         '{{paket_tabelle}}'   => ['quelle' => 'Diese Seite, Abschnitt „Sponsoring-Pakete"',                     'ziel' => ''],
@@ -630,9 +633,12 @@ function sponsorBriefPlatzhalterQuelle(): array {
 /**
  * Vorlage laden: eigener Draft → DB-Master → Code-Default.
  * $userId = 0 überspringt die Draft-Prüfung (Preview-APIs, CLI).
+ * $sponsorId > 0 zieht zuerst den pro-Sponsor gespeicherten Stand (nur Bestätigung); gibt es
+ * keinen, fällt es auf den allgemeinen Entwurf (sponsor_id = 0) zurück — damit sieht ein noch
+ * nicht individuell bearbeiteter Sponsor weiterhin die Vorlage.
  * @return array{name:string, betreff:string, koerper_md:string, draft:bool, draft_ts:string}
  */
-function sponsorBriefLoad(PDO $pdo, string $slug, int $userId = 0): array {
+function sponsorBriefLoad(PDO $pdo, string $slug, int $userId = 0, int $sponsorId = 0): array {
     $defaults = sponsorBriefDefaults();
     $base = $defaults[$slug] ?? $defaults['erstanschreiben'];
 
@@ -655,23 +661,28 @@ function sponsorBriefLoad(PDO $pdo, string $slug, int $userId = 0): array {
     }
 
     if ($userId > 0) {
-        try {
-            $stmt = $pdo->prepare('SELECT betreff, koerper_md, gespeichert_am FROM briefvorlagen_entwurf WHERE user_id = :uid AND vorlage_art = :art AND slug = :slug');
-            $stmt->execute(['uid' => $userId, 'art' => 'sponsor', 'slug' => $slug]);
-            $draft = $stmt->fetch();
-            if ($draft) {
-                $dBetreff = trim((string) ($draft['betreff'] ?? ''));
-                $dKoerper = trim((string) ($draft['koerper_md'] ?? ''));
-                return [
-                    'name'       => $master['name'],
-                    'betreff'    => $dBetreff !== '' ? $dBetreff : $master['betreff'],
-                    'koerper_md' => $dKoerper !== '' ? $dKoerper : $master['koerper_md'],
-                    'draft'      => true,
-                    'draft_ts'   => (string) $draft['gespeichert_am'],
-                ];
+        // Reihenfolge: pro-Sponsor-Entwurf (sponsor_id > 0) vor allgemeinem Entwurf (0).
+        $kandidaten = $sponsorId > 0 ? [$sponsorId, 0] : [0];
+        foreach ($kandidaten as $sid) {
+            try {
+                $stmt = $pdo->prepare('SELECT betreff, koerper_md, gespeichert_am FROM briefvorlagen_entwurf WHERE user_id = :uid AND vorlage_art = :art AND slug = :slug AND sponsor_id = :sid');
+                $stmt->execute(['uid' => $userId, 'art' => 'sponsor', 'slug' => $slug, 'sid' => $sid]);
+                $draft = $stmt->fetch();
+                if ($draft) {
+                    $dBetreff = trim((string) ($draft['betreff'] ?? ''));
+                    $dKoerper = trim((string) ($draft['koerper_md'] ?? ''));
+                    return [
+                        'name'       => $master['name'],
+                        'betreff'    => $dBetreff !== '' ? $dBetreff : $master['betreff'],
+                        'koerper_md' => $dKoerper !== '' ? $dKoerper : $master['koerper_md'],
+                        'draft'      => true,
+                        'draft_ts'   => (string) $draft['gespeichert_am'],
+                    ];
+                }
+            } catch (PDOException $e) {
+                // Entwurf-Tabelle/Spalte noch nicht migriert -> Master/Default nutzen
+                break;
             }
-        } catch (PDOException $e) {
-            // Entwurf-Tabelle noch nicht migriert -> ignorieren
         }
     }
 
@@ -734,6 +745,23 @@ function sponsorAnrede(string $anrede, string $nachname, string $firma = '', str
         return "Sehr geehrte Damen und Herren der {$firma},";
     }
     return 'Sehr geehrte Damen und Herren,';
+}
+
+/**
+ * Platzhalter-Wert "{{nachname}}": Anrede-Wort + Nachname, z. B. "Herr Müller" / "Frau Müller".
+ * Ohne verwertbare Anrede (leer oder „Divers") bleibt nur der Nachname stehen — nie ein
+ * unpassendes „Herr/Frau". Ohne Nachnamen ist der Wert leer.
+ */
+function sponsorNachnameMitAnrede(string $anrede, string $nachname): string {
+    $nachname = trim($nachname);
+    if ($nachname === '') {
+        return '';
+    }
+    $anrede = trim($anrede);
+    if ($anrede === 'Herr' || $anrede === 'Frau') {
+        return $anrede . ' ' . $nachname;
+    }
+    return $nachname;
 }
 
 /** Paketname. */
@@ -998,6 +1026,7 @@ function sponsorBriefContext(PDO $pdo, int $userId, string $anrede, string $vorn
         'inline' => [
             '{{anrede}}'      => sponsorAnrede($anrede, $nachname, $firma, $vorname, $ansprache),
             '{{vorname}}'     => trim($vorname),
+            '{{nachname}}'    => sponsorNachnameMitAnrede($anrede, $nachname),
             '{{firma}}'       => $firmaText,
             '{{paket_text}}'  => sponsorLevelText($paket),
             '{{event_datum}}' => $eventDatum,
