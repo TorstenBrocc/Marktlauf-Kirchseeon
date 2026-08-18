@@ -67,7 +67,31 @@ neuer Lauf / ein vergleichbarer Workstream direkt wirksam arbeiten kann.
   über die Fördergruppen-Reiter (`?zielgruppe=fg_<gruppe>`) Empfänger UND Variantentext um.
 - Zielgruppen/Empfänger-Filter je Anschreiben-Seite: `src/sponsor_zielgruppen.php`.
 
-## Aktueller Stand / Übergabe (Stand 2026-08-14)
+## Aktueller Stand / Übergabe (Stand 2026-08-18)
+
+Erledigt am 2026-08-18 (lokale Session, alles auf `main` deployt):
+- **Sponsor-Aufgaben bearbeitbar:** ✎-Button je Aufgabe in der Sponsor-Maske klappt ein
+  vorausgefülltes Edit-Formular auf (`orga/sponsor_form.php`), nutzt den vorhandenen
+  `action=update` in `orga/api/aufgabe_orga_crud.php`. ACHTUNG Muster: `update` schreibt
+  ALLE Felder — jedes Edit-Formular muss `notiz` und `status` mitsenden, sonst leert das
+  Speichern sie (gleiche Falle wie einst `einstellungen_update.php`).
+- **Digest-Routing:** Einträge ohne Zuständigen gehen NUR noch an
+  `TODO_HERRENLOS_EMPFAENGER_EMAIL` (TT; `src/offene_todos.php`), nicht mehr an alle
+  Admins. Zugewiesene Einträge unverändert an die Person; info@ liest jede Mail per
+  BCC mit (`mailBccAddress()`).
+- **Reminder-Frequenz einstellbar:** Einstellungen → „Erinnerungs-Mails" →
+  `reminder_frequenz` (täglich/werktags/Di+Fr/freitags; Default täglich). Gate
+  `reminderVersandtagHeute()` greift nur im `--modus=auto` des Digests; der Cron im
+  Workflow bleibt täglich. `bin/aufgaben_erinnerung.php` bleibt BEWUSST täglich
+  (feuert nur exakt am Fälligkeitstag — Drosselung würde Erinnerungen verschlucken).
+- **Branch-Aufräumung:** Die 6 fertigen Commits des Session-Branches
+  `claude/sponsor-seite-vorbereiten-yay6o0` (Überlauf-Fix sponsoren.php, Migration 076,
+  Doku) waren NICHT auf `main` — jeder main-Deploy hat den TT-bestätigten Live-Fix
+  zurückgerollt. Per Cherry-pick auf `main` geholt; der Branch selbst blieb unangetastet.
+  Lehre: fertige Branch-Arbeit sofort nach `main` bringen, sonst rollt der nächste
+  Deploy sie zurück.
+
+## Vorheriger Stand / Übergabe (Stand 2026-08-14)
 
 Fördergruppen-Feature steht und ist deployt: Reiter + **empfänger-getriebene** Vorlagen-
 Varianten im **Erst- und Folgeanschreiben**, Kern-Hinweis je Gruppe unter den Reitern
