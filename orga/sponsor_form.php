@@ -61,7 +61,7 @@ if ($isEdit) {
     $orgaUsers = orgaUserListe($pdo);
 
     try {
-        $apStmt = $pdo->prepare('SELECT * FROM sponsor_ansprechpartner WHERE sponsor_id = :id ORDER BY id ASC');
+        $apStmt = $pdo->prepare('SELECT * FROM sponsor_ansprechpartner WHERE sponsor_id = :id ORDER BY sortierung ASC, id ASC');
         $apStmt->execute(['id' => $sponsorId]);
         $ansprechpartner = $apStmt->fetchAll();
     } catch (PDOException $e) {
@@ -359,6 +359,20 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
         }
         .ap-item-foot .ap-remove { margin-left: auto; }
         .ap-item-foot .ap-status { min-width: 0; text-align: left; }
+        /* Drag-Handle: nur der Griff ist ziehbar (nicht die ganze Karte), damit
+           Inline-Edit/Klick-Icons nicht mit dem Sortieren kollidieren. */
+        .ap-drag {
+            cursor: grab;
+            user-select: none;
+            color: var(--text-light);
+            font-size: 1.15em;
+            line-height: 1;
+            padding: 0 0.2rem;
+            border-radius: 4px;
+        }
+        .ap-drag:hover { color: var(--text); background: var(--bg-light, rgba(0,0,0,0.05)); }
+        .ap-drag:active { cursor: grabbing; }
+        .ap-item.ap-dragging { opacity: 0.45; }
         /* Signatur: eine Zeile pro Feld */
         .ap-item-main {
             flex: 0 0 auto;
@@ -814,6 +828,7 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                                         </div>
                                     </div>
                                     <div class="ap-item-foot">
+                                        <span class="ap-drag" draggable="true" title="Ziehen, um die Reihenfolge zu ändern" aria-label="Reihenfolge ändern">⠿</span>
                                         <label class="ap-anschreiben-toggle" title="Ins Anschreiben aufnehmen">
                                             <input type="checkbox" data-field="im_anschreiben" <?= $imAnschreiben ? 'checked' : '' ?>>
                                             <span>Anschreiben</span>
@@ -1572,6 +1587,7 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                     contactLine('email', 'E-Mail', 'mail') +
                 '</div>' +
                 '<div class="ap-item-foot">' +
+                    '<span class="ap-drag" draggable="true" title="Ziehen, um die Reihenfolge zu ändern" aria-label="Reihenfolge ändern">⠿</span>' +
                     '<label class="ap-anschreiben-toggle" title="Ins Anschreiben aufnehmen">' +
                         '<input type="checkbox" data-field="im_anschreiben" checked><span>Anschreiben</span>' +
                     '</label>' +
@@ -1582,6 +1598,80 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
             var first = item.querySelector('.ap-edit[data-field="vorname"]');
             if (first) startEdit(first);
         };
+
+        // ---- Drag & Drop: Reihenfolge der Ansprechpartner -------------------
+        // Nur der Griff (.ap-drag) ist draggable. Die Karte wird waehrend des
+        // Ziehens live umsortiert; persistiert wird bei dragend (feuert immer),
+        // sofern sich die Reihenfolge gegenueber dem Start geaendert hat.
+        var dragged = null;
+        var startOrder = '';
+
+        function currentOrder() {
+            var ids = [];
+            var items = container.querySelectorAll('.ap-item');
+            for (var i = 0; i < items.length; i++) {
+                ids.push(items[i].dataset.apId || '0');
+            }
+            return ids;
+        }
+
+        function persistOrder() {
+            var ids = currentOrder().filter(function (id) { return id !== '0'; });
+            if (ids.length < 2) return; // nichts Sinnvolles zu sortieren
+            var body = new URLSearchParams();
+            body.set('action', 'reorder');
+            body.set('csrf_token', CSRF);
+            body.set('sponsor_id', SPONSOR_ID);
+            ids.forEach(function (id) { body.append('order[]', id); });
+            fetch('api/ansprechpartner_save.php', {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'fetch' },
+                body: body
+            }).then(function (r) { return r.json(); }).then(function (d) {
+                if (dragged) return; // waehrend eines neuen Drags nichts anzeigen
+                if (!(d && d.ok)) { alert((d && d.message) || 'Reihenfolge konnte nicht gespeichert werden.'); }
+            }).catch(function () {
+                alert('Netzwerkfehler beim Speichern der Reihenfolge.');
+            });
+        }
+
+        container.addEventListener('dragstart', function (e) {
+            var handle = e.target.closest('.ap-drag');
+            if (!handle) return;
+            dragged = handle.closest('.ap-item');
+            if (!dragged) return;
+            startOrder = currentOrder().join(',');
+            dragged.classList.add('ap-dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            // Chrome verlangt eine Payload, sonst wird kein Drop akzeptiert.
+            try { e.dataTransfer.setData('text/plain', dragged.dataset.apId || ''); } catch (err) {}
+            // Ganze Karte als Drag-Bild statt nur des kleinen Griffs.
+            if (e.dataTransfer.setDragImage) e.dataTransfer.setDragImage(dragged, 20, 20);
+        });
+
+        container.addEventListener('dragover', function (e) {
+            if (!dragged) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            var over = e.target.closest('.ap-item');
+            if (!over || over === dragged || !container.contains(over)) return;
+            var rect = over.getBoundingClientRect();
+            var after = (e.clientY - rect.top) > rect.height / 2;
+            container.insertBefore(dragged, after ? over.nextSibling : over);
+        });
+
+        // preventDefault, damit der Browser den Drop akzeptiert (kein „no-drop").
+        container.addEventListener('drop', function (e) {
+            if (dragged) e.preventDefault();
+        });
+
+        container.addEventListener('dragend', function () {
+            if (!dragged) return;
+            dragged.classList.remove('ap-dragging');
+            var changed = currentOrder().join(',') !== startOrder;
+            dragged = null;
+            if (changed) persistOrder();
+        });
     })();
 
     // ---- Einzelmaske: feldweiser Autosave -------------------------------------
