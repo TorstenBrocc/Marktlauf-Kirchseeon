@@ -397,4 +397,15 @@ return [
         'admin' => true,
         'tile'  => false,
     ],
+    [
+        // Read-only Referenz: Compliance laufender Förderprogramme (aktuell Google Ad Grants).
+        // Kanonische Quelle im Vereins-Vault (45_verein/foerderung/); diese Seite spiegelt die
+        // operativen Essentials. Kein Arbeitsvorrat → keine Kachel.
+        'key'     => 'foerderrichtlinien',
+        'label'   => 'Förderrichtlinien',
+        'section' => 'ADMIN',
+        'href'    => 'foerderrichtlinien.php',
+        'admin' => true,
+        'tile'  => false,
+    ],
 ];
