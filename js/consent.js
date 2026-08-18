@@ -17,7 +17,7 @@
   "use strict";
 
   // ===== Konfiguration =====
-  var GA_MEASUREMENT_ID = ""; // z. B. "G-XXXXXXXXXX" – HIER eintragen
+  var GA_MEASUREMENT_ID = "G-F04JYXVLT7"; // GA4 „Marktlauf Website" (Property ATSV Kirchseeon)
   var ADS_CONVERSION_ID = ""; // optional, z. B. "AW-XXXXXXXXX"
   var STORAGE_KEY = "ml_consent"; // "granted" | "denied"
   var LANG_KEY = "preferredLang"; // gleiche Quelle wie js/main.js
