@@ -343,6 +343,7 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
         }
         /* Jede Karte-in-Karte (grau auf weißer form-card), Inhalt vertikal gestapelt */
         .ap-item {
+            position: relative;
             display: flex;
             flex-direction: column;
             gap: 0.5rem;
@@ -359,15 +360,19 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
         }
         .ap-item-foot .ap-remove { margin-left: auto; }
         .ap-item-foot .ap-status { min-width: 0; text-align: left; }
-        /* Drag-Handle: nur der Griff ist ziehbar (nicht die ganze Karte), damit
-           Inline-Edit/Klick-Icons nicht mit dem Sortieren kollidieren. */
+        /* Drag-Handle: oben rechts in der Karte, nur der Griff ist ziehbar (nicht
+           die ganze Karte), damit Inline-Edit/Klick-Icons nicht mit dem Sortieren
+           kollidieren. */
         .ap-drag {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.55rem;
             cursor: grab;
             user-select: none;
             color: var(--text-light);
             font-size: 1.15em;
             line-height: 1;
-            padding: 0 0.2rem;
+            padding: 0.1rem 0.25rem;
             border-radius: 4px;
         }
         .ap-drag:hover { color: var(--text); background: var(--bg-light, rgba(0,0,0,0.05)); }
@@ -807,6 +812,7 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                             <?php foreach ($ansprechpartner as $ap): ?>
                                 <?php $imAnschreiben = (int) ($ap['im_anschreiben'] ?? 1) === 1; ?>
                                 <div class="ap-item" data-ap-id="<?= (int) $ap['id'] ?>">
+                                    <span class="ap-drag" draggable="true" title="Ziehen, um die Reihenfolge zu ändern" aria-label="Reihenfolge ändern">⠿</span>
                                     <div class="ap-item-main">
                                         <div class="ap-line ap-line-anrede">
                                             <?= apEditSpan('anrede', (string) ($ap['anrede'] ?? ''), 'Anrede', 'ap-anrede') ?>
@@ -828,7 +834,6 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                                         </div>
                                     </div>
                                     <div class="ap-item-foot">
-                                        <span class="ap-drag" draggable="true" title="Ziehen, um die Reihenfolge zu ändern" aria-label="Reihenfolge ändern">⠿</span>
                                         <label class="ap-anschreiben-toggle" title="Ins Anschreiben aufnehmen">
                                             <input type="checkbox" data-field="im_anschreiben" <?= $imAnschreiben ? 'checked' : '' ?>>
                                             <span>Anschreiben</span>
@@ -1576,6 +1581,7 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
             item.className = 'ap-item';
             item.dataset.apId = '0';
             item.innerHTML =
+                '<span class="ap-drag" draggable="true" title="Ziehen, um die Reihenfolge zu ändern" aria-label="Reihenfolge ändern">⠿</span>' +
                 '<div class="ap-item-main">' +
                     '<div class="ap-line ap-line-anrede">' + span('anrede', 'Anrede', 'ap-anrede') + '</div>' +
                     '<div class="ap-line ap-line-name">' +
@@ -1587,7 +1593,6 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                     contactLine('email', 'E-Mail', 'mail') +
                 '</div>' +
                 '<div class="ap-item-foot">' +
-                    '<span class="ap-drag" draggable="true" title="Ziehen, um die Reihenfolge zu ändern" aria-label="Reihenfolge ändern">⠿</span>' +
                     '<label class="ap-anschreiben-toggle" title="Ins Anschreiben aufnehmen">' +
                         '<input type="checkbox" data-field="im_anschreiben" checked><span>Anschreiben</span>' +
                     '</label>' +
