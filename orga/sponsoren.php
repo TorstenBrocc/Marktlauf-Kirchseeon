@@ -535,6 +535,14 @@ try {
         }
         .fg-kern-hinweis strong { color: var(--primary); }
         .data-table.grouped thead th {
+            /* NICHT sticky im gruppierten Modus: .table-wrap.grouped ist wegen overflow-x:auto
+               (Überlauf-Containment) selbst der Sticky-Scrollcontainer. Der Desktop-Regel
+               top:var(--fixzone-h) fehlt dann der Viewport-Bezug -> der Kopf wird bei Scroll 0
+               um die Fixzonen-Höhe nach unten geschoben und landet mitten in der Tabelle (auf
+               der zweiten Gruppen-Überschrift). static hält ihn an der Tabellenoberkante; das
+               Kopf-Einfrieren war ohnehin schon der bewusst akzeptierte Trade-off des
+               Containments (vgl. .table-wrap.grouped oben). */
+            position: static;
             background: #eceef1;
             border-bottom: none;
             box-shadow: 0 6px 8px -7px rgba(0, 0, 0, 0.25);
