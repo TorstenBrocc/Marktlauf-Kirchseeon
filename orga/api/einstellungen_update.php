@@ -8,6 +8,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/_auth.php';
 require_once __DIR__ . '/../../src/db.php';
 require_once __DIR__ . '/../../src/logger.php';
+require_once __DIR__ . '/../../src/offene_todos.php'; // REMINDER_FREQUENZ_OPTIONEN
 
 // Autosave (fetch mit X-Requested-With) bekommt JSON statt Redirect+Flash; ein klassisches
 // Formular-Submit ohne den Header läuft weiterhin über Redirect mit Flash (No-JS-Fallback).
@@ -61,6 +62,7 @@ $allowedKeys = [
     'social_hashtags',
     'raceresult_api_url',
     'sponsor_merkfeld',
+    'reminder_frequenz',
 ];
 
 $renntag = trim($_POST['renntag_datum'] ?? '');
@@ -80,6 +82,12 @@ $raceresultApiUrl = trim((string) ($_POST['raceresult_api_url'] ?? ''));
 
 // Sponsoren-Merkfeld (Bank-/Vereinsdaten), umgezogen aus der Sponsoren-Übersicht.
 $sponsorMerkfeld = mb_substr(trim((string) ($_POST['sponsor_merkfeld'] ?? '')), 0, 5000);
+
+// Versandtage des ToDo-Digests — nur Werte aus der festen Auswahl (src/offene_todos.php).
+$reminderFrequenz = trim((string) ($_POST['reminder_frequenz'] ?? ''));
+if ($reminderFrequenz !== '' && !array_key_exists($reminderFrequenz, REMINDER_FREQUENZ_OPTIONEN)) {
+    ein_respond(false, 'Ungültige Reminder-Frequenz.');
+}
 
 // Zugangsdaten-Notizen (Freitext, nur Admin sichtbar) — auf 2000 Zeichen gekappt.
 $raceresultHinweis = mb_substr(trim($_POST['raceresult_hinweis'] ?? ''), 0, 2000);
@@ -145,6 +153,7 @@ try {
         'social_hashtags'           => $socialHashtags ?: null,
         'raceresult_api_url'        => $raceresultApiUrl ?: null,
         'sponsor_merkfeld'          => $sponsorMerkfeld ?: null,
+        'reminder_frequenz'         => $reminderFrequenz ?: null,
     ];
 
     $stmt = $pdo->prepare('INSERT INTO einstellungen (`key`, `value`) VALUES (:key, :value) ON DUPLICATE KEY UPDATE `value` = :value2');
