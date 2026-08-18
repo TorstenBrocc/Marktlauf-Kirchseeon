@@ -42,7 +42,38 @@ Klickpfade vorgeben. Ziel des Google-Teils:
 > **Alternative** ohne GA4: reines **Google-Ads-Conversion-Tag** (`AW-XXXXXXXXX` + Conversion-Label).
 > Dann diese Werte statt der `G-…`-ID verwenden.
 
-## 4. Was im Code umzusetzen ist (Claude, lokal)
+## 3a. STATUS: Infrastruktur ist bereits gebaut ✅
+
+Die komplette Code-Seite wurde bereits vorbereitet (Remote-Session). **Aktiv wird alles erst, wenn in
+`js/consent.js` die echte GA4-ID eingetragen ist** — bis dahin kein Banner, kein Tracking (Seite unverändert).
+
+Bereits vorhanden:
+- **`js/consent.js`** — Consent-Banner (self-contained, DE/EN), Google **Consent Mode v2 (strikt Opt-in:
+  gtag lädt erst nach „Zustimmen")**, Event-API `window.mlTrack(name)` + `window.mlOpenConsent()`.
+  Ganz oben die Konfig-Konstanten **`GA_MEASUREMENT_ID`** (und optional `ADS_CONVERSION_ID`).
+- **Eingebunden** auf: `index.html`, `newsletter-erfolg.html`, `newsletter-bestaetigung.html`,
+  `danke-newsletter.html`, `impressum.html`, `datenschutz.html` und in der Erfolgsausgabe von `contact.php`.
+- **Conversion-Punkte verdrahtet:**
+  - `anmeldung_start` → `data-mltrack="anmeldung_start"` an beiden „Jetzt anmelden"-CTAs in `index.html`.
+  - `newsletter_confirmed` → `data-mltrack-onload="newsletter_confirmed"` am `<body>` von `newsletter-erfolg.html`.
+  - `contact_sent` → `mlTrack('contact_sent')` in der Erfolgsausgabe von `contact.php`.
+- **Cookie-Einstellungen-Link** im Footer von `index.html` und `datenschutz.html` (ruft `mlOpenConsent()`),
+  i18n-Key `footer.legal.cookies` in `lang/de.json` + `lang/en.json`.
+- **Datenschutzerklärung** um Abschnitt „9. Webanalyse mit Google Analytics (nur mit Einwilligung)" ergänzt.
+- **`deploy.yml`** stempelt `js/consent.js` fürs Cache-Busting.
+
+### Verbleibende Aufgaben der lokalen Session (mit Browser)
+1. GA4-Property anlegen + **Mess-ID** holen (Teil 3) → in `js/consent.js` bei `GA_MEASUREMENT_ID` eintragen.
+   *(Optional Ads: `ADS_CONVERSION_ID = "AW-…"`.)*
+2. Im **echten Browser** verifizieren: Banner erscheint, „Zustimmen" lädt gtag, „Ablehnen"/kein-Consent
+   unterbindet alles; in **GA4 Realtime** eine Test-Conversion sehen.
+3. In GA4 die Events (`anmeldung_start`, `newsletter_confirmed`, `contact_sent`) als **Schlüsselereignis**
+   markieren und in **Google Ads** importieren.
+4. Commit → PR nach `main` → mergen (Deploy).
+
+> Der Rest von Abschnitt 4 ist Hintergrund/Referenz — die Umsetzung ist wie oben beschrieben bereits erfolgt.
+
+## 4. Referenz: ursprünglicher Umsetzungsplan
 
 Empfohlene Standard-Umsetzung (mit dem Nutzer bestätigen):
 

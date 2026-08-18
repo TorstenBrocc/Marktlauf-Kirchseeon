@@ -25,6 +25,7 @@ jobs:
             -e "s|href=\"css/components.css\"|href=\"css/components.css?v=$V\"|g" \
             -e "s|src=\"js/main.js\"|src=\"js/main.js?v=$V\"|g" \
             -e "s|src=\"js/maps.js\"|src=\"js/maps.js?v=$V\"|g" \
+            -e "s|src=\"js/consent.js\"|src=\"js/consent.js?v=$V\"|g" \
             "$f"
         done
         sed -i "s|/lang/\${lang}.json|/lang/\${lang}.json?v=$V|g" js/main.js
