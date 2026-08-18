@@ -467,21 +467,23 @@ try {
         .status-angefragt-row { background: rgba(43, 125, 233, 0.12); }
         /* Branche-Karten (nur gruppiert): weiße Karten auf grauem Grund */
         @media (min-width: 769px) {
-            /* App-Shell: Layout auf Fensterhöhe fixieren, Inhaltsbereich scrollt intern ->
-               der Kopf bleibt beim Scrollen stehen (sonst scrollt die ganze Seite). */
+            /* App-Shell (nur Desktop): main-content füllt die Fensterhöhe und ist eine
+               vertikale Flex-Spalte. Kopf-Zone oben und Aktionsleiste unten bleiben fix, die
+               gruppierte Tabelle (siehe eigener Media-Block weiter unten) füllt den Rest und
+               scrollt IN SICH. So bleibt der Spaltenkopf beim Scrollen sichtbar und es scrollt
+               nie die ganze Seite horizontal weg (das erzeugte früher den kaputten rechten
+               Rand). Auf dem Handy (< 769px) greift nichts davon -> normaler Seiten-Scroll. */
             .dashboard-layout { height: 100vh; overflow: hidden; }
-            .main-content { height: 100vh; }
+            .main-content { height: 100vh; display: flex; flex-direction: column; min-height: 0; }
             .sidebar { overflow-y: auto; }
-            /* Fixierte Kopf-Zone (nur Desktop): Titel + Filter + Stats + Reiter bleiben als
-               EIN Block oben stehen, der Spaltenkopf dockt exakt darunter an. --fixzone-h =
-               per JS gemessene Blockhöhe. Auf dem Handy (< 769px) ist nichts fixiert, die
-               ganze Seite scrollt normal -> die Liste bleibt sichtbar. */
             .kopf-fixzone {
                 position: sticky;
                 top: 0;
+                flex: 0 0 auto;
                 z-index: 20;
                 background: var(--bg);
             }
+            .action-bar { flex: 0 0 auto; }
             .data-table thead th {
                 position: sticky;
                 top: var(--fixzone-h, 0px);
@@ -489,13 +491,10 @@ try {
             }
         }
         .table-wrap.grouped {
-            /* Horizontal-Überlauf HIER einfangen: ist die Tabelle breiter als der Viewport
-               (viele Spalten / schmale Ansicht), scrollt sie innerhalb dieser Karte, statt
-               den Überlauf auf .main-content bzw. die ganze Seite zu schieben (das erzeugte
-               den „kaputten" rechten Rand, v. a. schmal < 769px ohne fixierten Kopf).
-               Trade-off: overflow-x:auto koppelt overflow-y auf auto → der vertikale
-               Sticky-Spaltenkopf (Desktop) friert nicht mehr ein. Bewusst zugunsten eines
-               an jeder Breite unkaputten Layouts. */
+            /* Basis = Mobil (< 769px): die breite Tabelle scrollt horizontal innerhalb ihrer
+               Karte, statt den Überlauf auf die Seite zu schieben (kaputter rechter Rand).
+               Auf Desktop wird diese Regel vom Scroll-Box-Media-Block weiter unten überschrieben
+               (overflow:auto + Flex-Höhe). */
             overflow-x: auto;
             box-shadow: none;
             border-radius: 0;
@@ -535,17 +534,31 @@ try {
         }
         .fg-kern-hinweis strong { color: var(--primary); }
         .data-table.grouped thead th {
-            /* NICHT sticky im gruppierten Modus: .table-wrap.grouped ist wegen overflow-x:auto
-               (Überlauf-Containment) selbst der Sticky-Scrollcontainer. Der Desktop-Regel
-               top:var(--fixzone-h) fehlt dann der Viewport-Bezug -> der Kopf wird bei Scroll 0
-               um die Fixzonen-Höhe nach unten geschoben und landet mitten in der Tabelle (auf
-               der zweiten Gruppen-Überschrift). static hält ihn an der Tabellenoberkante; das
-               Kopf-Einfrieren war ohnehin schon der bewusst akzeptierte Trade-off des
-               Containments (vgl. .table-wrap.grouped oben). */
-            position: static;
+            /* Position wird pro Breite gesetzt: Desktop = sticky am Box-Rand (Media-Block
+               weiter unten), Mobil = static (normaler Fluss). Hier nur die Optik. */
             background: #eceef1;
             border-bottom: none;
             box-shadow: 0 6px 8px -7px rgba(0, 0, 0, 0.25);
+        }
+        /* Scroll-Box (nur Desktop): die gruppierte Tabelle füllt als Flex-Kind den Raum
+           zwischen fixer Kopf-Zone und fixer Aktionsleiste und scrollt IN SICH — vertikal
+           (Spaltenkopf bleibt oben) und horizontal (breite Tabelle scrollt in der Box, nicht
+           die ganze Seite → kein ungedeckter rechter Rand). min-height:0 ist Pflicht, sonst
+           kann das Flex-Kind nicht unter seine Inhaltshöhe schrumpfen und der interne Scroll
+           entsteht nicht. Dieser Block steht bewusst NACH .table-wrap.grouped{overflow-x:auto}
+           (die Basis-Regel gilt nur noch für Mobil < 769px): Media-Queries erhöhen die
+           Spezifität nicht, nur die Quellreihenfolge entscheidet auf Desktop. */
+        @media (min-width: 769px) {
+            .table-wrap.grouped {
+                flex: 1 1 auto;
+                min-height: 0;
+                overflow: auto;
+            }
+            .data-table.grouped thead th {
+                position: sticky;
+                top: 0;
+                z-index: 5;
+            }
         }
         /* Kachel-Kopf: klickbar (einklappen), Doppelklick benennt um */
         .branche-heading-row td {
