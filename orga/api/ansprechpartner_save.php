@@ -85,15 +85,47 @@ try {
             exit;
         }
 
-        // Neuanlage.
+        // Neuanlage – ans Ende der Sortier-Reihenfolge dieses Sponsors haengen.
+        $posStmt = $pdo->prepare('SELECT COALESCE(MAX(sortierung), 0) + 1 FROM sponsor_ansprechpartner WHERE sponsor_id = :sid');
+        $posStmt->execute(['sid' => $sponsorId]);
+        $params['sortierung'] = (int) $posStmt->fetchColumn();
         $params['sponsor_id'] = $sponsorId;
         $pdo->prepare('
             INSERT INTO sponsor_ansprechpartner
-                (sponsor_id, anrede, vorname, nachname, funktion, telefon, email, im_anschreiben)
+                (sponsor_id, anrede, vorname, nachname, funktion, telefon, email, im_anschreiben, sortierung)
             VALUES
-                (:sponsor_id, :anrede, :vorname, :nachname, :funktion, :telefon, :email, :im_anschreiben)
+                (:sponsor_id, :anrede, :vorname, :nachname, :funktion, :telefon, :email, :im_anschreiben, :sortierung)
         ')->execute($params);
         echo json_encode(['ok' => true, 'id' => (int) $pdo->lastInsertId()]);
+        exit;
+    }
+
+    if ($action === 'reorder') {
+        // Neue Reihenfolge: Liste von ap_ids in Ziel-Reihenfolge. Es werden nur
+        // Zeilen geschrieben, die dem uebergebenen Sponsor gehoeren (Ownership per
+        // WHERE sponsor_id). Positionen werden auf 1..n normalisiert.
+        $order = $_POST['order'] ?? [];
+        if (!is_array($order)) {
+            $order = [];
+        }
+        $upd = $pdo->prepare('UPDATE sponsor_ansprechpartner SET sortierung = :pos WHERE id = :id AND sponsor_id = :sid');
+        $pdo->beginTransaction();
+        try {
+            $pos = 1;
+            foreach ($order as $rawId) {
+                $id = (int) $rawId;
+                if ($id <= 0) {
+                    continue;
+                }
+                $upd->execute(['pos' => $pos, 'id' => $id, 'sid' => $sponsorId]);
+                $pos++;
+            }
+            $pdo->commit();
+        } catch (Throwable $e) {
+            $pdo->rollBack();
+            throw $e;
+        }
+        echo json_encode(['ok' => true]);
         exit;
     }
 
