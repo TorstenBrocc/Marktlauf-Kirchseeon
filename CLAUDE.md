@@ -118,17 +118,25 @@ Erledigt in der lokalen DB-Session am 2026-08-14:
   wirkungslos; nie wieder Optik ohne Blick auf die ECHTE Seite als erledigt melden. Trade-off
   bewusst akzeptiert (TT ok): der desktop-vertikale Sticky-Spaltenkopf friert nicht mehr ein
   (`overflow-x:auto` koppelt `overflow-y` auf auto). Bei Bedarf per Scroll-Box-Muster nachrüstbar.
-- **Folgefehler zum Containment — behoben & live verifiziert (2026-08-18).** Der Containment-Fix
-  hatte einen versteckten Nebeneffekt, den der Trade-off-Satt oben unterschätzte: weil
-  `.table-wrap.grouped` durch `overflow-x:auto` selbst zum Sticky-Scrollcontainer wird, fehlte der
-  Desktop-Regel `.data-table thead th { top: var(--fixzone-h) }` der Viewport-Bezug. Ergebnis: der
-  Spaltenkopf wurde schon bei Scroll 0 um die Fixzonen-Höhe (~263px) **nach unten** geschoben und
-  saß mitten in der Tabelle auf der zweiten Gruppen-Überschrift (`Regionale Produkte`). Fix:
-  `.data-table.grouped thead th { position: static }` (`orga/sponsoren.php` ~537) — Kopf bleibt an
-  der Tabellenoberkante; das Nicht-Einfrieren war ohnehin der akzeptierte Trade-off. Live in Chrome
-  gemessen (th an Wrap-Oberkante) und per Screenshot bestätigt. **Lehre:** ein Sticky-Element in
-  einem `overflow`-Container stickt relativ zu diesem Container, nicht zum Viewport — `overflow` an
-  einer Tabellen-Karte und `position:sticky` am Tabellenkopf vertragen sich nur mit passendem `top`.
+- **Sponsoren-Kopf beim Scrollen — final gelöst via Scroll-Box/App-Shell (2026-08-18, TT gewählt).**
+  Die zwei Vorgänger-Fixes standen in einem Grundkonflikt: Kopf-Pinnen braucht `.main-content` als
+  Scroller (`.table-wrap.grouped{overflow:visible}`), aber sobald die Tabelle breiter als der
+  Viewport ist, scrollt `.main-content` horizontal und die (nur viewport-breite) Fixzone wandert
+  weg → ungedeckter rechter Rand. `left:0` fängt das nur fast (ein ~24px-Leck-Streifen neben der
+  Fixzone bleibt, live per Zoom bestätigt). Der Containment-Fix (`overflow-x:auto` auf der Karte)
+  erschlug den Streifen, machte die Karte aber zum Sticky-Scrollcontainer → Kopf verlor den
+  Viewport-Bezug (`top:var(--fixzone-h)` schob ihn bei Scroll 0 um ~263px nach unten auf
+  „Regionale Produkte"). Beides gleichzeitig ist im Seiten-Scroll-Modell nicht sauber möglich.
+  **Lösung (TT hat die Scroll-Box gewählt):** Desktop-App-Shell — `.main-content` ist
+  `display:flex; flex-direction:column`, Kopf-Zone (`flex:0 0 auto`) und `.action-bar`
+  (`flex:0 0 auto`) bleiben fix, die gruppierte Tabelle ist `flex:1 1 auto; min-height:0;
+  overflow:auto` und scrollt IN SICH (vertikal: Kopf `sticky top:0` am Box-Rand; horizontal: in der
+  Box statt auf der Seite). Kein Seiten-Overflow (0px), Aktionsleiste immer sichtbar. Live in Chrome
+  gemessen + Screenshots. Zwei **Lehren:** (1) ein Sticky-Element stickt relativ zum nächsten
+  `overflow`-Scrollcontainer, nicht zwingend zum Viewport. (2) `min-height:0` ist Pflicht, damit ein
+  Flex-Kind unter seine Inhaltshöhe schrumpfen und intern scrollen kann. (3) Media-Queries erhöhen
+  die Spezifität NICHT — der Desktop-Scroll-Box-Block muss in der Quelle NACH der
+  Mobil-Basisregel `.table-wrap.grouped{overflow-x:auto}` stehen, sonst gewinnt die Basis.
 - **Kontakt-Audit (107 Sponsoren, direkt aus der DB).** Verteilung: sponsoring 80 · foerderantrag 7
   · ueber_dritte 7 · oeffentlichkeitsarbeit 13. Flags: Test-Datensätze `98 _torsten`, `65 Testfirma`,
   `102 _Anja Jost GmbH` (Cleanup destruktiv → offen); mögliche Dublette `30` vs `80` (Allianz
