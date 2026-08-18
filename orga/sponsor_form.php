@@ -237,6 +237,7 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
         .aufgaben-list li {
             display: flex;
             align-items: center;
+            flex-wrap: wrap; /* edit form wraps to its own full-width line */
             gap: 0.5rem;
             padding: 0.5rem 0;
             border-bottom: 1px solid var(--border);
@@ -287,6 +288,26 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
             padding: 0.5rem;
             border: 1px solid var(--border);
             border-radius: 4px;
+        }
+        .aufgabe-edit-form {
+            flex-basis: 100%;
+            display: none;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            padding: 0.25rem 0 0.25rem 2rem;
+        }
+        .aufgabe-edit-form.offen {
+            display: flex;
+        }
+        .aufgabe-edit-form input,
+        .aufgabe-edit-form select {
+            padding: 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+        }
+        .aufgabe-edit-form input[name="titel"],
+        .aufgabe-edit-form input[name="notiz"] {
+            flex: 2 1 12rem;
         }
         .kein-kontakt-notice {
             background: #f8d7da;
@@ -1258,6 +1279,8 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                                         <?php endif; ?>
                                     </span>
                                     <div class="aufgabe-actions">
+                                        <button type="button" class="btn-mini" title="Bearbeiten"
+                                                onclick="this.closest('li').querySelector('.aufgabe-edit-form').classList.toggle('offen')">✎</button>
                                         <form method="post" action="api/aufgabe_orga_crud.php" style="display:inline" onsubmit="return confirm('Aufgabe löschen?');">
                                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                                             <input type="hidden" name="action" value="delete">
@@ -1267,6 +1290,26 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                                             <button type="submit" class="btn-mini btn-mini-danger" title="Löschen">×</button>
                                         </form>
                                     </div>
+                                    <form method="post" action="api/aufgabe_orga_crud.php" class="aufgabe-edit-form">
+                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                                        <input type="hidden" name="action" value="update">
+                                        <input type="hidden" name="aufgabe_id" value="<?= (int) $a['id'] ?>">
+                                        <input type="hidden" name="zurueck" value="sponsor">
+                                        <input type="hidden" name="kontext_id" value="<?= $sponsorId ?>">
+                                        <?php /* update writes ALL fields — status must travel along,
+                                                otherwise saving would reset 'erledigt' back to 'offen'. */ ?>
+                                        <input type="hidden" name="status" value="<?= htmlspecialchars($a['status']) ?>">
+                                        <input type="text" name="titel" value="<?= htmlspecialchars($a['titel']) ?>" required>
+                                        <input type="text" name="notiz" value="<?= htmlspecialchars((string) ($a['notiz'] ?? '')) ?>" placeholder="Notiz (optional)">
+                                        <input type="date" name="faellig_am" value="<?= htmlspecialchars(substr((string) ($a['faellig_am'] ?? ''), 0, 10)) ?>" title="Frist (optional)">
+                                        <select name="verantwortlich_user_id" title="Verantwortlich (optional)">
+                                            <option value="">– wer? –</option>
+                                            <?php foreach ($orgaUsers as $ou): ?>
+                                                <option value="<?= (int) $ou['id'] ?>" <?= (int) $ou['id'] === (int) ($a['verantwortlich_user_id'] ?? 0) ? 'selected' : '' ?>><?= htmlspecialchars($ou['name']) ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                        <button type="submit" class="btn btn-small btn-primary">Speichern</button>
+                                    </form>
                                 </li>
                             <?php endforeach; ?>
                         </ul>
