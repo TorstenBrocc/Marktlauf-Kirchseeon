@@ -45,6 +45,9 @@ if ($email && $nachricht) {
         echo "<h1 style='font-family: sans-serif; text-align: center; margin-top: 50px;'>Nachricht erfolgreich gesendet!</h1>";
         echo "<p style='font-family: sans-serif; text-align: center;'>Vielen Dank für Ihre Nachricht.</p>";
         echo "<p style='font-family: sans-serif; text-align: center;'><a href='index.html'>Zurück zur Webseite</a></p>";
+        // Conversion-Tracking: nur aktiv, wenn GA-ID gesetzt UND Einwilligung vorliegt.
+        echo "<script src='js/consent.js'></script>";
+        echo "<script>window.mlTrack && window.mlTrack('contact_sent');</script>";
     } else {
         logError('contact.php: mail() fehlgeschlagen (Empfaenger ' . $empfaenger . ')');
         echo "<h1 style='font-family: sans-serif; text-align: center; margin-top: 50px;'>Fehler beim Senden</h1>";
