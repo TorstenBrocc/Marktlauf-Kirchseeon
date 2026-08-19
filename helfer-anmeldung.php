@@ -416,7 +416,7 @@ $basePath = '';
                 </svg>
                 <h1 class="success-headline">Du bist dabei!</h1>
                 <p class="success-subline">Vielen Dank! Wir melden uns in Kürze mit allen Details per E-Mail.</p>
-                <a href="index.html" class="success-backlink">← Zurück zur Startseite</a>
+                <a href="./" class="success-backlink">← Zurück zur Startseite</a>
             </div>
         </section>
         <?php else: ?>

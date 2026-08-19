@@ -455,7 +455,7 @@ $basePath = '../';
             <div class="container">
                 <h1>Zugang nicht verfügbar</h1>
                 <p>Der angeforderte Zugang ist ungültig oder wurde noch nicht freigeschaltet.</p>
-                <a href="<?= $basePath ?>index.html" class="btn btn-primary">Zur Startseite</a>
+                <a href="<?= $basePath ?: './' ?>" class="btn btn-primary">Zur Startseite</a>
             </div>
         </section>
         <?php else: ?>
