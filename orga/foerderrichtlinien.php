@@ -112,8 +112,15 @@ $isAdmin = isAdminFromGuard();
                 <h3>Monatliche Checkliste</h3>
                 <ul>
                     <li>≥ 1 valide Conversion · CTR ≥ 5&nbsp;%</li>
-                    <li>Keyword-Hygiene (keine Einzelwort/„generic", QS-1/2 pausieren)</li>
-                    <li>Smart Bidding aktiv · Programm-Umfragen beantworten</li>
+                    <li>Keyword-Hygiene (keine Einzelwort/„generic", QS-1/2 pausieren) · <strong>Negative Keywords</strong> pflegen</li>
+                    <li>Smart Bidding aktiv · <strong>Konto-Warnungen/Alerts</strong> abarbeiten · Programm-Umfragen beantworten</li>
+                </ul>
+
+                <h3>Aus dem Begrüßungsvideo (Ergänzungen)</h3>
+                <ul>
+                    <li><strong>Relevanz-Dreiklang:</strong> Suchbegriff ↔ Anzeigentext ↔ Landingpage eng aufeinander abstimmen (Absprünge vermeiden); Keywords eng auf die jeweilige Zielseite (Anmeldung/Strecke/FAQ).</li>
+                    <li><strong>Anzeigenerweiterungen:</strong> neben ≥ 2 Sitelinks auch Callouts/Zusatzinfos. <em>Video-Angabe (keine Richtlinien-Zahl): Erweiterungen steigern Klicks ~10–15&nbsp;%.</em></li>
+                    <li><strong>Maximize Conversions</strong> hebt das 2-USD-CPC-Limit auf.</li>
                 </ul>
 
                 <h3>Offene Punkte</h3>
