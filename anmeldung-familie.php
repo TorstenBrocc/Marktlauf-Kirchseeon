@@ -53,7 +53,7 @@ $embed = isset($_GET['embed']) && $_GET['embed'] === '1';
                     Melde mehrere Personen &ndash; z.&nbsp;B. deine ganze Familie &ndash; in einem einzigen Vorgang an.
                 </p>
                 <p class="text-center" style="margin-bottom: var(--space-lg);">
-                    <a href="index.html#anmeldung">&larr; Zur Einzelanmeldung</a>
+                    <a href="./#anmeldung">&larr; Zur Einzelanmeldung</a>
                 </p>
         <?php endif; ?>
 
