@@ -401,24 +401,23 @@ MD;
             'name'       => 'Bestätigung Sponsoring',
             'betreff'    => 'Herzlichen Dank und nächste Schritte – Marktlauf Kirchseeon, {{firma}}',
             'koerper_md' => <<<MD
-{{anrede}}
+Liebe/r {{nachname}},
 
-herzlichen Dank, dass Sie den Marktlauf Kirchseeon am **{{event_datum}}** als **{{paket_text}}** unterstützen. Wir freuen uns sehr über Ihre Zusage und die Zusammenarbeit!
-
-Damit wir Ihren Markenauftritt optimal vorbereiten können, bitten wir Sie, uns folgende Unterlagen und Informationen zukommen zu lassen:
+meinen herzlichsten Dank, dass Sie den Marktlauf Kirchseeon als **{{paket_text}}** unterstützen werden. Wir freuen uns sehr über Ihre Zusage und die Zusammenarbeit!
+Wie telefonisch besprochen, erreicht Sie auf diesem Wege unsere Bestätigung bzw. Statusüberblick, damit wir Ihren Markenauftritt optimal vorbereiten können:
 
 **1. Logo & Platzierungen**
 
 - Bitte senden Sie uns Ihr Logo in allen Auflösungen für Web (bevorzugt SVG) und Druck.
-- Für die Website-Verlinkung benötigen wir den gewünschten Ziel-Link.
-- Haben Sie konkrete Vorstellungen zur Platzierung? Aktuell vorgesehen: Plakat und Startnummern.
-- Haben Sie Flyer oder Give-aways, die wir auslegen oder in den Startetüten verteilen dürfen?
+- Für die Logo-Verlinkung auf unserer Website benötigen wir den gewünschten Ziel-Link: [Marktlauf-Website-Sponsoren](https://atsv-kirchseeon-marktlauf.de/#sponsoren) – gern nach Übersendung dann mal nachschauen und klicken.
+- konkrete Platzierungen Ihres Logos sind Plakat A4 & A3 (anbei - gern Ausdrucken/Weiterleiten) sowie auf Startnummern und Urkunden.
+- Haben Sie Flyer oder Give-aways, die wir auslegen oder bei Startnummernabholung überreichen dürfen?
 
 **2. Banner / Hussen**
 
 Für unsere Absperrgitter empfehlen wir **Hussen** statt klassischer Banner – geringerer Aufwand, kein Kabelbinder-Abfall nach dem Event. Die Bemaßungen finden Sie im Anhang.
 
-Lieferadresse:
+Entweder gern direkt mitbringen oder Lieferadresse:
 
 ATSV Kirchseeon
 c/o ORGA Marktlauf, z. Hd. Frau Jenny Fischer
@@ -427,37 +426,49 @@ Sportplatzweg 1
 
 **3. Digitale Vernetzung**
 
-Unsere Social-Media-Auftritte sind auf [atsv-kirchseeon-marktlauf.de](https://atsv-kirchseeon-marktlauf.de) im Footer verlinkt. Wie möchten Sie digital vernetzt werden? Gibt es Kanäle oder Links, die wir besonders hervorheben sollen?
+Wie möchten Sie digital vernetzt werden? Gibt es Kanäle oder Links, die wir besonders hervorheben sollen?
+Unsere Social-Media-Auftritte sind auf [atsv-kirchseeon-marktlauf.de](https://atsv-kirchseeon-marktlauf.de) im Footer und auch hier in der Signatur verlinkt. Ggf. Followen Sie uns zurück?
+Zu Kooperationsposts, insofern Sie daran interessiert sind, arbeiten wir noch und kommen wieder zurück, wenn wir so weit sind. Wenn Ihnen diesbezüglich schon etwas vorschweben sollte, dann lassen Sie es mich gern wissen.
 
 **4. Ablauf am Renntag**
 
-Wie und wo möchten Sie sich am Renntag aufbauen? Zu welcher Zeit sollen wir mit Ihnen rechnen?
+Wie wollen wir uns am Renntag connecten? Wie stellen Sie sich den Ablauf für Ihren Stand am Renntag vor (nur für Gold-Sponsoren)
+Möchten Sie am Renntag mit einer speziellen Repräsentation vor Ort sein? Haben Sie hier schon Details, wenn dem so ist?
+Promoten Sie uns gern 'in house' und lassen Sie die Kollegen von Ihnen gern mit einheitlichem Trikot erscheinen - was meinen Sie?
 
 **5. Nachlauf & Social Media**
 
-Wie soll der Nachlauf gestaltet werden? Benötigen Sie von uns Fotos, Logos oder Ergebnis-Highlights für Ihre Social-Media-Kanäle?
+Gibt es spezielle Vorstellungen von Ihnen für den Nachlauf - Bilder von Bannerplatzierung, Startnummer, Urkunde?
+Benötigen Sie von uns Fotos, Logos oder Ergebnis-Highlights für Ihre Social-Media-Kanäle?
+Wie kommen mögliche Werbematerialien zu Ihnen zurück?
 
 **6. Freie Startplätze**
 
 Gutschein laut Paket {{startplaetze}}x frei verwendbar: {{gutscheincode}}
 
-Bitte bei der Registrierung gern bei Verein {{firma}} (bei gebräuchlichen Kürzeln gern auch dieses) mit angeben, dann können wir sogar eine Gruppenauswertung am Ende machen, wenn gewünscht.
+Bitte bei der Registrierung gern bei Verein `{{firma}}` oder eindeutiges Kürzel mit angeben, dann können wir sogar eine Gruppenauswertung am Ende machen, wenn gewünscht.
 
 **7. Plakate**
 
-zum Aushängen/Weiterleiten anbei
+wie oben schon geschrieben zum Aushängen/Weiterleiten anbei
 
 **8. Rechnungsanschrift**
 
-Damit wir Ihnen die Rechnung korrekt ausstellen können, benötigen wir Ihre vollständige Rechnungsadresse sowie alle für die Buchhaltung notwendigen Informationen (z. B. Ansprechpartner Buchhaltung).
+Damit wir Ihnen die Rechnung korrekt ausstellen können, benötigen wir Ihre:
+
+- vollständige Rechnungsadresse
+- alle für die Buchhaltung notwendigen Informationen (z. B. Ansprechpartner Buchhaltung) und
+- E-Mail-Adresse, wohin wir die Rechnung schicken dürfen.
+
+**9. Sponsoring-Bedingungen**
+
+Grundlage unserer Zusammenarbeit sind die beiliegenden Sponsoring-Bedingungen. Bitte geben Sie uns dazu eine kurze positive Rückmeldung – damit gelten sie als vereinbart.
 
 Sollte Ihnen etwas fehlen oder Sie noch Fragen haben, kommen Sie jederzeit gerne auf mich zu.
 
 Vielen Dank für Ihre Unterstützung und Ihr Vertrauen – gemeinsam machen wir den Marktlauf Kirchseeon zu einem unvergesslichen Erlebnis!
 
-Grundlage unserer Zusammenarbeit sind die beiliegenden Sponsoring-Bedingungen. Bitte geben Sie uns dazu eine kurze positive Rückmeldung – damit gelten sie als vereinbart.
-
-Herzliche Grüße
+Mit sportlichen Grüßen
 
 {{signatur}}
 MD,
@@ -477,9 +488,9 @@ function sponsorBestaetigungSektionen(): array {
             'checked' => true,
             'text'    => "**1. Logo & Platzierungen**\n\n"
                        . "- Bitte senden Sie uns Ihr Logo in allen Auflösungen für Web (bevorzugt SVG) und Druck.\n"
-                       . "- Für die Website-Verlinkung benötigen wir den gewünschten Ziel-Link.\n"
-                       . "- Haben Sie konkrete Vorstellungen zur Platzierung? Aktuell vorgesehen: Plakat und Startnummern.\n"
-                       . "- Haben Sie Flyer oder Give-aways, die wir auslegen oder in den Startetüten verteilen dürfen?",
+                       . "- Für die Logo-Verlinkung auf unserer Website benötigen wir den gewünschten Ziel-Link: [Marktlauf-Website-Sponsoren](https://atsv-kirchseeon-marktlauf.de/#sponsoren) – gern nach Übersendung dann mal nachschauen und klicken.\n"
+                       . "- konkrete Platzierungen Ihres Logos sind Plakat A4 & A3 (anbei - gern Ausdrucken/Weiterleiten) sowie auf Startnummern und Urkunden.\n"
+                       . "- Haben Sie Flyer oder Give-aways, die wir auslegen oder bei Startnummernabholung überreichen dürfen?",
         ],
         [
             'id'      => 's2',
@@ -489,10 +500,10 @@ function sponsorBestaetigungSektionen(): array {
                        . "Für unsere Absperrgitter empfehlen wir **Hussen** statt klassischer Banner – "
                        . "geringerer Aufwand, kein Kabelbinder-Abfall nach dem Event. "
                        . "Die Bemaßungen finden Sie im Anhang.\n\n"
-                       . "Lieferadresse:\n\n"
-                       . "ATSV Kirchseeon  \n"
-                       . "c/o ORGA Marktlauf, z. Hd. Frau Jenny Fischer  \n"
-                       . "Sportplatzweg 1  \n"
+                       . "Entweder gern direkt mitbringen oder Lieferadresse:\n\n"
+                       . "ATSV Kirchseeon\n"
+                       . "c/o ORGA Marktlauf, z. Hd. Frau Jenny Fischer\n"
+                       . "Sportplatzweg 1\n"
                        . "85614 Kirchseeon",
         ],
         [
@@ -500,24 +511,27 @@ function sponsorBestaetigungSektionen(): array {
             'titel'   => '3. Digitale Vernetzung',
             'checked' => true,
             'text'    => "**3. Digitale Vernetzung**\n\n"
-                       . "Unsere Social-Media-Auftritte sind auf [atsv-kirchseeon-marktlauf.de](https://atsv-kirchseeon-marktlauf.de) "
-                       . "im Footer verlinkt. Wie möchten Sie digital vernetzt werden? "
-                       . "Gibt es Kanäle oder Links, die wir besonders hervorheben sollen?",
+                       . "Wie möchten Sie digital vernetzt werden? Gibt es Kanäle oder Links, die wir besonders hervorheben sollen?\n"
+                       . "Unsere Social-Media-Auftritte sind auf [atsv-kirchseeon-marktlauf.de](https://atsv-kirchseeon-marktlauf.de) im Footer und auch hier in der Signatur verlinkt. Ggf. Followen Sie uns zurück?\n"
+                       . "Zu Kooperationsposts, insofern Sie daran interessiert sind, arbeiten wir noch und kommen wieder zurück, wenn wir so weit sind. Wenn Ihnen diesbezüglich schon etwas vorschweben sollte, dann lassen Sie es mich gern wissen.",
         ],
         [
             'id'      => 's4',
             'titel'   => '4. Ablauf am Renntag',
             'checked' => true,
             'text'    => "**4. Ablauf am Renntag**\n\n"
-                       . "Wie und wo möchten Sie sich am Renntag aufbauen? Zu welcher Zeit sollen wir mit Ihnen rechnen?",
+                       . "Wie wollen wir uns am Renntag connecten? Wie stellen Sie sich den Ablauf für Ihren Stand am Renntag vor (nur für Gold-Sponsoren)\n"
+                       . "Möchten Sie am Renntag mit einer speziellen Repräsentation vor Ort sein? Haben Sie hier schon Details, wenn dem so ist?\n"
+                       . "Promoten Sie uns gern 'in house' und lassen Sie die Kollegen von Ihnen gern mit einheitlichem Trikot erscheinen - was meinen Sie?",
         ],
         [
             'id'      => 's5',
             'titel'   => '5. Nachlauf & Social Media',
             'checked' => true,
             'text'    => "**5. Nachlauf & Social Media**\n\n"
-                       . "Wie soll der Nachlauf gestaltet werden? Benötigen Sie von uns Fotos, Logos oder "
-                       . "Ergebnis-Highlights für Ihre Social-Media-Kanäle?",
+                       . "Gibt es spezielle Vorstellungen von Ihnen für den Nachlauf - Bilder von Bannerplatzierung, Startnummer, Urkunde?\n"
+                       . "Benötigen Sie von uns Fotos, Logos oder Ergebnis-Highlights für Ihre Social-Media-Kanäle?\n"
+                       . "Wie kommen mögliche Werbematerialien zu Ihnen zurück?",
         ],
         [
             'id'      => 's6',
@@ -525,30 +539,30 @@ function sponsorBestaetigungSektionen(): array {
             'checked' => true,
             'text'    => "**6. Freie Startplätze**\n\n"
                        . "Gutschein laut Paket {{startplaetze}}x frei verwendbar: {{gutscheincode}}\n\n"
-                       . "Bitte bei der Registrierung gern bei Verein {{firma}} (bei gebräuchlichen "
-                       . "Kürzeln gern auch dieses) mit angeben, dann können wir sogar eine "
-                       . "Gruppenauswertung am Ende machen, wenn gewünscht.",
+                       . "Bitte bei der Registrierung gern bei Verein `{{firma}}` oder eindeutiges Kürzel "
+                       . "mit angeben, dann können wir sogar eine Gruppenauswertung am Ende machen, wenn gewünscht.",
         ],
         [
             'id'      => 's7',
             'titel'   => '7. Plakate',
             'checked' => true,
-            'text'    => "**7. Plakate**\n\nzum Aushängen/Weiterleiten anbei",
+            'text'    => "**7. Plakate**\n\nwie oben schon geschrieben zum Aushängen/Weiterleiten anbei",
         ],
         [
             'id'      => 's8',
             'titel'   => '8. Rechnungsanschrift',
             'checked' => true,
             'text'    => "**8. Rechnungsanschrift**\n\n"
-                       . "Damit wir Ihnen die Rechnung korrekt ausstellen können, benötigen wir Ihre vollständige "
-                       . "Rechnungsadresse sowie alle für die Buchhaltung notwendigen Informationen "
-                       . "(z. B. Ansprechpartner Buchhaltung).",
+                       . "Damit wir Ihnen die Rechnung korrekt ausstellen können, benötigen wir Ihre:\n\n"
+                       . "- vollständige Rechnungsadresse\n"
+                       . "- alle für die Buchhaltung notwendigen Informationen (z. B. Ansprechpartner Buchhaltung) und\n"
+                       . "- E-Mail-Adresse, wohin wir die Rechnung schicken dürfen.",
         ],
         [
             'id'      => 's9',
             'titel'   => '9. Sponsoring-Bedingungen',
             'checked' => true,
-            'text'    => "**Sponsoring-Bedingungen**\n\n"
+            'text'    => "**9. Sponsoring-Bedingungen**\n\n"
                        . "Grundlage unserer Zusammenarbeit sind die beiliegenden Sponsoring-Bedingungen. "
                        . "Bitte geben Sie uns dazu eine kurze positive Rückmeldung – damit gelten sie als vereinbart.",
         ],
