@@ -261,11 +261,11 @@ $typLabel = static fn (?string $p): string => match ($p) {
         const codeFehlt = <?= $gewaehlt['code_fehlt'] ? 'true' : 'false' ?>;
         const firma = <?= json_encode($gewaehlt['firma'], JSON_UNESCAPED_UNICODE) ?>;
         const INTRO = <?= json_encode(
-            "{{anrede}}\n\nherzlichen Dank, dass Sie den Marktlauf Kirchseeon am **{{event_datum}}** als **{{paket_text}}** unterstützen. Wir freuen uns sehr über Ihre Zusage und die Zusammenarbeit!\n\nDamit wir Ihren Markenauftritt optimal vorbereiten können, bitten wir Sie, uns folgende Unterlagen und Informationen zukommen zu lassen:",
+            "Liebe/r {{nachname}},\n\nmeinen herzlichsten Dank, dass Sie den Marktlauf Kirchseeon als **{{paket_text}}** unterstützen werden. Wir freuen uns sehr über Ihre Zusage und die Zusammenarbeit!\nWie telefonisch besprochen, erreicht Sie auf diesem Wege unsere Bestätigung bzw. Statusüberblick, damit wir Ihren Markenauftritt optimal vorbereiten können:",
             JSON_UNESCAPED_UNICODE
         ) ?>;
         const OUTRO = <?= json_encode(
-            "Sollte Ihnen etwas fehlen oder Sie noch Fragen haben, kommen Sie jederzeit gerne auf mich zu.\n\nVielen Dank für Ihre Unterstützung und Ihr Vertrauen – gemeinsam machen wir den Marktlauf Kirchseeon zu einem unvergesslichen Erlebnis!\n\n{{signatur}}",
+            "Sollte Ihnen etwas fehlen oder Sie noch Fragen haben, kommen Sie jederzeit gerne auf mich zu.\n\nVielen Dank für Ihre Unterstützung und Ihr Vertrauen – gemeinsam machen wir den Marktlauf Kirchseeon zu einem unvergesslichen Erlebnis!\n\nMit sportlichen Grüßen\n\n{{signatur}}",
             JSON_UNESCAPED_UNICODE
         ) ?>;
 
