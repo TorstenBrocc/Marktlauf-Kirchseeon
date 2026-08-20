@@ -446,7 +446,7 @@ Wie kommen mögliche Werbematerialien zu Ihnen zurück?
 
 Gutschein laut Paket {{startplaetze}}x frei verwendbar: {{gutscheincode}}
 
-Bitte bei der Registrierung gern bei Verein `{{firma}}` oder eindeutiges Kürzel mit angeben, dann können wir sogar eine Gruppenauswertung am Ende machen, wenn gewünscht.
+Bitte bei der Registrierung gern bei Verein {{firma}} oder eindeutiges Kürzel mit angeben, dann können wir sogar eine Gruppenauswertung am Ende machen, wenn gewünscht.
 
 **7. Plakate**
 
@@ -539,7 +539,7 @@ function sponsorBestaetigungSektionen(): array {
             'checked' => true,
             'text'    => "**6. Freie Startplätze**\n\n"
                        . "Gutschein laut Paket {{startplaetze}}x frei verwendbar: {{gutscheincode}}\n\n"
-                       . "Bitte bei der Registrierung gern bei Verein `{{firma}}` oder eindeutiges Kürzel "
+                       . "Bitte bei der Registrierung gern bei Verein {{firma}} oder eindeutiges Kürzel "
                        . "mit angeben, dann können wir sogar eine Gruppenauswertung am Ende machen, wenn gewünscht.",
         ],
         [
