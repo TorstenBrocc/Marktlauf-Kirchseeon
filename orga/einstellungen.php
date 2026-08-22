@@ -53,6 +53,7 @@ require_once __DIR__ . '/../src/offene_todos.php'; // REMINDER_TAGE_LABELS/_PRES
 $reminderVersandtage = reminderVersandtage($settings['reminder_versandtage'] ?? null);
 $reminderPauseBis    = trim((string) ($settings['reminder_pause_bis'] ?? ''));
 $socialHashtags   = trim((string) ($settings['social_hashtags'] ?? '')) ?: socialHashtagsDefault();
+$besteSendezeiten = trim((string) ($settings['beste_sendezeiten'] ?? '')) ?: besteSendezeitenDefault();
 $raceresultApiUrl = $settings['raceresult_api_url'] ?? '';
 $raceresultHinweis = $settings['raceresult_hinweis'] ?? '';
 $trelloHinweis = $settings['trello_hinweis'] ?? '';
@@ -341,14 +342,9 @@ $makeWebhookSecret = (string) ($config['make_webhook_secret'] ?? '');
                     <p class="settings-hint">Vereinsweite Vorgaben für die Social-Pipeline und das Post-Detail.</p>
                     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1rem;margin-bottom:1rem">
                         <div style="border:1px solid var(--border);border-radius:8px;padding:0.8rem 1rem">
-                            <p style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-light);margin:0 0 0.5rem">Beste Sendezeiten (Studien 2025/26)</p>
-                            <ul style="list-style:none;padding:0;margin:0;font-size:0.85rem;line-height:1.9">
-                                <li><strong>Instagram:</strong> Mi 12:00 · Do 8:30 · So 20:00</li>
-                                <li><strong>Facebook:</strong> Di 12:30 · (Test: Do 6:30)</li>
-                                <li><strong>Kernzeit:</strong> Di–Do, mittags 12–14 &amp; abends 18–21 Uhr</li>
-                                <li><strong>Meiden:</strong> Fr-Abend, Samstag, nachts</li>
-                                <li>Nach 4–6 Wochen gegen die eigenen Insights halten<br><span style="color:var(--text-light)">(Meta Business Suite → „Aktivste Zeiten")</span></li>
-                            </ul>
+                            <label for="beste_sendezeiten" style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-light);margin:0 0 0.5rem;display:block">Beste Sendezeiten (Studien 2025/26)</label>
+                            <textarea id="beste_sendezeiten" name="beste_sendezeiten" rows="4" style="font-size:0.85rem;line-height:1.6" placeholder="Instagram: …&#10;Facebook: …&#10;Kernzeit: …&#10;Meiden: …"><?= htmlspecialchars($besteSendezeiten) ?></textarea>
+                            <p class="settings-hint" style="margin:0.4rem 0 0">Eine Zeile je Kanal/Regel. Wird im Post-Detail (Thema-Kachel + eigene Kachel) angezeigt. Nach 4–6 Wochen gegen die eigenen Insights halten (Meta Business Suite → „Aktivste Zeiten").</p>
                         </div>
                         <div style="border:1px solid var(--border);border-radius:8px;padding:0.8rem 1rem">
                             <p style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-light);margin:0 0 0.5rem">Nach dem Posten (erste Stunde)</p>

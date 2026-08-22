@@ -95,6 +95,9 @@ $kbLayout     = socialLayoutLabel(socialLayoutKey($anlassKey));
 $kbCta        = socialCtaDefault($anlassKey);
 $kbQr         = socialQrLabel(socialQrKey($anlassKey, true));
 $kbFaktenZeilen = count(array_filter(array_map('trim', explode("\n", $fakten)), static fn (string $z): bool => $z !== ''));
+// Beste Sendezeiten (aus den Einstellungen, sonst Default) — für Thema-Kachel + eigene Kachel
+$besteSendezeiten = besteSendezeiten($pdo);
+$besteSendezeitenZeilen = array_values(array_filter(array_map('trim', explode("\n", $besteSendezeiten)), static fn (string $z): bool => $z !== ''));
 
 // "öffnen" = Klick auf die Fahrplan-Zeile (?neu=1): von Grund auf neuer Entwurf. Der
 // gespeicherte Stand bleibt in der DB unangetastet und ist über "Bearbeiten" erreichbar —
@@ -219,6 +222,9 @@ $wartetAufStichtag = !$frisch && ($post['status'] ?? '') === 'approved'
                 <li><b>CTA</b> <?= htmlspecialchars($kbCta) ?></li>
                 <li><b>QR-Ziel</b> <?= htmlspecialchars($kbQr) ?></li>
                 <li><b>Presse</b> <?= $mitPresse ? 'ja' : 'nein' ?></li>
+                <?php if ($besteSendezeitenZeilen): ?>
+                <li><b>Beste Zeiten</b> <span style="display:inline-block;font-size:0.82em;color:var(--text-light);line-height:1.35;vertical-align:top"><?= nl2br(htmlspecialchars(implode("\n", $besteSendezeitenZeilen))) ?></span></li>
+                <?php endif; ?>
             </ul>
         </div>
 
@@ -350,6 +356,17 @@ $wartetAufStichtag = !$frisch && ($post['status'] ?? '') === 'approved'
             <?php endif; ?>
             <p class="sp-hinweis" style="margin:0 0 0.7rem">Gute Slots: <strong>Di–Do</strong> · mittags 12–14 &amp; abends 18–21 Uhr
                 (IG: Mi 12:00 / Do 8:30 · FB: Di 12:30) — Details in den <a href="einstellungen.php#social-section" style="color:var(--primary-dark)">Einstellungen</a>.</p>
+            <?php if (!$schrittVersand): ?>
+            <details style="background:#f7fafc;border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.9rem;margin:0 0 0.9rem">
+                <summary style="cursor:pointer;font-size:0.85rem;color:var(--primary-dark)">Beim Auslösen geht automatisch diese Mail ans Orga-Team</summary>
+                <p class="sp-hinweis" style="margin:0.5rem 0 0.3rem">Betreff „Social-Post ist live: <?= htmlspecialchars($anlassDef['ui']) ?>" — Inhalt (erste Stunde zählt am meisten):</p>
+                <ol style="padding:0 0 0 1.1rem;margin:0;font-size:0.85rem;line-height:1.8">
+                    <?php foreach (socialVerstaerkerErsteStunde() as $handgriff): ?>
+                    <li><?= htmlspecialchars($handgriff) ?></li>
+                    <?php endforeach; ?>
+                </ol>
+            </details>
+            <?php endif; ?>
             <div class="sp-zeile" style="margin-bottom:0.9rem">
                 <label style="display:inline-flex;align-items:center;gap:0.35rem;font-size:0.9rem">
                     <input type="checkbox" id="sp-ch-ig" checked> Instagram
@@ -390,6 +407,18 @@ $wartetAufStichtag = !$frisch && ($post['status'] ?? '') === 'approved'
                     <li>Instagram-Feed: kein klickbarer Caption-Link → „Link in Bio". Facebook: Link klickbar.</li>
                 </ul>
             </details>
+            </div>
+        </div>
+
+        <div class="hd-card">
+            <h2>⏰ Beste Sendezeiten</h2>
+            <div class="sp-body">
+                <p class="sp-hinweis" style="margin:0 0 0.5rem">Wann dieser Post die meiste Reichweite hat — Details &amp; Bearbeiten in den <a href="einstellungen.php#social-section" style="color:var(--primary-dark)">Einstellungen</a>.</p>
+                <ul style="list-style:none;padding:0;margin:0;font-size:0.9rem;line-height:1.9">
+                    <?php foreach ($besteSendezeitenZeilen as $z): ?>
+                    <li><?= htmlspecialchars($z) ?></li>
+                    <?php endforeach; ?>
+                </ul>
             </div>
         </div>
     </main>
