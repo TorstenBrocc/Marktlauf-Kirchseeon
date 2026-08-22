@@ -19,6 +19,23 @@ require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/logger.php';
 require_once __DIR__ . '/brand_voice.php';
 
+/** Gemini-Modell (v1beta). Zentral, damit ein Versionswechsel eine Ein-Zeilen-Sache ist. */
+const GEMINI_MODEL = 'gemini-2.0-flash';
+
+/**
+ * Klartext-Grund, warum die letzte LLM-Antwort leer blieb (HTTP-Status/Key-Fehler,
+ * Safety-Block, finishReason). Fuer die Admin-Fehlermeldung — nicht fuer Endnutzer.
+ * Aufruf mit Argument setzt, ohne liest. Jeder Generate-Aufruf setzt zu Beginn zurueck.
+ */
+function llmLastError(?string $set = null): string
+{
+    static $last = '';
+    if ($set !== null) {
+        $last = $set;
+    }
+    return $last;
+}
+
 /**
  * Aktiven Provider aus einstellungen lesen (Default: gemini).
  */
@@ -57,14 +74,16 @@ function llmGenerate(string $systemPrompt, string $userInput, ?string $provider 
 
 function llmGenerateGemini(string $systemPrompt, string $userInput): string
 {
+    llmLastError('');
     $config = getConfig();
     $apiKey = $config['gemini_api_key'] ?? '';
     if ($apiKey === '') {
+        llmLastError('Gemini-API-Key fehlt (storage/config.php: gemini_api_key).');
         logError('llmGenerateGemini: gemini_api_key nicht konfiguriert');
         return '';
     }
 
-    $url  = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' . urlencode($apiKey);
+    $url  = 'https://generativelanguage.googleapis.com/v1beta/models/' . GEMINI_MODEL . ':generateContent?key=' . urlencode($apiKey);
     $body = json_encode([
         'contents' => [
             ['role' => 'user', 'parts' => [['text' => $userInput]]],
@@ -78,29 +97,49 @@ function llmGenerateGemini(string $systemPrompt, string $userInput): string
         ],
     ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 
-    $raw = llmCurlPost($url, $body, ['Content-Type: application/json']);
-    if ($raw === null) {
-        return '';
+    // Bekanntes Gemini-Verhalten: HTTP 200 mit fehlenden parts / leerem Text tritt
+    // sporadisch auf (finishReason STOP ohne Inhalt). Einmal wiederholen, bevor wir
+    // aufgeben; ein inhaltlicher Block (SAFETY o. ä.) bricht sofort ab.
+    for ($versuch = 1; $versuch <= 2; $versuch++) {
+        $raw = llmCurlPost($url, $body, ['Content-Type: application/json']);
+        if ($raw === null) {
+            return ''; // Grund hat llmCurlPost gesetzt (HTTP-Status, Key-Fehler, Netzwerk)
+        }
+
+        try {
+            $data = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
+        } catch (JsonException $e) {
+            llmLastError('Gemini-Antwort nicht lesbar (JSON-Fehler).');
+            logError('llmGenerateGemini: JSON-Parse-Fehler: ' . $e->getMessage() . ' — ' . substr($raw, 0, 300));
+            return '';
+        }
+
+        $text = $data['candidates'][0]['content']['parts'][0]['text'] ?? '';
+        if ($text !== '') {
+            return $text;
+        }
+
+        // Leer: Grund bestimmen. blockReason (Prompt geblockt) hat Vorrang vor finishReason.
+        $grund = $data['promptFeedback']['blockReason'] ?? ($data['candidates'][0]['finishReason'] ?? '');
+        if (in_array($grund, ['SAFETY', 'RECITATION', 'BLOCKLIST', 'PROHIBITED_CONTENT', 'SPII'], true)) {
+            llmLastError('Gemini hat den Text blockiert (' . $grund . ') — Fakten/Anweisung anpassen.');
+            logError('llmGenerateGemini: blockiert (' . $grund . ') — ' . substr($raw, 0, 300));
+            return ''; // Wiederholen zwecklos
+        }
+        llmLastError('Gemini lieferte keinen Text' . ($grund !== '' ? ' (finishReason=' . $grund . ')' : '') . '.');
+        logError('llmGenerateGemini: leere Antwort (Versuch ' . $versuch . '/2, ' . ($grund ?: 'ohne finishReason') . ') — ' . substr($raw, 0, 300));
     }
 
-    try {
-        $data = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
-        $text = $data['candidates'][0]['content']['parts'][0]['text'] ?? '';
-        if ($text === '') {
-            logError('llmGenerateGemini: leere Antwort — ' . substr($raw, 0, 300));
-        }
-        return $text;
-    } catch (JsonException $e) {
-        logError('llmGenerateGemini: JSON-Parse-Fehler: ' . $e->getMessage() . ' — ' . substr($raw, 0, 300));
-        return '';
-    }
+    return '';
 }
 
 function llmGenerateMistral(string $systemPrompt, string $userInput): string
 {
+    llmLastError('');
     $config = getConfig();
     $apiKey = $config['mistral_api_key'] ?? '';
     if ($apiKey === '') {
+        llmLastError('Mistral-API-Key fehlt (storage/config.php: mistral_api_key).');
         logError('llmGenerateMistral: mistral_api_key nicht konfiguriert');
         return '';
     }
@@ -128,10 +167,12 @@ function llmGenerateMistral(string $systemPrompt, string $userInput): string
         $data = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
         $text = $data['choices'][0]['message']['content'] ?? '';
         if ($text === '') {
+            llmLastError('Mistral lieferte keinen Text.');
             logError('llmGenerateMistral: leere Antwort — ' . substr($raw, 0, 300));
         }
         return $text;
     } catch (JsonException $e) {
+        llmLastError('Mistral-Antwort nicht lesbar (JSON-Fehler).');
         logError('llmGenerateMistral: JSON-Parse-Fehler: ' . $e->getMessage() . ' — ' . substr($raw, 0, 300));
         return '';
     }
@@ -159,16 +200,27 @@ function llmCurlPost(string $url, string $body, array $headers): ?string
     curl_close($ch);
 
     if ($curlErr !== '') {
+        llmLastError('Netzwerkfehler beim Provider-Aufruf (' . $curlErr . ').');
         logError('llmCurlPost: cURL-Fehler: ' . $curlErr . ' — URL: ' . $url);
         return null;
     }
 
     if ($httpCode === 429) {
+        llmLastError('Provider-Limit erreicht (HTTP 429) — kurz warten und erneut versuchen.');
         logError('llmCurlPost: Rate-Limit (429) — URL: ' . $url);
         return null;
     }
 
     if ($httpCode < 200 || $httpCode >= 300) {
+        // Fehlermeldung des Providers herausziehen (Gemini/Mistral: {"error":{"message":...}})
+        $msg = '';
+        $err = json_decode((string)$raw, true);
+        if (is_array($err)) {
+            $msg = (string) ($err['error']['message'] ?? ($err['message'] ?? ''));
+        }
+        $hint = ($httpCode === 400 || $httpCode === 401 || $httpCode === 403)
+            ? ' — API-Key ungültig oder ohne Berechtigung.' : '';
+        llmLastError('Provider-Fehler HTTP ' . $httpCode . ($msg !== '' ? ': ' . $msg : '') . $hint);
         logError('llmCurlPost: HTTP ' . $httpCode . ' — URL: ' . $url . ' — Body: ' . substr((string)$raw, 0, 300));
         return null;
     }
