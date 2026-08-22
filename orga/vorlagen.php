@@ -227,7 +227,7 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
         .poster .runner { position: absolute; right: 20px; bottom: 20px; width: 713px; height: 1162px;
             object-fit: contain; object-position: right bottom; filter: drop-shadow(0 8px 24px rgba(0,0,0,.18)); }
         .poster .logobar { position: absolute; top: 44px; left: 52px; display: flex; align-items: center; gap: 18px;
-            background: #fff; border-radius: 22px; padding: 16px 24px; box-shadow: 0 10px 30px rgba(0,0,0,.16); z-index: 3; }
+            background: #f7f5ee; border-radius: 22px; padding: 16px 24px; box-shadow: 0 10px 30px rgba(0,0,0,.16); z-index: 3; }
         .poster .logobar img.mark { height: 64px; width: auto; display: block; }
         .poster .logobar .sep { width: 2px; height: 56px; background: #e2e6de; }
         .poster .logobar img.atsv { height: 70px; width: auto; display: block; }
@@ -386,6 +386,11 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                         <?php endif; ?>
                     </div>
 
+                    <div class="vt-layout-row" style="border:0;padding-top:0;">
+                        <button type="button" class="btn btn-secondary btn-small" id="vt-reset-vorlage">Auf Vorlage zurücksetzen</button>
+                        <span class="vt-layout-auto" id="vt-autosave-hint">Änderungen werden automatisch zwischengespeichert</span>
+                    </div>
+
                     <h2>1 &middot; Inhalt befuellen</h2>
 
                     <div class="vt-field">
@@ -404,17 +409,11 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                             </div>
                             <span class="vt-hint" id="vt-photo-name">kein Foto gewaehlt</span>
                             <div class="vt-photo-picker" id="vt-photo-picker"></div>
-                            <form method="post" action="api/file_upload.php" enctype="multipart/form-data" style="margin-top:0.6rem;">
-                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                                <input type="hidden" name="bereich" value="orga">
-                                <input type="hidden" name="kategorie" value="presse">
-                                <input type="hidden" name="redirect_after" value="vorlagen.php">
-                                <div class="vt-row">
-                                    <input type="file" name="datei" accept="image/png,image/jpeg" required style="font-size:0.85rem;">
-                                    <button type="submit" class="btn btn-secondary">Hochladen</button>
-                                </div>
-                                <span class="vt-hint">Neues Foto landet in der Datei-Ablage (Kategorie Presse) und ist danach oben waehlbar. Bei Foto tritt der L&auml;ufer zurueck.</span>
-                            </form>
+                            <div class="vt-row" style="margin-top:0.6rem;">
+                                <label for="vt-photo-file" class="vt-hint" style="margin:0">Oder eigenes Foto vom Rechner:</label>
+                                <input type="file" id="vt-photo-file" accept="image/png,image/jpeg,image/webp" style="font-size:0.85rem;">
+                            </div>
+                            <span class="vt-hint">Wird direkt in die Grafik übernommen (nur für diesen Post — kein Upload in die Ablage nötig). Bei Foto tritt der L&auml;ufer zurueck.</span>
                         </div>
                     </div>
 
@@ -717,6 +716,7 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
         const card2 = $('vt-card2');
         let lastDataUrl = null;
         let selectedPhotoUrl = '';
+        let lokalesFotoUrl = ''; // Blob-URL eines lokal gewaehlten Fotos (zum Freigeben)
 
         const csrf        = <?= json_encode($csrfToken) ?>;
         const postKontext = <?= json_encode($postKontext) ?>;
@@ -798,10 +798,67 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
             } catch (e) { picker.textContent = 'Fehler beim Laden.'; }
         });
         $('vt-clear-photo').addEventListener('click', () => {
+            if (lokalesFotoUrl) { URL.revokeObjectURL(lokalesFotoUrl); lokalesFotoUrl = ''; }
             selectedPhotoUrl = '';
             $('vt-photo-name').textContent = 'kein Foto gewaehlt';
             $('vt-clear-photo').style.display = 'none';
+            $('vt-photo-file').value = '';
         });
+
+        // Eigenes Foto vom Rechner: direkt als Hintergrund (client-seitig, snapDOM-tauglich).
+        // Kein Upload/keine Ablage noetig — das fertige PNG wird ohnehin lokal gerendert.
+        $('vt-photo-file').addEventListener('change', () => {
+            const file = $('vt-photo-file').files && $('vt-photo-file').files[0];
+            if (!file) { return; }
+            if (lokalesFotoUrl) { URL.revokeObjectURL(lokalesFotoUrl); }
+            lokalesFotoUrl = URL.createObjectURL(file);
+            selectedPhotoUrl = lokalesFotoUrl;
+            if (!$('bg-photo').checked) { $('bg-photo').checked = true; $('vt-photo-block').style.display = 'block'; }
+            $('vt-photo-name').textContent = file.name;
+            $('vt-clear-photo').style.display = 'inline-flex';
+            $('vt-photo-picker').style.display = 'none';
+        });
+
+        // --- Auto-Zwischenspeicher der Editor-Felder pro Post (localStorage) ---
+        // "Bearbeitungsstaende immer direkt zwischenspeichern": jede Aenderung landet sofort
+        // im Browser-Cache und wird beim erneuten Oeffnen wiederhergestellt. Der Button
+        // "Auf Vorlage zuruecksetzen" stellt den Ursprung (Themen-Defaults) wieder her.
+        // Lokale Blob-Fotos lassen sich nicht persistieren (Blob stirbt beim Reload) -> ausgelassen.
+        const VT_CACHE_KEY = 'vt-draft-' + (<?= (int) ($_GET['post'] ?? 0) ?> || 'standalone');
+        function vtSammleFelder() {
+            const felder = {};
+            document.querySelectorAll('[id^="vt-"]').forEach(el => {
+                if (el.id === 'vt-photo-file') { return; }
+                const t = el.tagName;
+                if (t === 'SELECT' || t === 'TEXTAREA' || (t === 'INPUT' && ['text', 'number'].includes(el.type))) {
+                    felder[el.id] = el.value;
+                }
+            });
+            const bg = document.querySelector('input[name="bgmode"]:checked');
+            const photo = (selectedPhotoUrl && !selectedPhotoUrl.startsWith('blob:')) ? selectedPhotoUrl : '';
+            return { felder, bgmode: bg ? bg.value : '', photo };
+        }
+        let vtSaveT = null;
+        function vtSpeichereDraft() { try { localStorage.setItem(VT_CACHE_KEY, JSON.stringify(vtSammleFelder())); } catch (e) {} }
+        function vtSpeichereDebounced() { clearTimeout(vtSaveT); vtSaveT = setTimeout(vtSpeichereDraft, 400); }
+        function vtStelleWieder() {
+            let raw; try { raw = localStorage.getItem(VT_CACHE_KEY); } catch (e) { return; }
+            if (!raw) { return; }
+            let d; try { d = JSON.parse(raw); } catch (e) { return; }
+            Object.entries(d.felder || {}).forEach(([id, val]) => { const el = document.getElementById(id); if (el) { el.value = val; } });
+            if (d.bgmode) { const r = document.querySelector('input[name="bgmode"][value="' + d.bgmode + '"]'); if (r) { r.checked = true; } }
+            if (d.photo) { selectedPhotoUrl = d.photo; $('vt-photo-name').textContent = 'gespeichertes Foto'; $('vt-clear-photo').style.display = 'inline-flex'; }
+            vorlageWechsel();
+            $('vt-photo-block').style.display = $('bg-photo').checked ? 'block' : 'none';
+        }
+        document.addEventListener('input', (e) => { const id = e.target.id || ''; if (id.startsWith('vt-') && id !== 'vt-photo-file') { vtSpeichereDebounced(); } });
+        document.addEventListener('change', (e) => { const id = e.target.id || ''; if (e.target.name === 'bgmode' || (id.startsWith('vt-') && id !== 'vt-photo-file')) { vtSpeichereDebounced(); } });
+        $('vt-reset-vorlage').addEventListener('click', () => {
+            if (!confirm('Diesen Entwurf verwerfen und die Vorlage von vorne beginnen?')) { return; }
+            try { localStorage.removeItem(VT_CACHE_KEY); } catch (e) {}
+            location.reload();
+        });
+        vtStelleWieder();
 
         // --- Slots aus den Eingaben in die Karte schreiben ---
         function fillCard() {
