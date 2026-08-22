@@ -178,8 +178,8 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
            nimmt den restlichen Platz (der grosse Teil). Umbruch bei <=820px: darunter bliebe fuer
            die Vorschau weniger als die 380px-Leiste -> stattdessen gestapelt, Vorschau voll breit.
            So ist die Vorschau nebeneinander immer groesser als die Leiste, sonst voll breit. */
-        .vt-split { display: grid; grid-template-columns: 380px minmax(0, 1fr); gap: 1.25rem; align-items: start; }
-        @media (max-width: 820px) { .vt-split { grid-template-columns: minmax(0, 1fr); } }
+        .vt-split { display: grid; grid-template-columns: 342px minmax(0, 1fr); gap: 1.25rem; align-items: start; }
+        @media (max-width: 760px) { .vt-split { grid-template-columns: minmax(0, 1fr); } }
         .vt-panel { background: var(--white); border-radius: 8px; box-shadow: var(--shadow-card); padding: 1.25rem; }
         .vt-panel h2 { font-size: 1rem; margin: 0 0 0.9rem; }
         .vt-panel h3 { font-size: 0.82rem; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; margin: 1.2rem 0 0.6rem; }
@@ -224,11 +224,10 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
            position:absolute werden, waere der Footer das einzige Flow-Element und rueckte im
            space-between-Flex nach oben; deshalb hier fest an die Padding-Box unten anheften.
            Padding der .sc-card ist formatunabhaengig 80px. */
-        /* Footer fix unten + klick-durchlaessig: als letztes, absolut positioniertes Kind laege
-           er sonst UEBER den unteren Drag-Bloecken (CTA/Meta) und finge deren Klicks ab ->
-           die waeren nicht mehr ziehbar. pointer-events:none laesst Klicks durch (der Footer
-           ist ohnehin nicht ziehbar). */
-        .sc-card.freilayout .sc-footer { position: absolute !important; left: 80px; right: 80px; bottom: 80px; pointer-events: none; }
+        /* Footer-Wrapper im Frei-Modus static: seine Kinder (Wortmarke + QR) sind einzeln ziehbar
+           (.vt-drag -> position:absolute) und sollen relativ zur KARTE ankern. Waere der Wrapper
+           positioniert, ankerten sie an ihm (kollabiert auf 0 Hoehe) -> falsche Position. */
+        .sc-card.freilayout .sc-footer { position: static !important; display: block; }
 
         /* ============================================================
            Vorlage "Anmeldung geoeffnet" — 1:1 Port des Proofs
@@ -679,16 +678,14 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                         <div class="sc-bullet" id="th-z3"></div>
                     </div>
                     <div class="sc-cta vt-drag" data-drag="cta" id="th-cta-wrap"><span id="th-cta"></span></div>
-                    <div class="vt-drag" data-drag="meta">
-                        <div class="sc-meta" id="th-datum"></div>
-                        <div class="sc-meta" id="th-ort"></div>
-                    </div>
+                    <div class="sc-meta vt-drag" data-drag="datum" id="th-datum"></div>
+                    <div class="sc-meta vt-drag" data-drag="ort" id="th-ort"></div>
                     <div class="sc-footer">
-                        <div class="sc-footer-text">
+                        <div class="sc-footer-text vt-drag" data-drag="wortmarke">
                             <span class="sc-wordmark">ATSV Kirchseeon</span>
                             <span class="sc-url">atsv-kirchseeon-marktlauf.de</span>
                         </div>
-                        <div class="sc-qr" id="th-qr" style="display:none">
+                        <div class="sc-qr vt-drag" data-drag="qr" id="th-qr" style="display:none">
                             <img id="th-qr-img" alt="">
                             <span class="sc-qr-label" id="th-qr-label"></span>
                         </div>
@@ -730,11 +727,11 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                     </div>
                     <div class="sc-highlight vt-drag" data-drag="highlight" id="rt-highlight"></div>
                     <div class="sc-footer">
-                        <div class="sc-footer-text">
+                        <div class="sc-footer-text vt-drag" data-drag="wortmarke">
                             <span class="sc-wordmark">ATSV Kirchseeon</span>
                             <span class="sc-url">atsv-kirchseeon-marktlauf.de</span>
                         </div>
-                        <div class="sc-qr" id="rt-qr" style="display:none">
+                        <div class="sc-qr vt-drag" data-drag="qr" id="rt-qr" style="display:none">
                             <img id="rt-qr-img" alt="">
                             <span class="sc-qr-label" id="rt-qr-label"></span>
                         </div>
@@ -1181,8 +1178,8 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
         const liveWrap = $('vt-live-wrap'), liveVp = $('vt-live-vp'), liveScale = $('vt-live-scale');
         // Je ziehbare Vorlage: ihre Karte, deren Off-screen-Stage (Ruecksprung) und Fuellfunktion.
         const FREI = {
-            thema:   { card: card3, stage: card3.parentElement, fill: fillCard3 },
-            renntag: { card: card2, stage: card2.parentElement, fill: fillCard2 },
+            thema:   { card: card3, stage: card3.parentElement, fill: fillCard3, qr: ['th-qr', 'th-qr-img', 'th-qr-label'] },
+            renntag: { card: card2, stage: card2.parentElement, fill: fillCard2, qr: ['rt-qr', 'rt-qr-img', 'rt-qr-label'] },
         };
         function istFrei(v) { return !!FREI[v || aktiveVorlage()]; }
         function dragEls(c) { return Array.from(c.querySelectorAll('.vt-drag')); }
@@ -1232,6 +1229,7 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
             liveScale.appendChild(c);
             liveScale.style.transform = 'none';   // bei natuerlicher Groesse messen
             cfg.fill({ w: w, h: h });
+            applyQr(cfg.qr[0], cfg.qr[1], cfg.qr[2], 'flex');   // QR live zeigen -> messbar + ziehbar
             // Default-Positionen aus dem Flow messen — nur fuer sichtbare, noch nicht gesetzte
             // Bloecke (border-box-relativ; Karte hat keinen Border). Ausgeblendete Bloecke
             // (leeres Highlight/Bullets) erst messen, wenn sie sichtbar werden.
@@ -1260,6 +1258,7 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
             if (!cfg || aktiveFreiKarte() !== cfg.card) { return; }
             const sw = freiScale(), store = posStore(v);
             cfg.fill({ w: sw.w, h: sw.h });
+            applyQr(cfg.qr[0], cfg.qr[1], cfg.qr[2], 'flex');   // QR-Inhalt/Sichtbarkeit live nachziehen
             dragEls(cfg.card).forEach(el => { const p = store[keyOf(el)]; if (p) { el.style.left = p.l + '%'; el.style.top = p.t + '%'; } });
         }
         // Vorschau-Modus steuern: ziehbare Vorlage -> interaktive Karte; sonst Bild-Vorschau.
