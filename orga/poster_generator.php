@@ -11,6 +11,8 @@
 declare(strict_types=1);
 require_once __DIR__ . '/api/_auth.php';
 require_once __DIR__ . '/../src/db.php';
+require_once __DIR__ . '/../src/social_anlaesse.php';
+require_once __DIR__ . '/../src/social_grafik_defaults.php';
 $pdo     = getDbConnection();
 $user    = getCurrentUserFromGuard();
 $isAdmin = isAdminFromGuard();
@@ -27,6 +29,73 @@ $csrfToken  = generateCsrfToken();
 $postId     = (int) ($_GET['post'] ?? 0);
 $fahrplanId = (int) ($_GET['fahrplan'] ?? 0);
 $embed      = ((int) ($_GET['embed'] ?? 0)) === 1 && $postId > 0;
+
+// Themen-/post-spezifische Vorbefüllung: aus dem Anlass des Posts dieselben Defaults ableiten
+// wie das Vorlagen-Tool (Headline/CTA/Datum/Format/QR — plus Subline/Features für die spätere
+// "Voll"-Erweiterung mitgeliefert). Robust gegen fehlende DB (Sandbox/Mock): alles in try/catch.
+$themeDefaults = null;
+if ($postId > 0) {
+    try {
+        $anlassKey = '';
+        if ($pdo instanceof PDO) {
+            $st = $pdo->prepare('SELECT anlass_key FROM post_race_contents WHERE id = :id');
+            $st->execute(['id' => $postId]);
+            $anlassKey = (string) ($st->fetchColumn() ?: '');
+        }
+        if ($anlassKey !== '') {
+            $def = socialAnlaesse()[$anlassKey] ?? null;
+            // Datum-Kachel aus den Eckdaten
+            $themaDatum = '';
+            try {
+                $st2 = $pdo->query("SELECT `key`, `value` FROM einstellungen WHERE `key` = 'renntag_datum'");
+                $d   = $st2 ? trim((string) ($st2->fetchColumn() ?: '')) : '';
+                if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $d)) {
+                    $wt = [1 => 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
+                    $ts = strtotime($d);
+                    $themaDatum = $wt[(int) date('N', $ts)] . ', ' . date('d.m.Y', $ts) . ' · Start ab 10:00 Uhr';
+                }
+            } catch (Throwable $e) {
+            }
+            // QR-Ziel je Thema (inkl. aktivem Helfer-Token, wie vorlagen.php)
+            $appUrl = rtrim((string) ((function_exists('getConfig') ? (getConfig()['app']['url'] ?? '') : '') ?: 'https://atsv-kirchseeon-marktlauf.de'), '/');
+            $qrUrls = [
+                'anmeldung'     => $appUrl . '/#anmeldung',
+                'registrierung' => 'https://my.raceresult.com/412617/registration',
+                'website'       => $appUrl,
+            ];
+            $helferToken = false;
+            try {
+                $tok = $pdo->query("SELECT token FROM access_tokens WHERE active = 1 AND expires_at > NOW() ORDER BY id DESC LIMIT 1")->fetchColumn();
+                if ($tok) { $qrUrls['helfer'] = $appUrl . '/helfer-anmeldung.php?token=' . rawurlencode((string) $tok); $helferToken = true; }
+            } catch (Throwable $e) {
+            }
+            $qrKey = socialQrKey($anlassKey, $helferToken);
+            $fmt   = socialFormatDefault($anlassKey);
+            if ($fmt === 'grid34') { $fmt = 'square'; } // Poster kennt nur portrait/square/story
+            // Fakten -> Subline + 3 Features (nur für die spätere "Voll"-Option mitgeliefert)
+            $sub = ''; $feats = ['', '', ''];
+            if ($def) {
+                $zeilen = array_values(array_filter(
+                    array_map('trim', explode("\n", (string) ($def['fakten'] ?? ''))),
+                    static fn (string $z): bool => $z !== '' && !str_starts_with($z, '(')
+                ));
+                $sub   = $zeilen[0] ?? '';
+                $feats = [$zeilen[1] ?? '', $zeilen[2] ?? '', $zeilen[3] ?? ''];
+            }
+            $themeDefaults = [
+                'headline' => $def ? trim((string) preg_replace('/\s*\(.*\)\s*$/', '', (string) $def['ui'])) : '',
+                'cta'      => socialCtaDefault($anlassKey),
+                'date'     => $themaDatum,
+                'format'   => $fmt,
+                'qr'       => $qrUrls[$qrKey] ?? ($qrUrls['anmeldung'] ?? ''),
+                'subline'  => $sub,      // Option "Voll" (aktuell nicht angewandt)
+                'features' => $feats,    // Option "Voll" (aktuell nicht angewandt)
+            ];
+        }
+    } catch (Throwable $e) {
+        $themeDefaults = null;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -340,6 +409,7 @@ $embed      = ((int) ($_GET['embed'] ?? 0)) === 1 && $postId > 0;
     (function(){
         var SPONSORS = <?= json_encode($sponsors, JSON_UNESCAPED_SLASHES) ?>;
         var EMBED = <?= $embed ? 'true' : 'false' ?>, POST_ID = <?= (int) $postId ?>, FAHRPLAN_ID = <?= (int) $fahrplanId ?>, CSRF = <?= json_encode($csrfToken) ?>;
+        var THEME = <?= json_encode($themeDefaults) ?>; // themen-/post-spezifische Vorbefüllung (null ohne Post-Kontext)
         var FORMATS = { portrait:{w:1080,h:1350}, square:{w:1080,h:1080}, story:{w:1080,h:1920} };
         var PAD = 340; // Arbeitsflaeche rings um das Poster (in Poster-Pixeln)
 
@@ -727,7 +797,8 @@ $embed      = ((int) ($_GET['embed'] ?? 0)) === 1 && $postId > 0;
             Object.keys(pos).forEach(function(id){ if(/^(custom|shape)/.test(id)){ var el=$(id); if(el) el.remove(); } });
             pos=baseDefaults(); groupOf={}; meta=baseMeta(); featIcons=['shoe','stopwatch','leaf'];
             [['c-f1i',0],['c-f2i',1],['c-f3i',2]].forEach(function(m){ fillIconSelect($(m[0]),featIcons[m[1]]); });
-            refreshGroupMarks(); renderAll(); applyAll(); deselect(); clearSaved();
+            applyTheme(); // zurück auf die Theme-Defaults dieses Posts (falls Post-Kontext)
+            refreshGroupMarks(); renderAll(); applyFormat(); applyAll(); updateQr(); deselect(); clearSaved();
         });
 
         // ---- Render (nur Poster-Bereich) -> PNG-DataURL ----
@@ -774,7 +845,19 @@ $embed      = ((int) ($_GET['embed'] ?? 0)) === 1 && $postId > 0;
         }
 
         // ---- Autospeichern (localStorage, entprellt) ----
-        var STORAGE_KEY='mkl_poster_v1', saveT=null;
+        var STORAGE_KEY='mkl_poster_v1'+(POST_ID>0?('_post'+POST_ID):''), saveT=null; // Autospeichern pro Post
+        // Themen-Vorbefüllung anwenden (gezielt: Headline/CTA/Datum/Format/QR).
+        function applyTheme(){
+            if(!THEME) return;
+            if(THEME.headline) $('c-headline').value=THEME.headline;
+            if(THEME.cta)      $('c-cta').value=THEME.cta;
+            if(THEME.date)     $('c-date').value=THEME.date;
+            if(THEME.qr)       $('c-qr-url').value=THEME.qr;
+            if(THEME.format)   $('c-format').value=THEME.format;
+            // --- Erweiterungspunkt Option "Voll" (aktuell aus): Subline + 3 Features aus dem Thema ---
+            // if(THEME.subline){ $('c-subline').value=THEME.subline; }
+            // if(THEME.features){ ['c-f1t','c-f2t','c-f3t'].forEach(function(id,i){ if(THEME.features[i]) $(id).value=THEME.features[i]; }); }
+        }
         var SAVE_FIELDS=['c-format','c-headline','c-subline','c-cta','c-f1t','c-f1s','c-f1i','c-f2t','c-f2s','c-f2i','c-f3t','c-f3s','c-f3i','c-date','c-loc','c-fam','c-domain','c-show-sponsors','c-qr-url','c-scan-head','c-grad-on','c-grad-angle','c-grad-c1','c-grad-c2','c-grad-fade'];
         function serialize(){
             var customText={}; Object.keys(pos).forEach(function(id){ if(/^custom/.test(id)){ var t=$(id)&&$(id).querySelector('.pg-ct-text'); if(t) customText[id]=t.textContent; } });
@@ -812,7 +895,7 @@ $embed      = ((int) ($_GET['embed'] ?? 0)) === 1 && $postId > 0;
         }
 
         // Init
-        var restored=loadSaved(); if(!restored){ pos=baseDefaults(); }
+        var restored=loadSaved(); if(!restored){ pos=baseDefaults(); applyTheme(); }
         renderAll(); applyFormat(); applyAll(); applyGrad(); updateQr(); lastW=stage.clientWidth;
         var _cc=document.querySelector('.pg-controls');
         if(_cc){ _cc.addEventListener('input',scheduleSave); _cc.addEventListener('change',scheduleSave); }
