@@ -288,6 +288,8 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
         .sc-card .sc-logos img { height: 96px; width: auto; max-width: 340px; object-fit: contain; }
         /* Auf dunklem Foto: halbtransparentes Weiß statt Creme, damit es sich einfügt. */
         .sc-card .sc-logos.on-photo { background: rgba(255,255,255,0.92); }
+        /* Kein Logo gewählt -> keine leere Pille (sonst durchgehender weißer Streifen). */
+        .sc-card .sc-logos:empty { display: none; }
         .sc-card .sc-event { display: flex; align-items: center; gap: 14px; font-size: 24px; font-weight: 600;
             letter-spacing: 0.16em; text-transform: uppercase; color: #fff8dd; margin-bottom: 20px; }
         .sc-card .sc-event::before { content: ''; width: 44px; height: 4px; border-radius: 2px;
@@ -416,7 +418,7 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                                 <label for="vt-photo-file" class="vt-hint" style="margin:0">Oder eigenes Foto vom Rechner:</label>
                                 <input type="file" id="vt-photo-file" accept="image/png,image/jpeg,image/webp" style="font-size:0.85rem;">
                             </div>
-                            <span class="vt-hint">Wird direkt in die Grafik übernommen (nur für diesen Post — kein Upload in die Ablage nötig). Bei Foto tritt der L&auml;ufer zurueck.</span>
+                            <span class="vt-hint">Bei Foto tritt der Läufer zurück.</span>
                         </div>
                     </div>
 
@@ -535,6 +537,12 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                     <div class="vt-row">
                         <button type="button" class="btn btn-secondary" id="vt-logo-add">Logo hinzufügen</button>
                         <button type="button" class="btn btn-secondary" id="vt-logo-reset">nur ATSV</button>
+                        <button type="button" class="btn btn-secondary" id="vt-logo-nur-marktlauf">nur Marktlauf</button>
+                    </div>
+                    <div class="vt-field" style="margin-top:0.6rem;">
+                        <label style="display:flex;align-items:center;gap:0.5rem;font-weight:400;cursor:pointer;">
+                            <input type="checkbox" id="vt-hide-event" style="width:auto;"> Datum-Kopfzeile (mit dem Strich) ausblenden
+                        </label>
                     </div>
                     <div class="vt-chips" id="vt-logo-chips"></div>
                     <div class="vt-photo-picker" id="vt-logo-picker"></div>
@@ -727,7 +735,8 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
         const embed       = <?= $embed ? 'true' : 'false' ?>;
         const repoAssets  = <?= json_encode($repoAssets, JSON_UNESCAPED_UNICODE) ?>;
         const sponsorLogos = <?= json_encode($sponsorLogos, JSON_UNESCAPED_UNICODE) ?>;
-        const DEFAULT_LOGO = '<?= htmlspecialchars($logoAtsv) ?>';
+        const DEFAULT_LOGO   = '<?= htmlspecialchars($logoAtsv) ?>';
+        const MARKTLAUF_LOGO = '<?= htmlspecialchars($logoWortmarke) ?>';
         const RT_FORMATS = {
             portrait: { w: 1080, h: 1350, label: 'Portrait 1080×1350' },
             grid34:   { w: 1080, h: 1440, label: 'Instagram-Grid 1080×1440' },
@@ -829,17 +838,18 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
         // Lokale Blob-Fotos lassen sich nicht persistieren (Blob stirbt beim Reload) -> ausgelassen.
         const VT_CACHE_KEY = 'vt-draft-' + (<?= (int) ($_GET['post'] ?? 0) ?> || 'standalone');
         function vtSammleFelder() {
-            const felder = {};
+            const felder = {}, checks = {};
             document.querySelectorAll('[id^="vt-"]').forEach(el => {
                 if (el.id === 'vt-photo-file') { return; }
                 const t = el.tagName;
+                if (t === 'INPUT' && el.type === 'checkbox') { checks[el.id] = el.checked; return; }
                 if (t === 'SELECT' || t === 'TEXTAREA' || (t === 'INPUT' && ['text', 'number'].includes(el.type))) {
                     felder[el.id] = el.value;
                 }
             });
             const bg = document.querySelector('input[name="bgmode"]:checked');
             const photo = (selectedPhotoUrl && !selectedPhotoUrl.startsWith('blob:')) ? selectedPhotoUrl : '';
-            return { felder, bgmode: bg ? bg.value : '', photo };
+            return { felder, checks, bgmode: bg ? bg.value : '', photo };
         }
         let vtSaveT = null;
         function vtSpeichereDraft() { try { localStorage.setItem(VT_CACHE_KEY, JSON.stringify(vtSammleFelder())); } catch (e) {} }
@@ -849,6 +859,7 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
             if (!raw) { return; }
             let d; try { d = JSON.parse(raw); } catch (e) { return; }
             Object.entries(d.felder || {}).forEach(([id, val]) => { const el = document.getElementById(id); if (el) { el.value = val; } });
+            Object.entries(d.checks || {}).forEach(([id, val]) => { const el = document.getElementById(id); if (el) { el.checked = !!val; } });
             if (d.bgmode) { const r = document.querySelector('input[name="bgmode"][value="' + d.bgmode + '"]'); if (r) { r.checked = true; } }
             if (d.photo) { selectedPhotoUrl = d.photo; $('vt-photo-name').textContent = 'Gewählt: gespeichertes Foto'; $('vt-clear-photo').style.display = 'inline-flex'; }
             vorlageWechsel();
@@ -951,6 +962,10 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
             selectedLogos = [{ url: DEFAULT_LOGO, label: 'ATSV-Logo' }];
             renderLogoChips();
         });
+        $('vt-logo-nur-marktlauf').addEventListener('click', () => {
+            selectedLogos = [{ url: MARKTLAUF_LOGO, label: 'Marktlauf' }];
+            renderLogoChips();
+        });
         renderLogoChips();
 
         // --- Renntag-Karte aus den Eingaben befuellen ---
@@ -958,6 +973,7 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
             card2.style.width  = fmt.w + 'px';
             card2.style.height = fmt.h + 'px';
             $('rt-event').textContent    = $('vt-rt-event').value.trim();
+            $('rt-event').style.display  = $('vt-hide-event').checked ? 'none' : '';
             $('rt-headline').textContent = $('vt-rt-headline').value.trim();
             $('rt-s10').textContent      = $('vt-rt-s10').value.trim() || '–';
             $('rt-s10z').textContent     = $('vt-rt-s10z').value.trim();
@@ -1023,6 +1039,9 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
             $('th-datum').style.display = datum ? 'block' : 'none';
             $('th-ort').textContent = ort ? '📍 ' + ort : '';
             $('th-ort').style.display = ort ? 'block' : 'none';
+
+            const thEvent = document.querySelector('#vt-card3 .sc-event');
+            if (thEvent) { thEvent.style.display = $('vt-hide-event').checked ? 'none' : ''; }
 
             const box = $('th-logos');
             box.innerHTML = '';
