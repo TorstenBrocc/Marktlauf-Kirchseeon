@@ -322,12 +322,9 @@ return [
         'href'    => 'newsletter.php',
         // Fakten → KI-Newsletter → Brevo-Entwurf. Kein KPI → reiner Absprung-Link.
     ],
-    [
-        'key'     => 'vorlagen',
-        'label'   => 'Grafik-Vorlagen',
-        'section' => 'KOMMUNIKATION',
-        'href'    => 'vorlagen.php',
-    ],
+    // "Grafik-Vorlagen" als eigener Nav-Punkt entfernt (Inhaber 2026-08-22): der Grafik-
+    // Editor (vorlagen.php) ist ausschliesslich der eingebettete "Grafik erstellen"-Schritt
+    // in der Social-Pipeline (social_post.php) — ein Werkzeug, ein Einstieg.
     [
         'key'     => 'live_ticker',
         'label'   => 'Live-Ticker',
