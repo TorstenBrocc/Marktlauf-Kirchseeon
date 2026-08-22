@@ -28,6 +28,31 @@ function socialHashtagsDefault(): string
 }
 
 /**
+ * Default-Text „Beste Sendezeiten" (Studien 2025/26) — editierbar über die Einstellungen
+ * (Key `beste_sendezeiten`). Eine Zeile je Kanal/Regel; wird im Post-Detail (Thema-Kachel +
+ * eigene Kachel) und in den Einstellungen gezeigt. Gespeicherter Wert gewinnt.
+ */
+function besteSendezeitenDefault(): string
+{
+    return "Instagram: Mi 12:00 · Do 8:30 · So 20:00\n"
+        . "Facebook: Di 12:30 · (Test: Do 6:30)\n"
+        . "Kernzeit: Di–Do, mittags 12–14 & abends 18–21 Uhr\n"
+        . "Meiden: Fr-Abend, Samstag, nachts";
+}
+
+/** Gespeicherte „Beste Sendezeiten" lesen, sonst Default. Robust gegen fehlende Tabelle. */
+function besteSendezeiten(PDO $pdo): string
+{
+    try {
+        $stmt = $pdo->query("SELECT `value` FROM einstellungen WHERE `key` = 'beste_sendezeiten'");
+        $val  = $stmt ? trim((string) ($stmt->fetchColumn() ?: '')) : '';
+    } catch (PDOException $e) {
+        $val = '';
+    }
+    return $val !== '' ? $val : besteSendezeitenDefault();
+}
+
+/**
  * Verbindliche Event-Eckdaten fuer jeden Text-Prompt — aus den Einstellungen
  * (renntag_datum, veranstaltungsname), damit das LLM keine Daten erfindet.
  */
