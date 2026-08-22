@@ -174,8 +174,10 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
     <link rel="stylesheet" href="../css/fonts.css?v=<?= @filemtime(__DIR__ . '/../css/fonts.css') ?>">
     <style>
         /* --- Werkzeug-Layout: Steuerung links, Vorschau rechts --- */
-        .vt-split { display: grid; grid-template-columns: minmax(320px, 430px) 1fr; gap: 1.25rem; align-items: start; }
-        @media (max-width: 1000px) { .vt-split { grid-template-columns: 1fr; } }
+        /* Zwei gleich breite Spalten: die Vorschau ist so breit wie die Befuell-Seitenleiste
+           (bis 460px), darunter responsiv schmaler; unter 900px gestapelt (volle Breite). */
+        .vt-split { display: grid; grid-template-columns: repeat(2, minmax(300px, 460px)); gap: 1.25rem; align-items: start; justify-content: start; }
+        @media (max-width: 900px) { .vt-split { grid-template-columns: minmax(0, 1fr); } }
         .vt-panel { background: var(--white); border-radius: 8px; box-shadow: var(--shadow-card); padding: 1.25rem; }
         .vt-panel h2 { font-size: 1rem; margin: 0 0 0.9rem; }
         .vt-panel h3 { font-size: 0.82rem; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; margin: 1.2rem 0 0.6rem; }
@@ -209,13 +211,18 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
         /* --- Off-screen Render-Buehne (echte 1080px, NICHT display:none) --- */
         .vt-stage { position: absolute; left: -9999px; top: 0; width: 1080px; overflow: visible; }
         /* Freie Text-Platzierung: interaktive Live-Vorschau + ziehbare Bloecke (Standard) */
-        #vt-live-vp { width: 100%; max-width: 340px; overflow: hidden; border: 1px solid var(--border); border-radius: 8px; }
+        #vt-live-vp { width: 100%; max-width: 100%; overflow: hidden; border: 1px solid var(--border); border-radius: 8px; }
         #vt-live-scale { transform-origin: top left; }
         /* position !important: schlaegt die spaeter stehende, gleich-spezifische Regel
            `.sc-card > *:not(.sc-bg):not(.sc-overlay){position:relative}` — sonst bleiben
            die Bloecke im Flow und sind nicht frei ziehbar. */
         .sc-card.freilayout .vt-drag { position: absolute !important; cursor: grab; outline: 2px dashed rgba(255,255,255,0.6); outline-offset: 4px; touch-action: none; }
         .sc-card.freilayout .vt-drag:active { cursor: grabbing; }
+        /* Footer (Wortmarke/URL + QR) bleibt fix unten — nicht ziehbar. Sobald die Textbloecke
+           position:absolute werden, waere der Footer das einzige Flow-Element und rueckte im
+           space-between-Flex nach oben; deshalb hier fest an die Padding-Box unten anheften.
+           Padding der .sc-card ist formatunabhaengig 80px. */
+        .sc-card.freilayout .sc-footer { position: absolute !important; left: 80px; right: 80px; bottom: 80px; }
 
         /* ============================================================
            Vorlage "Anmeldung geoeffnet" — 1:1 Port des Proofs
@@ -1183,6 +1190,15 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
             return { s: vw / fmt.w, w: fmt.w, h: fmt.h };
         }
         function aktiveFreiKarte() { return liveScale.firstElementChild; }
+        // Nur neu skalieren (kein Neuaufbau): Karte fuellt die Vorschau-Box, egal wie breit
+        // sie gerade ist. Deckt Init-Timing (Box noch 0/schmal) UND Fenster-Resize ab.
+        function freiRescale() {
+            const c = aktiveFreiKarte();
+            if (!c || !liveVp.clientWidth) { return; }
+            const sw = freiScale();
+            liveScale.style.transform = 'scale(' + sw.s + ')';
+            liveVp.style.height = (sw.h * sw.s) + 'px';
+        }
         // Aktuell gehostete Frei-Karte zurueck in ihre Stage; gespeicherte Positionen bleiben.
         function raeumeFreiKarte() {
             const c = aktiveFreiKarte();
@@ -1273,6 +1289,11 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
             posStore()[keyOf(thDrag.el)] = { l: +l.toFixed(1), t: +t.toFixed(1) };
         });
         liveScale.addEventListener('pointerup', () => { if (thDrag) { thDrag = null; vtSpeichereDebounced(); } });
+
+        // Vorschau-Karte an die Breite der Vorschau-Box koppeln (responsiv bei Fenster-Resize
+        // und korrekt, falls die Box beim ersten Aufbau noch nicht ausgemessen war).
+        if (window.ResizeObserver) { new ResizeObserver(freiRescale).observe(liveVp); }
+        window.addEventListener('resize', freiRescale);
 
         // Standard-Vorschau nach vollem Setup aktivieren (Positionen ggf. aus dem Cache).
         aktualisiereVorschauModus();
