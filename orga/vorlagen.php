@@ -278,10 +278,13 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
         .sc-card .sc-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
         .sc-card .sc-overlay { position: absolute; inset: 0; z-index: 1; }
         .sc-card > *:not(.sc-bg):not(.sc-overlay) { position: relative; z-index: 2; }
-        .sc-card .sc-logos { display: flex; flex-wrap: wrap; gap: 40px; align-items: center; margin-bottom: 24px; }
+        /* Helle Logo-Plakette wie auf der Homepage (.logo-plakette, --color-cream): IMMER
+           eine cremefarbene Pille hinter den Logos — pipeline-weit über alle Post-Layouts. */
+        .sc-card .sc-logos { display: flex; flex-wrap: wrap; gap: 30px; align-items: center; margin-bottom: 24px;
+            align-self: flex-start; background: #f7f5ee; border-radius: 20px; padding: 18px 26px; box-shadow: 0 6px 18px rgba(0,0,0,0.18); }
         .sc-card .sc-logos img { height: 96px; width: auto; max-width: 340px; object-fit: contain; }
-        /* Gruene-Logo-Platte (Spec 5.C.11): helle Unterlegplatte, wenn Logos auf dunklem Foto liegen */
-        .sc-card .sc-logos.on-photo { background: rgba(255,255,255,0.92); border-radius: 20px; padding: 18px 26px; gap: 30px; align-self: flex-start; box-shadow: 0 6px 18px rgba(0,0,0,0.18); }
+        /* Auf dunklem Foto: halbtransparentes Weiß statt Creme, damit es sich einfügt. */
+        .sc-card .sc-logos.on-photo { background: rgba(255,255,255,0.92); }
         .sc-card .sc-event { display: flex; align-items: center; gap: 14px; font-size: 24px; font-weight: 600;
             letter-spacing: 0.16em; text-transform: uppercase; color: #fff8dd; margin-bottom: 20px; }
         .sc-card .sc-event::before { content: ''; width: 44px; height: 4px; border-radius: 2px;
