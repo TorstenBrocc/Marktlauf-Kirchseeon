@@ -45,7 +45,7 @@ if (!$post) {
     postBildJson(false, 'Post nicht gefunden.');
 }
 
-if (preg_match('#^data:image/png;base64,#', $imageB64)) {
+if (preg_match('#^data:image/[a-z0-9.+-]+;base64,#i', $imageB64)) {
     $imageB64 = substr($imageB64, strpos($imageB64, ',') + 1);
 }
 $binary = base64_decode($imageB64, true);
@@ -57,10 +57,14 @@ if (strlen($binary) > 8 * 1024 * 1024) {
     http_response_code(413);
     postBildJson(false, 'Bild zu groß (max. 8 MB).');
 }
-if (substr($binary, 0, 8) !== "\x89PNG\r\n\x1a\n") {
+// PNG (Vorlagen-Grafik) ODER JPEG (Weg "nur Foto") akzeptieren.
+$istPng  = substr($binary, 0, 8) === "\x89PNG\r\n\x1a\n";
+$istJpeg = substr($binary, 0, 3) === "\xFF\xD8\xFF";
+if (!$istPng && !$istJpeg) {
     http_response_code(415);
-    postBildJson(false, 'Nur PNG-Grafiken werden akzeptiert.');
+    postBildJson(false, 'Nur PNG- oder JPEG-Bilder werden akzeptiert.');
 }
+$ext = $istJpeg ? 'jpg' : 'png';
 
 $dir = __DIR__ . '/../../assets/social';
 if (!is_dir($dir) && !mkdir($dir, 0755, true) && !is_dir($dir)) {
@@ -69,7 +73,7 @@ if (!is_dir($dir) && !mkdir($dir, 0755, true) && !is_dir($dir)) {
     postBildJson(false, 'Bild-Ablage nicht verfügbar.');
 }
 
-$filename = 'post-' . $postId . '-' . date('Ymd-His') . '-' . bin2hex(random_bytes(4)) . '.png';
+$filename = 'post-' . $postId . '-' . date('Ymd-His') . '-' . bin2hex(random_bytes(4)) . '.' . $ext;
 if (file_put_contents($dir . '/' . $filename, $binary) === false) {
     logError('post_bild: Bild konnte nicht geschrieben werden.');
     http_response_code(500);
