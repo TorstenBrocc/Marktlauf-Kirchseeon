@@ -306,7 +306,7 @@ $wartetAufStichtag = !$frisch && ($post['status'] ?? '') === 'approved'
             <div id="sp-grafik-embed-wrap" style="display:none;margin-top:0.9rem;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--white)">
                 <iframe id="sp-grafik-embed" title="Grafik-Editor" loading="lazy"
                         style="width:100%;border:0;display:block;min-height:640px"
-                        data-src="vorlagen.php?embed=1&amp;post=<?= (int) $postId ?>&amp;fahrplan=<?= (int) $fahrplanId ?>"></iframe>
+                        data-src="vorlagen.php?embed=1&amp;post=<?= (int) $postId ?>&amp;fahrplan=<?= (int) $fahrplanId ?>&amp;v=<?= @filemtime(__DIR__ . '/vorlagen.php') ?>"></iframe>
             </div>
             </div>
         </div>
