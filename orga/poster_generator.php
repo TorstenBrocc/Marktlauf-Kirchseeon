@@ -19,6 +19,14 @@ $sponsors = [];
 foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JPG}', GLOB_BRACE) ?: [] as $f) {
     $sponsors[] = '../assets/images/sponsoren/' . rawurlencode(basename($f));
 }
+
+// Embed-Modus (?embed=1&post=&fahrplan=): ohne Sidebar/Intro, eingebettet im Grafik-Schritt
+// des Post-Details. "Für Post übernehmen" hängt das Poster-PNG per api/post_bild.php an den
+// Post und meldet es der Elternseite via postMessage (analog vorlagen.php).
+$csrfToken  = generateCsrfToken();
+$postId     = (int) ($_GET['post'] ?? 0);
+$fahrplanId = (int) ($_GET['fahrplan'] ?? 0);
+$embed      = ((int) ($_GET['embed'] ?? 0)) === 1 && $postId > 0;
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -140,12 +148,21 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
         /* Freie Fläche / Kachel (Breite & Höhe unabhängig) */
         .pg-shape { border-radius: 24px; background: #fff; box-shadow: 0 8px 24px rgba(0,0,0,0.12); box-sizing: border-box; }
         .pg-shape.pg-shape-noshadow { box-shadow: none; }
+
+        /* Embed-Modus (?embed=1): im Grafik-Schritt des Post-Details eingebettet */
+        body.pg-embed { background: var(--white); }
+        body.pg-embed .main-content { margin: 0; padding: 0.25rem 0.25rem 0.75rem; max-width: none; }
     </style>
 </head>
-<body>
+<body class="<?= $embed ? 'pg-embed' : '' ?>">
+<?php if (!$embed): ?>
 <?php $activeNav = 'social_media'; require __DIR__ . '/_sidebar.php'; ?>
+<?php endif; ?>
 
     <main class="main-content">
+<?php if ($embed): ?>
+        <p class="pg-hint" style="margin:0 0 0.6rem">Poster bauen, dann unten <strong>„Für Post übernehmen"</strong> — die Grafik wird direkt an diesen Post gehängt.</p>
+<?php else: ?>
         <header class="content-header">
             <h1>Kampagnen-Poster (Frei-Editor)</h1>
             <p class="content-subtitle">Einzelne Elemente · Icons/Logos tauschbar · Kachel-Hintergrund an/aus · Zoom · Arbeitsfläche · Verlauf · PNG-Export</p>
@@ -159,6 +176,7 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
             <strong>Arbeitsfläche:</strong> Elemente neben das Poster ziehen = ablegen (nicht im Export).
             <strong>Zoom:</strong> Leiste über der Vorschau oder <strong>Strg/Cmd + Mausrad</strong>.
         </p>
+<?php endif; ?>
 
         <div class="pg-wrap">
             <div class="pg-controls">
@@ -252,7 +270,12 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
 
                 <div class="pg-row"><label>Hintergrundfoto (optional)</label><input type="file" id="c-photo" accept="image/*"> <button class="btn btn-small btn-secondary" id="c-photo-clear" type="button">entfernen</button></div>
                 <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.6rem">
+<?php if ($embed): ?>
+                    <button class="btn btn-primary" id="pg-uebernehmen" type="button">Für Post übernehmen</button>
+                    <button class="btn btn-secondary" id="c-export" type="button">PNG exportieren</button>
+<?php else: ?>
                     <button class="btn btn-primary" id="c-export" type="button">PNG exportieren</button>
+<?php endif; ?>
                     <button class="btn btn-secondary" id="c-reset" type="button">Layout zurücksetzen</button>
                 </div>
                 <p class="pg-hint" id="c-status" style="margin-top:0.5rem"></p>
@@ -307,13 +330,16 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
             </div>
         </div>
     </main>
+<?php if (!$embed): ?>
 </div><!-- /dashboard-layout -->
+<?php endif; ?>
 
     <script src="../assets/js/snapdom.js"></script>
     <script src="../assets/js/qrcode.js"></script>
     <script>
     (function(){
         var SPONSORS = <?= json_encode($sponsors, JSON_UNESCAPED_SLASHES) ?>;
+        var EMBED = <?= $embed ? 'true' : 'false' ?>, POST_ID = <?= (int) $postId ?>, FAHRPLAN_ID = <?= (int) $fahrplanId ?>, CSRF = <?= json_encode($csrfToken) ?>;
         var FORMATS = { portrait:{w:1080,h:1350}, square:{w:1080,h:1080}, story:{w:1080,h:1920} };
         var PAD = 340; // Arbeitsflaeche rings um das Poster (in Poster-Pixeln)
 
@@ -704,9 +730,8 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
             refreshGroupMarks(); renderAll(); applyAll(); deselect(); clearSaved();
         });
 
-        // ---- Export (nur Poster-Bereich) ----
-        $('c-export').addEventListener('click',async function(){
-            var s=$('c-status'); s.textContent='⏳ Rendert …';
+        // ---- Render (nur Poster-Bereich) -> PNG-DataURL ----
+        async function renderPoster(){
             selbox.style.display='none'; hideGuides();
             var marks=Array.prototype.slice.call(document.querySelectorAll('.pb.pg-grouped'));
             marks.forEach(function(b){ b.classList.remove('pg-grouped'); });
@@ -719,11 +744,34 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
                 var out=document.createElement('canvas'); out.width=curW*2; out.height=curH*2;
                 var cx=out.getContext('2d'); cx.fillStyle='#007230'; cx.fillRect(0,0,out.width,out.height);
                 cx.drawImage(full, PAD*2, PAD*2, curW*2, curH*2, 0, 0, curW*2, curH*2);
-                var a=document.createElement('a'); a.download='marktlauf-poster.png'; a.href=out.toDataURL('image/png'); a.click();
-                s.textContent='✓ Exportiert ('+curW+'×'+curH+').';
-            }catch(err){ s.textContent='⚠️ Fehler beim Export: '+err; }
-            finally{ scene.style.transform=sv; stage.style.height=sh; stage.style.overflowX=sox; marks.forEach(function(b){ b.classList.add('pg-grouped'); }); hid.forEach(function(b){ b.style.display=''; }); if(selIds.length) updateSelbox(); }
+                return out.toDataURL('image/png');
+            } finally{ scene.style.transform=sv; stage.style.height=sh; stage.style.overflowX=sox; marks.forEach(function(b){ b.classList.add('pg-grouped'); }); hid.forEach(function(b){ b.style.display=''; }); if(selIds.length) updateSelbox(); }
+        }
+        // ---- Export (Download) ----
+        $('c-export').addEventListener('click',async function(){
+            var s=$('c-status'); s.textContent='⏳ Rendert …';
+            try{ var url=await renderPoster(); var a=document.createElement('a'); a.download='marktlauf-poster.png'; a.href=url; a.click(); s.textContent='✓ Exportiert ('+curW+'×'+curH+').'; }
+            catch(err){ s.textContent='⚠️ Fehler beim Export: '+err; }
         });
+        // ---- Embed: "Für Post übernehmen" + Höhen-Meldung an die Elternseite ----
+        if(EMBED){
+            var ub=$('pg-uebernehmen');
+            if(ub) ub.addEventListener('click',async function(){
+                var s=$('c-status'); ub.disabled=true; var old=ub.textContent; ub.textContent='⏳ Speichert …'; s.textContent='';
+                try{
+                    var url=await renderPoster();
+                    var body=new URLSearchParams(); body.set('csrf_token',CSRF); body.set('post_id',POST_ID); body.set('image_base64',url);
+                    var r=await fetch('api/post_bild.php',{method:'POST',body:body}); var d=await r.json();
+                    if(d.ok){ if(window.parent!==window){ window.parent.postMessage({type:'vt-uebernommen',fahrplanId:FAHRPLAN_ID}, location.origin); } else { window.location.href='social_post.php?fahrplan='+FAHRPLAN_ID; } return; }
+                    s.textContent='⚠️ '+(d.message||'Speichern fehlgeschlagen.');
+                }catch(e){ s.textContent='⚠️ Netzwerkfehler beim Speichern.'; }
+                finally{ ub.disabled=false; ub.textContent=old; }
+            });
+            if(window.parent!==window){
+                var reportH=function(){ try{ window.parent.postMessage({type:'vt-height',height:document.body.scrollHeight}, location.origin); }catch(e){} };
+                window.addEventListener('load',reportH); setInterval(reportH,800);
+            }
+        }
 
         // ---- Autospeichern (localStorage, entprellt) ----
         var STORAGE_KEY='mkl_poster_v1', saveT=null;

@@ -302,6 +302,7 @@ $wartetAufStichtag = !$frisch && ($post['status'] ?? '') === 'approved'
             </div>
             <div class="sp-zeile" style="margin-top:0.7rem;flex-wrap:wrap;gap:0.6rem;align-items:center">
                 <button type="button" class="btn btn-primary btn-small" id="sp-grafik-toggle"><?= $schrittGrafik ? 'Grafik ändern' : 'Grafik erstellen' ?></button>
+                <button type="button" class="btn btn-secondary btn-small" id="sp-poster-toggle">Postergenerator</button>
                 <span class="sp-hinweis">oder</span>
                 <label class="btn btn-secondary btn-small" style="cursor:pointer;margin:0">
                     Nur ein Foto senden (ohne Vorlage)
@@ -314,6 +315,11 @@ $wartetAufStichtag = !$frisch && ($post['status'] ?? '') === 'approved'
                 <iframe id="sp-grafik-embed" title="Grafik-Editor" loading="lazy"
                         style="width:100%;border:0;display:block;min-height:640px"
                         data-src="vorlagen.php?embed=1&amp;post=<?= (int) $postId ?>&amp;fahrplan=<?= (int) $fahrplanId ?>&amp;v=<?= @filemtime(__DIR__ . '/vorlagen.php') ?>"></iframe>
+            </div>
+            <div id="sp-poster-embed-wrap" style="display:none;margin-top:0.9rem;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--white)">
+                <iframe id="sp-poster-embed" title="Postergenerator" loading="lazy"
+                        style="width:100%;border:0;display:block;min-height:640px"
+                        data-src="poster_generator.php?embed=1&amp;post=<?= (int) $postId ?>&amp;fahrplan=<?= (int) $fahrplanId ?>&amp;v=<?= @filemtime(__DIR__ . '/poster_generator.php') ?>"></iframe>
             </div>
             </div>
         </div>
@@ -595,24 +601,35 @@ document.getElementById('sp-copy-social').addEventListener('click', () => spCopy
 const copyArtikelBtn = document.getElementById('sp-copy-artikel');
 if (copyArtikelBtn) { copyArtikelBtn.addEventListener('click', () => spCopy('sp-artikel')); }
 
-// Grafik-Editor eingebettet (kein Seitenwechsel): lazy laden, Hoehe + Uebernahme via postMessage
+// Editoren eingebettet (Grafik-Vorlage + Postergenerator, kein Seitenwechsel):
+// lazy laden, sich gegenseitig zuklappen, Hoehe + Uebernahme via postMessage.
 (function() {
-    const toggle = document.getElementById('sp-grafik-toggle');
-    const wrap   = document.getElementById('sp-grafik-embed-wrap');
-    const frame  = document.getElementById('sp-grafik-embed');
-    if (!toggle || !wrap || !frame) { return; }
-    toggle.addEventListener('click', () => {
-        const auf = wrap.style.display !== 'none';
-        if (auf) { wrap.style.display = 'none'; return; }
-        wrap.style.display = 'block';
-        if (!frame.src) { frame.src = frame.dataset.src; }  // erst beim Oeffnen laden
-        wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const editors = [
+        { toggle: 'sp-grafik-toggle', wrap: 'sp-grafik-embed-wrap', frame: 'sp-grafik-embed' },
+        { toggle: 'sp-poster-toggle', wrap: 'sp-poster-embed-wrap', frame: 'sp-poster-embed' }
+    ].map(e => ({
+        toggle: document.getElementById(e.toggle),
+        wrap:   document.getElementById(e.wrap),
+        frame:  document.getElementById(e.frame)
+    })).filter(e => e.toggle && e.wrap && e.frame);
+    if (!editors.length) { return; }
+    editors.forEach((e) => {
+        e.toggle.addEventListener('click', () => {
+            const auf = e.wrap.style.display !== 'none';
+            editors.forEach(o => { if (o !== e) { o.wrap.style.display = 'none'; } });  // nur einer offen
+            if (auf) { e.wrap.style.display = 'none'; return; }
+            e.wrap.style.display = 'block';
+            if (!e.frame.src) { e.frame.src = e.frame.dataset.src; }  // erst beim Oeffnen laden
+            e.wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
     });
     window.addEventListener('message', (ev) => {
-        if (ev.origin !== location.origin || ev.source !== frame.contentWindow) { return; }
+        if (ev.origin !== location.origin) { return; }
+        const e = editors.find(x => x.frame.contentWindow === ev.source);
+        if (!e) { return; }
         const d = ev.data || {};
         if (d.type === 'vt-height' && typeof d.height === 'number') {
-            frame.style.height = Math.max(480, d.height) + 'px';
+            e.frame.style.height = Math.max(480, d.height) + 'px';
         } else if (d.type === 'vt-uebernommen') {
             location.reload();  // neue Grafik am Post -> Schritt 3 abgehakt
         }
