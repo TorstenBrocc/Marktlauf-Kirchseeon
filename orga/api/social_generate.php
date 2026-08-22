@@ -93,8 +93,11 @@ $article = $mitPresse ? llmGenerate(llmPromptPress(), $userInput, $provider) : '
 $social  = llmGenerate(llmPromptSocial(), $userInput, $provider);
 
 if ($article === '' && $social === '') {
+    $grund = llmLastError();
     http_response_code(502);
-    echo json_encode(['error' => 'KI-Antwort leer — API-Key prüfen oder Provider wechseln.']);
+    echo json_encode([
+        'error' => 'KI-Antwort leer' . ($grund !== '' ? ' — ' . $grund : ' — API-Key prüfen oder Provider wechseln.'),
+    ], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
