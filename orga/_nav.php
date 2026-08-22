@@ -299,7 +299,7 @@ return [
     ],
     [
         'key'     => 'social_fahrplan',
-        'label'   => 'Social-Fahrplan',
+        'label'   => 'Social-Pipeline',
         'section' => 'KOMMUNIKATION',
         'href'    => 'social_fahrplan.php',
         'kpi'     => static function (PDO $pdo): array {

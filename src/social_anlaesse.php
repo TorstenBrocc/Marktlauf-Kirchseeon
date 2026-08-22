@@ -143,7 +143,7 @@ function socialAnlaesse(): array
             'ui'     => 'Helfer gesucht',
             'prompt' => 'Rufe gezielt Helfer auf — ehrenamtsnah und herzlich. Mach den nächsten Schritt leicht.',
             'ausschluss' => 'Nicht mit der Läufer-Anmeldung vermischen. Keine Sponsoren.',
-            'fakten' => "Für den Renntag am Sonntag, 20.09.2026 suchen wir Helfer\nEinsatzbereiche: Streckenposten, Start & Ziel, Verpflegung, Auf- & Abbau\nSchichten am Renntag, Auf-/Abbau am Tag selbst\nMelden über atsv-kirchseeon-marktlauf.de oder direkt bei der Orga\nAls Dankeschön: gemeinsamer Ausklang nach dem Lauf",
+            'fakten' => "Für den Renntag am Sonntag, 20.09.2026 suchen wir Helfer\nEinsatzbereiche: Streckenposten, Start & Ziel, Verpflegung, Auf-/Abbau\nMelden über QR-Code oder unser Kontaktformular: atsv-kirchseeon-marktlauf.de/#connect",
         ],
         'sponsorenvorstellung' => [
             'gruppe' => 'Contentplan 2026',

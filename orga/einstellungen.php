@@ -338,7 +338,7 @@ $makeWebhookSecret = (string) ($config['make_webhook_secret'] ?? '');
 
                 <div class="settings-section" id="social-section">
                     <h2>Social Media</h2>
-                    <p class="settings-hint">Vereinsweite Vorgaben für den Social-Fahrplan und das Post-Detail.</p>
+                    <p class="settings-hint">Vereinsweite Vorgaben für die Social-Pipeline und das Post-Detail.</p>
                     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1rem;margin-bottom:1rem">
                         <div style="border:1px solid var(--border);border-radius:8px;padding:0.8rem 1rem">
                             <p style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-light);margin:0 0 0.5rem">Beste Sendezeiten (Studien 2025/26)</p>
