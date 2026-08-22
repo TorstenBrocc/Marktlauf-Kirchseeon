@@ -71,6 +71,9 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
             font-family: 'Montserrat', 'Arial Black', system-ui, sans-serif; color:#fff; }
         .pb.dragging { cursor: grabbing; }
         .pb.pg-grouped::after { content:''; position:absolute; inset:-4px; border:2px dotted rgba(255,140,66,0.55); border-radius:6px; pointer-events:none; z-index:7; }
+        /* Ausgeblendetes Element: im Editor blass + Markierung, im Export ganz entfernt */
+        .pb.pg-hidden { opacity: 0.3; }
+        .pb.pg-hidden::before { content:'ausgeblendet'; position:absolute; top:0; left:0; z-index:8; background:#ff6b35; color:#fff; font:700 12px/1 system-ui,Arial,sans-serif; letter-spacing:0.3px; text-transform:none; padding:3px 7px; border-radius:5px; pointer-events:none; white-space:nowrap; }
 
         /* Auswahlrahmen + Resize-Handle + Fanglinien (UI-Overlay, nicht im Export) */
         .pg-selbox { position: absolute; z-index: 9000; border: 3px dashed #ff6b35; box-sizing: border-box; display: none; pointer-events: none; }
@@ -120,6 +123,8 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
         .pg-scan-head { font-weight: 900; font-size: 24px; color: #007230; margin-bottom: 12px; line-height: 1.1; }
         .pg-domain { font-size: 19px; font-weight: 700; color: #007230; margin-top: 12px; }
         #pg-qr { width: 190px; height: 190px; display: block; margin: 0 auto; }
+        .pg-scan.pg-notile { background: transparent; padding: 0; }
+        .pg-scan.pg-notile .pg-scan-head, .pg-scan.pg-notile .pg-domain { color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,0.3); }
 
         /* Eigene Kachel */
         .pg-ctile { background: #fff; color: #0d3b1e; border-radius: 16px; padding: 18px 22px; display: flex; align-items: center; gap: 14px; }
@@ -175,6 +180,8 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
 
                     <div class="pg-row" id="pg-tile-row" style="display:none;margin-top:0.3rem"><label style="display:flex;align-items:center;gap:0.4rem;margin:0"><input type="checkbox" id="pg-el-tile"> weiße Kachel als Hintergrund</label></div>
 
+                    <div class="pg-row" id="pg-hide-row" style="display:none;margin-top:0.3rem"><label style="display:flex;align-items:center;gap:0.4rem;margin:0"><input type="checkbox" id="pg-el-hidden"> Element ausblenden <span class="pg-hint">(nicht im Export)</span></label></div>
+
                     <div id="pg-shape-ctrl" style="display:none">
                         <div class="pg-row" style="margin-bottom:0.4rem"><label>Breite: <span id="pg-sh-wv">400</span> px</label><input type="range" id="pg-sh-w" min="30" max="1400" value="400"></div>
                         <div class="pg-row" style="margin-bottom:0.4rem"><label>Höhe: <span id="pg-sh-hv">200</span> px</label><input type="range" id="pg-sh-h" min="30" max="1400" value="200"></div>
@@ -228,6 +235,7 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
                 <div class="pg-row"><label>Domain</label><input type="text" id="c-domain" value="atsv-kirchseeon-marktlauf.de"></div>
                 <div class="pg-row"><label><input type="checkbox" id="c-show-sponsors"> Sponsoren-Kacheln anzeigen</label></div>
                 <div class="pg-row"><label>QR-Ziel-URL</label><input type="url" id="c-qr-url" value="https://atsv-kirchseeon-marktlauf.de/#anmeldung"></div>
+                <div class="pg-row"><label>Scan-Überschrift (leer = ausblenden)</label><input type="text" id="c-scan-head" value="JETZT SCANNEN & ANMELDEN!"></div>
 
                 <div class="pg-grad">
                     <label><input type="checkbox" id="c-grad-on" checked> Marken-Verlauf (Hintergrund)</label>
@@ -281,7 +289,7 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
 
                         <div class="pb" id="b-scan" data-name="Scan/QR-Kachel" data-kind="scan">
                             <div class="pg-scan">
-                                <div class="pg-scan-head">JETZT SCANNEN<br>&amp; ANMELDEN!</div>
+                                <div class="pg-scan-head" id="p-scanhead">JETZT SCANNEN &amp; ANMELDEN!</div>
                                 <img id="pg-qr" alt="">
                                 <div class="pg-domain" id="p-domain">atsv-kirchseeon-marktlauf.de</div>
                             </div>
@@ -314,6 +322,7 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
         };
         SPONSORS.forEach(function(u,i){ LOGOS['Sponsor '+(i+1)] = u; });
         var uploadN = 0;
+        var BASE_LOGO_KEYS = Object.keys(LOGOS); // Basis-Bibliothek (fuer Autospeichern: eigene Uploads = alles ausserhalb)
 
         // ---- Icon-Bibliothek ----
         var ICONS = {
@@ -361,7 +370,8 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
             'b-coop':{img:'Gemeinde',tile:true,cap:'IN KOOPERATION MIT'},
             'b-date':{icon:'calendar',tile:true},
             'b-loc':{icon:'pin',tile:true},
-            'b-fam':{icon:'family',tile:true}
+            'b-fam':{icon:'family',tile:true},
+            'b-scan':{tile:true}
         }; }
         var meta = baseMeta();
         var featIcons = ['shoe','stopwatch','leaf'];
@@ -380,7 +390,7 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
         // pos ist in SZENEN-Koordinaten (inkl. PAD-Offset). Poster-Ecke oben-links = (PAD,PAD).
         function rect(id){ var p=pos[id]; return {x:p.x, y:p.y, w:natW(id)*p.s, h:natH(id)*p.s}; }
         function defaultZ(id){ return kindOf(id)==='shape' ? 5 : 10; }
-        function applyBlock(id){ var b=$(id),p=pos[id]; b.style.left=p.x+'px'; b.style.top=p.y+'px'; b.style.transform='scale('+p.s+')'; b.style.zIndex=(p.z!=null?p.z:defaultZ(id)); }
+        function applyBlock(id){ var b=$(id),p=pos[id]; b.style.left=p.x+'px'; b.style.top=p.y+'px'; b.style.transform='scale('+p.s+')'; b.style.zIndex=(p.z!=null?p.z:defaultZ(id)); b.classList.toggle('pg-hidden', !!(meta[id]&&meta[id].hidden)); }
         function applyAll(){ Object.keys(pos).forEach(applyBlock); if(selIds.length) updateSelbox(); }
         function bbox(ids){ var x0=1e9,y0=1e9,x1=-1e9,y1=-1e9; ids.forEach(function(id){ var r=rect(id); x0=Math.min(x0,r.x); y0=Math.min(y0,r.y); x1=Math.max(x1,r.x+r.w); y1=Math.max(y1,r.y+r.h); }); return {x:x0,y:y0,w:x1-x0,h:y1-y0}; }
 
@@ -414,17 +424,21 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
             el.classList.toggle('pg-shape-noshadow', transp); }
         function renderEl(id){ var k=kindOf(id);
             if(k==='logo') renderLogo(id); else if(k==='coop') renderCoop(id); else if(k==='dcard') renderDcard(id);
-            else if(k==='features') renderFeatures(); else if(k==='custom') renderCustom(id); else if(k==='shape') renderShape(id); }
+            else if(k==='features') renderFeatures(); else if(k==='custom') renderCustom(id); else if(k==='shape') renderShape(id);
+            else if(k==='scan') renderScan(id); }
         function renderStatic(){
             $('p-headline').textContent=$('c-headline').value; $('p-subline').textContent=$('c-subline').value;
-            $('p-cta').textContent=$('c-cta').value; $('p-domain').textContent=$('c-domain').value;
+            $('p-cta').textContent=$('c-cta').value;
+            var dv=$('c-domain').value, de=$('p-domain'); de.textContent=dv; de.style.display=dv?'block':'none';
+            var sv=$('c-scan-head').value, se=$('p-scanhead'); se.textContent=sv; se.style.display=sv?'block':'none';
         }
+        function renderScan(id){ var m=meta[id]||{}; $(id).querySelector('.pg-scan').classList.toggle('pg-notile', !m.tile); }
         function renderSponsors(){
             var blk=$('b-sponsors');
             if(!$('c-show-sponsors').checked||!SPONSORS.length){ blk.style.display='none'; if(selIds.indexOf('b-sponsors')!==-1) deselect(); return; }
             $('p-sponsors').innerHTML=SPONSORS.map(function(u){ return '<div class="pg-sp"><img src="'+u+'" alt=""></div>'; }).join(''); blk.style.display='block';
         }
-        function renderAll(){ renderStatic(); ['b-logo1','b-logo2','b-coop','b-date','b-loc','b-fam'].forEach(renderEl);
+        function renderAll(){ renderStatic(); ['b-logo1','b-logo2','b-coop','b-date','b-loc','b-fam','b-scan'].forEach(renderEl);
             Object.keys(meta).forEach(function(id){ if(/^custom/.test(id)&&$(id)) renderCustom(id); else if(/^shape/.test(id)&&$(id)) renderShape(id); });
             renderFeatures(); renderSponsors(); }
 
@@ -433,7 +447,8 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
         bindStatic('c-headline',function(){ $('p-headline').textContent=$('c-headline').value; });
         bindStatic('c-subline',function(){ $('p-subline').textContent=$('c-subline').value; });
         bindStatic('c-cta',function(){ $('p-cta').textContent=$('c-cta').value; });
-        bindStatic('c-domain',function(){ $('p-domain').textContent=$('c-domain').value; });
+        bindStatic('c-domain',function(){ var v=$('c-domain').value, e=$('p-domain'); e.textContent=v; e.style.display=v?'block':'none'; });
+        bindStatic('c-scan-head',function(){ var v=$('c-scan-head').value, e=$('p-scanhead'); e.textContent=v; e.style.display=v?'block':'none'; });
         ['c-f1t','c-f1s','c-f2t','c-f2s','c-f3t','c-f3s'].forEach(function(id){ $(id).addEventListener('input',function(){ renderFeatures(); if(selIds.length) updateSelbox(); }); });
         [['c-date','b-date'],['c-loc','b-loc'],['c-fam','b-fam']].forEach(function(m){ $(m[0]).addEventListener('input',function(){ renderDcard(m[1]); if(selIds.length) updateSelbox(); }); });
         $('c-show-sponsors').addEventListener('change', renderSponsors);
@@ -456,8 +471,8 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
         $('c-grad-angle').addEventListener('input',function(){ $('c-grad-angle-val').textContent=this.value; applyGrad(); });
         $('c-grad-fade').addEventListener('input',function(){ $('c-grad-fade-val').textContent=this.value; applyGrad(); });
 
-        $('c-photo').addEventListener('change',function(e){ var f=e.target.files[0]; if(!f) return; var r=new FileReader(); r.onload=function(){ $('pg-bg').style.backgroundImage='url('+r.result+')'; }; r.readAsDataURL(f); });
-        $('c-photo-clear').addEventListener('click',function(){ $('pg-bg').style.backgroundImage=''; $('c-photo').value=''; });
+        $('c-photo').addEventListener('change',function(e){ var f=e.target.files[0]; if(!f) return; var r=new FileReader(); r.onload=function(){ $('pg-bg').style.backgroundImage='url('+r.result+')'; scheduleSave(); }; r.readAsDataURL(f); });
+        $('c-photo-clear').addEventListener('click',function(){ $('pg-bg').style.backgroundImage=''; $('c-photo').value=''; scheduleSave(); });
 
         function updateQr(){
             var url=($('c-qr-url').value||'').trim(), img=$('pg-qr'); if(!url){ img.removeAttribute('src'); return; }
@@ -501,7 +516,8 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
             show('pg-icon-row', k==='dcard'||isCustom);
             show('pg-img-row', k==='logo'||k==='coop'||isCustom);
             show('pg-cap-row', k==='coop');
-            show('pg-tile-row', k==='logo'||k==='coop'||k==='dcard'||isCustom);
+            show('pg-tile-row', k==='logo'||k==='coop'||k==='dcard'||isCustom||k==='scan');
+            show('pg-hide-row', n===1);
             $('pg-shape-ctrl').style.display=isShape?'block':'none';
             if(n===1){
                 var m=meta[one]||{};
@@ -509,6 +525,7 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
                 if($('pg-img-row').style.display!=='none'){ buildImgSelect(m.img||''); }
                 if($('pg-cap-row').style.display!=='none'){ $('pg-el-cap').value=m.cap||''; }
                 if($('pg-tile-row').style.display!=='none'){ $('pg-el-tile').checked=!!m.tile; }
+                $('pg-el-hidden').checked=!!m.hidden;
                 if(isCustom){ $('pg-el-text').value=$(one).querySelector('.pg-ct-text').textContent; }
                 if(isShape){ $('pg-sh-w').value=m.w; $('pg-sh-wv').textContent=m.w; $('pg-sh-h').value=m.h; $('pg-sh-hv').textContent=m.h;
                     $('pg-sh-r').value=(m.radius!=null?m.radius:24); $('pg-sh-rv').textContent=(m.radius!=null?m.radius:24);
@@ -532,9 +549,10 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
         $('pg-el-text').addEventListener('input',function(){ if(sel&&kindOf(sel)==='custom'){ $(sel).querySelector('.pg-ct-text').textContent=this.value; updateSelbox(); } });
         $('pg-el-icon').addEventListener('change',function(){ if(!sel) return; meta[sel]=meta[sel]||{}; meta[sel].icon=this.value; $('pg-el-icon-prev').innerHTML=(this.value&&ICONS[this.value])?ICONS[this.value]:''; renderEl(sel); updateSelbox(); });
         $('pg-el-img').addEventListener('change',function(){ if(!sel) return; if(this.value==='__up__'){ this.value=meta[sel]&&meta[sel].img?meta[sel].img:''; $('pg-el-img-file').click(); return; } meta[sel]=meta[sel]||{}; meta[sel].img=this.value; renderEl(sel); updateSelbox(); });
-        $('pg-el-img-file').addEventListener('change',function(e){ var f=e.target.files[0]; if(!f||!sel) return; var r=new FileReader(); r.onload=function(){ var key='Eigenes Bild '+(++uploadN); LOGOS[key]=r.result; meta[sel]=meta[sel]||{}; meta[sel].img=key; buildImgSelect(key); renderEl(sel); updateSelbox(); }; r.readAsDataURL(f); this.value=''; });
+        $('pg-el-img-file').addEventListener('change',function(e){ var f=e.target.files[0]; if(!f||!sel) return; var r=new FileReader(); r.onload=function(){ var key='Eigenes Bild '+(++uploadN); LOGOS[key]=r.result; meta[sel]=meta[sel]||{}; meta[sel].img=key; buildImgSelect(key); renderEl(sel); updateSelbox(); scheduleSave(); }; r.readAsDataURL(f); this.value=''; });
         $('pg-el-cap').addEventListener('input',function(){ if(!sel) return; meta[sel]=meta[sel]||{}; meta[sel].cap=this.value; renderEl(sel); updateSelbox(); });
         $('pg-el-tile').addEventListener('change',function(){ if(!sel) return; meta[sel]=meta[sel]||{}; meta[sel].tile=this.checked; renderEl(sel); updateSelbox(); });
+        $('pg-el-hidden').addEventListener('change',function(){ if(!sel) return; meta[sel]=meta[sel]||{}; meta[sel].hidden=this.checked; applyBlock(sel); updateSelbox(); });
 
         // Shape-Editoren
         function shapeSet(prop,val){ if(!sel||kindOf(sel)!=='shape') return; meta[sel][prop]=val; renderShape(sel); updateSelbox(); }
@@ -543,15 +561,15 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
         $('pg-sh-r').addEventListener('input',function(){ $('pg-sh-rv').textContent=this.value; shapeSet('radius',parseInt(this.value,10)); });
         $('pg-sh-fill').addEventListener('input',function(){ $('pg-sh-transp').checked=false; shapeSet('fill',this.value); });
         $('pg-sh-transp').addEventListener('change',function(){ if(this.checked){ shapeSet('fill','none'); } else { shapeSet('fill',$('pg-sh-fill').value); } });
-        Array.prototype.forEach.call(document.querySelectorAll('.pg-sh-preset'),function(btn){ btn.addEventListener('click',function(){ var c=this.getAttribute('data-fill'); $('pg-sh-fill').value=c; $('pg-sh-transp').checked=false; shapeSet('fill',c); }); });
+        Array.prototype.forEach.call(document.querySelectorAll('.pg-sh-preset'),function(btn){ btn.addEventListener('click',function(){ var c=this.getAttribute('data-fill'); $('pg-sh-fill').value=c; $('pg-sh-transp').checked=false; shapeSet('fill',c); scheduleSave(); }); });
 
         // Reihenfolge (z-index)
         function zRange(){ var mn=1e9,mx=-1e9; Object.keys(pos).forEach(function(id){ var z=(pos[id].z!=null?pos[id].z:defaultZ(id)); if(z<mn)mn=z; if(z>mx)mx=z; }); return {mn:mn,mx:mx}; }
-        $('pg-front').addEventListener('click',function(){ if(!selIds.length) return; var r=zRange(),i=1; selIds.forEach(function(id){ pos[id].z=r.mx+(i++); applyBlock(id); }); });
-        $('pg-back').addEventListener('click',function(){ if(!selIds.length) return; var r=zRange(),i=1; selIds.forEach(function(id){ pos[id].z=r.mn-(i++); applyBlock(id); }); });
+        $('pg-front').addEventListener('click',function(){ if(!selIds.length) return; var r=zRange(),i=1; selIds.forEach(function(id){ pos[id].z=r.mx+(i++); applyBlock(id); }); scheduleSave(); });
+        $('pg-back').addEventListener('click',function(){ if(!selIds.length) return; var r=zRange(),i=1; selIds.forEach(function(id){ pos[id].z=r.mn-(i++); applyBlock(id); }); scheduleSave(); });
 
-        $('pg-group').addEventListener('click',function(){ if(selIds.length<2) return; var gid='g'+(++groupSeq); selIds.forEach(function(id){ groupOf[id]=gid; }); refreshGroupMarks(); showPanel(); });
-        $('pg-ungroup').addEventListener('click',function(){ selIds.forEach(function(id){ delete groupOf[id]; }); refreshGroupMarks(); showPanel(); });
+        $('pg-group').addEventListener('click',function(){ if(selIds.length<2) return; var gid='g'+(++groupSeq); selIds.forEach(function(id){ groupOf[id]=gid; }); refreshGroupMarks(); showPanel(); scheduleSave(); });
+        $('pg-ungroup').addEventListener('click',function(){ selIds.forEach(function(id){ delete groupOf[id]; }); refreshGroupMarks(); showPanel(); scheduleSave(); });
 
         // ---- Snapping (bbox-basiert) ----
         function snap(nx,ny,w,h,ex){
@@ -618,34 +636,34 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
                 if(selIds.length===1 && kindOf(selIds[0])!=='shape'){ $('pg-sel-scale').value=Math.round(pos[selIds[0]].s*100); $('pg-sel-scale-val').textContent=Math.round(pos[selIds[0]].s*100); }
             }
         });
-        window.addEventListener('mouseup',function(){ if(mode==='move'&&st){ st.ids.forEach(function(x){ if($(x)) $(x).classList.remove('dragging'); }); } mode=null; st=null; hideGuides(); });
+        window.addEventListener('mouseup',function(){ var was=mode; if(mode==='move'&&st){ st.ids.forEach(function(x){ if($(x)) $(x).classList.remove('dragging'); }); } mode=null; st=null; hideGuides(); if(was) scheduleSave(); });
 
         // Klick auf leere Flaeche = Auswahl aufheben
         scene.addEventListener('mousedown',function(e){ var t=e.target;
             if((t===scene||t===art||t===$('pg-bg')||t===$('pg-ov')) && !e.shiftKey) deselect(); });
 
         // ---- Eigene Elemente ----
-        function addTile(){
-            customN++; var id='custom'+customN;
-            var b=document.createElement('div'); b.className='pb'; b.id=id; b.setAttribute('data-name','Eigenes Element '+customN); b.setAttribute('data-kind','custom');
+        // Node-Builder (auch beim Wiederherstellen aus dem Autospeicher genutzt)
+        function makeCustomNode(id){ var b=document.createElement('div'); b.className='pb'; b.id=id; b.setAttribute('data-name','Eigenes Element '+id.replace('custom','')); b.setAttribute('data-kind','custom');
             b.innerHTML='<div class="pg-ctile"><span class="pg-ct-ic"></span><img class="pg-ct-img" style="display:none" alt=""><span class="pg-ct-text">Neuer Text</span></div>';
-            scene.appendChild(b);
+            scene.appendChild(b); attach(b); return b; }
+        function makeShapeNode(id){ var b=document.createElement('div'); b.className='pb'; b.id=id; b.setAttribute('data-name','Fläche '+id.replace('shape','')); b.setAttribute('data-kind','shape');
+            b.innerHTML='<div class="pg-shape"></div>'; scene.appendChild(b); attach(b); return b; }
+        function addTile(){
+            customN++; var id='custom'+customN; makeCustomNode(id);
             meta[id]={tile:true,icon:'',img:''};
             pos[id]={x:Math.round(PAD+curW/2-120),y:Math.round(PAD+curH/2-30),s:1,z:10};
-            attach(b); renderCustom(id); applyBlock(id); setSel([id]);
+            renderCustom(id); applyBlock(id); setSel([id]); scheduleSave();
         }
         $('c-add-tile').addEventListener('click',addTile);
         function addShape(){
-            var id='shape'+(++shapeN);
-            var b=document.createElement('div'); b.className='pb'; b.id=id; b.setAttribute('data-name','Fläche '+shapeN); b.setAttribute('data-kind','shape');
-            b.innerHTML='<div class="pg-shape"></div>';
-            scene.appendChild(b);
+            var id='shape'+(++shapeN); makeShapeNode(id);
             meta[id]={w:520,h:220,radius:24,fill:'#ffffff'};
             pos[id]={x:Math.round(PAD+curW/2-260),y:Math.round(PAD+curH/2-110),s:1,z:5};
-            attach(b); renderShape(id); applyBlock(id); setSel([id]);
+            renderShape(id); applyBlock(id); setSel([id]); scheduleSave();
         }
         $('c-add-shape').addEventListener('click',addShape);
-        $('pg-del-block').addEventListener('click',function(){ if(!sel||(kindOf(sel)!=='custom'&&kindOf(sel)!=='shape')) return; var id=sel; deselect(); delete groupOf[id]; delete meta[id]; $(id).remove(); delete pos[id]; });
+        $('pg-del-block').addEventListener('click',function(){ if(!sel||(kindOf(sel)!=='custom'&&kindOf(sel)!=='shape')) return; var id=sel; deselect(); delete groupOf[id]; delete meta[id]; $(id).remove(); delete pos[id]; scheduleSave(); });
 
         // ---- Format + Zoom + Fit ----
         function refit(){ fitScale = stage.clientWidth / sceneW; }
@@ -679,7 +697,7 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
             Object.keys(pos).forEach(function(id){ if(/^(custom|shape)/.test(id)){ var el=$(id); if(el) el.remove(); } });
             pos=baseDefaults(); groupOf={}; meta=baseMeta(); featIcons=['shoe','stopwatch','leaf'];
             [['c-f1i',0],['c-f2i',1],['c-f3i',2]].forEach(function(m){ fillIconSelect($(m[0]),featIcons[m[1]]); });
-            refreshGroupMarks(); renderAll(); applyAll(); deselect();
+            refreshGroupMarks(); renderAll(); applyAll(); deselect(); clearSaved();
         });
 
         // ---- Export (nur Poster-Bereich) ----
@@ -688,6 +706,8 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
             selbox.style.display='none'; hideGuides();
             var marks=Array.prototype.slice.call(document.querySelectorAll('.pb.pg-grouped'));
             marks.forEach(function(b){ b.classList.remove('pg-grouped'); });
+            var hid=Array.prototype.slice.call(document.querySelectorAll('.pb.pg-hidden'));
+            hid.forEach(function(b){ b.style.display='none'; });
             var sv=scene.style.transform, sh=stage.style.height, sox=stage.style.overflowX; scene.style.transform='none';
             try{
                 if(document.fonts&&document.fonts.ready) await document.fonts.ready;
@@ -698,11 +718,52 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
                 var a=document.createElement('a'); a.download='marktlauf-poster.png'; a.href=out.toDataURL('image/png'); a.click();
                 s.textContent='✓ Exportiert ('+curW+'×'+curH+').';
             }catch(err){ s.textContent='⚠️ Fehler beim Export: '+err; }
-            finally{ scene.style.transform=sv; stage.style.height=sh; stage.style.overflowX=sox; marks.forEach(function(b){ b.classList.add('pg-grouped'); }); if(selIds.length) updateSelbox(); }
+            finally{ scene.style.transform=sv; stage.style.height=sh; stage.style.overflowX=sox; marks.forEach(function(b){ b.classList.add('pg-grouped'); }); hid.forEach(function(b){ b.style.display=''; }); if(selIds.length) updateSelbox(); }
         });
 
+        // ---- Autospeichern (localStorage, entprellt) ----
+        var STORAGE_KEY='mkl_poster_v1', saveT=null;
+        var SAVE_FIELDS=['c-format','c-headline','c-subline','c-cta','c-f1t','c-f1s','c-f1i','c-f2t','c-f2s','c-f2i','c-f3t','c-f3s','c-f3i','c-date','c-loc','c-fam','c-domain','c-show-sponsors','c-qr-url','c-scan-head','c-grad-on','c-grad-angle','c-grad-c1','c-grad-c2','c-grad-fade'];
+        function serialize(){
+            var customText={}; Object.keys(pos).forEach(function(id){ if(/^custom/.test(id)){ var t=$(id)&&$(id).querySelector('.pg-ct-text'); if(t) customText[id]=t.textContent; } });
+            var extraLogos={}; Object.keys(LOGOS).forEach(function(k){ if(BASE_LOGO_KEYS.indexOf(k)===-1) extraLogos[k]=LOGOS[k]; });
+            var fields={}; SAVE_FIELDS.forEach(function(id){ var e=$(id); if(!e) return; fields[id]=(e.type==='checkbox')?e.checked:e.value; });
+            return {v:1,pos:pos,meta:meta,featIcons:featIcons,groupOf:groupOf,customN:customN,shapeN:shapeN,uploadN:uploadN,customText:customText,extraLogos:extraLogos,fields:fields,bg:$('pg-bg').style.backgroundImage||''};
+        }
+        function doSave(){
+            try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(serialize())); }
+            catch(e){ // Speicher voll (z.B. grosse Bilder) -> Layout & Texte ohne Bilder retten
+                try{ var d=serialize(); d.extraLogos={}; d.bg=''; localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
+                     $('c-status').textContent='⚠️ Hochgeladene Bilder zu groß fürs Autospeichern – Layout & Texte gesichert, Bilder nicht.'; }catch(e2){}
+            }
+        }
+        function scheduleSave(){ clearTimeout(saveT); saveT=setTimeout(doSave,500); }
+        function clearSaved(){ try{ localStorage.removeItem(STORAGE_KEY); }catch(e){} }
+        function loadSaved(){
+            var raw; try{ raw=localStorage.getItem(STORAGE_KEY); }catch(e){ return false; }
+            if(!raw) return false;
+            var d; try{ d=JSON.parse(raw); }catch(e){ return false; }
+            if(!d||d.v!==1||!d.pos) return false;
+            if(d.extraLogos) Object.keys(d.extraLogos).forEach(function(k){ LOGOS[k]=d.extraLogos[k]; });
+            if(typeof d.uploadN==='number') uploadN=d.uploadN;
+            if(d.fields) Object.keys(d.fields).forEach(function(id){ var e=$(id); if(!e) return; if(e.type==='checkbox') e.checked=!!d.fields[id]; else e.value=d.fields[id]; });
+            featIcons=d.featIcons||featIcons; groupOf=d.groupOf||{}; meta=d.meta||baseMeta();
+            customN=d.customN||0; shapeN=d.shapeN||0;
+            Object.keys(d.pos).forEach(function(id){ if(/^custom/.test(id)) makeCustomNode(id); else if(/^shape/.test(id)) makeShapeNode(id); });
+            Object.keys(d.customText||{}).forEach(function(id){ var t=$(id)&&$(id).querySelector('.pg-ct-text'); if(t) t.textContent=d.customText[id]; });
+            pos=d.pos;
+            [['c-f1i',0],['c-f2i',1],['c-f3i',2]].forEach(function(m){ fillIconSelect($(m[0]),featIcons[m[1]]); });
+            if(d.bg) $('pg-bg').style.backgroundImage=d.bg;
+            $('c-grad-angle-val').textContent=$('c-grad-angle').value; $('c-grad-fade-val').textContent=$('c-grad-fade').value;
+            refreshGroupMarks();
+            return true;
+        }
+
         // Init
-        pos=baseDefaults(); renderAll(); applyFormat(); applyAll(); updateQr(); lastW=stage.clientWidth;
+        var restored=loadSaved(); if(!restored){ pos=baseDefaults(); }
+        renderAll(); applyFormat(); applyAll(); applyGrad(); updateQr(); lastW=stage.clientWidth;
+        var _cc=document.querySelector('.pg-controls');
+        if(_cc){ _cc.addEventListener('input',scheduleSave); _cc.addEventListener('change',scheduleSave); }
 
         var bg=$('burger-btn'), sb=$('sidebar'), ov=$('sidebar-overlay');
         if(bg){ bg.addEventListener('click',function(){ sb.classList.toggle('open'); ov.classList.toggle('active'); });
