@@ -280,8 +280,11 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
         .sc-card > *:not(.sc-bg):not(.sc-overlay) { position: relative; z-index: 2; }
         /* Helle Logo-Plakette wie auf der Homepage (.logo-plakette, --color-cream): IMMER
            eine cremefarbene Pille hinter den Logos — pipeline-weit über alle Post-Layouts. */
+        /* width:fit-content, damit die Pille die Logos umschliesst statt volle Breite zu ziehen
+           (der Eltern-Block ist kein Flex-Container, align-self allein greift daher nicht). */
         .sc-card .sc-logos { display: flex; flex-wrap: wrap; gap: 30px; align-items: center; margin-bottom: 24px;
-            align-self: flex-start; background: #f7f5ee; border-radius: 20px; padding: 18px 26px; box-shadow: 0 6px 18px rgba(0,0,0,0.18); }
+            width: fit-content; max-width: 100%; align-self: flex-start; background: #f7f5ee;
+            border-radius: 20px; padding: 18px 26px; box-shadow: 0 6px 18px rgba(0,0,0,0.18); }
         .sc-card .sc-logos img { height: 96px; width: auto; max-width: 340px; object-fit: contain; }
         /* Auf dunklem Foto: halbtransparentes Weiß statt Creme, damit es sich einfügt. */
         .sc-card .sc-logos.on-photo { background: rgba(255,255,255,0.92); }
@@ -363,11 +366,11 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
             </div>
             <?php endif; ?>
             <p class="vt-hint" style="margin-bottom:1rem;max-width:760px;">
-                Fertiges Layout befuellen &amp; als Bild exportieren &mdash; ohne Design-Kenntnisse.
-                Layouts: <strong>&bdquo;Themen-Post&ldquo;</strong> (universell, Formate waehlbar),
-                <strong>&bdquo;Anmeldung geoeffnet&ldquo;</strong> (Portrait 1080&times;1350) und
-                <strong>&bdquo;Renntag-Ergebnis&ldquo;</strong> (Formate waehlbar).
-                Fuer freie Plakate bleibt der <a href="poster_generator.php">Plakat-Generator</a>.
+                Fertiges Layout befüllen &amp; als Bild exportieren &mdash; ohne Design-Kenntnisse.
+                Layouts: <strong>&bdquo;Themen-Post&ldquo;</strong> (universell, Formate wählbar),
+                <strong>&bdquo;Anmeldung geöffnet&ldquo;</strong> (Portrait 1080&times;1350) und
+                <strong>&bdquo;Renntag-Ergebnis&ldquo;</strong> (Formate wählbar).
+                Für freie Plakate bleibt der <a href="poster_generator.php">Plakat-Generator</a>.
             </p>
             <?php endif; ?>
 
@@ -404,10 +407,10 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                         <?php if ($postKontext && $bildDefault === 'foto'): ?><span class="vt-hint">Dieses Thema lebt vom echten Foto — bitte ein Foto aus der Ablage wählen.</span><?php endif; ?>
                         <div id="vt-photo-block" style="display:none;margin-top:0.5rem;">
                             <div class="vt-row">
-                                <button type="button" class="btn btn-secondary" id="vt-pick-photo">Foto aus Ablage waehlen</button>
+                                <button type="button" class="btn btn-secondary" id="vt-pick-photo">Foto aus Ablage wählen</button>
                                 <button type="button" class="btn btn-secondary" id="vt-clear-photo" style="display:none;">Foto entfernen</button>
                             </div>
-                            <span class="vt-hint" id="vt-photo-name">kein Foto gewaehlt</span>
+                            <span class="vt-hint" id="vt-photo-name"></span>
                             <div class="vt-photo-picker" id="vt-photo-picker"></div>
                             <div class="vt-row" style="margin-top:0.6rem;">
                                 <label for="vt-photo-file" class="vt-hint" style="margin:0">Oder eigenes Foto vom Rechner:</label>
@@ -789,7 +792,7 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                     t.appendChild(im); t.appendChild(nm);
                     t.addEventListener('click', () => {
                         selectedPhotoUrl = img.url;
-                        $('vt-photo-name').textContent = img.name;
+                        $('vt-photo-name').textContent = 'Gewählt: ' + img.name;
                         $('vt-clear-photo').style.display = 'inline-flex';
                         picker.style.display = 'none';
                     });
@@ -800,7 +803,7 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
         $('vt-clear-photo').addEventListener('click', () => {
             if (lokalesFotoUrl) { URL.revokeObjectURL(lokalesFotoUrl); lokalesFotoUrl = ''; }
             selectedPhotoUrl = '';
-            $('vt-photo-name').textContent = 'kein Foto gewaehlt';
+            $('vt-photo-name').textContent = '';
             $('vt-clear-photo').style.display = 'none';
             $('vt-photo-file').value = '';
         });
@@ -814,7 +817,7 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
             lokalesFotoUrl = URL.createObjectURL(file);
             selectedPhotoUrl = lokalesFotoUrl;
             if (!$('bg-photo').checked) { $('bg-photo').checked = true; $('vt-photo-block').style.display = 'block'; }
-            $('vt-photo-name').textContent = file.name;
+            $('vt-photo-name').textContent = 'Gewählt: ' + file.name;
             $('vt-clear-photo').style.display = 'inline-flex';
             $('vt-photo-picker').style.display = 'none';
         });
@@ -847,7 +850,7 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
             let d; try { d = JSON.parse(raw); } catch (e) { return; }
             Object.entries(d.felder || {}).forEach(([id, val]) => { const el = document.getElementById(id); if (el) { el.value = val; } });
             if (d.bgmode) { const r = document.querySelector('input[name="bgmode"][value="' + d.bgmode + '"]'); if (r) { r.checked = true; } }
-            if (d.photo) { selectedPhotoUrl = d.photo; $('vt-photo-name').textContent = 'gespeichertes Foto'; $('vt-clear-photo').style.display = 'inline-flex'; }
+            if (d.photo) { selectedPhotoUrl = d.photo; $('vt-photo-name').textContent = 'Gewählt: gespeichertes Foto'; $('vt-clear-photo').style.display = 'inline-flex'; }
             vorlageWechsel();
             $('vt-photo-block').style.display = $('bg-photo').checked ? 'block' : 'none';
         }
