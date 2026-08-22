@@ -1282,6 +1282,26 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
             if (window.ResizeObserver) { new ResizeObserver(meldeHoehe).observe(document.body); }
             meldeHoehe();
         }
+
+        // --- Auto-Erzeugung beim Oeffnen (Inhaber-Wunsch 2026-08-22): sofort mit den
+        // aktuellen Einstellungen eine Grafik rendern statt auf den Button zu warten.
+        // Vorher fragen, ob ein Foto als Hintergrund verwendet werden soll. Nur mit
+        // Post-Kontext (der eingebettete Editor im Post-Detail). ?noauto=1 schaltet es ab.
+        if (postKontext && !/[?&]noauto=1/.test(location.search)) {
+            const autoErzeugen = () => {
+                const wollenFoto = window.confirm('Soll für die Grafik ein Foto als Hintergrund verwendet werden?\n\nOK = Foto   ·   Abbrechen = Farbverlauf');
+                if (wollenFoto) {
+                    $('bg-photo').checked = true;
+                    $('vt-photo-block').style.display = 'block';
+                } else {
+                    $('bg-gradient').checked = true;
+                    $('vt-photo-block').style.display = 'none';
+                }
+                $('vt-render').click();
+            };
+            if (document.readyState === 'complete') { autoErzeugen(); }
+            else { window.addEventListener('load', autoErzeugen); }
+        }
     })();
 
     (function() {
