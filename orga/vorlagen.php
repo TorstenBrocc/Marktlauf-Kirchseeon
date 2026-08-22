@@ -208,7 +208,7 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
 
         /* --- Off-screen Render-Buehne (echte 1080px, NICHT display:none) --- */
         .vt-stage { position: absolute; left: -9999px; top: 0; width: 1080px; overflow: visible; }
-        /* Freie Text-Platzierung (Beta): Live-Vorschau + ziehbare Bloecke */
+        /* Freie Text-Platzierung: interaktive Live-Vorschau + ziehbare Bloecke (Standard) */
         #vt-live-vp { width: 100%; max-width: 340px; overflow: hidden; border: 1px solid var(--border); border-radius: 8px; }
         #vt-live-scale { transform-origin: top left; }
         /* position !important: schlaegt die spaeter stehende, gleich-spezifische Regel
@@ -551,9 +551,6 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                         <label style="display:flex;align-items:center;gap:0.5rem;font-weight:400;cursor:pointer;">
                             <input type="checkbox" id="vt-hide-event" style="width:auto;"> Datum-Kopfzeile (mit dem Strich) ausblenden
                         </label>
-                        <label style="display:flex;align-items:center;gap:0.5rem;font-weight:400;cursor:pointer;margin-top:0.4rem;">
-                            <input type="checkbox" id="vt-freilayout" style="width:auto;"> Text frei positionieren (Beta · nur Themen-Post)
-                        </label>
                     </div>
                     <div class="vt-chips" id="vt-logo-chips"></div>
                     <div class="vt-photo-picker" id="vt-logo-picker"></div>
@@ -687,12 +684,12 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                 <div class="sc-card" id="vt-card2">
                     <img class="sc-bg" id="rt-bg" alt="" style="display:none">
                     <div class="sc-overlay" id="rt-overlay"></div>
-                    <div>
+                    <div class="vt-drag" data-drag="top">
                         <div class="sc-logos" id="rt-logos"></div>
                         <div class="sc-event" id="rt-event"></div>
                         <div class="sc-headline" id="rt-headline"></div>
                     </div>
-                    <div class="sc-metrics">
+                    <div class="sc-metrics vt-drag" data-drag="metrics">
                         <div class="sc-metric-row">
                             <div class="sc-metric">
                                 <span class="sc-metric-label">Sieger 10 km</span>
@@ -716,7 +713,7 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                             </div>
                         </div>
                     </div>
-                    <div class="sc-highlight" id="rt-highlight"></div>
+                    <div class="sc-highlight vt-drag" data-drag="highlight" id="rt-highlight"></div>
                     <div class="sc-footer">
                         <div class="sc-footer-text">
                             <span class="sc-wordmark">ATSV Kirchseeon</span>
@@ -743,7 +740,7 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
         let lastDataUrl = null;
         let selectedPhotoUrl = '';
         let lokalesFotoUrl = ''; // Blob-URL eines lokal gewaehlten Fotos (zum Freigeben)
-        let thPositions = {};    // Freie Text-Platzierung Themen-Post: {blockKey: {l,t}} in %
+        let thPositions = {};    // Freie Text-Platzierung pro Vorlage: {vorlage: {blockKey: {l,t}}} in %
 
         const csrf        = <?= json_encode($csrfToken) ?>;
         const postKontext = <?= json_encode($postKontext) ?>;
@@ -878,12 +875,17 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
             Object.entries(d.checks || {}).forEach(([id, val]) => { const el = document.getElementById(id); if (el) { el.checked = !!val; } });
             if (d.bgmode) { const r = document.querySelector('input[name="bgmode"][value="' + d.bgmode + '"]'); if (r) { r.checked = true; } }
             if (d.photo) { selectedPhotoUrl = d.photo; $('vt-photo-name').textContent = 'Gewählt: gespeichertes Foto'; $('vt-clear-photo').style.display = 'inline-flex'; }
-            if (d.positions && typeof d.positions === 'object') { thPositions = d.positions; }
+            if (d.positions && typeof d.positions === 'object') {
+                // Neu: {thema:{…}, renntag:{…}}. Alte flache Entwuerfe ({top:…, bullets:…})
+                // gehoerten zum Themen-Post -> dorthin migrieren.
+                const p = d.positions;
+                thPositions = (p.thema || p.renntag) ? p : (Object.keys(p).length ? { thema: p } : {});
+            }
             vorlageWechsel();
             $('vt-photo-block').style.display = $('bg-photo').checked ? 'block' : 'none';
         }
-        document.addEventListener('input', (e) => { const id = e.target.id || ''; if (id.startsWith('vt-') && id !== 'vt-photo-file') { vtSpeichereDebounced(); } });
-        document.addEventListener('change', (e) => { const id = e.target.id || ''; if (e.target.name === 'bgmode' || (id.startsWith('vt-') && id !== 'vt-photo-file')) { vtSpeichereDebounced(); } });
+        document.addEventListener('input', (e) => { const id = e.target.id || ''; if (id.startsWith('vt-') && id !== 'vt-photo-file') { vtSpeichereDebounced(); freiLiveRefresh(); } });
+        document.addEventListener('change', (e) => { const id = e.target.id || ''; if (e.target.name === 'bgmode' || (id.startsWith('vt-') && id !== 'vt-photo-file')) { vtSpeichereDebounced(); freiLiveRefresh(); } });
         $('vt-reset-vorlage').addEventListener('click', () => {
             if (!confirm('Diesen Entwurf verwerfen und die Vorlage von vorne beginnen?')) { return; }
             try { localStorage.removeItem(VT_CACHE_KEY); } catch (e) {}
@@ -1138,9 +1140,14 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                 });
                 lastDataUrl = canvas.toDataURL('image/png');
                 $('vt-card-img').src = lastDataUrl;
-                $('vt-card-img').style.display = 'block';
-                $('vt-preview-empty').style.display = 'none';
-                $('vt-caption').textContent = 'Vorschau (' + fmt.label + '):';
+                if (istFrei()) {
+                    // Ziehbare Vorlage: interaktive Karte bleibt die Vorschau, PNG nur exportiert.
+                    $('vt-caption').textContent = 'PNG erzeugt (' + fmt.label + ') — Blöcke weiter ziehbar.';
+                } else {
+                    $('vt-card-img').style.display = 'block';
+                    $('vt-preview-empty').style.display = 'none';
+                    $('vt-caption').textContent = 'Vorschau (' + fmt.label + '):';
+                }
                 $('vt-download').style.display = 'inline-block';
                 if (postKontext) { $('vt-uebernehmen').style.display = 'inline-block'; }
             } catch (e) {
@@ -1151,83 +1158,124 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
             }
         });
 
-        // ================= B: Freie Text-Platzierung (Themen-Post, Beta) =================
-        // Verifiziert im Mockup: skalierte Live-Buehne + absolut positionierte, ziehbare
-        // Bloecke; snapDOM exportiert die Anordnung trotz transform:scale korrekt bei 1080.
+        // ============ Freie Text-Platzierung (Themen-Post + Renntag-Ergebnis) ============
+        // Skalierte Live-Buehne + absolut positionierte, ziehbare Bloecke; snapDOM exportiert
+        // die Anordnung trotz transform:scale korrekt bei 1080. Standard-Vorschau fuer jede
+        // ziehbare Vorlage — kein Schalter mehr.
         const liveWrap = $('vt-live-wrap'), liveVp = $('vt-live-vp'), liveScale = $('vt-live-scale');
-        const thStage = document.querySelector('.vt-stage'); // Ruecksprung-Ziel fuer #vt-card3
-        function thDragEls() { return Array.from(card3.querySelectorAll('.vt-drag')); }
+        // Je ziehbare Vorlage: ihre Karte, deren Off-screen-Stage (Ruecksprung) und Fuellfunktion.
+        const FREI = {
+            thema:   { card: card3, stage: card3.parentElement, fill: fillCard3 },
+            renntag: { card: card2, stage: card2.parentElement, fill: fillCard2 },
+        };
+        function istFrei(v) { return !!FREI[v || aktiveVorlage()]; }
+        function dragEls(c) { return Array.from(c.querySelectorAll('.vt-drag')); }
         function keyOf(el) { return el.dataset.drag || el.id; }
-        function freiAktiv() { return $('vt-freilayout').checked && aktiveVorlage() === 'thema'; }
+        // Positionen pro Vorlage getrennt halten: data-drag="top" gibt es in beiden Karten.
+        function posStore(v) {
+            v = v || aktiveVorlage();
+            if (!thPositions[v] || typeof thPositions[v] !== 'object') { thPositions[v] = {}; }
+            return thPositions[v];
+        }
         function freiScale() {
             const fmt = RT_FORMATS[$('vt-rt-format').value] || RT_FORMATS.portrait;
             const vw = liveVp.clientWidth || 340;
             return { s: vw / fmt.w, w: fmt.w, h: fmt.h };
         }
+        function aktiveFreiKarte() { return liveScale.firstElementChild; }
+        // Aktuell gehostete Frei-Karte zurueck in ihre Stage; gespeicherte Positionen bleiben.
+        function raeumeFreiKarte() {
+            const c = aktiveFreiKarte();
+            if (!c) { return; }
+            c.classList.remove('freilayout');
+            dragEls(c).forEach(el => { el.style.left = ''; el.style.top = ''; });
+            const cfg = Object.values(FREI).find(x => x.card === c);
+            if (cfg && c.parentElement !== cfg.stage) { cfg.stage.appendChild(c); }
+        }
         function freilayoutEin() {
-            // ERST sichtbar machen: in einem display:none-Teilbaum hat #vt-card3 keine
-            // Layout-Groesse (offsetWidth=0) -> Messung ergaebe NaN-Positionen -> die Bloecke
-            // kollabieren und lassen sich nicht ziehen. Deshalb vor jeder Messung anzeigen.
+            const v = aktiveVorlage(), cfg = FREI[v];
+            if (!cfg) { return; }
+            raeumeFreiKarte();               // evtl. andere Karte zuerst zuruecklegen
+            const c = cfg.card, store = posStore(v);
+            // ERST sichtbar machen: in einem display:none-Teilbaum haette die Karte keine
+            // Layout-Groesse (offsetWidth=0) -> Messung ergaebe NaN -> Bloecke kollabieren.
             $('vt-card-img').style.display = 'none';
             $('vt-preview-empty').style.display = 'none';
             liveWrap.style.display = 'block';
             const sw = freiScale(), w = sw.w, h = sw.h;
-            card3.style.width = w + 'px'; card3.style.height = h + 'px';
-            liveScale.appendChild(card3);
+            c.style.width = w + 'px'; c.style.height = h + 'px';
+            liveScale.appendChild(c);
             liveScale.style.transform = 'none';   // bei natuerlicher Groesse messen
-            fillCard3({ w: w, h: h });
-            // Default-Positionen aus dem Flow-Layout messen (border-box-relativ; Karte hat keinen
-            // Border -> Padding-Box == Border-Box, %-Basis = offsetWidth passt zu left/top in %).
-            const cr = card3.getBoundingClientRect(), bw = card3.offsetWidth, bh = card3.offsetHeight;
-            thDragEls().forEach(el => {
+            cfg.fill({ w: w, h: h });
+            // Default-Positionen aus dem Flow messen — nur fuer sichtbare, noch nicht gesetzte
+            // Bloecke (border-box-relativ; Karte hat keinen Border). Ausgeblendete Bloecke
+            // (leeres Highlight/Bullets) erst messen, wenn sie sichtbar werden.
+            const cr = c.getBoundingClientRect(), bw = c.offsetWidth, bh = c.offsetHeight;
+            dragEls(c).forEach(el => {
                 const k = keyOf(el);
-                if (!thPositions[k] && bw > 0) {
+                if (!store[k] && bw > 0 && el.offsetParent !== null) {
                     const r = el.getBoundingClientRect();
-                    thPositions[k] = { l: +((r.left - cr.left) / bw * 100).toFixed(1), t: +((r.top - cr.top) / bh * 100).toFixed(1) };
+                    store[k] = { l: +((r.left - cr.left) / bw * 100).toFixed(1), t: +((r.top - cr.top) / bh * 100).toFixed(1) };
                 }
             });
-            card3.classList.add('freilayout');
-            thDragEls().forEach(el => { const p = thPositions[keyOf(el)]; if (p) { el.style.left = p.l + '%'; el.style.top = p.t + '%'; } });
+            c.classList.add('freilayout');
+            dragEls(c).forEach(el => { const p = store[keyOf(el)]; if (p) { el.style.left = p.l + '%'; el.style.top = p.t + '%'; } });
             liveScale.style.transform = 'scale(' + sw.s + ')';
             liveVp.style.height = (h * sw.s) + 'px';
         }
         function freilayoutAus() {
-            card3.classList.remove('freilayout');
-            thDragEls().forEach(el => { el.style.left = ''; el.style.top = ''; });
-            if (card3.parentElement !== thStage) { thStage.appendChild(card3); }
+            raeumeFreiKarte();
             liveScale.style.transform = '';
             liveWrap.style.display = 'none';
         }
-        $('vt-freilayout').addEventListener('change', () => {
-            if (freiAktiv()) { freilayoutEin(); } else { freilayoutAus(); }
-        });
-        // Layoutwechsel weg vom Themen-Post beendet den Frei-Modus sauber
-        $('vt-vorlage').addEventListener('change', () => {
-            if (!freiAktiv() && card3.classList.contains('freilayout')) { freilayoutAus(); }
-        });
+        // Live-Aktualisierung: waehrend des Tippens die aktive Frei-Karte neu befuellen und die
+        // gezogenen Positionen wieder auflegen (sonst wirkt die Standard-Vorschau tot).
+        function freiLiveRefresh() {
+            const v = aktiveVorlage(), cfg = FREI[v];
+            if (!cfg || aktiveFreiKarte() !== cfg.card) { return; }
+            const sw = freiScale(), store = posStore(v);
+            cfg.fill({ w: sw.w, h: sw.h });
+            dragEls(cfg.card).forEach(el => { const p = store[keyOf(el)]; if (p) { el.style.left = p.l + '%'; el.style.top = p.t + '%'; } });
+        }
+        // Vorschau-Modus steuern: ziehbare Vorlage -> interaktive Karte; sonst Bild-Vorschau.
+        function aktualisiereVorschauModus() {
+            if (istFrei()) {
+                freilayoutEin();
+                $('vt-caption').textContent = 'Vorschau — Blöcke direkt ziehen; „Grafik erzeugen" exportiert als PNG.';
+            } else {
+                freilayoutAus();
+                if (!lastDataUrl) { $('vt-preview-empty').style.display = 'block'; }
+                $('vt-caption').textContent = 'Vorschau erscheint nach „Grafik erzeugen".';
+            }
+        }
+        $('vt-vorlage').addEventListener('change', aktualisiereVorschauModus);
+        // Formatwechsel im Frei-Modus: Karte in der neuen Groesse neu aufbauen und skalieren.
+        $('vt-rt-format').addEventListener('change', () => { if (istFrei()) { freilayoutEin(); } });
 
         let thDrag = null;
-        card3.addEventListener('pointerdown', (e) => {
-            if (!card3.classList.contains('freilayout')) { return; }
+        liveScale.addEventListener('pointerdown', (e) => {
+            const c = aktiveFreiKarte();
+            if (!c || !c.classList.contains('freilayout')) { return; }
             const el = e.target.closest('.vt-drag');
-            if (!el || !card3.contains(el)) { return; }
+            if (!el || !c.contains(el)) { return; }
             e.preventDefault();
             thDrag = { el: el, sx: e.clientX, sy: e.clientY, ol: el.offsetLeft, ot: el.offsetTop, s: freiScale().s };
             el.setPointerCapture(e.pointerId);
         });
-        card3.addEventListener('pointermove', (e) => {
+        liveScale.addEventListener('pointermove', (e) => {
             if (!thDrag) { return; }
-            const cw = card3.offsetWidth, ch = card3.offsetHeight;
+            const c = aktiveFreiKarte(), cw = c.offsetWidth, ch = c.offsetHeight;
             const dx = (e.clientX - thDrag.sx) / thDrag.s, dy = (e.clientY - thDrag.sy) / thDrag.s;
             const l = Math.max(0, Math.min(92, (thDrag.ol + dx) / cw * 100));
             const t = Math.max(0, Math.min(94, (thDrag.ot + dy) / ch * 100));
             thDrag.el.style.left = l.toFixed(1) + '%';
             thDrag.el.style.top  = t.toFixed(1) + '%';
-            thPositions[keyOf(thDrag.el)] = { l: +l.toFixed(1), t: +t.toFixed(1) };
+            posStore()[keyOf(thDrag.el)] = { l: +l.toFixed(1), t: +t.toFixed(1) };
         });
-        card3.addEventListener('pointerup', () => { if (thDrag) { thDrag = null; vtSpeichereDebounced(); } });
-        // Aus dem Cache wiederhergestellter Frei-Modus aktivieren (nach vollem Setup)
-        if (freiAktiv()) { freilayoutEin(); }
+        liveScale.addEventListener('pointerup', () => { if (thDrag) { thDrag = null; vtSpeichereDebounced(); } });
+
+        // Standard-Vorschau nach vollem Setup aktivieren (Positionen ggf. aus dem Cache).
+        aktualisiereVorschauModus();
 
         $('vt-download').addEventListener('click', () => {
             if (!lastDataUrl) return;
