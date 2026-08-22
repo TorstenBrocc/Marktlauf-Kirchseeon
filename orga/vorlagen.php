@@ -174,11 +174,12 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
     <link rel="stylesheet" href="../css/fonts.css?v=<?= @filemtime(__DIR__ . '/../css/fonts.css') ?>">
     <style>
         /* --- Werkzeug-Layout: Steuerung links, Vorschau rechts --- */
-        /* Zwei gleich breite 50/50-Spalten: die Vorschau ist immer so breit wie die
-           Befuell-Seitenleiste (nebeneinander), schrumpft mit; erst unter 640px gestapelt
-           (volle Breite) — dann reicht die Seitenbreite nicht mehr fuer zwei Spalten. */
-        .vt-split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; align-items: start; }
-        @media (max-width: 640px) { .vt-split { grid-template-columns: minmax(0, 1fr); } }
+        /* Befuell-Seitenleiste fest schmal (380px, bequem fuer Labels/Eingaben); die Vorschau
+           nimmt den restlichen Platz (der grosse Teil). Umbruch bei <=820px: darunter bliebe fuer
+           die Vorschau weniger als die 380px-Leiste -> stattdessen gestapelt, Vorschau voll breit.
+           So ist die Vorschau nebeneinander immer groesser als die Leiste, sonst voll breit. */
+        .vt-split { display: grid; grid-template-columns: 380px minmax(0, 1fr); gap: 1.25rem; align-items: start; }
+        @media (max-width: 820px) { .vt-split { grid-template-columns: minmax(0, 1fr); } }
         .vt-panel { background: var(--white); border-radius: 8px; box-shadow: var(--shadow-card); padding: 1.25rem; }
         .vt-panel h2 { font-size: 1rem; margin: 0 0 0.9rem; }
         .vt-panel h3 { font-size: 0.82rem; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; margin: 1.2rem 0 0.6rem; }
