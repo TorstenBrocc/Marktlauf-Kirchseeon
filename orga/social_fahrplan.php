@@ -56,6 +56,17 @@ foreach ($eintraege as $e) {
     if ($filter === 'meine'    && (int) $e['zustaendig_user_id'] !== (int) $user['id']) { continue; }
     $rows[] = $e;
 }
+
+// Monochrome Inline-SVG-Icons für die Zeilen-Aktionen (erben currentColor über .fp-icon).
+$svg = static fn (string $inner): string =>
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" '
+    . 'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . $inner . '</svg>';
+$icons = [
+    'edit'    => $svg('<path d="M4 20h4L18.5 9.5a2.12 2.12 0 0 0-3-3L5 17z"/><path d="M13.5 6.5l4 4"/>'),
+    'check'   => $svg('<path d="M5 13l4 4L19 7"/>'),
+    'trash'   => $svg('<path d="M4 7h16"/><path d="M9 7V5h6v2"/><path d="M6 7l1 13h10l1-13"/>'),
+    'calendar'=> $svg('<rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 9h16"/><path d="M8 3v4M16 3v4"/>'),
+];
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -68,20 +79,22 @@ foreach ($eintraege as $e) {
     <link rel="icon" type="image/svg+xml" href="../assets/images/logo-final.svg">
     <style>
         /* Zielstil Helfer-Draht: hd-card/hd-table (orga.css) + abgetoentes Gruen fuer Aktionen */
-        .fp-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
-        .fp-actions a, .fp-actions button {
-            color: var(--primary-dark); background: var(--white);
-            border: 1px solid var(--border); border-radius: 6px; padding: 0.28rem 0.7rem;
-            font-size: 0.82rem; cursor: pointer; text-decoration: none; font-family: inherit; line-height: 1.4;
+        /* Actions als reine Icon-Buttons */
+        .fp-actions { display: flex; gap: 0.35rem; align-items: center; }
+        .fp-icon {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 1.9rem; height: 1.9rem; border: 1px solid var(--border); border-radius: 6px;
+            background: var(--white); color: var(--text-light); cursor: pointer; font-size: 0.95rem;
+            text-decoration: none; font-family: inherit; line-height: 1; padding: 0;
         }
-        .fp-actions a:hover, .fp-actions button:hover { border-color: var(--primary-dark); background: var(--bg); }
-        /* Termin-Editor der Zeile: bewusst abgesetzt (rechts, nur Symbol) */
-        .fp-actions .fp-termin { margin-left: auto; color: var(--text-light); padding: 0.28rem 0.55rem; font-size: 0.95rem; }
-        .fp-actions .fp-termin:hover { color: var(--primary-dark); }
-        /* Klick auf die ganze Zeile = neuer Entwurf von Grund auf */
-        tr.fp-row { cursor: pointer; }
-        tr.fp-row:hover { background: var(--bg); }
-        tr.fp-row:focus-visible { outline: 2px solid var(--primary-dark); outline-offset: -2px; }
+        .fp-icon:hover { border-color: var(--primary-dark); color: var(--primary-dark); background: var(--bg); }
+        .fp-icon:focus-visible { outline: 2px solid var(--primary-dark); outline-offset: 1px; }
+        .fp-icon svg { width: 15px; height: 15px; display: block; }
+        /* Termin (Kalender) bewusst vom Post-Stift abgesetzt */
+        .fp-icon.fp-termin { margin-left: 0.35rem; }
+        /* Thema öffnet einen neuen Entwurf von Grund auf */
+        .fp-thema-link { color: var(--primary-dark); text-decoration: none; font-weight: 600; }
+        .fp-thema-link:hover { text-decoration: underline; }
         .fp-kopfzeile { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.9rem; }
         .fp-filter { display: flex; gap: 0.4rem; flex-wrap: wrap; }
         .fp-filter a {
@@ -123,7 +136,7 @@ foreach ($eintraege as $e) {
     <main class="main-content">
         <header class="content-header">
             <h1>Social-Pipeline</h1>
-            <p class="content-subtitle">Terminierter Contentplan — Zeile anklicken für einen neuen Entwurf, „Bearbeiten" öffnet den gespeicherten Stand, ✎ ändert den Termin</p>
+            <p class="content-subtitle">Terminierter Contentplan — Thema anklicken für einen neuen Entwurf · ✎ öffnet den gespeicherten Stand · 📅 ändert den Termin</p>
         </header>
 
         <div class="hd-card">
@@ -210,12 +223,11 @@ foreach ($eintraege as $e) {
                         elseif (trim((string) $e['post_social']) !== '') { $badge[1] .= ' · Entwurf'; }
                     }
                 ?>
-                <tr class="fp-row" data-fahrplan="<?= (int) $e['id'] ?>" tabindex="0" role="link"
-                    title="Öffnen: neuer Entwurf von Grund auf"
-                    aria-label="Neuen Entwurf erstellen: <?= htmlspecialchars($themaLabel) ?>">
+                <tr>
                     <td><?= $e['zieldatum'] ? htmlspecialchars(date('d.m.Y', strtotime($e['zieldatum']))) : '—' ?></td>
                     <td>
-                        <?= htmlspecialchars($themaLabel) ?>
+                        <a class="fp-thema-link" href="social_post.php?fahrplan=<?= (int) $e['id'] ?>&amp;neu=1"
+                           title="Öffnen – neuer Entwurf von Grund auf"><?= htmlspecialchars($themaLabel) ?></a>
                         <?php if ($e['frequenz_tage']): ?>
                         <span class="fp-wiederkehr">↻ alle <?= (int) $e['frequenz_tage'] ?> Tage<?= $e['ende'] ? ' bis ' . htmlspecialchars(date('d.m.', strtotime($e['ende']))) : '' ?></span>
                         <?php endif; ?>
@@ -223,21 +235,23 @@ foreach ($eintraege as $e) {
                     <td><?= $e['zustaendig_name'] ? htmlspecialchars($e['zustaendig_name']) : '<span style="color:var(--text-light)">—</span>' ?></td>
                     <td><span class="fp-badge <?= $badge[0] ?>"><?= $badge[1] ?></span></td>
                     <td class="fp-actions">
-                        <a class="fp-bearbeiten" href="social_post.php?fahrplan=<?= (int) $e['id'] ?>"
-                           title="Bearbeiten: zuletzt gespeicherter Entwurf">Bearbeiten</a>
+                        <a class="fp-icon fp-bearbeiten" href="social_post.php?fahrplan=<?= (int) $e['id'] ?>"
+                           title="Bearbeiten – zuletzt gespeicherter Entwurf" aria-label="Gespeicherten Entwurf bearbeiten"><?= $icons['edit'] ?></a>
                         <?php if ($e['status'] === 'offen'): ?>
-                        <button type="button" class="fp-erledigt" data-id="<?= (int) $e['id'] ?>">erledigt</button>
+                        <button type="button" class="fp-icon fp-erledigt" data-id="<?= (int) $e['id'] ?>"
+                            title="Als erledigt markieren" aria-label="Als erledigt markieren"><?= $icons['check'] ?></button>
                         <?php endif; ?>
-                        <button type="button" class="fp-loeschen" data-id="<?= (int) $e['id'] ?>">löschen</button>
-                        <button type="button" class="fp-termin"
-                            title="Termin &amp; Planung dieser Zeile bearbeiten (Datum, Anlass, Zuständig)"
+                        <button type="button" class="fp-icon fp-loeschen" data-id="<?= (int) $e['id'] ?>"
+                            title="Eintrag löschen" aria-label="Eintrag löschen"><?= $icons['trash'] ?></button>
+                        <button type="button" class="fp-icon fp-termin"
+                            title="Termin &amp; Planung dieser Zeile (Datum, Anlass, Zuständig)"
                             aria-label="Termin bearbeiten"
                             data-id="<?= (int) $e['id'] ?>"
                             data-anlass="<?= htmlspecialchars($e['anlass_key']) ?>"
                             data-datum="<?= htmlspecialchars((string) $e['zieldatum']) ?>"
                             data-zustaendig="<?= (int) $e['zustaendig_user_id'] ?>"
                             data-frequenz="<?= (int) $e['frequenz_tage'] ?>"
-                            data-ende="<?= htmlspecialchars((string) $e['ende']) ?>">✎</button>
+                            data-ende="<?= htmlspecialchars((string) $e['ende']) ?>"><?= $icons['calendar'] ?></button>
                     </td>
                 </tr>
                 <?php endforeach; ?>
@@ -328,19 +342,6 @@ document.querySelectorAll('.fp-loeschen').forEach(btn => btn.addEventListener('c
         if (d.ok) { location.reload(); } else { fpMsg('⚠️ ' + (d.message || 'Fehler'), false); }
     }).catch(() => fpMsg('⚠️ Netzwerkfehler', false));
 }));
-
-// Klick auf die ganze Zeile öffnet einen Entwurf von Grund auf (?neu=1); Klicks auf die
-// Aktions-Buttons/den Termin-Stift werden NICHT als Zeilen-Klick gewertet.
-document.querySelectorAll('.fp-row').forEach(tr => {
-    const oeffneNeu = () => { location.href = 'social_post.php?fahrplan=' + tr.dataset.fahrplan + '&neu=1'; };
-    tr.addEventListener('click', (ev) => { if (!ev.target.closest('.fp-actions')) { oeffneNeu(); } });
-    tr.addEventListener('keydown', (ev) => {
-        if ((ev.key === 'Enter' || ev.key === ' ') && !ev.target.closest('.fp-actions')) {
-            ev.preventDefault();
-            oeffneNeu();
-        }
-    });
-});
 
 // Merkfeld: speichert beim Verlassen des Feldes (bestehender Endpoint)
 document.getElementById('fp-merkfeld').addEventListener('blur', (ev) => {
