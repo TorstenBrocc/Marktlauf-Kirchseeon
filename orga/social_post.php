@@ -300,9 +300,16 @@ $wartetAufStichtag = !$frisch && ($post['status'] ?? '') === 'approved'
                     zum Thema vorgewählt, „Für Post übernehmen" speichert sie direkt hier.</p>
                 <?php endif; ?>
             </div>
-            <div class="sp-zeile" style="margin-top:0.7rem">
+            <div class="sp-zeile" style="margin-top:0.7rem;flex-wrap:wrap;gap:0.6rem;align-items:center">
                 <button type="button" class="btn btn-primary btn-small" id="sp-grafik-toggle"><?= $schrittGrafik ? 'Grafik ändern' : 'Grafik erstellen' ?></button>
+                <span class="sp-hinweis">oder</span>
+                <label class="btn btn-secondary btn-small" style="cursor:pointer;margin:0">
+                    Nur ein Foto senden (ohne Vorlage)
+                    <input type="file" id="sp-nurfoto" accept="image/png,image/jpeg,image/webp" style="display:none">
+                </label>
+                <span class="sp-hinweis" id="sp-nurfoto-msg"></span>
             </div>
+            <p class="sp-hinweis" style="margin:0.3rem 0 0">„Nur Foto" nimmt dein Foto unverändert (Seitenverhältnis bleibt) als Post-Bild — der Text aus Schritt 1 ist die Caption.</p>
             <div id="sp-grafik-embed-wrap" style="display:none;margin-top:0.9rem;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--white)">
                 <iframe id="sp-grafik-embed" title="Grafik-Editor" loading="lazy"
                         style="width:100%;border:0;display:block;min-height:640px"
@@ -611,6 +618,43 @@ if (copyArtikelBtn) { copyArtikelBtn.addEventListener('click', () => spCopy('sp-
         }
     });
 })();
+
+// Nur-Foto-Weg (Option A): Foto unverändert (Seitenverhältnis bleibt, Auflösung gedeckelt)
+// direkt als Post-Bild ablegen — über denselben Endpoint wie die Vorlagen-Grafik.
+const nurFotoInput = document.getElementById('sp-nurfoto');
+if (nurFotoInput) {
+    nurFotoInput.addEventListener('change', async (ev) => {
+        const file = ev.target.files && ev.target.files[0];
+        if (!file) { return; }
+        const msg = document.getElementById('sp-nurfoto-msg');
+        msg.style.color = 'var(--text-light)'; msg.textContent = '⏳ lädt …';
+        try {
+            const bild = await new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = () => reject(new Error('Bild nicht lesbar'));
+                img.src = URL.createObjectURL(file);
+            });
+            const maxEdge = 1600; // Seitenverhältnis bleibt, nur Auflösung deckeln (8-MB-Grenze)
+            const f = Math.min(1, maxEdge / Math.max(bild.naturalWidth, bild.naturalHeight));
+            const w = Math.round(bild.naturalWidth * f), h = Math.round(bild.naturalHeight * f);
+            const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+            cv.getContext('2d').drawImage(bild, 0, 0, w, h);
+            URL.revokeObjectURL(bild.src);
+            const r = await fetch('api/post_bild.php', {
+                method: 'POST',
+                body: new URLSearchParams({ csrf_token: csrf, post_id: postId, image_base64: cv.toDataURL('image/jpeg', 0.9) }),
+            });
+            const d = await r.json();
+            if (d.ok) { location.reload(); return; }
+            msg.style.color = '#dc2626'; msg.textContent = '⚠️ ' + (d.message || 'Fehler beim Speichern.');
+        } catch (e) {
+            msg.style.color = '#dc2626'; msg.textContent = '⚠️ Foto konnte nicht verarbeitet werden.';
+        } finally {
+            nurFotoInput.value = '';
+        }
+    });
+}
 
 // Burger-Menü (wie alle anderen Orga-Seiten)
 const burgerBtn      = document.getElementById('burger-btn');
