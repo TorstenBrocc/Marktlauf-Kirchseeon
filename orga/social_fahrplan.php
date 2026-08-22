@@ -63,7 +63,7 @@ foreach ($eintraege as $e) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
-    <title>Social-Fahrplan | ATSV Kirchseeon Marktlauf</title>
+    <title>Social-Pipeline | ATSV Kirchseeon Marktlauf</title>
     <link rel="stylesheet" href="css/orga.css?v=<?= @filemtime(__DIR__ . '/css/orga.css') ?>">
     <link rel="icon" type="image/svg+xml" href="../assets/images/logo-final.svg">
     <style>
@@ -114,7 +114,7 @@ foreach ($eintraege as $e) {
 
     <main class="main-content">
         <header class="content-header">
-            <h1>Social-Fahrplan</h1>
+            <h1>Social-Pipeline</h1>
             <p class="content-subtitle">Terminierter Contentplan — Thema öffnen, Entwürfe erzeugen, veröffentlichen</p>
         </header>
 

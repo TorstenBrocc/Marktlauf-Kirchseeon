@@ -134,8 +134,8 @@ try {
     $meta = todoGruppenMeta();
     // Social-Fahrplan ist kein Sponsoring-Thema — Meta hier lokal, nicht in offene_todos.php
     $meta['social_fahrplan'] = [
-        'titel' => 'Social-Fahrplan — fällige Themen',
-        'sub'   => 'Posts erstellen, prüfen und senden: Dashboard → Social-Fahrplan.',
+        'titel' => 'Social-Pipeline — fällige Themen',
+        'sub'   => 'Posts erstellen, prüfen und senden: Dashboard → Social-Pipeline.',
     ];
     $vier = ['Firma', 'Info', 'Status / Frist', 'Kontakt'];
     // Frist-Text für Aufgaben: überfällig, heute, oder Vorausschau.
