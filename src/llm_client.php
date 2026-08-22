@@ -20,7 +20,7 @@ require_once __DIR__ . '/logger.php';
 require_once __DIR__ . '/brand_voice.php';
 
 /** Gemini-Modell (v1beta). Zentral, damit ein Versionswechsel eine Ein-Zeilen-Sache ist. */
-const GEMINI_MODEL = 'gemini-2.0-flash';
+const GEMINI_MODEL = 'gemini-2.5-flash';
 
 /**
  * Klartext-Grund, warum die letzte LLM-Antwort leer blieb (HTTP-Status/Key-Fehler,
@@ -94,6 +94,9 @@ function llmGenerateGemini(string $systemPrompt, string $userInput): string
         'generationConfig' => [
             'maxOutputTokens' => 1200,
             'temperature'     => 0.7,
+            // 2.5-flash ist ein Thinking-Modell: Thinking abschalten (thinkingBudget 0),
+            // sonst frisst der Denk-Schritt das Output-Budget und die Antwort bleibt leer.
+            'thinkingConfig'  => ['thinkingBudget' => 0],
         ],
     ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 
