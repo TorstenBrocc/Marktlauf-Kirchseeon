@@ -68,12 +68,20 @@ foreach ($eintraege as $e) {
     <link rel="icon" type="image/svg+xml" href="../assets/images/logo-final.svg">
     <style>
         /* Zielstil Helfer-Draht: hd-card/hd-table (orga.css) + abgetoentes Gruen fuer Aktionen */
+        .fp-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
         .fp-actions a, .fp-actions button {
-            color: var(--primary-dark); background: none; border: none; padding: 0;
-            font-size: var(--fs-base); cursor: pointer; text-decoration: none; font-family: inherit;
+            color: var(--primary-dark); background: var(--white);
+            border: 1px solid var(--border); border-radius: 6px; padding: 0.28rem 0.7rem;
+            font-size: 0.82rem; cursor: pointer; text-decoration: none; font-family: inherit; line-height: 1.4;
         }
-        .fp-actions a:hover, .fp-actions button:hover { text-decoration: underline; }
-        .fp-actions { display: flex; gap: 0.9rem; flex-wrap: wrap; }
+        .fp-actions a:hover, .fp-actions button:hover { border-color: var(--primary-dark); background: var(--bg); }
+        /* Termin-Editor der Zeile: bewusst abgesetzt (rechts, nur Symbol) */
+        .fp-actions .fp-termin { margin-left: auto; color: var(--text-light); padding: 0.28rem 0.55rem; font-size: 0.95rem; }
+        .fp-actions .fp-termin:hover { color: var(--primary-dark); }
+        /* Klick auf die ganze Zeile = neuer Entwurf von Grund auf */
+        tr.fp-row { cursor: pointer; }
+        tr.fp-row:hover { background: var(--bg); }
+        tr.fp-row:focus-visible { outline: 2px solid var(--primary-dark); outline-offset: -2px; }
         .fp-kopfzeile { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.9rem; }
         .fp-filter { display: flex; gap: 0.4rem; flex-wrap: wrap; }
         .fp-filter a {
@@ -115,7 +123,7 @@ foreach ($eintraege as $e) {
     <main class="main-content">
         <header class="content-header">
             <h1>Social-Pipeline</h1>
-            <p class="content-subtitle">Terminierter Contentplan — Thema öffnen, Entwürfe erzeugen, veröffentlichen</p>
+            <p class="content-subtitle">Terminierter Contentplan — Zeile anklicken für einen neuen Entwurf, „Bearbeiten" öffnet den gespeicherten Stand, ✎ ändert den Termin</p>
         </header>
 
         <div class="hd-card">
@@ -202,7 +210,9 @@ foreach ($eintraege as $e) {
                         elseif (trim((string) $e['post_social']) !== '') { $badge[1] .= ' · Entwurf'; }
                     }
                 ?>
-                <tr>
+                <tr class="fp-row" data-fahrplan="<?= (int) $e['id'] ?>" tabindex="0" role="link"
+                    title="Öffnen: neuer Entwurf von Grund auf"
+                    aria-label="Neuen Entwurf erstellen: <?= htmlspecialchars($themaLabel) ?>">
                     <td><?= $e['zieldatum'] ? htmlspecialchars(date('d.m.Y', strtotime($e['zieldatum']))) : '—' ?></td>
                     <td>
                         <?= htmlspecialchars($themaLabel) ?>
@@ -213,18 +223,21 @@ foreach ($eintraege as $e) {
                     <td><?= $e['zustaendig_name'] ? htmlspecialchars($e['zustaendig_name']) : '<span style="color:var(--text-light)">—</span>' ?></td>
                     <td><span class="fp-badge <?= $badge[0] ?>"><?= $badge[1] ?></span></td>
                     <td class="fp-actions">
-                        <a href="social_post.php?fahrplan=<?= (int) $e['id'] ?>">öffnen</a>
-                        <button type="button" class="fp-edit"
+                        <a class="fp-bearbeiten" href="social_post.php?fahrplan=<?= (int) $e['id'] ?>"
+                           title="Bearbeiten: zuletzt gespeicherter Entwurf">Bearbeiten</a>
+                        <?php if ($e['status'] === 'offen'): ?>
+                        <button type="button" class="fp-erledigt" data-id="<?= (int) $e['id'] ?>">erledigt</button>
+                        <?php endif; ?>
+                        <button type="button" class="fp-loeschen" data-id="<?= (int) $e['id'] ?>">löschen</button>
+                        <button type="button" class="fp-termin"
+                            title="Termin &amp; Planung dieser Zeile bearbeiten (Datum, Anlass, Zuständig)"
+                            aria-label="Termin bearbeiten"
                             data-id="<?= (int) $e['id'] ?>"
                             data-anlass="<?= htmlspecialchars($e['anlass_key']) ?>"
                             data-datum="<?= htmlspecialchars((string) $e['zieldatum']) ?>"
                             data-zustaendig="<?= (int) $e['zustaendig_user_id'] ?>"
                             data-frequenz="<?= (int) $e['frequenz_tage'] ?>"
-                            data-ende="<?= htmlspecialchars((string) $e['ende']) ?>">bearbeiten</button>
-                        <?php if ($e['status'] === 'offen'): ?>
-                        <button type="button" class="fp-erledigt" data-id="<?= (int) $e['id'] ?>">erledigt</button>
-                        <?php endif; ?>
-                        <button type="button" class="fp-loeschen" data-id="<?= (int) $e['id'] ?>">löschen</button>
+                            data-ende="<?= htmlspecialchars((string) $e['ende']) ?>">✎</button>
                     </td>
                 </tr>
                 <?php endforeach; ?>
@@ -291,7 +304,7 @@ form.addEventListener('submit', (ev) => {
     }).catch(() => fpMsg('⚠️ Netzwerkfehler', false));
 });
 
-document.querySelectorAll('.fp-edit').forEach(btn => btn.addEventListener('click', () => {
+document.querySelectorAll('.fp-termin').forEach(btn => btn.addEventListener('click', () => {
     form.elements.id.value                 = btn.dataset.id;
     form.elements.anlass_key.value         = btn.dataset.anlass;
     form.elements.zieldatum.value          = btn.dataset.datum;
@@ -315,6 +328,19 @@ document.querySelectorAll('.fp-loeschen').forEach(btn => btn.addEventListener('c
         if (d.ok) { location.reload(); } else { fpMsg('⚠️ ' + (d.message || 'Fehler'), false); }
     }).catch(() => fpMsg('⚠️ Netzwerkfehler', false));
 }));
+
+// Klick auf die ganze Zeile öffnet einen Entwurf von Grund auf (?neu=1); Klicks auf die
+// Aktions-Buttons/den Termin-Stift werden NICHT als Zeilen-Klick gewertet.
+document.querySelectorAll('.fp-row').forEach(tr => {
+    const oeffneNeu = () => { location.href = 'social_post.php?fahrplan=' + tr.dataset.fahrplan + '&neu=1'; };
+    tr.addEventListener('click', (ev) => { if (!ev.target.closest('.fp-actions')) { oeffneNeu(); } });
+    tr.addEventListener('keydown', (ev) => {
+        if ((ev.key === 'Enter' || ev.key === ' ') && !ev.target.closest('.fp-actions')) {
+            ev.preventDefault();
+            oeffneNeu();
+        }
+    });
+});
 
 // Merkfeld: speichert beim Verlassen des Feldes (bestehender Endpoint)
 document.getElementById('fp-merkfeld').addEventListener('blur', (ev) => {
