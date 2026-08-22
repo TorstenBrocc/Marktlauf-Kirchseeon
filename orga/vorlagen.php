@@ -211,7 +211,10 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
         /* Freie Text-Platzierung (Beta): Live-Vorschau + ziehbare Bloecke */
         #vt-live-vp { width: 100%; max-width: 340px; overflow: hidden; border: 1px solid var(--border); border-radius: 8px; }
         #vt-live-scale { transform-origin: top left; }
-        .sc-card.freilayout .vt-drag { position: absolute; cursor: grab; outline: 2px dashed rgba(255,255,255,0.6); outline-offset: 4px; touch-action: none; }
+        /* position !important: schlaegt die spaeter stehende, gleich-spezifische Regel
+           `.sc-card > *:not(.sc-bg):not(.sc-overlay){position:relative}` — sonst bleiben
+           die Bloecke im Flow und sind nicht frei ziehbar. */
+        .sc-card.freilayout .vt-drag { position: absolute !important; cursor: grab; outline: 2px dashed rgba(255,255,255,0.6); outline-offset: 4px; touch-action: none; }
         .sc-card.freilayout .vt-drag:active { cursor: grabbing; }
 
         /* ============================================================
