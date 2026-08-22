@@ -1165,6 +1165,12 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
             return { s: vw / fmt.w, w: fmt.w, h: fmt.h };
         }
         function freilayoutEin() {
+            // ERST sichtbar machen: in einem display:none-Teilbaum hat #vt-card3 keine
+            // Layout-Groesse (offsetWidth=0) -> Messung ergaebe NaN-Positionen -> die Bloecke
+            // kollabieren und lassen sich nicht ziehen. Deshalb vor jeder Messung anzeigen.
+            $('vt-card-img').style.display = 'none';
+            $('vt-preview-empty').style.display = 'none';
+            liveWrap.style.display = 'block';
             const sw = freiScale(), w = sw.w, h = sw.h;
             card3.style.width = w + 'px'; card3.style.height = h + 'px';
             liveScale.appendChild(card3);
@@ -1175,18 +1181,15 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
             const cr = card3.getBoundingClientRect(), bw = card3.offsetWidth, bh = card3.offsetHeight;
             thDragEls().forEach(el => {
                 const k = keyOf(el);
-                if (!thPositions[k]) {
+                if (!thPositions[k] && bw > 0) {
                     const r = el.getBoundingClientRect();
                     thPositions[k] = { l: +((r.left - cr.left) / bw * 100).toFixed(1), t: +((r.top - cr.top) / bh * 100).toFixed(1) };
                 }
             });
             card3.classList.add('freilayout');
-            thDragEls().forEach(el => { const p = thPositions[keyOf(el)]; el.style.left = p.l + '%'; el.style.top = p.t + '%'; });
+            thDragEls().forEach(el => { const p = thPositions[keyOf(el)]; if (p) { el.style.left = p.l + '%'; el.style.top = p.t + '%'; } });
             liveScale.style.transform = 'scale(' + sw.s + ')';
             liveVp.style.height = (h * sw.s) + 'px';
-            liveWrap.style.display = 'block';
-            $('vt-card-img').style.display = 'none';
-            $('vt-preview-empty').style.display = 'none';
         }
         function freilayoutAus() {
             card3.classList.remove('freilayout');
