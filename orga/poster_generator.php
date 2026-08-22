@@ -151,8 +151,7 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
             <p class="content-subtitle">Einzelne Elemente · Icons/Logos tauschbar · Kachel-Hintergrund an/aus · Zoom · Arbeitsfläche · Verlauf · PNG-Export</p>
         </header>
 
-        <p style="margin:0 0 1rem"><a href="social_fahrplan.php">&larr; zur Social-Pipeline</a>
-            <a href="../docs/poster-generator.md" target="_blank" rel="noopener" style="margin-left:1rem">ℹ️ Doku &amp; Ausbaustufen</a></p>
+        <p style="margin:0 0 1rem"><a href="social_fahrplan.php">&larr; zur Social-Pipeline</a></p>
         <p class="pg-hint" style="max-width:860px;margin-bottom:1.25rem">
             <strong>Element anklicken</strong> → im Panel links erscheinen die passenden Optionen (Icon/Bild tauschen, skalieren, <strong>Kachel-Hintergrund an/aus</strong> = Schrift &amp; Kachel trennen).
             <strong>Ziehen</strong> zum Verschieben (mit Fanglinien), <strong>orangenes Eck-Quadrat</strong> = Größe.
@@ -181,6 +180,12 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
                     <div class="pg-row" id="pg-tile-row" style="display:none;margin-top:0.3rem"><label style="display:flex;align-items:center;gap:0.4rem;margin:0"><input type="checkbox" id="pg-el-tile"> weiße Kachel als Hintergrund</label></div>
 
                     <div class="pg-row" id="pg-hide-row" style="display:none;margin-top:0.3rem"><label style="display:flex;align-items:center;gap:0.4rem;margin:0"><input type="checkbox" id="pg-el-hidden"> Element ausblenden <span class="pg-hint">(nicht im Export)</span></label></div>
+
+                    <div id="pg-scan-ctrl" style="display:none;margin-top:0.4rem;border-top:1px solid #fed7aa;padding-top:0.5rem">
+                        <div class="pg-row"><label>QR-Ziel-URL</label><input type="url" id="c-qr-url" value="https://atsv-kirchseeon-marktlauf.de/#anmeldung"></div>
+                        <div class="pg-row"><label>Beschriftung (leer = ausblenden)</label><input type="text" id="c-scan-head" value="JETZT SCANNEN & ANMELDEN!"></div>
+                        <div class="pg-row" style="margin-bottom:0"><label>Domain (leer = ausblenden)</label><input type="text" id="c-domain" value="atsv-kirchseeon-marktlauf.de"></div>
+                    </div>
 
                     <div id="pg-shape-ctrl" style="display:none">
                         <div class="pg-row" style="margin-bottom:0.4rem"><label>Breite: <span id="pg-sh-wv">400</span> px</label><input type="range" id="pg-sh-w" min="30" max="1400" value="400"></div>
@@ -232,10 +237,8 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
                 <div class="pg-row"><label>Datum-Kachel (Titel · Zusatz)</label><input type="text" id="c-date" value="Sonntag 20.09.2026 · Start 10:00 Uhr"></div>
                 <div class="pg-row"><label>Ort-Kachel (Titel · Zusatz)</label><input type="text" id="c-loc" value="JEK, Westring 6 · Kirchseeon"></div>
                 <div class="pg-row"><label>Familien-Kachel (Titel · Zusatz)</label><input type="text" id="c-fam" value="Für die ganze Familie · Sport, Spaß & Gemeinschaft"></div>
-                <div class="pg-row"><label>Domain</label><input type="text" id="c-domain" value="atsv-kirchseeon-marktlauf.de"></div>
                 <div class="pg-row"><label><input type="checkbox" id="c-show-sponsors"> Sponsoren-Kacheln anzeigen</label></div>
-                <div class="pg-row"><label>QR-Ziel-URL</label><input type="url" id="c-qr-url" value="https://atsv-kirchseeon-marktlauf.de/#anmeldung"></div>
-                <div class="pg-row"><label>Scan-Überschrift (leer = ausblenden)</label><input type="text" id="c-scan-head" value="JETZT SCANNEN & ANMELDEN!"></div>
+                <p class="pg-hint" style="margin:0 0 0.65rem">QR-Code, Beschriftung &amp; Domain bearbeitest du über die <strong>Scan/QR-Kachel</strong> im Poster (anklicken).</p>
 
                 <div class="pg-grad">
                     <label><input type="checkbox" id="c-grad-on" checked> Marken-Verlauf (Hintergrund)</label>
@@ -519,6 +522,7 @@ foreach (glob(__DIR__ . '/../assets/images/sponsoren/*.{png,jpg,jpeg,webp,PNG,JP
             show('pg-tile-row', k==='logo'||k==='coop'||k==='dcard'||isCustom||k==='scan');
             show('pg-hide-row', n===1);
             $('pg-shape-ctrl').style.display=isShape?'block':'none';
+            $('pg-scan-ctrl').style.display=(k==='scan')?'block':'none';
             if(n===1){
                 var m=meta[one]||{};
                 if($('pg-icon-row').style.display!=='none'){ fillIconSelect($('pg-el-icon'), m.icon||''); $('pg-el-icon-prev').innerHTML=(m.icon&&ICONS[m.icon])?ICONS[m.icon]:''; }
