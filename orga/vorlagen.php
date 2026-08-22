@@ -208,6 +208,11 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
 
         /* --- Off-screen Render-Buehne (echte 1080px, NICHT display:none) --- */
         .vt-stage { position: absolute; left: -9999px; top: 0; width: 1080px; overflow: visible; }
+        /* Freie Text-Platzierung (Beta): Live-Vorschau + ziehbare Bloecke */
+        #vt-live-vp { width: 100%; max-width: 340px; overflow: hidden; border: 1px solid var(--border); border-radius: 8px; }
+        #vt-live-scale { transform-origin: top left; }
+        .sc-card.freilayout .vt-drag { position: absolute; cursor: grab; outline: 2px dashed rgba(255,255,255,0.6); outline-offset: 4px; touch-action: none; }
+        .sc-card.freilayout .vt-drag:active { cursor: grabbing; }
 
         /* ============================================================
            Vorlage "Anmeldung geoeffnet" — 1:1 Port des Proofs
@@ -543,6 +548,9 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                         <label style="display:flex;align-items:center;gap:0.5rem;font-weight:400;cursor:pointer;">
                             <input type="checkbox" id="vt-hide-event" style="width:auto;"> Datum-Kopfzeile (mit dem Strich) ausblenden
                         </label>
+                        <label style="display:flex;align-items:center;gap:0.5rem;font-weight:400;cursor:pointer;margin-top:0.4rem;">
+                            <input type="checkbox" id="vt-freilayout" style="width:auto;"> Text frei positionieren (Beta · nur Themen-Post)
+                        </label>
                     </div>
                     <div class="vt-chips" id="vt-logo-chips"></div>
                     <div class="vt-photo-picker" id="vt-logo-picker"></div>
@@ -583,6 +591,10 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                     <p class="vt-caption" id="vt-caption">Vorschau erscheint nach &bdquo;Grafik erzeugen&ldquo;.</p>
                     <div class="vt-preview-empty" id="vt-preview-empty">Noch keine Vorschau &mdash; links befuellen und &bdquo;Grafik erzeugen&ldquo; klicken.</div>
                     <img id="vt-card-img" alt="Vorschau der erzeugten Grafik" style="display:none;">
+                    <div id="vt-live-wrap" style="display:none;">
+                        <p class="vt-hint" style="margin:0 0 0.4rem">Frei-Modus: Textblöcke direkt ziehen. „Grafik erzeugen" exportiert die Anordnung.</p>
+                        <div id="vt-live-vp"><div id="vt-live-scale"></div></div>
+                    </div>
                 </div>
             </div>
 
@@ -638,19 +650,19 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                 <div class="sc-card" id="vt-card3">
                     <img class="sc-bg" id="th-bg" alt="" style="display:none">
                     <div class="sc-overlay" id="th-overlay"></div>
-                    <div>
+                    <div class="vt-drag" data-drag="top">
                         <div class="sc-logos" id="th-logos"></div>
                         <div class="sc-event"><?= htmlspecialchars($veranstaltung . ($eyebrowDatum !== '' ? ' · ' . $eyebrowDatum : '')) ?></div>
                         <div class="sc-headline" id="th-headline"></div>
                         <div class="sc-sub" id="th-sub"></div>
                     </div>
-                    <div class="sc-bullets" id="th-bullets">
+                    <div class="sc-bullets vt-drag" data-drag="bullets" id="th-bullets">
                         <div class="sc-bullet" id="th-z1"></div>
                         <div class="sc-bullet" id="th-z2"></div>
                         <div class="sc-bullet" id="th-z3"></div>
                     </div>
-                    <div class="sc-cta" id="th-cta-wrap"><span id="th-cta"></span></div>
-                    <div>
+                    <div class="sc-cta vt-drag" data-drag="cta" id="th-cta-wrap"><span id="th-cta"></span></div>
+                    <div class="vt-drag" data-drag="meta">
                         <div class="sc-meta" id="th-datum"></div>
                         <div class="sc-meta" id="th-ort"></div>
                     </div>
@@ -728,6 +740,7 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
         let lastDataUrl = null;
         let selectedPhotoUrl = '';
         let lokalesFotoUrl = ''; // Blob-URL eines lokal gewaehlten Fotos (zum Freigeben)
+        let thPositions = {};    // Freie Text-Platzierung Themen-Post: {blockKey: {l,t}} in %
 
         const csrf        = <?= json_encode($csrfToken) ?>;
         const postKontext = <?= json_encode($postKontext) ?>;
@@ -849,7 +862,7 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
             });
             const bg = document.querySelector('input[name="bgmode"]:checked');
             const photo = (selectedPhotoUrl && !selectedPhotoUrl.startsWith('blob:')) ? selectedPhotoUrl : '';
-            return { felder, checks, bgmode: bg ? bg.value : '', photo };
+            return { felder, checks, bgmode: bg ? bg.value : '', photo, positions: thPositions };
         }
         let vtSaveT = null;
         function vtSpeichereDraft() { try { localStorage.setItem(VT_CACHE_KEY, JSON.stringify(vtSammleFelder())); } catch (e) {} }
@@ -862,6 +875,7 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
             Object.entries(d.checks || {}).forEach(([id, val]) => { const el = document.getElementById(id); if (el) { el.checked = !!val; } });
             if (d.bgmode) { const r = document.querySelector('input[name="bgmode"][value="' + d.bgmode + '"]'); if (r) { r.checked = true; } }
             if (d.photo) { selectedPhotoUrl = d.photo; $('vt-photo-name').textContent = 'Gewählt: gespeichertes Foto'; $('vt-clear-photo').style.display = 'inline-flex'; }
+            if (d.positions && typeof d.positions === 'object') { thPositions = d.positions; }
             vorlageWechsel();
             $('vt-photo-block').style.display = $('bg-photo').checked ? 'block' : 'none';
         }
@@ -1133,6 +1147,81 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                 btn.disabled = false; btn.textContent = 'Grafik erzeugen';
             }
         });
+
+        // ================= B: Freie Text-Platzierung (Themen-Post, Beta) =================
+        // Verifiziert im Mockup: skalierte Live-Buehne + absolut positionierte, ziehbare
+        // Bloecke; snapDOM exportiert die Anordnung trotz transform:scale korrekt bei 1080.
+        const liveWrap = $('vt-live-wrap'), liveVp = $('vt-live-vp'), liveScale = $('vt-live-scale');
+        const thStage = document.querySelector('.vt-stage'); // Ruecksprung-Ziel fuer #vt-card3
+        function thDragEls() { return Array.from(card3.querySelectorAll('.vt-drag')); }
+        function keyOf(el) { return el.dataset.drag || el.id; }
+        function freiAktiv() { return $('vt-freilayout').checked && aktiveVorlage() === 'thema'; }
+        function freiScale() {
+            const fmt = RT_FORMATS[$('vt-rt-format').value] || RT_FORMATS.portrait;
+            const vw = liveVp.clientWidth || 340;
+            return { s: vw / fmt.w, w: fmt.w, h: fmt.h };
+        }
+        function freilayoutEin() {
+            const sw = freiScale(), w = sw.w, h = sw.h;
+            card3.style.width = w + 'px'; card3.style.height = h + 'px';
+            liveScale.appendChild(card3);
+            liveScale.style.transform = 'none';   // bei natuerlicher Groesse messen
+            fillCard3({ w: w, h: h });
+            // Default-Positionen aus dem Flow-Layout messen (border-box-relativ; Karte hat keinen
+            // Border -> Padding-Box == Border-Box, %-Basis = offsetWidth passt zu left/top in %).
+            const cr = card3.getBoundingClientRect(), bw = card3.offsetWidth, bh = card3.offsetHeight;
+            thDragEls().forEach(el => {
+                const k = keyOf(el);
+                if (!thPositions[k]) {
+                    const r = el.getBoundingClientRect();
+                    thPositions[k] = { l: +((r.left - cr.left) / bw * 100).toFixed(1), t: +((r.top - cr.top) / bh * 100).toFixed(1) };
+                }
+            });
+            card3.classList.add('freilayout');
+            thDragEls().forEach(el => { const p = thPositions[keyOf(el)]; el.style.left = p.l + '%'; el.style.top = p.t + '%'; });
+            liveScale.style.transform = 'scale(' + sw.s + ')';
+            liveVp.style.height = (h * sw.s) + 'px';
+            liveWrap.style.display = 'block';
+            $('vt-card-img').style.display = 'none';
+            $('vt-preview-empty').style.display = 'none';
+        }
+        function freilayoutAus() {
+            card3.classList.remove('freilayout');
+            thDragEls().forEach(el => { el.style.left = ''; el.style.top = ''; });
+            if (card3.parentElement !== thStage) { thStage.appendChild(card3); }
+            liveScale.style.transform = '';
+            liveWrap.style.display = 'none';
+        }
+        $('vt-freilayout').addEventListener('change', () => {
+            if (freiAktiv()) { freilayoutEin(); } else { freilayoutAus(); }
+        });
+        // Layoutwechsel weg vom Themen-Post beendet den Frei-Modus sauber
+        $('vt-vorlage').addEventListener('change', () => {
+            if (!freiAktiv() && card3.classList.contains('freilayout')) { freilayoutAus(); }
+        });
+
+        let thDrag = null;
+        card3.addEventListener('pointerdown', (e) => {
+            if (!card3.classList.contains('freilayout')) { return; }
+            const el = e.target.closest('.vt-drag');
+            if (!el || !card3.contains(el)) { return; }
+            e.preventDefault();
+            thDrag = { el: el, sx: e.clientX, sy: e.clientY, ol: el.offsetLeft, ot: el.offsetTop, s: freiScale().s };
+            el.setPointerCapture(e.pointerId);
+        });
+        card3.addEventListener('pointermove', (e) => {
+            if (!thDrag) { return; }
+            const cw = card3.offsetWidth, ch = card3.offsetHeight;
+            const dx = (e.clientX - thDrag.sx) / thDrag.s, dy = (e.clientY - thDrag.sy) / thDrag.s;
+            const l = Math.max(0, Math.min(92, (thDrag.ol + dx) / cw * 100));
+            const t = Math.max(0, Math.min(94, (thDrag.ot + dy) / ch * 100));
+            thDrag.el.style.left = l.toFixed(1) + '%';
+            thDrag.el.style.top  = t.toFixed(1) + '%';
+            thPositions[keyOf(thDrag.el)] = { l: +l.toFixed(1), t: +t.toFixed(1) };
+        });
+        card3.addEventListener('pointerup', () => { if (thDrag) { thDrag = null; vtSpeichereDebounced(); } });
+        // Aus dem Cache wiederhergestellter Frei-Modus aktivieren (nach vollem Setup)
+        if (freiAktiv()) { freilayoutEin(); }
 
         $('vt-download').addEventListener('click', () => {
             if (!lastDataUrl) return;
