@@ -174,10 +174,11 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
     <link rel="stylesheet" href="../css/fonts.css?v=<?= @filemtime(__DIR__ . '/../css/fonts.css') ?>">
     <style>
         /* --- Werkzeug-Layout: Steuerung links, Vorschau rechts --- */
-        /* Zwei gleich breite Spalten: die Vorschau ist so breit wie die Befuell-Seitenleiste
-           (bis 460px), darunter responsiv schmaler; unter 900px gestapelt (volle Breite). */
-        .vt-split { display: grid; grid-template-columns: repeat(2, minmax(300px, 460px)); gap: 1.25rem; align-items: start; justify-content: start; }
-        @media (max-width: 900px) { .vt-split { grid-template-columns: minmax(0, 1fr); } }
+        /* Zwei gleich breite 50/50-Spalten: die Vorschau ist immer so breit wie die
+           Befuell-Seitenleiste (nebeneinander), schrumpft mit; erst unter 640px gestapelt
+           (volle Breite) — dann reicht die Seitenbreite nicht mehr fuer zwei Spalten. */
+        .vt-split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; align-items: start; }
+        @media (max-width: 640px) { .vt-split { grid-template-columns: minmax(0, 1fr); } }
         .vt-panel { background: var(--white); border-radius: 8px; box-shadow: var(--shadow-card); padding: 1.25rem; }
         .vt-panel h2 { font-size: 1rem; margin: 0 0 0.9rem; }
         .vt-panel h3 { font-size: 0.82rem; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; margin: 1.2rem 0 0.6rem; }
@@ -222,7 +223,11 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
            position:absolute werden, waere der Footer das einzige Flow-Element und rueckte im
            space-between-Flex nach oben; deshalb hier fest an die Padding-Box unten anheften.
            Padding der .sc-card ist formatunabhaengig 80px. */
-        .sc-card.freilayout .sc-footer { position: absolute !important; left: 80px; right: 80px; bottom: 80px; }
+        /* Footer fix unten + klick-durchlaessig: als letztes, absolut positioniertes Kind laege
+           er sonst UEBER den unteren Drag-Bloecken (CTA/Meta) und finge deren Klicks ab ->
+           die waeren nicht mehr ziehbar. pointer-events:none laesst Klicks durch (der Footer
+           ist ohnehin nicht ziehbar). */
+        .sc-card.freilayout .sc-footer { position: absolute !important; left: 80px; right: 80px; bottom: 80px; pointer-events: none; }
 
         /* ============================================================
            Vorlage "Anmeldung geoeffnet" — 1:1 Port des Proofs
@@ -437,6 +442,17 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                         </div>
                     </div>
 
+                    <!-- Kopf-Option (folgt der Dokument-Reihenfolge: Datum-Zeile steht ganz oben,
+                         also die Ausblenden-Option ueber der Schlagzeile). Nur fuer ziehbare
+                         Vorlagen (Themen-Post + Renntag), per vorlageWechsel() ein/aus. -->
+                    <div id="vt-kopf-optionen" style="display:none">
+                        <div class="vt-field" style="margin-bottom:0.4rem;">
+                            <label style="display:flex;align-items:center;gap:0.5rem;font-weight:400;cursor:pointer;">
+                                <input type="checkbox" id="vt-hide-event" style="width:auto;"> Datum-Kopfzeile (mit dem Strich) ausblenden
+                            </label>
+                        </div>
+                    </div>
+
                     <div id="vt-felder-anmeldung">
                     <h3>Kopf</h3>
                     <div class="vt-field">
@@ -554,11 +570,6 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                         <button type="button" class="btn btn-secondary" id="vt-logo-reset">nur ATSV</button>
                         <button type="button" class="btn btn-secondary" id="vt-logo-nur-marktlauf">nur Marktlauf</button>
                     </div>
-                    <div class="vt-field" style="margin-top:0.6rem;">
-                        <label style="display:flex;align-items:center;gap:0.5rem;font-weight:400;cursor:pointer;">
-                            <input type="checkbox" id="vt-hide-event" style="width:auto;"> Datum-Kopfzeile (mit dem Strich) ausblenden
-                        </label>
-                    </div>
                     <div class="vt-chips" id="vt-logo-chips"></div>
                     <div class="vt-photo-picker" id="vt-logo-picker"></div>
                     </div><!-- /vt-felder-scard -->
@@ -657,12 +668,10 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                 <div class="sc-card" id="vt-card3">
                     <img class="sc-bg" id="th-bg" alt="" style="display:none">
                     <div class="sc-overlay" id="th-overlay"></div>
-                    <div class="vt-drag" data-drag="top">
-                        <div class="sc-logos" id="th-logos"></div>
-                        <div class="sc-event"><?= htmlspecialchars($veranstaltung . ($eyebrowDatum !== '' ? ' · ' . $eyebrowDatum : '')) ?></div>
-                        <div class="sc-headline" id="th-headline"></div>
-                        <div class="sc-sub" id="th-sub"></div>
-                    </div>
+                    <div class="sc-logos vt-drag" data-drag="logos" id="th-logos"></div>
+                    <div class="sc-event vt-drag" data-drag="event"><?= htmlspecialchars($veranstaltung . ($eyebrowDatum !== '' ? ' · ' . $eyebrowDatum : '')) ?></div>
+                    <div class="sc-headline vt-drag" data-drag="headline" id="th-headline"></div>
+                    <div class="sc-sub vt-drag" data-drag="sub" id="th-sub"></div>
                     <div class="sc-bullets vt-drag" data-drag="bullets" id="th-bullets">
                         <div class="sc-bullet" id="th-z1"></div>
                         <div class="sc-bullet" id="th-z2"></div>
@@ -691,11 +700,9 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                 <div class="sc-card" id="vt-card2">
                     <img class="sc-bg" id="rt-bg" alt="" style="display:none">
                     <div class="sc-overlay" id="rt-overlay"></div>
-                    <div class="vt-drag" data-drag="top">
-                        <div class="sc-logos" id="rt-logos"></div>
-                        <div class="sc-event" id="rt-event"></div>
-                        <div class="sc-headline" id="rt-headline"></div>
-                    </div>
+                    <div class="sc-logos vt-drag" data-drag="logos" id="rt-logos"></div>
+                    <div class="sc-event vt-drag" data-drag="event" id="rt-event"></div>
+                    <div class="sc-headline vt-drag" data-drag="headline" id="rt-headline"></div>
                     <div class="sc-metrics vt-drag" data-drag="metrics">
                         <div class="sc-metric-row">
                             <div class="sc-metric">
@@ -775,6 +782,7 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
             $('vt-felder-renntag').style.display   = v === 'renntag'   ? 'block' : 'none';
             $('vt-felder-thema').style.display     = v === 'thema'     ? 'block' : 'none';
             $('vt-felder-scard').style.display     = v === 'anmeldung' ? 'none'  : 'block';
+            $('vt-kopf-optionen').style.display    = v === 'anmeldung' ? 'none'  : 'block';
         }
         $('vt-vorlage').addEventListener('change', vorlageWechsel);
         vorlageWechsel();
