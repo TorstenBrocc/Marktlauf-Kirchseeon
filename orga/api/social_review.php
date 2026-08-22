@@ -66,6 +66,19 @@ if ($social !== '' && ($delta = brandVoiceChannel('social')) !== '') {
 if ($article !== '' && ($delta = brandVoiceChannel('presse')) !== '') {
     $sysParts[] = "KANAL-VORGABEN PRESSE-ARTIKEL:\n" . $delta;
 }
+// Meta-Richtlinien + Social-Best-Practices — nur fuer den Social-Post (IG/FB), nicht Presse.
+if ($social !== '') {
+    $sysParts[] = "META-RICHTLINIEN & BEST PRACTICES (nur Social-Post, Instagram/Facebook):\n"
+        . "Prüfe zusätzlich, ob der Social-Post gegen Metas Content-/Community- oder Werbe-"
+        . "Richtlinien verstoßen könnte: irreführende oder unbelegte Behauptungen, Superlative/"
+        . "Heilsversprechen, „Engagement-Bait“ (Aufruf zu Like/Teilen/Markieren nur um Reichweite), "
+        . "fremde Marken-/Urheberrechte, personenbezogene Daten Dritter ohne Einwilligung. "
+        . "Prüfe außerdem gängige Best Practices für Vereins-Posts: starker Hook in Zeile 1, "
+        . "genau ein Call-to-Action, gute Lesbarkeit (kurze Sätze, Emojis gezielt statt in Ketten), "
+        . "auf Instagram kein „klick den Link“ (Caption-Links sind dort nicht klickbar). "
+        . "WICHTIG: Dein Wissen über Metas Richtlinien kann veraltet sein — kennzeichne Unsicheres "
+        . "als Hinweis, nicht als Tatsache. Dies ersetzt keine offizielle Freigabe.";
+}
 $sysParts[] = 'ANTWORTFORMAT: je Entwurf eine kurze Liste konkreter Beanstandungen — '
     . 'verletzte Regel, Zitat der betroffenen Stelle, knapper Korrekturvorschlag. '
     . 'Ist ein Entwurf regelkonform und plausibel, schreibe das ausdrücklich. '

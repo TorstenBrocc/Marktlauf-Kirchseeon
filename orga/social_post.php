@@ -96,12 +96,20 @@ $kbCta        = socialCtaDefault($anlassKey);
 $kbQr         = socialQrLabel(socialQrKey($anlassKey, true));
 $kbFaktenZeilen = count(array_filter(array_map('trim', explode("\n", $fakten)), static fn (string $z): bool => $z !== ''));
 
-$schrittText    = trim((string) ($post['llm_text_social'] ?? '')) !== '';
-$schrittGeprueft = $post['geprueft_am'] !== null;
-$bildPfad       = trim((string) ($post['bild_pfad'] ?? ''));
+// "öffnen" = Klick auf die Fahrplan-Zeile (?neu=1): von Grund auf neuer Entwurf. Der
+// gespeicherte Stand bleibt in der DB unangetastet und ist über "Bearbeiten" erreichbar —
+// hier wird er nur nicht vorbelegt, damit der Auto-Entwurf frisch generiert.
+$frisch = ((int) ($_GET['neu'] ?? 0) === 1);
+$textSocial  = $frisch ? '' : (string) ($post['llm_text_social'] ?? '');
+$textArticle = $frisch ? '' : (string) ($post['llm_text_article'] ?? '');
+$reviewErg   = $frisch ? '' : (string) ($post['geprueft_ergebnis'] ?? '');
+
+$schrittText    = trim($textSocial) !== '';
+$schrittGeprueft = !$frisch && $post['geprueft_am'] !== null;
+$bildPfad       = $frisch ? '' : trim((string) ($post['bild_pfad'] ?? ''));
 $schrittGrafik  = $bildPfad !== '';
-$schrittVersand = ($post['status'] ?? '') === 'gesendet';
-$wartetAufStichtag = ($post['status'] ?? '') === 'approved'
+$schrittVersand = !$frisch && ($post['status'] ?? '') === 'gesendet';
+$wartetAufStichtag = !$frisch && ($post['status'] ?? '') === 'approved'
     && $eintrag['zieldatum'] !== null && $eintrag['zieldatum'] > date('Y-m-d');
 ?>
 <!DOCTYPE html>
@@ -244,12 +252,12 @@ $wartetAufStichtag = ($post['status'] ?? '') === 'approved'
             <div class="<?= $mitPresse ? 'sp-grid2' : '' ?>">
                 <div class="sp-feld">
                     <label for="sp-social">Social-Post (Instagram / Facebook)</label>
-                    <textarea id="sp-social" class="gross" placeholder="Entwurf erscheint nach dem KI-Aufruf …"><?= htmlspecialchars($post['llm_text_social'] ?? '') ?></textarea>
+                    <textarea id="sp-social" class="gross" placeholder="Entwurf erscheint nach dem KI-Aufruf …"><?= htmlspecialchars($textSocial) ?></textarea>
                 </div>
                 <?php if ($mitPresse): ?>
                 <div class="sp-feld">
                     <label for="sp-artikel">Presse-Artikel (Lokalzeitung)</label>
-                    <textarea id="sp-artikel" class="gross" placeholder="Entwurf erscheint nach dem KI-Aufruf …"><?= htmlspecialchars($post['llm_text_article'] ?? '') ?></textarea>
+                    <textarea id="sp-artikel" class="gross" placeholder="Entwurf erscheint nach dem KI-Aufruf …"><?= htmlspecialchars($textArticle) ?></textarea>
                 </div>
                 <?php endif; ?>
             </div>
@@ -264,6 +272,7 @@ $wartetAufStichtag = ($post['status'] ?? '') === 'approved'
             <h2>2 · Gegenprüfung</h2>
             <p class="sp-lockhint">Erst den Text in Schritt 1 erstellen.</p>
             <div class="sp-body">
+            <p class="sp-hinweis" style="margin:0 0 0.7rem">Prüfung gegen die aktuellen Richtlinien von Meta und Best Practices für die Textbeiträge zu den Posts — sowie gegen die Marken-Stimme. KI-Einschätzung, keine verbindliche Compliance-Freigabe.</p>
             <div class="sp-zeile">
                 <button class="btn btn-secondary" id="sp-pruefen">Mit KI gegenprüfen</button>
                 <span class="sp-hinweis" id="sp-pruef-spinner" style="display:none">⏳ prüft …</span>
@@ -271,7 +280,7 @@ $wartetAufStichtag = ($post['status'] ?? '') === 'approved'
                 <span class="sp-hinweis">zuletzt geprüft <?= htmlspecialchars(date('d.m.Y H:i', strtotime($post['geprueft_am']))) ?> (<?= htmlspecialchars($post['geprueft_provider'] ?? '') ?>)</span>
                 <?php endif; ?>
             </div>
-            <div class="sp-review-box" id="sp-review-box" <?= $post['geprueft_ergebnis'] ? 'style="display:block"' : '' ?>><?= htmlspecialchars($post['geprueft_ergebnis'] ?? '') ?></div>
+            <div class="sp-review-box" id="sp-review-box" <?= $reviewErg !== '' ? 'style="display:block"' : '' ?>><?= htmlspecialchars($reviewErg) ?></div>
             </div>
         </div>
 
