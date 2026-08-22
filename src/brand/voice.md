@@ -19,7 +19,7 @@ Läuferinnen und Läufer, Familien, Helfer, lokale Unterstützer.
 - **Ton:** herzlich, klar, sachlich-positiv. **Keine Werbefloskeln, keine Ausrufezeichen-Ketten.**
 - **Konkret statt allgemein:** Datum, Ort, Uhrzeit, Link nennen, sobald sie in den Fakten stehen.
 - **Keine erfundenen Fakten.** Nur verwenden, was in den Fakten steht; Unbestätigtes als Vorbehalt kennzeichnen („noch vorläufig", „unter Vorbehalt").
-- **Emoji: nur aus der Erlaubt-Liste, funktional statt Deko.** Erlaubt: **📅** (Termin/Datum), **📍** (Ort/Treffpunkt). Alles andere nicht verwenden. Diese Liste ist die **einzige** Stelle — hier ergänzen/kürzen; kein UI-Schalter nötig.
+- **Emoji: nie als Wort-Ersatz, nie in jede Zeile, keine Emoji-Ketten.** Wie viele und welche erlaubt sind, legt die **Kanal-Vorgabe** unten fest (Presse emoji-frei, Newsletter sehr sparsam, Social ausdrucksstark-dezent) — das ist die einzige Stellschraube, kein UI-Schalter nötig.
 - **Trennzeichen:** der Mittelpunkt `·` trennt Metazeilen („Bambini · 500 m"); der Gedankenstrich `—` trennt Gedanken.
 - **Casing:** normale Satz-Schreibung, keine Großschreibung ganzer Sätze.
 - **Zahlen/Einheiten:** „500 m", „1 km & 2 km", „10:00 Uhr", Zeiträume „12:30–13:30 Uhr", Datum ausgeschrieben („Sonntag, 20. September 2026"), Beträge deutsch („4.200 €").
@@ -30,7 +30,7 @@ Läuferinnen und Läufer, Familien, Helfer, lokale Unterstützer.
 
 <!-- voice:channel:newsletter -->
 Newsletter: 200–350 Wörter, in 2–4 thematischen Blöcken mit kleinen Zwischenüberschriften.
-Betreffzeilen kurz (max. ~60 Zeichen), konkret, kein Clickbait. **Emoji nur funktional aus der Erlaubt-Liste (📅/📍), sehr sparsam.**
+Betreffzeilen kurz (max. ~60 Zeichen), konkret, kein Clickbait. **Emoji nur funktional (📅 Termin, 📍 Ort), sehr sparsam.**
 <!-- /voice:channel:newsletter -->
 
 <!-- voice:channel:presse -->
@@ -42,7 +42,7 @@ Pressetext: neutral-journalistisch, kurze Sätze, keine Werbung, keine Ausrufeze
 Social-Post (Instagram/Facebook): kurz, max. ~5 Sätze / ~80 Wörter. **Emotion vor Fakten, weniger ist mehr** — ein menschlicher Moment oder ein Gefühl trägt den Post, kein Datenblatt.
 **Erste Zeile = Hook (max. ~125 Zeichen)**, ganz vorn, zieht zum Weiterlesen — nur die ersten ~125 Zeichen zeigt die App vor dem „… mehr". Kein „Anlass: …", keine Aufzählung.
 **Genau EIN Handlungsaufruf**, natürlich eingewoben und zum Anlass passend — nicht stapeln, kein Baukasten-Anhängsel; die Stimme wählt den einen, der hier am stärksten zieht.
-**Emoji nur aus der Erlaubt-Liste, höchstens 1–2, funktional (z. B. 📅/📍) — keine Deko-Emojis.**
+**Emoji ausdrucksstark, aber dezent: 2–4 pro Post, gezielt am Moment gesetzt (nicht in jede Zeile), passend zum Anlass** — z. B. 🏃‍♀️ 🏃 🎉 🙌 💪 ☀️ 📅 📍. Keine Emoji-Ketten, kein Ersatz für Worte, keine Superlativ-Deko.
 Hashtags nicht anhängen (werden separat ergänzt). Schreibe die Caption so, dass sie **ohne** klickbaren
 Link funktioniert (Instagram-Feed erlaubt keinen klickbaren Caption-Link → das Ziel sprachlich nennen,
 „Link in Bio" oder QR-Code auf dem Bild, nie „klick hier"); auf Facebook darf ein Link stehen. Instagram braucht immer ein Bild.
