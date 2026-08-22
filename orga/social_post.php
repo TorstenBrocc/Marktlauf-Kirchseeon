@@ -179,6 +179,16 @@ $wartetAufStichtag = !$frisch && ($post['status'] ?? '') === 'approved'
         .sp-lockhint { display: none; font-size: 0.85rem; color: var(--text-light); margin: 0; }
         .sp-locked .sp-lockhint { display: block; }
         .sp-locked h2 { color: var(--text-light); }
+        /* Reichweiten-Info: kleines i-Icon mit Hover/Focus-Tooltip (umbrechend) */
+        .sp-info { display:inline-flex; align-items:center; justify-content:center; width:16px; height:16px; border-radius:50%;
+            background: var(--primary-dark); color:#fff; font-size:11px; font-weight:700; font-style:normal; line-height:1;
+            cursor:help; position:relative; margin-left:0.4rem; vertical-align:middle; }
+        .sp-info::after { content: attr(data-tip); position:absolute; left:0; top:calc(100% + 8px); width:max-content; max-width:280px;
+            white-space:normal; text-align:left; background:#1f2a22; color:#fff; font-size:0.78rem; font-weight:400; line-height:1.45;
+            padding:0.55rem 0.7rem; border-radius:6px; box-shadow:0 6px 20px rgba(0,0,0,0.25); opacity:0; visibility:hidden;
+            transition:opacity .12s; z-index:9999; }
+        .sp-info:hover::after, .sp-info:focus::after { opacity:1; visibility:visible; }
+        @media (max-width:520px){ .sp-info::after{ left:auto; right:0; max-width:220px; } }
     </style>
 </head>
 <body>
@@ -228,8 +238,20 @@ $wartetAufStichtag = !$frisch && ($post['status'] ?? '') === 'approved'
             </ul>
         </div>
 
+        <details class="hd-card" style="padding:0.9rem 1.1rem">
+            <summary style="cursor:pointer;font-weight:600;color:var(--primary-dark)">📈 Reichweite maximieren — die wichtigsten Hebel</summary>
+            <ul class="sp-hinweis" style="margin:0.7rem 0 0 1.1rem;line-height:1.65">
+                <li><b>Hook:</b> erste Zeile ≤125 Zeichen (Nutzen/Frage/Neugier) — nur die zeigt der Feed vor „… mehr“.</li>
+                <li><b>Format:</b> Reels &gt; Carousel &gt; Single-Image; Story 9:16 für Countdown/Reminder, sonst Portrait als Feed-Standard.</li>
+                <li><b>Interaktion:</b> Saves, Sends, Shares &amp; Kommentare zählen am meisten — genau EIN zum Thema passender CTA.</li>
+                <li><b>Links:</b> Facebook = klickbarer Link-Post; Instagram-Feed nicht klickbar → Story-Link-Sticker + „Link in Bio“ + QR-Code auf der Grafik.</li>
+                <li><b>Erste Stunde:</b> liken, in die Story teilen, an Freunde senden (Sends!), lokale FB-Gruppen — Details im Versand-Schritt.</li>
+                <li><b>Timing:</b> zur besten Zeit posten — siehe „Beste Sendezeiten“.</li>
+            </ul>
+        </details>
+
         <div class="hd-card">
-            <h2>1 · Text</h2>
+            <h2>1 · Text <span class="sp-info" tabindex="0" role="img" aria-label="Reichweiten-Tipp Text" data-tip="Hook: erste Zeile ≤125 Zeichen als Nutzen/Frage/Neugier — nur die ersten ~125 Zeichen zeigt der Feed vor dem „… mehr“. Der Algorithmus belohnt Saves, Sends, Shares &amp; Kommentare — genau EIN zum Thema passender CTA, natürlich eingewoben.">i</span></h2>
             <div class="sp-grid2">
                 <div class="sp-feld">
                     <label for="sp-fakten">Fakten / Stichpunkte <span style="font-weight:400">(je Thema gespeichert)</span> <span class="sp-msg" id="sp-ft-msg"></span></label>
@@ -291,7 +313,7 @@ $wartetAufStichtag = !$frisch && ($post['status'] ?? '') === 'approved'
         </div>
 
         <div class="hd-card <?= $schrittText ? '' : 'sp-locked' ?>" id="sp-grafik-card">
-            <h2>3 · Grafik</h2>
+            <h2>3 · Grafik <span class="sp-info" tabindex="0" role="img" aria-label="Reichweiten-Tipp Grafik" data-tip="Reichweite nach Format: Reels &gt; Carousel &gt; Single-Image. Reels sind der stärkste Hebel für kleine Accounts, Carousels gewinnen Saves/Engagement. Standbild hier: Portrait als Feed-Standard, Story 9:16 für Countdown/Reminder.">i</span></h2>
             <p class="sp-lockhint">Erst den Text in Schritt 1 erstellen.</p>
             <div class="sp-body">
             <div id="sp-grafik-status">
@@ -331,7 +353,7 @@ $wartetAufStichtag = !$frisch && ($post['status'] ?? '') === 'approved'
         </div>
 
         <div class="hd-card <?= $schrittGrafik ? '' : 'sp-locked' ?>" id="sp-card-4">
-            <h2>4 · Versand</h2>
+            <h2>4 · Versand <span class="sp-info" tabindex="0" role="img" aria-label="Reichweiten-Tipp Versand" data-tip="Links kanalabhängig: Facebook = echter klickbarer Link-Post. Instagram-Feed ist nicht klickbar → Story-Link-Sticker + „Link in Bio“ + der QR-Code auf der Grafik. Timing: siehe „Beste Sendezeiten“.">i</span></h2>
             <p class="sp-lockhint">Erst eine Grafik in Schritt 3 erstellen — Instagram braucht ein Bild.</p>
             <div class="sp-body">
             <?php if ($schrittVersand): ?>
