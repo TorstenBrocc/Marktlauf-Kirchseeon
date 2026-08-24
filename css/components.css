@@ -1211,6 +1211,33 @@
     align-items: center;
     justify-content: center;
     text-decoration: none;
+    position: relative;
+}
+
+/* Klick-Affordance: der Cursor überschreibt das grab des ziehbaren Laufbands */
+.sponsor-item a:hover {
+    cursor: pointer;
+}
+
+/* Kleiner ↗-Hinweis pro Logo, blendet erst beim Hover ein (nur Desktop-Hover;
+   auf Touch trägt die Hinweiszeile die Botschaft). */
+.sponsor-item a::after {
+    content: "↗";
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    font-size: 0.95rem;
+    line-height: 1;
+    color: var(--primary);
+    opacity: 0;
+    transform: translateY(2px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    pointer-events: none;
+}
+
+.sponsor-item a:hover::after {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 .sponsor-item img {
@@ -1218,14 +1245,22 @@
     height: 116px;
     object-fit: contain;
     filter: none;
-    transition: filter 0.3s ease;
+    transition: transform 0.25s ease, filter 0.3s ease;
     /* Sonst startet der Browser beim Ziehen ein Bild-Drag&Drop */
     -webkit-user-drag: none;
     user-select: none;
 }
 
-.sponsor-item:hover img {
-    filter: none;
+.sponsor-item a:hover img {
+    transform: translateY(-3px) scale(1.03);
+}
+
+/* Dauerhafter Hinweis unter dem Laufband — wirkt auf allen Geräten inkl. Mobil */
+.sponsor-hinweis {
+    text-align: center;
+    margin-top: var(--space-md);
+    font-size: 0.9rem;
+    color: var(--gray-500, #64748b);
 }
 
 /* ── Scroll-Animationen ──────────────────────────────────── */
@@ -1251,6 +1286,7 @@
 @media (prefers-reduced-motion: reduce) {
     .reveal { opacity: 1; transform: none; transition: none; }
     .sponsor-marquee-track { animation: none; }
+    .sponsor-item a:hover img { transform: none; }
 }
 
 /* Contact Form */

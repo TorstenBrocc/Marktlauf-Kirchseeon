@@ -62,6 +62,7 @@
   "anmeldung.placeholder_text": "The RaceResult registration snippet will be embedded here.",
   "anmeldung.placeholder_note": "(Please insert RaceResult iframe/script here)",
   "sponsoren.title": "Our Sponsors",
+  "sponsoren.hinweis": "All sponsor logos are links – click one to open that sponsor's website.",
   "kontakt.title": "Write to us – we are happy to help you!",
   "kontakt.faq_text": "Have a quick question? ",
   "kontakt.faq_link": "Visit our FAQ",
