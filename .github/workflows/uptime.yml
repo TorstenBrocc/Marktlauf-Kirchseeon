@@ -31,12 +31,24 @@ jobs:
             "https://atsv-kirchseeon-marktlauf.de/helfer-anmeldung.php"
             "https://atsv-kirchseeon-marktlauf.de/orga/"
           )
+          attempts=3        # Versuche pro URL, bevor als Ausfall gewertet wird
+          delay=10          # Sekunden Pause zwischen den Versuchen
+          # Nur bei anhaltendem Fehlschlag alarmieren: transiente Runner-/DNS-Blips
+          # (curl-Code 000) erholen sich meist im naechsten Versuch und sind kein Ausfall.
           fail=0
           for u in "${urls[@]}"; do
-            code=$(curl -s -o /dev/null -w "%{http_code}" -m 25 -L "$u" || echo "000")
-            echo "$u -> $code"
+            code=000
+            for n in $(seq 1 "$attempts"); do
+              code=$(curl -s -o /dev/null -w "%{http_code}" -m 25 -L "$u" || echo "000")
+              if [ "$code" = "200" ]; then
+                if [ "$n" -gt 1 ]; then echo "$u -> $code (ok nach Versuch $n)"; fi
+                break
+              fi
+              echo "$u -> $code (Versuch $n/$attempts)"
+              if [ "$n" -lt "$attempts" ]; then sleep "$delay"; fi
+            done
             if [ "$code" != "200" ]; then
-              echo "::error::$u lieferte HTTP $code (erwartet 200)"
+              echo "::error::$u lieferte HTTP $code nach $attempts Versuchen (erwartet 200)"
               fail=1
             fi
           done
