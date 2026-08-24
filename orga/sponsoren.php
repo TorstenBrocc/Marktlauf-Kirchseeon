@@ -156,7 +156,9 @@ if (!empty($filterBranchen)) {
 
 $ansprechpartnerBySponsor = [];
 try {
-    $apStmt = $pdo->query('SELECT sponsor_id, anrede, vorname, nachname, email, telefon FROM sponsor_ansprechpartner ORDER BY sponsor_id, id');
+    // Reihenfolge wie in der Sponsorenmaske (Drag-and-Drop, Migration 079), damit der in der
+    // Übersicht gezeigte erste Ansprechpartner ($apList[0]) dem ersten der Maske entspricht.
+    $apStmt = $pdo->query('SELECT sponsor_id, anrede, vorname, nachname, email, telefon FROM sponsor_ansprechpartner ORDER BY sponsor_id, sortierung ASC, id ASC');
     while ($row = $apStmt->fetch()) {
         $ansprechpartnerBySponsor[$row['sponsor_id']][] = $row;
     }
