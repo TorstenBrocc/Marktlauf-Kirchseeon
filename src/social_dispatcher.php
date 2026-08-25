@@ -28,9 +28,11 @@ require_once __DIR__ . '/logger.php';
  * @param int      $postId   Post-ID — Make.com reicht sie im Erfolgs-Callback zurueck
  *                           (orga/api/post_status_callback.php), damit der Permalink dem
  *                           richtigen Post zugeordnet wird.
+ * @param string   $firstComment Erster Kommentar (Link+Hashtags). Make setzt ihn nach dem Post
+ *                           als ersten Kommentar; leer = Make ueberspringt den Schritt.
  * @return array{ok:bool,message:string,channels:string[],fallback?:bool}
  */
-function socialDispatch(string $text, string $imageUrl, array $channels, int $postId = 0): array
+function socialDispatch(string $text, string $imageUrl, array $channels, int $postId = 0, string $firstComment = ''): array
 {
     $config     = getConfig();
     $webhookUrl = trim((string) ($config['make_webhook_url'] ?? ''));
@@ -47,11 +49,12 @@ function socialDispatch(string $text, string $imageUrl, array $channels, int $po
     }
 
     $payload = json_encode([
-        'post_id'   => $postId,
-        'text'      => $text,
-        'image_url' => $imageUrl,
-        'channels'  => array_values($channels),
-        'secret'    => $secret,
+        'post_id'       => $postId,
+        'text'          => $text,
+        'image_url'     => $imageUrl,
+        'channels'      => array_values($channels),
+        'first_comment' => $firstComment,
+        'secret'        => $secret,
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
     // make.com-Optimierung #4 (Haertung): HMAC-Signatur ueber den exakten Body mitschicken

@@ -11,6 +11,9 @@
  * (kein offener Schreibzugriff auf die DB).
  *
  * Erwarteter JSON-Body: {"post_id":123,"channel":"instagram"|"facebook","permalink":"https://…","status":"ok"}
+ * MO1 (Insights-Rueckkanal): zusaetzlich optional {"reichweite":1840,"likes":97} — darf im selben
+ * ODER in einem spaeteren (verzoegerten) Callback kommen; es wird nur gesetzt, was mitkommt, ein
+ * Insights-only-Callback loescht den Permalink NICHT.
  * Antwort: {"ok":true} / {"ok":false,"message":"…"}
  */
 
@@ -73,21 +76,46 @@ if ($permalink !== '' && !preg_match('#^https://([a-z0-9-]+\.)?(instagram\.com|f
     $permalink = '';
 }
 
-$spalte = $channel === 'instagram' ? 'ig_permalink' : 'fb_permalink';
+// Kanal-Praefix aus fester Whitelist (ig/fb) — sicher fuer die Spalten-Interpolation.
+$chPrefix = $channel === 'instagram' ? 'ig' : 'fb';
+
+// Nur setzen, was dieser Callback mitbringt (Permalink UND/ODER Insights koennen getrennt
+// kommen — MO1 §1.4). versand_bestaetigt_am + callback_info markieren jeden Anruf.
+$sets   = [
+    'versand_bestaetigt_am = NOW()',
+    'versand_callback_info = LEFT(CONCAT(COALESCE(versand_callback_info, \'\'), :info), 400)',
+];
+$params = [
+    'info' => '[' . date('d.m. H:i') . ' ' . $channel . ' ' . ($status !== '' ? $status : 'ok') . '] ',
+    'id'   => $postId,
+];
+
+// Permalink nur ueberschreiben, wenn einer (gueltig) mitkommt — sonst NICHT auf NULL setzen
+// (ein Insights-only-Callback darf den bestehenden Permalink nicht loeschen).
+if ($permalink !== '') {
+    $sets[] = "`{$chPrefix}_permalink` = :permalink";
+    $params['permalink'] = $permalink;
+}
+
+// make.com-Optimierung MO1: Insights (Reichweite/Likes) optional, defensiv geklemmt.
+$hatReichweite = array_key_exists('reichweite', $data) && is_numeric($data['reichweite']);
+$hatLikes      = array_key_exists('likes', $data) && is_numeric($data['likes']);
+if ($hatReichweite) {
+    $sets[] = "`{$chPrefix}_reichweite` = :reichweite";
+    $params['reichweite'] = min(100000000, max(0, (int) $data['reichweite']));
+}
+if ($hatLikes) {
+    $sets[] = "`{$chPrefix}_likes` = :likes";
+    $params['likes'] = min(100000000, max(0, (int) $data['likes']));
+}
+if ($hatReichweite || $hatLikes) {
+    $sets[] = 'versand_insights_am = NOW()';
+}
+
 try {
     $pdo  = getDbConnection();
-    $stmt = $pdo->prepare(
-        "UPDATE post_race_contents
-            SET `$spalte` = :permalink,
-                versand_bestaetigt_am = NOW(),
-                versand_callback_info = LEFT(CONCAT(COALESCE(versand_callback_info, ''), :info), 400)
-          WHERE id = :id"
-    );
-    $stmt->execute([
-        'permalink' => $permalink !== '' ? $permalink : null,
-        'info'      => '[' . date('d.m. H:i') . ' ' . $channel . ' ' . ($status !== '' ? $status : 'ok') . '] ',
-        'id'        => $postId,
-    ]);
+    $stmt = $pdo->prepare('UPDATE post_race_contents SET ' . implode(', ', $sets) . ' WHERE id = :id');
+    $stmt->execute($params);
     if ($stmt->rowCount() === 0) {
         logError('post_status_callback: Post ' . $postId . ' nicht gefunden.');
     }
