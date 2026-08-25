@@ -61,6 +61,7 @@ function sponsorSetField(PDO $pdo, int $sponsorId, string $field, mixed $value):
         'ort', 'notizen', 'rechnung_firma', 'rechnung_email', 'rechnung_strasse',
         'rechnung_plz', 'rechnung_ort', 'foerderprogramm', 'kontaktweg',
         'quellenurl', 'weitere_links', 'website',
+        'kernkompetenz', 'social_handle',
     ];
     $dateFields = ['wiedervorlage', 'bedingungen_bestaetigt_am'];
     $checkboxFields = ['rechnung_betrag_brutto', 'bedingungen_beleg'];
@@ -160,5 +161,6 @@ function sponsorSetFieldKeys(): array
         'ort', 'notizen', 'rechnung_firma', 'rechnung_email', 'rechnung_strasse',
         'rechnung_plz', 'rechnung_ort', 'foerderprogramm', 'kontaktweg',
         'quellenurl', 'weitere_links', 'website',
+        'kernkompetenz', 'social_handle',
     ];
 }
