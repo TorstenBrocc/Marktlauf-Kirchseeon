@@ -44,6 +44,25 @@ function socialVerstaerkerAusbau(): array
 }
 
 /**
+ * Verfahrensweise fuer Sponsor-/Partner-Posts ("corporate posts") — zusammenhaengende
+ * Anleitung (Post-Wirkung-Spec 5.C). Wird auf den Sponsoren-Themen im Post-Detail angezeigt,
+ * damit die Schritte an EINER Stelle stehen statt verstreut. Reihenfolge = Ablauf.
+ *
+ * @return list<string>
+ */
+function socialSponsorPostAnleitung(): array
+{
+    return [
+        'Thema wählen: „Dank an Sponsoren & Partner" (alle gesammelt) oder „Sponsorenvorstellung" (ein Spotlight).',
+        'Text generieren lassen: die KI stellt den Bezug Kernkompetenz ↔ Marktlauf selbst her — pflege dafür die Kernkompetenz am Sponsor (Sponsor-Maske).',
+        'Einheitlich-warm bleiben: „mit Unterstützung von …" / „Danke an …" — keine Stufen-Titel („Gold-Sponsor") öffentlich.',
+        'Logo kommt automatisch aus dem Sponsor-Datensatz (eine Quelle wie die Website-Rotation) — höchstens 3 Logos, sonst wirkt es überladen.',
+        'Nach dem Posten: Sponsor markieren (@handle) und — für doppelte Reichweite — als Collab-Co-Autor einladen (der Sponsor muss annehmen).',
+        'Personen-Fotos nur mit Freigabe; Emotion vor Aufzählung — der Post soll für sich sprechen.',
+    ];
+}
+
+/**
  * Sponsor-Tag-/Collab-Erinnerungen (S5-Kopplung): nur auf Sponsoren-Themen und nur fuer
  * Sponsoren mit gepflegtem Social-Handle. Der Meta-Handgriff (markieren/als Collab einladen)
  * bleibt manuell. Leer, wenn keine Handles vorliegen (oder Migration 077 noch offen).

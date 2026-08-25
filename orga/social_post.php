@@ -250,6 +250,17 @@ $wartetAufStichtag = !$frisch && ($post['status'] ?? '') === 'approved'
             </ul>
         </details>
 
+        <?php if (in_array($anlassKey, ['sponsoren_dank', 'sponsorenvorstellung', 'renntag', 'danke'], true)): ?>
+        <details class="hd-card" open style="padding:0.9rem 1.1rem">
+            <summary style="cursor:pointer;font-weight:600;color:var(--primary-dark)">🤝 So läuft ein Sponsor-/Partner-Post</summary>
+            <ol class="sp-hinweis" style="margin:0.7rem 0 0 1.1rem;line-height:1.65">
+                <?php foreach (socialSponsorPostAnleitung() as $schritt): ?>
+                <li><?= htmlspecialchars($schritt) ?></li>
+                <?php endforeach; ?>
+            </ol>
+        </details>
+        <?php endif; ?>
+
         <div class="hd-card">
             <h2>1 · Text <span class="sp-info" tabindex="0" role="img" aria-label="Reichweiten-Tipp Text" data-tip="Hook: erste Zeile ≤125 Zeichen als Nutzen/Frage/Neugier — nur die ersten ~125 Zeichen zeigt der Feed vor dem „… mehr“. Der Algorithmus belohnt Saves, Sends, Shares &amp; Kommentare — genau EIN zum Thema passender CTA, natürlich eingewoben.">i</span></h2>
             <div class="sp-grid2">
@@ -362,6 +373,20 @@ $wartetAufStichtag = !$frisch && ($post['status'] ?? '') === 'approved'
                 an <?= htmlspecialchars(str_replace(',', ' + ', (string) $post['gesendet_kanaele'])) ?>
                 — <?= htmlspecialchars((string) $post['gesendet_ergebnis']) ?>
             </p>
+            <?php
+            // make.com-Optimierung #1/#2: von Make.com zurueckgemeldeter Live-Permalink je Kanal
+            // (Callback orga/api/post_status_callback.php). Erscheint erst, wenn die Rueckmeldung da ist.
+            $versandBestaetigt = $post['versand_bestaetigt_am'] ?? null;
+            if ($versandBestaetigt):
+                $igLink = trim((string) ($post['ig_permalink'] ?? ''));
+                $fbLink = trim((string) ($post['fb_permalink'] ?? ''));
+            ?>
+            <p class="sp-hinweis" style="margin:-0.4rem 0 0.9rem">
+                ✓ Von Make.com bestätigt <?= htmlspecialchars(date('d.m.Y H:i', strtotime((string) $versandBestaetigt))) ?>
+                <?php if ($igLink !== ''): ?> · <a href="<?= htmlspecialchars($igLink) ?>" target="_blank" rel="noopener noreferrer" style="color:var(--primary-dark)">Instagram ↗</a><?php endif; ?>
+                <?php if ($fbLink !== ''): ?> · <a href="<?= htmlspecialchars($fbLink) ?>" target="_blank" rel="noopener noreferrer" style="color:var(--primary-dark)">Facebook ↗</a><?php endif; ?>
+            </p>
+            <?php endif; ?>
             <div style="background:#eef7f0;border:1px solid #bfe3c8;border-radius:8px;padding:0.7rem 1rem;margin:0 0 0.9rem">
                 <p style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#065f46;margin:0 0 0.4rem">Jetzt zählt die erste Stunde</p>
                 <ol style="padding:0 0 0 1.1rem;margin:0;font-size:0.85rem;line-height:1.8">
