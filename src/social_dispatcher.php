@@ -50,12 +50,20 @@ function socialDispatch(string $text, string $imageUrl, array $channels): array
         'secret'    => $secret,
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
+    // make.com-Optimierung #4 (Haertung): HMAC-Signatur ueber den exakten Body mitschicken
+    // (Header `X-Signature: sha256=…`). Das `secret` im Body bleibt zusaetzlich erhalten, damit
+    // ein bestehendes Make-Szenario nicht bricht — Make kann die Signatur pruefen, sobald gewuenscht.
+    $headers = ['Content-Type: application/json'];
+    if ($secret !== '') {
+        $headers[] = 'X-Signature: sha256=' . hash_hmac('sha256', (string) $payload, $secret);
+    }
+
     try {
         $ch = curl_init($webhookUrl);
         curl_setopt_array($ch, [
             CURLOPT_POST           => true,
             CURLOPT_POSTFIELDS     => $payload,
-            CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
+            CURLOPT_HTTPHEADER     => $headers,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_TIMEOUT        => 15,
             CURLOPT_CONNECTTIMEOUT => 8,
