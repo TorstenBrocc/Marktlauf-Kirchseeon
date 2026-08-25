@@ -99,7 +99,7 @@ if ($bildPfad !== '') {
     $imageUrl = $baseUrl . '/assets/social/' . $sendDatei;
 }
 
-$ergebnis = socialDispatch($text, $imageUrl, $channels);
+$ergebnis = socialDispatch($text, $imageUrl, $channels, $postId);
 
 if (!empty($ergebnis['fallback'])) {
     postDispatchJson([
