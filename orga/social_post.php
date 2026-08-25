@@ -208,6 +208,13 @@ $fbChecked = $autoChannels === '' ? true : in_array('facebook', explode(',', $au
             transition:opacity .12s; z-index:9999; }
         .sp-info:hover::after, .sp-info:focus::after { opacity:1; visibility:visible; }
         @media (max-width:520px){ .sp-info::after{ left:auto; right:0; max-width:220px; } }
+        /* Leseranimation: Frage/CTA-Vorschlag-Chips unter der Caption (Wirkungs-Spec 2026-08-27) */
+        .sp-cta-chips { margin-top: 0.6rem; }
+        .sp-cta-chips .sp-cta-label { display:block; margin-bottom:0.35rem; }
+        .sp-chip { display:inline-block; margin:0 0.3rem 0.35rem 0; padding:0.32rem 0.65rem; font-size:0.82rem;
+            background:#eef7f0; color:var(--primary-dark); border:1px solid #bfe3c8; border-radius:999px;
+            cursor:pointer; line-height:1.35; text-align:left; white-space:normal; }
+        .sp-chip:hover { background:#dcefe1; }
     </style>
 </head>
 <body>
@@ -311,6 +318,15 @@ $fbChecked = $autoChannels === '' ? true : in_array('facebook', explode(',', $au
                 <div class="sp-feld">
                     <label for="sp-social">Social-Post (Instagram / Facebook)</label>
                     <textarea id="sp-social" class="gross" placeholder="Entwurf erscheint nach dem KI-Aufruf …"><?= htmlspecialchars($textSocial) ?></textarea>
+                    <?php $ctaVorschlaege = socialCtaVorschlaege($anlassKey); ?>
+                    <?php if ($ctaVorschlaege): ?>
+                    <div class="sp-cta-chips">
+                        <span class="sp-hinweis sp-cta-label">💬 Frage/CTA einfügen <span style="font-weight:400">(ersetzt den einen Handlungsaufruf — nicht zusätzlich anhängen)</span>:</span>
+                        <?php foreach ($ctaVorschlaege as $v): ?>
+                        <button type="button" class="sp-chip" data-cta="<?= htmlspecialchars($v) ?>"><?= htmlspecialchars($v) ?></button>
+                        <?php endforeach; ?>
+                    </div>
+                    <?php endif; ?>
                 </div>
                 <?php if ($mitPresse): ?>
                 <div class="sp-feld">
@@ -865,6 +881,35 @@ if (burgerBtn) {
         sidebarOverlay.classList.remove('active');
     });
 }
+
+// Leseranimation: Frage/CTA-Vorschlag am Cursor in die Caption einfuegen (Wirkungs-Spec 2026-08-27).
+// Ersetzt bewusst NICHT automatisch — der Benutzer setzt den Vorschlag als den einen CTA.
+// Merkt sich den letzten Cursor (der Chip-Klick blurrt das Feld); ohne gesetzten Cursor ans Ende.
+(function () {
+    const ta = document.getElementById('sp-social');
+    if (!ta) return;
+    let lastPos = null;
+    const remember = () => { lastPos = ta.selectionStart; };
+    ta.addEventListener('blur', remember);
+    ta.addEventListener('keyup', remember);
+    ta.addEventListener('mouseup', remember);
+    document.querySelectorAll('.sp-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            const text = chip.getAttribute('data-cta') || '';
+            const pos  = (lastPos === null) ? ta.value.length : lastPos;
+            const before = ta.value.slice(0, pos);
+            const after  = ta.value.slice(pos);
+            const sepBefore = (before && !before.endsWith('\n')) ? '\n\n' : '';
+            const sepAfter  = (after && !after.startsWith('\n')) ? '\n\n' : '';
+            ta.value = before + sepBefore + text + sepAfter + after;
+            const caret = (before + sepBefore + text).length;
+            ta.focus();
+            ta.setSelectionRange(caret, caret);
+            lastPos = caret;
+            ta.dispatchEvent(new Event('input', { bubbles: true }));
+        });
+    });
+})();
 </script>
 </body>
 </html>
