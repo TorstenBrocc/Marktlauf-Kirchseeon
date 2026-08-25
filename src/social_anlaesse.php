@@ -230,3 +230,41 @@ function socialAnlaesse(): array
         ],
     ];
 }
+
+/**
+ * Leseranimation — vorgeschlagene Engagement-Fragen/CTAs je Anlass (Post-Wirkung-Spec,
+ * „Leseranimation" 2026-08-27). Die gewaehlte Frage ist DER EINE Handlungsaufruf des Posts
+ * (ersetzt den generischen CTA, steht nicht zusaetzlich daneben — „genau ein CTA"-Regel).
+ * Der Orga-Board-Benutzer waehlt beim Erstellen im Post-Editor (social_post.php, Schritt 1);
+ * Klick fuegt den Text am Cursor in die Caption ein. Wortlaut in Vereins-Stimme, zentral hier
+ * pflegbar. Unbekannter/leerer Anlass faellt auf 'allgemein' zurueck.
+ *
+ * @return list<string>
+ */
+function socialCtaVorschlaege(string $anlassKey): array
+{
+    $vorschlaege = [
+        'allgemein'            => ['Was verbindest du mit dem Marktlauf? 👇'],
+        'ankuendigung'         => ['Bist du 2026 dabei? Sag\'s uns in den Kommentaren 👇', 'Wen nimmst du mit? Markier deine Laufpartner 👇'],
+        'countdown'            => ['Wer freut sich schon? Reagier mit einem 🏃', 'Bist du schon angemeldet? 👇'],
+        'sponsoren_dank'       => ['Kennt ihr unsere Partner? Ein 💚 für ihre Unterstützung', 'Sagt unseren Partnern kurz Danke in den Kommentaren 👇'],
+        'helfer'               => ['Warst du schon mal im Helfer-Team? Erzähl\'s uns 👇', 'Ein 💪 für alle, die mit anpacken'],
+        'renntag'              => ['Warst du dabei? Teil deinen schönsten Moment 👇', 'Markier jemanden, den du auf dem Bild entdeckst!'],
+        'save_the_date'        => ['Termin schon im Kalender? Reagier mit 📅', 'Wer ist fest dabei? 👇'],
+        'warum_mitlaufen'      => ['Was ist dein Grund zu laufen? 👇', 'Welcher Grund zieht bei dir am meisten? 👇'],
+        'strecke'              => ['Welcher Streckenabschnitt ist dein Liebling? 👇', 'Kennst du die Strecke schon? 👇'],
+        'nachhaltigkeit'       => ['Wie kommst du zum Lauf — Rad, zu Fuß, ÖPNV? 👇', 'Dein Tipp für mehr Nachhaltigkeit im Alltag? 👇'],
+        'anmeldung_offen'      => ['Schon angemeldet? Markier deine Laufpartner 👇', 'Wer ist dieses Jahr am Start? 👇'],
+        'helfer_gesucht'       => ['Wer ist dieses Jahr im Helfer-Team dabei? Meld dich 👇', 'Kennst du jemanden, der mit anpacken mag? Markier ihn 👇'],
+        'sponsorenvorstellung' => ['Kennt ihr [Sponsor]? Sagt kurz Hallo 👇', 'Ein 💚 für die Unterstützung von [Sponsor]'],
+        'countdown_30'         => ['Noch 30 Tage — wer trainiert schon? Reagier mit 💪', 'Wie sieht dein Trainingsplan aus? 👇'],
+        'trainingstipp'        => ['Was ist dein bester Trainingstipp? Verrate ihn 👇', 'Was hilft dir kurz vorm Lauf am meisten? 👇'],
+        'energie_umwelttag'    => ['Was tust du für mehr Nachhaltigkeit im Alltag? 👇', 'Kommst du klimafreundlich zum Lauf? Erzähl\'s uns 👇'],
+        'countdown_7'          => ['Eine Woche noch! Wer ist angemeldet? 🏃', 'Bist du bereit? Reagier mit 💪'],
+        'morgen'               => ['Bereit für morgen? Zeig deine Vorfreude 👇', 'Wer kann heute Nacht schon nicht schlafen vor Aufregung? 😄'],
+        'eventtag'             => ['Du bist vor Ort? Zeig uns dein Marktlauf-Foto 📸', 'Wie ist die Stimmung bei dir? 👇'],
+        'danke'                => ['Dein schönster Moment vom Marktlauf? Teil ihn 👇', 'Warst du dabei? Ein 💚 dalassen'],
+    ];
+
+    return $vorschlaege[$anlassKey] ?? $vorschlaege['allgemein'];
+}
