@@ -46,7 +46,9 @@ require_once __DIR__ . '/../src/sponsor_write.php';
 require_once __DIR__ . '/../src/sponsor_leistungen.php';
 require_once __DIR__ . '/../src/sponsor_rotation.php';
 
-function out(string $s): void { fwrite(STDOUT, $s . PHP_EOL); }
+// echo statt STDOUT: auf Strato läuft PHP per SSH als CGI, dort ist die Konstante STDOUT nicht
+// definiert (STDERR setzen wir oben selbst). Gleiches Muster wie bin/migrate.php.
+function out(string $s): void { echo $s . PHP_EOL; }
 function fail(string $s): void { fwrite(STDERR, 'FEHLER: ' . $s . PHP_EOL); exit(1); }
 
 // --- Optionen parsen: --key value / --flag ---
