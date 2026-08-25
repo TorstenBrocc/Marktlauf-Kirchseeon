@@ -87,6 +87,12 @@ Make.com-Seite (Inhaber, einmalig): nach dem IG/FB-Post-Modul ein HTTP-POST an
 `…/orga/api/post_status_callback.php` mit `{post_id, channel, permalink, status}` + Header
 `X-Signature` (HMAC-SHA256 des Bodys mit `make_webhook_secret`) **oder** `secret` im Body.
 
+**Nachtrag Folge-Session 2026-08-25 (Commit `b6ad46b`, deployt + migriert 084/085/086):** Die drei
+Vault-Specs sind unter `intern/` abgelegt; **MO1 Insights-Rückkanal, Erster-Kommentar-Automatik und
+#3 Auto-Versand am Stichtag sind gebaut** (MVP live — Details/Reste in `intern/VAULT_SNAPSHOT.md`).
+Stale-Branch `claude/social-post-impact-spec-0vlwns` ✅ gelöscht. Offen bleibt: make.com-Callback +
+Kommentar-Modul + Insights-Lieferung einrichten (Aufgabe 5, Inhaber-Login), Kernkompetenz-CSV, TikTok.
+
 Offen / vertagt (drei Vault-Specs im Chat-Transkript zum Ablegen unter `intern/`):
 - `make-com-optimierung-spec.md` — **Musik NICHT per API** (muss ins Video eingebettet sein);
   Reichweiten-Automatik: Erster-Kommentar-Link, Insights-Rückkanal (MO1).
