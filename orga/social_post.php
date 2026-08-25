@@ -115,13 +115,16 @@ $schrittVersand = !$frisch && ($post['status'] ?? '') === 'gesendet';
 $wartetAufStichtag = !$frisch && ($post['status'] ?? '') === 'approved'
     && $eintrag['zieldatum'] !== null && $eintrag['zieldatum'] > date('Y-m-d');
 
-// make.com-Optimierung: Vorbelegung "Erster Kommentar" = Link + Hashtags (Spec §2.3).
-// Gespeicherter Wert hat Vorrang; sonst thema-abgeleiteter Link + der 5er-Hashtag-Satz.
+// make.com-Optimierung: Vorbelegung "Erster Kommentar" = CTA-Satz + Link, OHNE Hashtags
+// (Inhaber-Entscheidung 2026-08-26, Spec §2.3). Die Hashtags leben in der Caption
+// (social_generate.php); im ersten Kommentar wuerden sie doppeln UND ihn zu einem reinen
+// Link+Hashtag-Block machen, den Metas Spam-Filter mit Fehler 20 ablehnt (Spec §6). Ein echter
+// Satz + Link ist spam-arm. Gespeicherter Wert hat weiterhin Vorrang.
 $ersterKommentar = $frisch ? '' : trim((string) ($post['erster_kommentar'] ?? ''));
 if ($ersterKommentar === '') {
     $appUrl   = (string) (getConfig()['app']['url'] ?? 'https://atsv-kirchseeon-marktlauf.de');
     $linkZiel = socialQrUrl(socialQrKey($anlassKey, false), $appUrl);
-    $ersterKommentar = rtrim($kbCta, '!') . ': ' . $linkZiel . "\n\n" . $hashtags;
+    $ersterKommentar = rtrim($kbCta, '!') . ': ' . $linkZiel;
 }
 
 // Auto-Versand am Stichtag (Opt-in je Post, Spec §1.1). Gespeicherte Kanalwahl spiegelt die
@@ -300,7 +303,7 @@ $fbChecked = $autoChannels === '' ? true : in_array('facebook', explode(',', $au
                 </select>
                 <span class="sp-hinweis" id="sp-spinner" style="display:none">⏳ KI läuft …</span>
             </div>
-            <p class="sp-hinweis" style="margin:0 0 0.9rem">Hashtags (werden automatisch angehängt):
+            <p class="sp-hinweis" style="margin:0 0 0.9rem">Hashtags (werden automatisch an die Caption angehängt):
                 <code style="background:var(--bg);padding:0.1rem 0.4rem;border-radius:4px"><?= htmlspecialchars($hashtags) ?></code>
                 · <a href="einstellungen.php#social-section" style="color:var(--primary-dark)">ändern</a></p>
             <div class="sp-msg" id="sp-fehler" style="color:#dc2626"></div>
@@ -459,9 +462,9 @@ $fbChecked = $autoChannels === '' ? true : in_array('facebook', explode(',', $au
             </details>
             <?php endif; ?>
             <div class="sp-feld" style="margin:0 0 0.9rem">
-                <label for="sp-erster-kommentar">Erster Kommentar <span style="font-weight:400">(Link &amp; Hashtags — automatisch nach dem Post)</span> <span class="sp-msg" id="sp-ek-msg"></span></label>
-                <textarea id="sp-erster-kommentar" placeholder="Link + Hashtags für den ersten Kommentar …"><?= htmlspecialchars($ersterKommentar) ?></textarea>
-                <p class="sp-hinweis" style="margin:0.35rem 0 0">Hält die Caption sauber; Make.com postet diesen Text direkt nach der Veröffentlichung als <strong>ersten Kommentar</strong>.</p>
+                <label for="sp-erster-kommentar">Erster Kommentar <span style="font-weight:400">(kurzer Satz &amp; Link — automatisch nach dem Post)</span> <span class="sp-msg" id="sp-ek-msg"></span></label>
+                <textarea id="sp-erster-kommentar" placeholder="Kurzer Satz + Anmelde-Link für den ersten Kommentar …"><?= htmlspecialchars($ersterKommentar) ?></textarea>
+                <p class="sp-hinweis" style="margin:0.35rem 0 0">Make.com postet diesen Text direkt nach der Veröffentlichung als <strong>ersten Kommentar</strong> — so steht der klickbare Link im Kommentar, die Hashtags bleiben in der Caption. <strong>Keine Hashtags hier</strong> (sonst wertet Instagram den Kommentar als Spam und lehnt ihn ab).</p>
             </div>
             <div class="sp-zeile" style="margin-bottom:0.9rem">
                 <label style="display:inline-flex;align-items:center;gap:0.35rem;font-size:0.9rem">
@@ -575,7 +578,7 @@ function persistAnlassFeld(feld, wert, msgId) {
 document.getElementById('sp-fakten').addEventListener('blur', ev => persistAnlassFeld('fakten', ev.target.value, 'sp-ft-msg'));
 document.getElementById('sp-prompt').addEventListener('blur', ev => persistAnlassFeld('prompt', ev.target.value, 'sp-pr-msg'));
 
-// Erster Kommentar (Link+Hashtags) — Auto-Grow + autospeichern beim Verlassen (make.com-Optimierung §2).
+// Erster Kommentar (Satz + Link, keine Hashtags) — Auto-Grow + autospeichern beim Verlassen (make.com-Optimierung §2).
 const ekFeld = document.getElementById('sp-erster-kommentar');
 if (ekFeld) {
     const ekGrow = () => { ekFeld.style.height = 'auto'; ekFeld.style.height = Math.max(72, ekFeld.scrollHeight) + 'px'; };
