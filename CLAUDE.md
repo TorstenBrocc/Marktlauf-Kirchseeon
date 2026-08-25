@@ -87,6 +87,13 @@ Make.com-Seite (Inhaber, einmalig): nach dem IG/FB-Post-Modul ein HTTP-POST an
 `…/orga/api/post_status_callback.php` mit `{post_id, channel, permalink, status}` + Header
 `X-Signature` (HMAC-SHA256 des Bodys mit `make_webhook_secret`) **oder** `secret` im Body.
 
+**Nachtrag 2026-08-25 (Commit `224e7d2`, deployt, keine Migration):** „Post ist live"-Mail
+entschärft — EINE Sammel-Mail (To: info@, Orga/Admins in BCC) statt Mail je Empfänger (info@
+bekam ~12 BCC-Kopien je Post); neuer Motivator-Betreff/-Text (Inhaber-Wortlaut); IG/FB-
+Profil-Links statt `social_post.php?fahrplan=…` (der zeigte den vorgerückten Eintrag und legte
+beim Öffnen einen Leer-Draft an); Verstärker-Katalog mit Emoji + echten Umlauten, Panel/Vorschau
+nachgezogen. Details: Vault `intern/social-live-mail-flut-handoff.md`.
+
 **Nachtrag Folge-Session 2026-08-25 (Commit `b6ad46b`, deployt + migriert 084/085/086):** Die drei
 Vault-Specs sind unter `intern/` abgelegt; **MO1 Insights-Rückkanal, Erster-Kommentar-Automatik und
 #3 Auto-Versand am Stichtag sind gebaut** (MVP live — Details/Reste in `intern/VAULT_SNAPSHOT.md`).
