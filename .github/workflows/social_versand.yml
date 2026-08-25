@@ -1,0 +1,36 @@
+name: Social-Auto-Versand (Stichtag)
+
+# Sendet am Stichtag freigegebene Opt-in-Posts (post_race_contents.auto_versand=1) automatisch
+# ueber Make.com. Feste Sendezeit "mittags" (Inhaber-Entscheid 2026-08-25) kommt aus dem
+# Cron-Zeitpunkt: 10:00 UTC ~ 12:00 CEST (Sommer) / ~11:00 CET (Winter) — fuer den Renntag
+# 20.09. ist Sommerzeit relevant. Wie sponsor_versand.yml ueber SSH, weil Strato-Shared-Hosting
+# kein crontab per SSH bietet. Das CLI-Script sichert sich per GET_LOCK gegen ueberlappende Laeufe.
+#
+# Hinweis: geplante Workflows starten unter Last evtl. verzoegert und werden nach 60 Tagen
+# Repo-Inaktivitaet deaktiviert (wie Uptime-Check / Sponsor-Versand).
+
+on:
+  schedule:
+    - cron: '0 10 * * *'   # taeglich ~12:00 CEST
+  workflow_dispatch:        # manuell im Actions-Tab ausloesbar (Erst-Test)
+
+# Nur ein Lauf gleichzeitig — zweiter wartet, statt parallel zu senden.
+concurrency:
+  group: social-versand
+  cancel-in-progress: false
+
+jobs:
+  auto-versand:
+    name: Faellige Auto-Posts senden
+    runs-on: ubuntu-latest
+    steps:
+      - name: CLI-Versand per SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SFTP_HOST }}
+          username: ${{ secrets.SFTP_USERNAME }}
+          key: ${{ secrets.SFTP_SSH_KEY }}
+          command_timeout: 30m
+          script: |
+            cd ${{ secrets.SFTP_REMOTE_PATH }}
+            MARKTLAUF_CLI=1 /bin/php bin/social_versand.php

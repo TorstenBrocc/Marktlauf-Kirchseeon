@@ -67,6 +67,24 @@ function socialQrLabel(string $qrKey): string
 }
 
 /**
+ * Tatsaechliche Ziel-URL zum QR-Ziel-Key (Spiegel der Zuordnung in orga/vorlagen.php:104-121).
+ * Genutzt fuer die Vorbelegung des ersten Kommentars (Link + Hashtags). $appUrl kommt aus
+ * getConfig()['app']['url']; $helferToken nur setzen, wenn ein aktiver Token vorliegt.
+ */
+function socialQrUrl(string $qrKey, string $appUrl, ?string $helferToken = null): string
+{
+    $appUrl = rtrim($appUrl, '/');
+    return match ($qrKey) {
+        'anmeldung'     => $appUrl . '/#anmeldung',
+        'registrierung' => 'https://my.raceresult.com/412617/registration',
+        'helfer'        => $helferToken !== null && $helferToken !== ''
+            ? $appUrl . '/helfer-anmeldung.php?token=' . rawurlencode($helferToken)
+            : $appUrl,
+        default         => $appUrl, // website
+    };
+}
+
+/**
  * Format-Vorwahl je Thema (Post-Wirkung-Spec 5.B/5.D): Story 9:16 fuer die klaren
  * Story-Themen (Reminder/Live), sonst Portrait 4:5 als Standard-Feed. Quadrat bleibt
  * manueller Fallback. Rueckgabe = Key aus RT_FORMATS (portrait|grid34|square|story).

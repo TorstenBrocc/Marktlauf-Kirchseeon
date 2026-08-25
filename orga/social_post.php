@@ -114,6 +114,22 @@ $schrittGrafik  = $bildPfad !== '';
 $schrittVersand = !$frisch && ($post['status'] ?? '') === 'gesendet';
 $wartetAufStichtag = !$frisch && ($post['status'] ?? '') === 'approved'
     && $eintrag['zieldatum'] !== null && $eintrag['zieldatum'] > date('Y-m-d');
+
+// make.com-Optimierung: Vorbelegung "Erster Kommentar" = Link + Hashtags (Spec §2.3).
+// Gespeicherter Wert hat Vorrang; sonst thema-abgeleiteter Link + der 5er-Hashtag-Satz.
+$ersterKommentar = $frisch ? '' : trim((string) ($post['erster_kommentar'] ?? ''));
+if ($ersterKommentar === '') {
+    $appUrl   = (string) (getConfig()['app']['url'] ?? 'https://atsv-kirchseeon-marktlauf.de');
+    $linkZiel = socialQrUrl(socialQrKey($anlassKey, false), $appUrl);
+    $ersterKommentar = rtrim($kbCta, '!') . ': ' . $linkZiel . "\n\n" . $hashtags;
+}
+
+// Auto-Versand am Stichtag (Opt-in je Post, Spec §1.1). Gespeicherte Kanalwahl spiegelt die
+// Checkboxen; ohne gespeicherte Wahl beide vorgewaehlt (Default fuer den manuellen Klick).
+$autoVersand  = !$frisch && (int) ($post['auto_versand'] ?? 0) === 1;
+$autoChannels = $frisch ? '' : trim((string) ($post['auto_versand_channels'] ?? ''));
+$igChecked = $autoChannels === '' ? true : in_array('instagram', explode(',', $autoChannels), true);
+$fbChecked = $autoChannels === '' ? true : in_array('facebook', explode(',', $autoChannels), true);
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -386,6 +402,30 @@ $wartetAufStichtag = !$frisch && ($post['status'] ?? '') === 'approved'
                 <?php if ($igLink !== ''): ?> · <a href="<?= htmlspecialchars($igLink) ?>" target="_blank" rel="noopener noreferrer" style="color:var(--primary-dark)">Instagram ↗</a><?php endif; ?>
                 <?php if ($fbLink !== ''): ?> · <a href="<?= htmlspecialchars($fbLink) ?>" target="_blank" rel="noopener noreferrer" style="color:var(--primary-dark)">Facebook ↗</a><?php endif; ?>
             </p>
+            <?php
+            // make.com-Optimierung MO1: Insights-Snapshot (Reichweite/Likes je Kanal) — erscheint
+            // erst, wenn der (ggf. verzoegerte) Insights-Callback Zahlen gemeldet hat.
+            $insightsAm = $post['versand_insights_am'] ?? null;
+            $fmtKanal = static function (?int $r, ?int $l): string {
+                $t = [];
+                if ($r !== null) { $t[] = '<strong>' . number_format($r, 0, ',', '.') . '</strong> erreicht'; }
+                if ($l !== null) { $t[] = '<strong>' . number_format($l, 0, ',', '.') . '</strong> Likes'; }
+                return implode(' · ', $t);
+            };
+            $igStr = $fmtKanal(
+                isset($post['ig_reichweite']) ? (int) $post['ig_reichweite'] : null,
+                isset($post['ig_likes']) ? (int) $post['ig_likes'] : null
+            );
+            $fbStr = $fmtKanal(
+                isset($post['fb_reichweite']) ? (int) $post['fb_reichweite'] : null,
+                isset($post['fb_likes']) ? (int) $post['fb_likes'] : null
+            );
+            if ($igStr !== '' || $fbStr !== ''):
+            ?>
+            <p class="sp-hinweis" style="margin:-0.4rem 0 0.9rem">
+                📊 <?php if ($igStr !== ''): ?>Instagram: <?= $igStr ?><?php endif; ?><?php if ($igStr !== '' && $fbStr !== ''): ?> · <?php endif; ?><?php if ($fbStr !== ''): ?>Facebook: <?= $fbStr ?><?php endif; ?><?php if ($insightsAm): ?> <span style="opacity:0.7">(Stand <?= htmlspecialchars(date('d.m. H:i', strtotime((string) $insightsAm))) ?>)</span><?php endif; ?>
+            </p>
+            <?php endif; ?>
             <?php endif; ?>
             <div style="background:#eef7f0;border:1px solid #bfe3c8;border-radius:8px;padding:0.7rem 1rem;margin:0 0 0.9rem">
                 <p style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#065f46;margin:0 0 0.4rem">Jetzt zählt die erste Stunde</p>
@@ -397,8 +437,12 @@ $wartetAufStichtag = !$frisch && ($post['status'] ?? '') === 'approved'
             </div>
             <?php elseif ($wartetAufStichtag): ?>
             <p class="sp-hinweis" style="margin:0 0 0.8rem">
+                <?php if ($autoVersand): ?>
+                Freigegeben — wird am <strong><?= htmlspecialchars(date('d.m.Y', strtotime($eintrag['zieldatum']))) ?></strong> <strong>automatisch gesendet</strong> (<?= htmlspecialchars(str_replace(',', ' + ', $autoChannels !== '' ? $autoChannels : 'instagram,facebook')) ?>) — mittags. Du kannst auch jederzeit manuell auslösen.
+                <?php else: ?>
                 Freigegeben — <strong>wartet auf den Stichtag <?= htmlspecialchars(date('d.m.Y', strtotime($eintrag['zieldatum']))) ?></strong>.
-                Die tägliche Mail erinnert bei Fälligkeit; gesendet wird per Klick (Auto-Versand folgt später).
+                Die tägliche Mail erinnert bei Fälligkeit; gesendet wird per Klick — oder unten „am Stichtag automatisch senden“ aktivieren.
+                <?php endif; ?>
             </p>
             <?php endif; ?>
             <p class="sp-hinweis" style="margin:0 0 0.7rem">Gute Slots: <strong>Di–Do</strong> · mittags 12–14 &amp; abends 18–21 Uhr
@@ -414,17 +458,28 @@ $wartetAufStichtag = !$frisch && ($post['status'] ?? '') === 'approved'
                 </ol>
             </details>
             <?php endif; ?>
+            <div class="sp-feld" style="margin:0 0 0.9rem">
+                <label for="sp-erster-kommentar">Erster Kommentar <span style="font-weight:400">(Link &amp; Hashtags — automatisch nach dem Post)</span> <span class="sp-msg" id="sp-ek-msg"></span></label>
+                <textarea id="sp-erster-kommentar" placeholder="Link + Hashtags für den ersten Kommentar …"><?= htmlspecialchars($ersterKommentar) ?></textarea>
+                <p class="sp-hinweis" style="margin:0.35rem 0 0">Hält die Caption sauber; Make.com postet diesen Text direkt nach der Veröffentlichung als <strong>ersten Kommentar</strong>.</p>
+            </div>
             <div class="sp-zeile" style="margin-bottom:0.9rem">
                 <label style="display:inline-flex;align-items:center;gap:0.35rem;font-size:0.9rem">
-                    <input type="checkbox" id="sp-ch-ig" checked> Instagram
+                    <input type="checkbox" id="sp-ch-ig" <?= $igChecked ? 'checked' : '' ?>> Instagram
                 </label>
                 <label style="display:inline-flex;align-items:center;gap:0.35rem;font-size:0.9rem">
-                    <input type="checkbox" id="sp-ch-fb" checked> Facebook
+                    <input type="checkbox" id="sp-ch-fb" <?= $fbChecked ? 'checked' : '' ?>> Facebook
                 </label>
                 <button class="btn btn-primary" id="sp-senden"><?= $schrittVersand ? 'Erneut senden (Make.com)' : 'Jetzt senden (Make.com)' ?></button>
                 <span class="sp-hinweis" id="sp-send-spinner" style="display:none">⏳ sendet …</span>
             </div>
             <p class="sp-msg" id="sp-send-msg" style="margin:0 0 0.9rem"></p>
+            <?php if (!$schrittVersand && !empty($eintrag['zieldatum'])): ?>
+            <label class="sp-hinweis" style="display:flex;align-items:flex-start;gap:0.45rem;margin:0 0 0.9rem;cursor:pointer">
+                <input type="checkbox" id="sp-auto-versand" <?= $autoVersand ? 'checked' : '' ?> style="margin-top:0.15rem">
+                <span>Am Stichtag <strong><?= htmlspecialchars(date('d.m.Y', strtotime($eintrag['zieldatum']))) ?></strong> automatisch senden (mittags, Make.com) — nutzt die oben gewählten Kanäle, sobald der Post <strong>freigegeben</strong> und fällig ist. <span class="sp-msg" id="sp-av-msg"></span></span>
+            </label>
+            <?php endif; ?>
             <details class="sp-ausbau" style="border-top:1px solid var(--border);padding-top:0.8rem">
                 <summary style="cursor:pointer;font-size:0.88rem;color:var(--primary-dark)">Reichweite ausbauen — so holst du mehr raus</summary>
                 <ul class="sp-hinweis" style="margin:0.6rem 0 0.3rem 1.1rem;line-height:1.6">
@@ -519,6 +574,49 @@ function persistAnlassFeld(feld, wert, msgId) {
 }
 document.getElementById('sp-fakten').addEventListener('blur', ev => persistAnlassFeld('fakten', ev.target.value, 'sp-ft-msg'));
 document.getElementById('sp-prompt').addEventListener('blur', ev => persistAnlassFeld('prompt', ev.target.value, 'sp-pr-msg'));
+
+// Erster Kommentar (Link+Hashtags) — Auto-Grow + autospeichern beim Verlassen (make.com-Optimierung §2).
+const ekFeld = document.getElementById('sp-erster-kommentar');
+if (ekFeld) {
+    const ekGrow = () => { ekFeld.style.height = 'auto'; ekFeld.style.height = Math.max(72, ekFeld.scrollHeight) + 'px'; };
+    ekFeld.addEventListener('input', ekGrow);
+    window.addEventListener('load', ekGrow);
+    ekFeld.addEventListener('blur', () => {
+        fetch('api/post_feld.php', {
+            method: 'POST',
+            body: new URLSearchParams({ csrf_token: csrf, post_id: postId, feld: 'erster_kommentar', wert: ekFeld.value }),
+        })
+            .then(r => r.json())
+            .then(d => zeige('sp-ek-msg', d.ok ? '✓ gespeichert' : '⚠️ ' + (d.message || 'Fehler'), d.ok ? '#16a34a' : '#dc2626'))
+            .catch(() => zeige('sp-ek-msg', '⚠️ Netzwerkfehler', '#dc2626'));
+    });
+}
+
+// Auto-Versand am Stichtag (Opt-in) — Haken + gewaehlte Kanaele persistieren (Spec §3.4).
+const avCheckbox = document.getElementById('sp-auto-versand');
+if (avCheckbox) {
+    const avChannels = () => {
+        const c = [];
+        if (document.getElementById('sp-ch-ig').checked) c.push('instagram');
+        if (document.getElementById('sp-ch-fb').checked) c.push('facebook');
+        return c.join(',');
+    };
+    const avSave = (feld, wert) => fetch('api/post_feld.php', {
+        method: 'POST',
+        body: new URLSearchParams({ csrf_token: csrf, post_id: postId, feld, wert }),
+    }).then(r => r.json());
+    const avSpeichern = () => {
+        const an = avCheckbox.checked;
+        Promise.all([
+            avSave('auto_versand', an ? '1' : '0'),
+            an ? avSave('auto_versand_channels', avChannels()) : Promise.resolve({ ok: true }),
+        ])
+            .then(res => zeige('sp-av-msg', res.every(d => d.ok) ? '✓ gespeichert' : '⚠️ Fehler', res.every(d => d.ok) ? '#16a34a' : '#dc2626'))
+            .catch(() => zeige('sp-av-msg', '⚠️ Netzwerkfehler', '#dc2626'));
+    };
+    avCheckbox.addEventListener('change', avSpeichern);
+    ['sp-ch-ig', 'sp-ch-fb'].forEach(id => document.getElementById(id).addEventListener('change', () => { if (avCheckbox.checked) avSpeichern(); }));
+}
 
 // Entwuerfe generieren (manueller Klick). Auto-Feuern beim Oeffnen ist bewusst GEGATED
 // (Inhaber 2026-08-14) bis zur "Thema zuerst"-IA — der geschaerfte Prompt (llmPromptSocial)
@@ -650,6 +748,7 @@ document.getElementById('sp-senden').addEventListener('click', async (ev) => {
         body.set('csrf_token', csrf);
         body.set('post_id', postId);
         channels.forEach(c => body.append('channels[]', c));
+        if (ekFeld) { body.set('erster_kommentar', ekFeld.value); }
         const r = await fetch('api/post_dispatch.php', { method: 'POST', body });
         const d = await r.json();
         if (d.ok) {
