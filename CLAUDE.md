@@ -67,6 +67,37 @@ neuer Lauf / ein vergleichbarer Workstream direkt wirksam arbeiten kann.
   über die Fördergruppen-Reiter (`?zielgruppe=fg_<gruppe>`) Empfänger UND Variantentext um.
 - Zielgruppen/Empfänger-Filter je Anschreiben-Seite: `src/sponsor_zielgruppen.php`.
 
+## Aktueller Stand / Übergabe (Stand 2026-08-25)
+
+Social-Post-Wirkung (Spec) + make.com-Optimierung — alles auf `main`, deployt, migriert:
+- **Wirkungs-Spec** liegt im **VAULT** unter `intern/social-post-wirkung-spec.md` (NICHT im Repo —
+  `intern/` ist per `.gitignore` + Deploy-EXCLUDE gesperrt; interne Specs gehören nie ins öffentliche
+  Repo). §5 (A–D) gefüllt/abgenickt; Bau-Schnitte S1–S6 wurden umgesetzt (Themen-Katalog schärfen,
+  Prompt/Stimme, Seiten-IA „Thema zuerst", Grafik-Regeln, Sponsor-Kopplung `src/social_sponsoren.php`,
+  Verstärker-Quelle `src/social_verstaerker.php`).
+- **make.com-Rückkanal (#1/#2):** `orga/api/post_status_callback.php` (nur POST, HMAC- bzw.
+  secret-verifiziert) nimmt je Kanal `{post_id, channel, permalink, status}`; Migration **083** legt
+  `ig_permalink/fb_permalink/versand_bestaetigt_am/versand_callback_info` an; der ausgehende Webhook
+  sendet jetzt `post_id`; Post-Detail zeigt die bestätigten Live-Links. **GET auf den Endpoint gibt
+  bewusst „POST erwartet." — korrekt, kein Fehler.**
+- **#4 Härtung:** `X-Signature: sha256=HMAC(secret, body)` am Webhook; Body-`secret` bleibt kompatibel.
+- **Sponsor-Post-Anleitung** (`socialSponsorPostAnleitung`) aufgeklappt auf Sponsor-Themen im Post-Detail.
+
+Make.com-Seite (Inhaber, einmalig): nach dem IG/FB-Post-Modul ein HTTP-POST an
+`…/orga/api/post_status_callback.php` mit `{post_id, channel, permalink, status}` + Header
+`X-Signature` (HMAC-SHA256 des Bodys mit `make_webhook_secret`) **oder** `secret` im Body.
+
+Offen / vertagt (drei Vault-Specs im Chat-Transkript zum Ablegen unter `intern/`):
+- `make-com-optimierung-spec.md` — **Musik NICHT per API** (muss ins Video eingebettet sein);
+  Reichweiten-Automatik: Erster-Kommentar-Link, Insights-Rückkanal (MO1).
+- `social-auto-versand-stichtag-spec.md` — #3 Auto-Versand am Stichtag (vertagt).
+- `social-tiktok-integration-spec.md` — TikTok (Kollegin hat begonnen), später in die EINE Pipeline einhängen.
+- **Kernkompetenz** der bestätigten Sponsoren füllen (Feld existiert, Migration 077): Stammdaten-CSV-
+  Export in der Sponsoren-Übersicht → Daten → je Sponsor eine knappe Kernkompetenz (die KI baut daraus
+  den Marktlauf-Bezug selbst).
+- Stale Remote-Branch `claude/social-post-impact-spec-0vlwns` per GitHub-UI löschen (der Proxy in
+  Web-Sessions lässt Ref-Löschung nicht zu).
+
 ## Aktueller Stand / Übergabe (Stand 2026-08-18)
 
 Erledigt am 2026-08-18 (lokale Session, alles auf `main` deployt):
