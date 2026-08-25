@@ -120,6 +120,27 @@ $spaltenGesamt = count($katalog) + 2; // Firma + Katalog-Spalten + Notiz
         .lm-ref .lm-pak strong { display: inline-block; min-width: 110px; }
         .lm-ref ul { margin: 0.25rem 0 0.75rem 1.2rem; padding: 0; font-size: 0.85rem; color: var(--text); }
         .lm-empty { color: var(--text-light); font-size: 0.9rem; }
+        /* Werbemittel-Detail (Option B): kompaktes Chip in der haken_text-Zelle statt losem
+           Freitextfeld. Das Chip bleibt schmal (keine Spaltenverbreiterung); Klick öffnet ein
+           schwebendes Panel, das per JS als position:fixed außerhalb des scroll-Containers sitzt
+           (sonst würde es der overflow der .lm-wrap abschneiden). */
+        .wm-chip { display: inline-flex; align-items: center; gap: 0.25rem; max-width: 98px; padding: 0.12rem 0.4rem; border: 1px solid var(--border); border-radius: 11px; background: var(--white); font-size: 0.68rem; line-height: 1.2; cursor: pointer; white-space: nowrap; overflow: hidden; color: var(--text); }
+        .wm-chip .wm-txt { overflow: hidden; text-overflow: ellipsis; }
+        .wm-chip:hover { border-color: var(--primary); }
+        .wm-chip.leer { color: var(--text-light); border-style: dashed; }
+        .wm-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+        .wm-dot.offen { background: #c9a100; }
+        .wm-dot.erhalten { background: #0a7abf; }
+        .wm-dot.zurueck { background: #888; }
+        .wm-panel { position: fixed; z-index: 50; width: 230px; background: var(--white); border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow-card); padding: 0.6rem 0.7rem; text-align: left; }
+        .wm-panel[hidden] { display: none; }
+        .wm-panel h4 { margin: 0 0 0.5rem; font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--primary-dark); }
+        .wm-row { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.4rem; }
+        .wm-row label { flex: 0 0 62px; font-size: 0.7rem; color: var(--text-light); }
+        .wm-row select, .wm-row input { flex: 1; padding: 0.22rem 0.35rem; border: 1px solid var(--border); border-radius: 4px; font-size: 0.74rem; background: var(--white); min-width: 0; }
+        .wm-statusrow { display: flex; gap: 0.25rem; flex: 1; }
+        .wm-seg { flex: 1; text-align: center; font-size: 0.66rem; padding: 0.2rem 0.1rem; border: 1px solid var(--border); border-radius: 5px; cursor: pointer; color: var(--text-light); background: var(--white); white-space: nowrap; }
+        .wm-seg.on { background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 600; }
     </style>
 </head>
 <body>
@@ -132,8 +153,9 @@ $spaltenGesamt = count($katalog) + 2; // Firma + Katalog-Spalten + Notiz
 
             <p class="lm-intro">
                 Welche Leistungen sind je Sponsor <strong>vereinbart und zu erbringen</strong>? Der Haken ist
-                aus dem Paket vorbelegt (kumulativ) und pro Sponsor abwählbar (Haken weg = fällt weg). Textfelder
-                für Details (Banner-Inhalt, Gutscheincode). Der Haken bedeutet „vereinbart", nicht „erledigt".
+                aus dem Paket vorbelegt (kumulativ) und pro Sponsor abwählbar (Haken weg = fällt weg).
+                Gutscheincode im Startplätze-Feld; beim Banner öffnet das Chip die Werbemittel-Details
+                (Art, Anzahl, Deadline, Status). Der Haken bedeutet „vereinbart", nicht „erledigt".
             </p>
 
             <?php if (!$sponsoren): ?>
@@ -194,6 +216,34 @@ $spaltenGesamt = count($katalog) + 2; // Firma + Katalog-Spalten + Notiz
                                                 htmlspecialchars($freitext),
                                                 $ph
                                             );
+                                            // Werbemittel-Chip (Option B): kompakte Zusammenfassung
+                                            // „Anzahl× · Status/Deadline" + Status-Punkt. Klick öffnet das Panel (JS).
+                                            $wmChip = static function () use ($row, $sid, $key): string {
+                                                $art      = $row['wm_art'] ?? '';
+                                                $anzahl   = $row['wm_anzahl'] ?? '';
+                                                $deadline = $row['wm_deadline'] ?? '';
+                                                $status   = $row['wm_status'] ?? '';
+                                                $hatDetail = ($art !== '' || $anzahl !== '' || $deadline !== '' || $status !== '');
+                                                $statusEff = $status !== '' ? $status : 'offen';
+                                                $teile = [];
+                                                if ($anzahl !== '') { $teile[] = $anzahl . '×'; }
+                                                if ($statusEff === 'erhalten') { $teile[] = 'erhalten'; }
+                                                elseif ($statusEff === 'zurueck') { $teile[] = 'zurück'; }
+                                                elseif ($deadline !== '') { $teile[] = date('d.m.', (int) strtotime($deadline)); }
+                                                $text = $hatDetail ? ($teile ? implode(' · ', $teile) : 'Detail') : '＋ Detail';
+                                                return sprintf(
+                                                    '<button type="button" class="wm-chip%s" data-sponsor="%d" data-position="%s" data-art="%s" data-anzahl="%s" data-deadline="%s" data-status="%s">%s<span class="wm-txt">%s</span></button>',
+                                                    $hatDetail ? '' : ' leer',
+                                                    $sid,
+                                                    htmlspecialchars($key),
+                                                    htmlspecialchars($art),
+                                                    htmlspecialchars($anzahl),
+                                                    htmlspecialchars($deadline),
+                                                    htmlspecialchars($status),
+                                                    $hatDetail ? '<span class="wm-dot ' . $statusEff . '"></span>' : '',
+                                                    htmlspecialchars($text)
+                                                );
+                                            };
                                         ?>
                                         <td class="lm-col<?= $hatText ? ' lm-col--text' : '' ?>">
                                             <div class="lm-cell">
@@ -207,7 +257,7 @@ $spaltenGesamt = count($katalog) + 2; // Firma + Katalog-Spalten + Notiz
                                                 <?= $checkbox ?>
                                             <?php elseif ($pos['typ'] === 'haken_text'): ?>
                                                 <?= $checkbox ?>
-                                                <?= $textfeld('Details') ?>
+                                                <?= $wmChip() ?>
                                             <?php else: ?>
                                                 <?= $checkbox ?>
                                             <?php endif; ?>
@@ -251,6 +301,37 @@ $spaltenGesamt = count($katalog) + 2; // Firma + Katalog-Spalten + Notiz
 
         </main>
     </div>
+
+    <!-- Werbemittel-Panel (Option B): eine Instanz, per JS positioniert und je Chip befüllt.
+         Liegt außerhalb der scroll-Tabelle, damit der overflow es nicht abschneidet. -->
+    <div id="wm-pop" class="wm-panel" hidden>
+        <h4>Banner &middot; Werbemittel</h4>
+        <div class="wm-row">
+            <label for="wm-art">Art</label>
+            <select id="wm-art">
+                <option value="">–</option>
+                <option value="banner">Banner</option>
+                <option value="hussen">Hussen</option>
+            </select>
+        </div>
+        <div class="wm-row">
+            <label for="wm-anzahl">Anzahl</label>
+            <input type="number" id="wm-anzahl" min="0" max="65535" placeholder="offen">
+        </div>
+        <div class="wm-row">
+            <label for="wm-deadline">Deadline</label>
+            <input type="date" id="wm-deadline">
+        </div>
+        <div class="wm-row" style="align-items:flex-start;">
+            <label style="padding-top:0.2rem;">Status</label>
+            <div class="wm-statusrow">
+                <button type="button" class="wm-seg" data-status="offen">offen</button>
+                <button type="button" class="wm-seg" data-status="erhalten">erhalten</button>
+                <button type="button" class="wm-seg" data-status="zurueck">zurück</button>
+            </div>
+        </div>
+    </div>
+
     <script>
     (function() {
         const csrf = <?= json_encode($csrfToken) ?>;
@@ -275,6 +356,83 @@ $spaltenGesamt = count($katalog) + 2; // Firma + Katalog-Spalten + Notiz
         document.querySelectorAll('.lm-text').forEach(function(t) {
             t.addEventListener('change', function() { save(t, { freitext: t.value }); });
         });
+
+        // ---- Werbemittel-Panel (Option B): Chip öffnet ein schwebendes Panel, jedes Feld
+        //      speichert einzeln (gleicher save()-Pfad) und aktualisiert das Chip live. ----
+        const pop = document.getElementById('wm-pop');
+        const fArt = document.getElementById('wm-art');
+        const fAnzahl = document.getElementById('wm-anzahl');
+        const fDeadline = document.getElementById('wm-deadline');
+        const segs = pop.querySelectorAll('.wm-seg');
+        let activeChip = null;
+
+        function fmtDate(iso) {
+            const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || '');
+            return m ? m[3] + '.' + m[2] + '.' : (iso || '');
+        }
+        function renderChip(chip) {
+            const art = chip.dataset.art, anzahl = chip.dataset.anzahl,
+                  deadline = chip.dataset.deadline, status = chip.dataset.status;
+            const hat = !!(art || anzahl || deadline || status);
+            const st = status || 'offen';
+            const parts = [];
+            if (anzahl) { parts.push(anzahl + '×'); }
+            if (st === 'erhalten') { parts.push('erhalten'); }
+            else if (st === 'zurueck') { parts.push('zurück'); }
+            else if (deadline) { parts.push(fmtDate(deadline)); }
+            const text = hat ? (parts.length ? parts.join(' · ') : 'Detail') : '＋ Detail';
+            chip.classList.toggle('leer', !hat);
+            chip.innerHTML = hat ? '<span class="wm-dot ' + st + '"></span>' : '';
+            const span = document.createElement('span');
+            span.className = 'wm-txt';
+            span.textContent = text;
+            chip.appendChild(span);
+        }
+        function syncSegs() {
+            const st = (activeChip && activeChip.dataset.status) || 'offen';
+            segs.forEach(function(s) { s.classList.toggle('on', s.dataset.status === st); });
+        }
+        function openPop(chip) {
+            activeChip = chip;
+            fArt.value = chip.dataset.art || '';
+            fAnzahl.value = chip.dataset.anzahl || '';
+            fDeadline.value = chip.dataset.deadline || '';
+            syncSegs();
+            pop.hidden = false;
+            const r = chip.getBoundingClientRect();
+            const w = pop.offsetWidth || 230, h = pop.offsetHeight || 200;
+            let left = r.left + r.width / 2 - w / 2;
+            left = Math.max(8, Math.min(left, window.innerWidth - w - 8));
+            let top = r.bottom + 6;
+            if (top + h > window.innerHeight - 8) { top = Math.max(8, r.top - h - 6); }
+            pop.style.left = left + 'px';
+            pop.style.top = top + 'px';
+        }
+        function closePop() { pop.hidden = true; activeChip = null; }
+        function setField(key, val) {
+            if (!activeChip) { return; }
+            const map = { wm_art: 'art', wm_anzahl: 'anzahl', wm_deadline: 'deadline', wm_status: 'status' };
+            activeChip.dataset[map[key]] = val;
+            const extra = {}; extra[key] = val;
+            save(activeChip, extra);
+            renderChip(activeChip);
+        }
+        document.querySelectorAll('.wm-chip').forEach(function(chip) {
+            chip.addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (activeChip === chip && !pop.hidden) { closePop(); return; }
+                openPop(chip);
+            });
+        });
+        fArt.addEventListener('change', function() { setField('wm_art', fArt.value); });
+        fAnzahl.addEventListener('change', function() { setField('wm_anzahl', fAnzahl.value); });
+        fDeadline.addEventListener('change', function() { setField('wm_deadline', fDeadline.value); });
+        segs.forEach(function(s) {
+            s.addEventListener('click', function() { setField('wm_status', s.dataset.status); syncSegs(); });
+        });
+        pop.addEventListener('click', function(e) { e.stopPropagation(); });
+        document.addEventListener('click', function() { if (!pop.hidden) { closePop(); } });
+        window.addEventListener('resize', closePop);
     })();
     </script>
 </body>

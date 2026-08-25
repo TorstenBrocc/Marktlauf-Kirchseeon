@@ -35,9 +35,34 @@ if ($sponsorId <= 0 || !in_array($position, $valid, true)) {
 $vereinbart = array_key_exists('vereinbart', $_POST) ? (($_POST['vereinbart'] ?? '') === '1') : null;
 $freitext   = array_key_exists('freitext', $_POST) ? (string) $_POST['freitext'] : null;
 
+// Werbemittel-Detail (Option B): nur mitgeschickte Felder landen im $wm-Array; Leerstring => NULL.
+// Validierung hart gegen die ENUM-/Typwerte, damit der Zustand nie kaputtgeht.
+$wm = null;
+$wmSet = static function (string $key, $value) use (&$wm): void {
+    $wm ??= [];
+    $wm[$key] = $value;
+};
+if (array_key_exists('wm_art', $_POST)) {
+    $v = trim((string) $_POST['wm_art']);
+    $wmSet('wm_art', in_array($v, ['banner', 'hussen'], true) ? $v : '');
+}
+if (array_key_exists('wm_anzahl', $_POST)) {
+    $v = trim((string) $_POST['wm_anzahl']);
+    $wmSet('wm_anzahl', ($v !== '' && ctype_digit($v) && (int) $v <= 65535) ? (string) (int) $v : '');
+}
+if (array_key_exists('wm_deadline', $_POST)) {
+    $v = trim((string) $_POST['wm_deadline']);
+    $d = DateTime::createFromFormat('Y-m-d', $v);
+    $wmSet('wm_deadline', ($d && $d->format('Y-m-d') === $v) ? $v : '');
+}
+if (array_key_exists('wm_status', $_POST)) {
+    $v = trim((string) $_POST['wm_status']);
+    $wmSet('wm_status', in_array($v, ['offen', 'erhalten', 'zurueck'], true) ? $v : '');
+}
+
 try {
     $pdo = getDbConnection();
-    sponsorLeistungSet($pdo, $sponsorId, $position, $vereinbart, $freitext);
+    sponsorLeistungSet($pdo, $sponsorId, $position, $vereinbart, $freitext, $wm);
     echo json_encode(['ok' => true]);
 } catch (Throwable $e) {
     logError('leistung_crud: ' . $e->getMessage());
