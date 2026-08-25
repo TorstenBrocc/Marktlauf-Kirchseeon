@@ -2,26 +2,27 @@
 /**
  * Verstaerker-Handgriffe — EINE Quelle (Post-Wirkung-Spec S6 / 5.B). Wird an drei Stellen
  * gerendert: Erfolgspanel im Post-Detail (orga/social_post.php, Schritt 4), Post-live-Mail
- * (orga/api/post_dispatch.php) und die vorwaertsgerichtete Ausbau-Liste. An einer Stelle
- * aendern -> alle ziehen mit.
+ * (src/social_versand.php, versendePost) und die vorwaertsgerichtete Ausbau-Liste. An einer
+ * Stelle aendern -> alle ziehen mit.
  */
 
 declare(strict_types=1);
 
 /**
  * „Erste Stunde" — was den frisch veroeffentlichten Post sofort traegt (Algorithmus belohnt
- * schnelle Interaktion). Reihenfolge = Prioritaet.
+ * schnelle Interaktion). Reihenfolge = Prioritaet. Wortlaut motivierend statt Pflichtliste
+ * (Inhaber-Text 2026-08-25); Emoji je Zeile ersetzt die Nummerierung.
  *
  * @return list<string>
  */
 function socialVerstaerkerErsteStunde(): array
 {
     return [
-        'Post liken und mit 1 Kommentar anschieben (Frage/Emoji reicht).',
-        'In die eigene Instagram-Story teilen (gern mit Sticker/Reaktion).',
-        'Link an Familie & Lauffreunde weiterschicken — „Sends" zaehlen beim Algorithmus am staerksten.',
-        'Falls du in lokalen Facebook-Gruppen bist: dort teilen (Regeln beachten, eigener Anmoderationssatz).',
-        'Kommentare, die du siehst, schnell und freundlich beantworten.',
+        '💚 Like + kurzer Kommentar (ein Emoji oder eine Frage genügt)',
+        '📣 In deine Instagram-Story teilen — gern mit Sticker oder Reaktion',
+        '💌 Den Post an Familie & Lauffreunde weiterschicken — geteilte Links wirken am stärksten',
+        '👥 In lokale Facebook-Gruppen tragen, wenn du drin bist (eigener Satz dazu)',
+        '💬 Kommentare, die du siehst, freundlich beantworten',
     ];
 }
 
@@ -34,9 +35,9 @@ function socialVerstaerkerErsteStunde(): array
 function socialVerstaerkerAusbau(): array
 {
     return [
-        'Reels: roher 10–20-s-Handy-Clip vom Renntag ODER Foto-Slideshow-Reel (Fotos + Musik) — staerkster Reichweiten-Hebel fuer einen kleinen Account.',
-        'Carousel fuer Save-Themen (mehrere Bilder) — gewinnt Speichern/Engagement.',
-        'IG-Story mit Link-Sticker koppeln (seit 2026 fuer alle Accounts) — macht den Link auf Instagram klickbar.',
+        'Reels: roher 10–20-s-Handy-Clip vom Renntag ODER Foto-Slideshow-Reel (Fotos + Musik) — stärkster Reichweiten-Hebel für einen kleinen Account.',
+        'Carousel für Save-Themen (mehrere Bilder) — gewinnt Speichern/Engagement.',
+        'IG-Story mit Link-Sticker koppeln (seit 2026 für alle Accounts) — macht den Link auf Instagram klickbar.',
         'Standort-Tag setzen: Kirchseeon / JEK — bringt lokale Reichweite.',
         'Interaktive Story-Sticker: Countdown-Sticker zum Renntag, Umfrage — Interaktion treibt den Algorithmus.',
         'Collab-Post mit einem Partner/Sponsor (Co-Autor) — erscheint bei beiden Publika.',

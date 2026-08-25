@@ -429,11 +429,11 @@ $fbChecked = $autoChannels === '' ? true : in_array('facebook', explode(',', $au
             <?php endif; ?>
             <div style="background:#eef7f0;border:1px solid #bfe3c8;border-radius:8px;padding:0.7rem 1rem;margin:0 0 0.9rem">
                 <p style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#065f46;margin:0 0 0.4rem">Jetzt zählt die erste Stunde</p>
-                <ol style="padding:0 0 0 1.1rem;margin:0;font-size:0.85rem;line-height:1.8">
+                <ul style="list-style:none;padding:0;margin:0;font-size:0.85rem;line-height:1.8">
                     <?php foreach (socialVerstaerkerErsteStunde() as $handgriff): ?>
                     <li><?= htmlspecialchars($handgriff) ?></li>
                     <?php endforeach; ?>
-                </ol>
+                </ul>
             </div>
             <?php elseif ($wartetAufStichtag): ?>
             <p class="sp-hinweis" style="margin:0 0 0.8rem">
@@ -450,12 +450,12 @@ $fbChecked = $autoChannels === '' ? true : in_array('facebook', explode(',', $au
             <?php if (!$schrittVersand): ?>
             <details style="background:#f7fafc;border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.9rem;margin:0 0 0.9rem">
                 <summary style="cursor:pointer;font-size:0.85rem;color:var(--primary-dark)">Beim Auslösen geht automatisch diese Mail ans Orga-Team</summary>
-                <p class="sp-hinweis" style="margin:0.5rem 0 0.3rem">Betreff „Social-Post ist live: <?= htmlspecialchars($anlassDef['ui']) ?>" — Inhalt (erste Stunde zählt am meisten):</p>
-                <ol style="padding:0 0 0 1.1rem;margin:0;font-size:0.85rem;line-height:1.8">
+                <p class="sp-hinweis" style="margin:0.5rem 0 0.3rem">Betreff „Neuer Social-Post - Deine (Re-)Aktion ist gefragt! Jede Minute zählt 💚" — eine Sammel-Mail ans ganze Orga-Team (die erste Stunde entscheidet - eine Sache reicht - gern auch mehr):</p>
+                <ul style="list-style:none;padding:0;margin:0;font-size:0.85rem;line-height:1.8">
                     <?php foreach (socialVerstaerkerErsteStunde() as $handgriff): ?>
                     <li><?= htmlspecialchars($handgriff) ?></li>
                     <?php endforeach; ?>
-                </ol>
+                </ul>
             </details>
             <?php endif; ?>
             <div class="sp-feld" style="margin:0 0 0.9rem">

@@ -90,7 +90,6 @@ function versendePost(PDO $pdo, array $post, array $channels, string $ersterKomm
     }
 
     // Versand-Log am Post + Fahrplan-Eintrag abschliessen (Wiederkehr rueckt vor)
-    $fahrplanRefId = 0;
     try {
         $pdo->prepare(
             "UPDATE post_race_contents
@@ -106,7 +105,6 @@ function versendePost(PDO $pdo, array $post, array $channels, string $ersterKomm
         $stmt = $pdo->prepare("SELECT id, zieldatum, frequenz_tage, ende FROM social_fahrplan WHERE post_id = :pid AND status = 'offen' LIMIT 1");
         $stmt->execute(['pid' => $postId]);
         if ($eintrag = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            $fahrplanRefId = (int) $eintrag['id'];
             $vorgerueckt = false;
             if ($eintrag['frequenz_tage'] && $eintrag['zieldatum']) {
                 $naechstes = (new DateTime($eintrag['zieldatum']))
@@ -127,31 +125,43 @@ function versendePost(PDO $pdo, array $post, array $channels, string $ersterKomm
         logError('versendePost: Log/Fahrplan-Update fehlgeschlagen: ' . $e->getMessage());
     }
 
-    // "Post ist live"-Mail an alle aktiven Orga/Admins: Verstaerker-Handgriffe der
-    // ersten Stunde (Inhaber-Entscheidung 2026-08-14). Fire-and-forget, Fehler nur ins Log.
+    // "Post ist live"-Mail ans Orga-Team (Verstaerker der ersten Stunde, Inhaber-Entscheid
+    // 2026-08-14). Seit 2026-08-25 EINE Sammel-Mail (To: info@, Orga/Admins in BCC) statt
+    // einer Mail je Empfaenger — sonst stapeln sich die info@-BCC-Kopien (Mail-Flut).
+    // Kein Dashboard-Link: der Fahrplan-Eintrag ist beim Lesen schon vorgerueckt und
+    // social_post.php legt beim Oeffnen einen neuen Draft an; die Handgriffe passieren
+    // ohnehin auf den Plattformen. Fire-and-forget, Fehler nur ins Log.
     try {
         $def   = socialAnlaesse()[(string) ($post['anlass_key'] ?? '')] ?? null;
         $thema = $def ? $def['ui'] : 'Social-Post';
-        $textVorschau = mb_substr($text, 0, 200) . (mb_strlen($text) > 200 ? '…' : '');
-        $ersteStunde = '';
-        foreach (socialVerstaerkerErsteStunde() as $i => $handgriff) {
-            $ersteStunde .= ($i + 1) . '. ' . $handgriff . "\n";
-        }
-        $sponsorTags = socialVerstaerkerSponsorTags($pdo, (string) ($post['anlass_key'] ?? ''));
-        $sponsorBlock = $sponsorTags === [] ? '' : "\nSponsoren nicht vergessen:\n- " . implode("\n- ", $sponsorTags) . "\n";
-        $mailText = "Gerade veröffentlicht auf " . implode(' + ', $channels) . ": {$thema}\n\n"
-            . "„{$textVorschau}\"\n\n"
-            . "So hilfst du dem Post jetzt (erste Stunde zählt am meisten):\n"
-            . $ersteStunde
-            . $sponsorBlock
-            . "\n" . ($fahrplanRefId > 0 ? "Post im Dashboard: https://atsv-kirchseeon-marktlauf.de/orga/social_post.php?fahrplan=" . $fahrplanRefId : "Dashboard: https://atsv-kirchseeon-marktlauf.de/orga/social_fahrplan.php");
+        $mailText = "„{$thema}\"\n\n"
+            . "**Die erste Stunde entscheidet - eine Sache reicht - gern auch mehr:**\n\n"
+            . implode("\n", socialVerstaerkerErsteStunde()) . "\n"
+            . "\nHier geht's direkt hin — der neue Post ist ganz oben:\n"
+            . "→ Instagram: https://www.instagram.com/atsv_marktlauf_kirchseeon\n"
+            . "→ Facebook: https://www.facebook.com/profile.php?id=61591689790244\n"
+            . "\nDanke dir — gemeinsam läuft's besser! 🏃";
         $body = marktlaufMailBody($mailText);
+        // marktlaufMailBody kann kein Fett — **…** nur fuer diese Mail uebersetzen
+        $body['html'] = preg_replace('~\*\*(.+?)\*\*~s', '<strong>$1</strong>', $body['html']);
+        $body['text'] = str_replace('**', '', $body['text']);
         $orgaMails = $pdo->query("
             SELECT name, email FROM users
             WHERE active = 1 AND role IN ('admin','orga') AND NULLIF(TRIM(email),'') IS NOT NULL
         ")->fetchAll();
-        foreach ($orgaMails as $o) {
-            sendMail((string) $o['email'], 'Social-Post ist live: ' . $thema, $body['text'], $body['html']);
+        $empfaenger = array_values(array_unique(array_filter(array_map(
+            static fn(array $o): string => trim((string) $o['email']),
+            $orgaMails
+        ))));
+        if ($empfaenger !== []) {
+            sendMail(
+                mailBccAddress(),
+                'Neuer Social-Post - Deine (Re-)Aktion ist gefragt! Jede Minute zählt 💚',
+                $body['text'],
+                $body['html'],
+                [],
+                $empfaenger
+            );
         }
     } catch (Throwable $e) {
         logError('versendePost: Live-Mail fehlgeschlagen: ' . $e->getMessage());
