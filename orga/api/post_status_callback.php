@@ -11,6 +11,8 @@
  * (kein offener Schreibzugriff auf die DB).
  *
  * Erwarteter JSON-Body: {"post_id":123,"channel":"instagram"|"facebook","permalink":"https://…","status":"ok"}
+ * Stage C: zusaetzlich optional {"media_id":"…"} — die IG/FB-Media-ID (fuer den spaeteren
+ * Insights-Sammler, gespeichert in ig_media_id/fb_post_id je Kanal).
  * MO1 (Insights-Rueckkanal): zusaetzlich optional {"reichweite":1840,"likes":97} — darf im selben
  * ODER in einem spaeteren (verzoegerten) Callback kommen; es wird nur gesetzt, was mitkommt, ein
  * Insights-only-Callback loescht den Permalink NICHT.
@@ -95,6 +97,15 @@ $params = [
 if ($permalink !== '') {
     $sets[] = "`{$chPrefix}_permalink` = :permalink";
     $params['permalink'] = $permalink;
+}
+
+// make.com-Optimierung Stage C: Media-ID mitspeichern (fuer den spaeteren Insights-Sammler).
+// Spalte je Kanal: ig_media_id / fb_post_id (feste Namen, kein prefix-Muster).
+$mediaId = trim((string) ($data['media_id'] ?? ''));
+if ($mediaId !== '' && preg_match('/^[A-Za-z0-9_]{1,64}$/', $mediaId)) {
+    $mediaCol = $chPrefix === 'ig' ? 'ig_media_id' : 'fb_post_id';
+    $sets[] = "`{$mediaCol}` = :media_id";
+    $params['media_id'] = $mediaId;
 }
 
 // make.com-Optimierung MO1: Insights (Reichweite/Likes) optional, defensiv geklemmt.
