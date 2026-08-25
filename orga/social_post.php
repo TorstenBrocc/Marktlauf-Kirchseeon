@@ -87,6 +87,12 @@ if (trim($hashtags) === '') {
     $hashtags = socialHashtagsDefault();
 }
 
+// Leitplanke (Wirkungs-Spec „Themen-Substanz" 2026-08-27): Steht in den Fakten noch ein
+// Klammer-Platzhalter (z. B. „(Konkreten Tipp einsetzen …)"), fehlt der eigentliche Inhalt.
+// Der Platzhalter wird in der Grafik weggefiltert (vorlagen.php) -> Post/Grafik bleiben inhaltsleer.
+// Deshalb hier sichtbar warnen, statt still mit Standardtext (z. B. „Jetzt anmelden") zu enden.
+$faktenPlatzhalter = (bool) preg_match('/^\s*\(.*\)\s*$/m', $fakten);
+
 // Kaskade aus dem Thema (Schritt-0-Thema-Karte, Post-Wirkung-Spec 5.A): was aus der
 // Themenwahl folgt — nur Anzeige, liest dieselben Ableitungen wie das Grafik-Werk.
 $kbKern       = trim((string) ($anlassDef['prompt'] ?? ''));
@@ -215,6 +221,9 @@ $fbChecked = $autoChannels === '' ? true : in_array('facebook', explode(',', $au
             background:#eef7f0; color:var(--primary-dark); border:1px solid #bfe3c8; border-radius:999px;
             cursor:pointer; line-height:1.35; text-align:left; white-space:normal; }
         .sp-chip:hover { background:#dcefe1; }
+        /* Leitplanke: fehlender Themen-Inhalt (Platzhalter in Fakten) */
+        .sp-warn { background:#fef3c7; border:1px solid #f2d377; border-radius:8px; padding:0.6rem 0.8rem;
+            font-size:0.85rem; line-height:1.5; color:#92400e; margin:0 0 0.9rem; }
     </style>
 </head>
 <body>
@@ -298,6 +307,11 @@ $fbChecked = $autoChannels === '' ? true : in_array('facebook', explode(',', $au
                     <label for="sp-prompt">Eigene Anweisung <span style="font-weight:400">(je Thema gespeichert, optional)</span> <span class="sp-msg" id="sp-pr-msg"></span></label>
                     <textarea id="sp-prompt" placeholder="z. B. „locker formulieren, Frage am Ende“"><?= htmlspecialchars($prompt) ?></textarea>
                 </div>
+            </div>
+            <div class="sp-warn" id="sp-fakten-warn" style="<?= $faktenPlatzhalter ? '' : 'display:none' ?>">
+                ⚠️ Für dieses Thema fehlt noch <strong>konkreter Inhalt</strong>: In „Fakten" steht ein
+                Platzhalter in (Klammern). Trag den echten Inhalt (z. B. den Trainingstipp) dort ein —
+                sonst bleiben Post-Text und Grafik inhaltsleer (der Klammer-Hinweis erscheint nicht auf der Grafik).
             </div>
             <div class="sp-zeile" style="margin-bottom:0.9rem">
                 <button class="btn btn-primary" id="sp-generieren"><?= $schrittText ? 'Neu formulieren' : 'Entwürfe generieren' ?></button>
@@ -592,6 +606,15 @@ function persistAnlassFeld(feld, wert, msgId) {
         .catch(() => zeige(msgId, '⚠️ Netzwerkfehler', '#dc2626'));
 }
 document.getElementById('sp-fakten').addEventListener('blur', ev => persistAnlassFeld('fakten', ev.target.value, 'sp-ft-msg'));
+// Leitplanke live: Warnung ein/aus, je nachdem ob noch ein Klammer-Platzhalter in den Fakten steht.
+(function () {
+    const ft = document.getElementById('sp-fakten');
+    const warn = document.getElementById('sp-fakten-warn');
+    if (!ft || !warn) return;
+    ft.addEventListener('input', () => {
+        warn.style.display = /^\s*\(.*\)\s*$/m.test(ft.value) ? '' : 'none';
+    });
+})();
 document.getElementById('sp-prompt').addEventListener('blur', ev => persistAnlassFeld('prompt', ev.target.value, 'sp-pr-msg'));
 
 // Erster Kommentar (Satz + Link, keine Hashtags) — Auto-Grow + autospeichern beim Verlassen (make.com-Optimierung §2).
