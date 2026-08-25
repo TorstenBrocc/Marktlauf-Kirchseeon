@@ -258,13 +258,21 @@ function sponsorLeistungKeys(): array
  */
 function sponsorLeistungenState(PDO $pdo, int $sponsorId): array
 {
-    $stmt = $pdo->prepare('SELECT position, vereinbart, freitext FROM sponsor_leistungen WHERE sponsor_id = :id');
+    $stmt = $pdo->prepare(
+        'SELECT position, vereinbart, freitext, wm_art, wm_anzahl, wm_deadline, wm_status
+           FROM sponsor_leistungen WHERE sponsor_id = :id'
+    );
     $stmt->execute(['id' => $sponsorId]);
     $out = [];
     foreach ($stmt->fetchAll() as $row) {
         $out[$row['position']] = [
-            'vereinbart' => (int) $row['vereinbart'] === 1,
-            'freitext'   => (string) ($row['freitext'] ?? ''),
+            'vereinbart'  => (int) $row['vereinbart'] === 1,
+            'freitext'    => (string) ($row['freitext'] ?? ''),
+            // Werbemittel-Detail (nur bei haken_text-Positionen befüllt, sonst NULL).
+            'wm_art'      => $row['wm_art'] !== null ? (string) $row['wm_art'] : '',
+            'wm_anzahl'   => $row['wm_anzahl'] !== null ? (string) (int) $row['wm_anzahl'] : '',
+            'wm_deadline' => $row['wm_deadline'] !== null ? (string) $row['wm_deadline'] : '',
+            'wm_status'   => $row['wm_status'] !== null ? (string) $row['wm_status'] : '',
         ];
     }
     return $out;
@@ -335,20 +343,52 @@ function sponsorGutscheincode(PDO $pdo, int $sponsorId): string
  * Zustand einer Zelle setzen (Upsert). $vereinbart/$freitext getrennt setzbar; null = nicht ändern
  * (der jeweils andere Wert bleibt erhalten bzw. fällt auf Default zurück).
  */
-function sponsorLeistungSet(PDO $pdo, int $sponsorId, string $position, ?bool $vereinbart, ?string $freitext): void
-{
-    // Bestehende Zeile lesen, damit Teil-Updates den anderen Wert nicht verlieren.
-    $cur = $pdo->prepare('SELECT vereinbart, freitext FROM sponsor_leistungen WHERE sponsor_id = :id AND position = :p');
+function sponsorLeistungSet(
+    PDO $pdo,
+    int $sponsorId,
+    string $position,
+    ?bool $vereinbart,
+    ?string $freitext,
+    ?array $wm = null
+): void {
+    // Bestehende Zeile lesen, damit Teil-Updates die anderen Werte nicht verlieren.
+    $cur = $pdo->prepare(
+        'SELECT vereinbart, freitext, wm_art, wm_anzahl, wm_deadline, wm_status
+           FROM sponsor_leistungen WHERE sponsor_id = :id AND position = :p'
+    );
     $cur->execute(['id' => $sponsorId, 'p' => $position]);
     $row = $cur->fetch();
 
     $ver = $vereinbart !== null ? ($vereinbart ? 1 : 0) : ($row ? (int) $row['vereinbart'] : 1);
     $txt = $freitext   !== null ? $freitext : ($row ? (string) ($row['freitext'] ?? '') : '');
 
+    // Werbemittel-Detail: je Feld einzeln setzbar. Ein im $wm-Array vorhandener Schlüssel setzt die
+    // Spalte (Leerstring => NULL), ein fehlender Schlüssel lässt den bestehenden Wert stehen.
+    $wmCol = static function (string $key) use ($wm, $row) {
+        if ($wm !== null && array_key_exists($key, $wm)) {
+            $v = $wm[$key];
+            return ($v === null || $v === '') ? null : $v;
+        }
+        return is_array($row) ? ($row[$key] ?? null) : null; // unverändert
+    };
+    $art      = $wmCol('wm_art');
+    $anzahl   = $wmCol('wm_anzahl');
+    $deadline = $wmCol('wm_deadline');
+    $status   = $wmCol('wm_status');
+
     $stmt = $pdo->prepare(
-        'INSERT INTO sponsor_leistungen (sponsor_id, position, vereinbart, freitext)
-         VALUES (:id, :p, :v, :t)
-         ON DUPLICATE KEY UPDATE vereinbart = :v2, freitext = :t2'
+        'INSERT INTO sponsor_leistungen
+            (sponsor_id, position, vereinbart, freitext, wm_art, wm_anzahl, wm_deadline, wm_status)
+         VALUES (:id, :p, :v, :t, :art, :anz, :dl, :st)
+         ON DUPLICATE KEY UPDATE
+            vereinbart = :v2, freitext = :t2,
+            wm_art = :art2, wm_anzahl = :anz2, wm_deadline = :dl2, wm_status = :st2'
     );
-    $stmt->execute(['id' => $sponsorId, 'p' => $position, 'v' => $ver, 't' => $txt, 'v2' => $ver, 't2' => $txt]);
+    $stmt->execute([
+        'id' => $sponsorId, 'p' => $position,
+        'v' => $ver, 't' => $txt,
+        'art' => $art, 'anz' => $anzahl, 'dl' => $deadline, 'st' => $status,
+        'v2' => $ver, 't2' => $txt,
+        'art2' => $art, 'anz2' => $anzahl, 'dl2' => $deadline, 'st2' => $status,
+    ]);
 }
