@@ -25,9 +25,12 @@ require_once __DIR__ . '/logger.php';
  * @param string   $text     Post-Text (Caption)
  * @param string   $imageUrl Öffentliche HTTPS-URL des PNG (leer erlaubt = reiner Text)
  * @param string[] $channels z.B. ['instagram','facebook']
+ * @param int      $postId   Post-ID — Make.com reicht sie im Erfolgs-Callback zurueck
+ *                           (orga/api/post_status_callback.php), damit der Permalink dem
+ *                           richtigen Post zugeordnet wird.
  * @return array{ok:bool,message:string,channels:string[],fallback?:bool}
  */
-function socialDispatch(string $text, string $imageUrl, array $channels): array
+function socialDispatch(string $text, string $imageUrl, array $channels, int $postId = 0): array
 {
     $config     = getConfig();
     $webhookUrl = trim((string) ($config['make_webhook_url'] ?? ''));
@@ -44,6 +47,7 @@ function socialDispatch(string $text, string $imageUrl, array $channels): array
     }
 
     $payload = json_encode([
+        'post_id'   => $postId,
         'text'      => $text,
         'image_url' => $imageUrl,
         'channels'  => array_values($channels),
