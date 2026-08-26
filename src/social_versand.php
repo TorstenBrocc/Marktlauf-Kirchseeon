@@ -40,6 +40,25 @@ function versendePost(PDO $pdo, array $post, array $channels, string $ersterKomm
         return ['ok' => false, 'code' => 422, 'message' => 'Kein Social-Text am Post — bitte zuerst Schritt 1.'];
     }
 
+    // Hashtags an die Caption anhaengen (Design-Entscheid 2026-08-26: Hashtags leben in der
+    // Caption). Die KI schreibt bewusst keine (llm_client.php), und der Versand hat sie bisher
+    // fallengelassen -> Posts gingen ohne Hashtags raus, obwohl die UI sie verspricht. Quelle:
+    // Einstellung social_hashtags, sonst der gegrillte Default. Doppel-Schutz, falls der Text
+    // (manuell) schon Hashtags enthaelt.
+    $hashtags = '';
+    try {
+        $stmt = $pdo->query("SELECT `value` FROM einstellungen WHERE `key` = 'social_hashtags' LIMIT 1");
+        $hashtags = trim((string) ($stmt->fetchColumn() ?: ''));
+    } catch (PDOException $e) {
+        // Einstellung fehlt -> Default unten
+    }
+    if ($hashtags === '') {
+        $hashtags = socialHashtagsDefault();
+    }
+    if ($hashtags !== '' && !str_contains($text, '#')) {
+        $text = rtrim($text) . "\n\n" . $hashtags;
+    }
+
     $bildPfad = trim((string) ($post['bild_pfad'] ?? ''));
     if (in_array('instagram', $channels, true) && $bildPfad === '') {
         return ['ok' => false, 'code' => 422, 'message' => 'Instagram braucht ein Bild — bitte zuerst Schritt 3 (oder Instagram abwählen).'];
