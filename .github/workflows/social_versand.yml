@@ -1,18 +1,20 @@
-name: Social-Auto-Versand (Stichtag)
+name: Social-Auto-Versand (beste Sendezeit)
 
-# Sendet am Stichtag freigegebene Opt-in-Posts (post_race_contents.auto_versand=1) automatisch
-# ueber Make.com. Feste Sendezeit "mittags" (Inhaber-Entscheid 2026-08-25) kommt aus dem
-# Cron-Zeitpunkt: 10:00 UTC ~ 12:00 CEST (Sommer) / ~11:00 CET (Winter) — fuer den Renntag
-# 20.09. ist Sommerzeit relevant. Wie sponsor_versand.yml ueber SSH, weil Strato-Shared-Hosting
-# kein crontab per SSH bietet. Das CLI-Script sichert sich per GET_LOCK gegen ueberlappende Laeufe.
+# "Beste Sendezeit"-Timer (Spec social-auto-versand-beste-zeit-spec.md §4b): laeuft STUENDLICH und
+# macht je Lauf zwei Dinge — (1) terminierte Posts, deren Slot erreicht ist, live schalten +
+# "erste-Stunde"-Mail; (2) faellige Opt-in-Posts (auto_versand=1) fuer ihren besten FB-Slot nativ
+# terminieren (Meta scheduled_publish_time), Catch-up sofort. Instagram laeuft ueber den
+# Meta-Business-Handoff, nicht ueber diesen Timer. Wie sponsor_versand.yml ueber SSH, weil
+# Strato-Shared-Hosting kein crontab per SSH bietet; das CLI sichert sich per GET_LOCK gegen
+# ueberlappende Laeufe (Cron + manueller Lauf senden nie doppelt).
 #
-# Hinweis: geplante Workflows starten unter Last evtl. verzoegert und werden nach 60 Tagen
-# Repo-Inaktivitaet deaktiviert (wie Uptime-Check / Sponsor-Versand).
+# Hinweis: geplante Workflows starten unter Last evtl. verzoegert (deshalb der 15-Min-Vorlauf-Puffer
+# im Script) und werden nach 60 Tagen Repo-Inaktivitaet deaktiviert (wie Uptime-Check).
 
 on:
   schedule:
-    - cron: '0 10 * * *'   # taeglich ~12:00 CEST
-  workflow_dispatch:        # manuell im Actions-Tab ausloesbar (Erst-Test)
+    - cron: '0 4-20 * * *'   # stuendlich 04:00-20:00 UTC ~ 06:00-22:00 CEST
+  workflow_dispatch:         # manuell im Actions-Tab ausloesbar (Erst-Test)
 
 # Nur ein Lauf gleichzeitig — zweiter wartet, statt parallel zu senden.
 concurrency:

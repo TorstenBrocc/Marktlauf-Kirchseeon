@@ -26,9 +26,13 @@ require_once __DIR__ . '/channels/mail.php';
  * @param array    $post            Zeile aus post_race_contents (SELECT *).
  * @param string[] $channels        Bereits validiert auf ['instagram','facebook'].
  * @param string   $ersterKommentar Optionaler erster Kommentar (Link+Hashtags).
+ * @param ?int     $scheduledTime   Unix-Zeit fuer terminierten Versand (Spec §4a/S3): gesetzt ->
+ *                                  Make terminiert FB nativ, Post wird 'terminiert' (nicht live),
+ *                                  KEINE Live-Mail (feuert erst der Finalizer zum Slot). null =
+ *                                  sofort (Klick/Catch-up) + Live-Mail wie bisher.
  * @return array{ok:bool,message:string,code?:int,fallback?:bool} — code nur bei Validierungsfehler.
  */
-function versendePost(PDO $pdo, array $post, array $channels, string $ersterKommentar = ''): array
+function versendePost(PDO $pdo, array $post, array $channels, string $ersterKommentar = '', ?int $scheduledTime = null): array
 {
     $postId = (int) ($post['id'] ?? 0);
     if ($postId <= 0 || $channels === []) {
@@ -98,7 +102,18 @@ function versendePost(PDO $pdo, array $post, array $channels, string $ersterKomm
         $imageUrl = $baseUrl . '/assets/social/' . $sendDatei;
     }
 
-    $ergebnis = socialDispatch($text, $imageUrl, $channels, $postId, $ersterKommentar);
+    // Terminierter FB-Versand (Spec §4b, Entscheid TT 2026-08-27): der Beitrag ist bis zum Slot
+    // unveroeffentlicht -> make kann keinen ersten Kommentar setzen (schlaegt sonst fehl). Damit der
+    // klickbare Anmelde-Link nicht verloren geht, wandert der CTA+Link in die FB-Caption (FB-Caption-
+    // Links sind klickbar, anders als IG) und der erste Kommentar wird geleert -> der bestehende
+    // make-Filter "nur wenn erster Kommentar" ueberspringt den Kommentar-Schritt von selbst.
+    $dispatchKommentar = $ersterKommentar;
+    if ($scheduledTime !== null && $ersterKommentar !== '') {
+        $text = rtrim($text) . "\n\n" . $ersterKommentar;
+        $dispatchKommentar = '';
+    }
+
+    $ergebnis = socialDispatch($text, $imageUrl, $channels, $postId, $dispatchKommentar, $scheduledTime);
 
     if (!empty($ergebnis['fallback'])) {
         return [
@@ -108,18 +123,36 @@ function versendePost(PDO $pdo, array $post, array $channels, string $ersterKomm
         ];
     }
 
-    // Versand-Log am Post + Fahrplan-Eintrag abschliessen (Wiederkehr rueckt vor)
+    $terminiert = $scheduledTime !== null;
+
+    // Versand-Log am Post + Fahrplan-Eintrag abschliessen (Wiederkehr rueckt vor). Terminiert:
+    // an Meta uebergeben, aber NOCH NICHT live -> status 'terminiert', terminiert_fuer haelt den
+    // Slot; live schaltet + Live-Mail feuert erst der Finalizer zum Slot (§4b), sonst Mail zu frueh.
     try {
-        $pdo->prepare(
-            "UPDATE post_race_contents
-                SET status = 'gesendet', gesendet_am = NOW(),
-                    gesendet_kanaele = :kanaele, gesendet_ergebnis = :ergebnis
-              WHERE id = :id"
-        )->execute([
-            'kanaele'  => implode(',', $channels),
-            'ergebnis' => mb_substr((string) ($ergebnis['message'] ?? 'an Make.com übergeben'), 0, 255),
-            'id'       => $postId,
-        ]);
+        if ($terminiert) {
+            $pdo->prepare(
+                "UPDATE post_race_contents
+                    SET status = 'terminiert', terminiert_fuer = FROM_UNIXTIME(:ts),
+                        gesendet_kanaele = :kanaele, gesendet_ergebnis = :ergebnis
+                  WHERE id = :id"
+            )->execute([
+                'ts'       => $scheduledTime,
+                'kanaele'  => implode(',', $channels),
+                'ergebnis' => mb_substr((string) ($ergebnis['message'] ?? 'bei Facebook terminiert'), 0, 255),
+                'id'       => $postId,
+            ]);
+        } else {
+            $pdo->prepare(
+                "UPDATE post_race_contents
+                    SET status = 'gesendet', gesendet_am = NOW(),
+                        gesendet_kanaele = :kanaele, gesendet_ergebnis = :ergebnis
+                  WHERE id = :id"
+            )->execute([
+                'kanaele'  => implode(',', $channels),
+                'ergebnis' => mb_substr((string) ($ergebnis['message'] ?? 'an Make.com übergeben'), 0, 255),
+                'id'       => $postId,
+            ]);
+        }
 
         $stmt = $pdo->prepare("SELECT id, zieldatum, frequenz_tage, ende FROM social_fahrplan WHERE post_id = :pid AND status = 'offen' LIMIT 1");
         $stmt->execute(['pid' => $postId]);
@@ -144,12 +177,30 @@ function versendePost(PDO $pdo, array $post, array $channels, string $ersterKomm
         logError('versendePost: Log/Fahrplan-Update fehlgeschlagen: ' . $e->getMessage());
     }
 
-    // "Post ist live"-Mail ans Orga-Team (Verstaerker der ersten Stunde, Inhaber-Entscheid
-    // 2026-08-14). Seit 2026-08-25 EINE Sammel-Mail (To: info@, Orga/Admins in BCC) statt
-    // einer Mail je Empfaenger — sonst stapeln sich die info@-BCC-Kopien (Mail-Flut).
-    // Kein Dashboard-Link: der Fahrplan-Eintrag ist beim Lesen schon vorgerueckt und
-    // social_post.php legt beim Oeffnen einen neuen Draft an; die Handgriffe passieren
-    // ohnehin auf den Plattformen. Fire-and-forget, Fehler nur ins Log.
+    // Live-Mail nur beim SOFORT-Versand (Post ist jetzt live). Beim terminierten Versand feuert
+    // der Finalizer die Mail zum echten Slot (§4b) — sonst ginge die "erste-Stunde"-Mail Stunden
+    // zu frueh raus.
+    if (!$terminiert) {
+        socialLiveMail($pdo, $post);
+    }
+
+    return [
+        'ok'      => true,
+        'message' => $terminiert
+            ? 'Für ' . (new DateTimeImmutable('@' . $scheduledTime))->setTimezone(new DateTimeZone('Europe/Berlin'))->format('d.m. H:i') . ' Uhr bei Facebook terminiert (Instagram: Handoff in der Meta Business Suite).'
+            : (string) ($ergebnis['message'] ?? 'An Make.com übergeben.'),
+    ];
+}
+
+/**
+ * "Post ist live"-Mail ans Orga-Team (Verstaerker der ersten Stunde, Inhaber-Entscheid 2026-08-14).
+ * EINE Sammel-Mail (To: info@ via mailBccAddress(), Orga/Admins in BCC) statt einer je Empfaenger —
+ * sonst stapeln sich die info@-BCC-Kopien (Mail-Flut). Kein Dashboard-Link: der Fahrplan-Eintrag
+ * ist beim Lesen schon vorgerueckt. Fire-and-forget, Fehler nur ins Log. Ausgelagert, weil sie
+ * beim Sofort-Versand (versendePost) UND beim Finalizer (finalisiereTerminiertePosts) feuert.
+ */
+function socialLiveMail(PDO $pdo, array $post): void
+{
     try {
         $def   = socialAnlaesse()[(string) ($post['anlass_key'] ?? '')] ?? null;
         $thema = $def ? $def['ui'] : 'Social-Post';
@@ -183,8 +234,37 @@ function versendePost(PDO $pdo, array $post, array $channels, string $ersterKomm
             );
         }
     } catch (Throwable $e) {
-        logError('versendePost: Live-Mail fehlgeschlagen: ' . $e->getMessage());
+        logError('socialLiveMail: fehlgeschlagen: ' . $e->getMessage());
     }
+}
 
-    return ['ok' => true, 'message' => (string) ($ergebnis['message'] ?? 'An Make.com übergeben.')];
+/**
+ * Finalisiert terminierte Posts, deren Slot erreicht ist (Spec §4b). Meta hat FB zum
+ * scheduled_publish_time live geschaltet — FB ruft dazu nicht zurueck, deshalb ist der stuendliche
+ * Timer (bin/social_versand.php) der Ausloeser: status 'terminiert' -> 'gesendet' + gesendet_am,
+ * und die "erste-Stunde"-Mail feuert JETZT (nah am echten Veroeffentlichungszeitpunkt).
+ * Idempotent: nach dem Flip faellt der Post aus dem Filter.
+ *
+ * @return int Anzahl finalisierter Posts.
+ */
+function finalisiereTerminiertePosts(PDO $pdo): int
+{
+    $posts = $pdo->query(
+        "SELECT * FROM post_race_contents
+          WHERE status = 'terminiert' AND terminiert_fuer IS NOT NULL AND terminiert_fuer <= NOW()
+          ORDER BY terminiert_fuer ASC"
+    )->fetchAll(PDO::FETCH_ASSOC);
+
+    $n = 0;
+    foreach ($posts as $post) {
+        try {
+            $pdo->prepare("UPDATE post_race_contents SET status = 'gesendet', gesendet_am = NOW() WHERE id = :id")
+                ->execute(['id' => (int) $post['id']]);
+            socialLiveMail($pdo, $post);
+            $n++;
+        } catch (Throwable $e) {
+            logError('finalisiereTerminiertePosts: Post ' . (int) ($post['id'] ?? 0) . ': ' . $e->getMessage());
+        }
+    }
+    return $n;
 }

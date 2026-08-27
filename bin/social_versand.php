@@ -1,15 +1,20 @@
 #!/usr/bin/env php
 <?php
 /**
- * CLI-Tool: Auto-Versand faelliger Social-Posts am Stichtag.
- * Grundlage: intern/social-auto-versand-stichtag-spec.md (Inhaber-Entscheide 2026-08-25).
+ * CLI-Tool: "Beste Sendezeit"-Timer — zweiphasig je Lauf (Spec social-auto-versand-beste-zeit-spec.md
+ * §4b/S3/S4, Bau-Entscheid TT 2026-08-27). Grundlage #3: social-auto-versand-stichtag-spec.md.
  *
- * Sendet NUR Posts, die der Mensch dafuer freigegeben hat (Opt-in je Post):
- *   status='approved'  UND  auto_versand=1  UND  faellig
- * Faellig = Fahrplan-Stichtag heute bis 2 Tage alt (Catch-up-Fenster gegen GitHub-Actions-
- * Verzoegerung/Wochenende). Nutzt die gemeinsame Versandlogik (src/social_versand.php) —
- * identisch zum manuellen Klick (Bild->JPEG, Make.com, Log, Fahrplan-Fortschritt, Live-Mail).
- * Die feste Sendezeit "mittags" kommt aus dem Cron-Zeitpunkt (social_versand.yml), nicht hier.
+ * Phase 1 — FINALISIEREN: terminierte Posts, deren Slot erreicht ist, live schalten
+ *   (status 'terminiert' -> 'gesendet') + "erste-Stunde"-Mail feuern. FB ruft zur echten
+ *   Veroeffentlichung nicht zurueck, deshalb finalisiert der stuendliche Timer nah am Slot.
+ * Phase 2 — TERMINIEREN: NUR vom Menschen freigegebene Opt-in-Posts (status='approved' UND
+ *   auto_versand=1 UND faellig). Faellig = Fahrplan-Stichtag heute bis 2 Tage alt (Catch-up gegen
+ *   GitHub-Actions-Verzug/Wochenende). Zielzeit = geplante_uhrzeit › bester FB-Slot › 12:00.
+ *   Liegt sie >15 Min in der Zukunft -> FB nativ terminiert (Meta scheduled_publish_time);
+ *   sonst (Catch-up) -> FB sofort. INSTAGRAM postet der Timer NIE (§4a) -> Handoff-Kachel im
+ *   Post-Detail. Gemeinsame Versandlogik (src/social_versand.php), identisch zum manuellen Klick.
+ *
+ * Cron: stuendlich 06:00-22:00 CEST (social_versand.yml) — frueh terminieren, nah am Slot finalisieren.
  *
  * Aufruf (SSH):  MARKTLAUF_CLI=1 php bin/social_versand.php
  *
@@ -44,9 +49,16 @@ try {
         exit(0);
     }
 
-    // Faellige Auto-Posts: freigegeben + Opt-in + Stichtag im Catch-up-Fenster (heute .. -2 Tage).
+    // Phase 1 — Finalisieren: terminierte Posts, deren Slot erreicht ist, live schalten + Mail.
+    $finalisiert = finalisiereTerminiertePosts($pdo);
+    if ($finalisiert > 0) {
+        svLog("$finalisiert terminierte(r) Post(s) live geschaltet (finalisiert).");
+    }
+
+    // Phase 2 — Terminieren: faellige Auto-Posts (freigegeben + Opt-in + Stichtag im Catch-up-
+    // Fenster heute .. -2 Tage). f.zieldatum wird mitgelesen, um den Slot-Zeitpunkt zu bilden.
     $posts = $pdo->query(
-        "SELECT p.*
+        "SELECT p.*, f.zieldatum AS f_zieldatum
            FROM post_race_contents p
            JOIN social_fahrplan f ON f.post_id = p.id AND f.status = 'offen'
           WHERE p.status = 'approved'
@@ -63,23 +75,58 @@ try {
         exit(0);
     }
 
+    // Best-Zeiten einmal laden (Einstellungen), fuer die FB-Slot-Berechnung je Post.
+    $bszStruktur = besteSendezeitenStruktur($pdo);
+    $jetzt       = time();
+    $vorlaufSek  = 15 * 60; // FB braucht >=10 Min Vorlauf; +Puffer gegen GH-Cron-Verzug.
+
     svLog(count($posts) . ' faellige(r) Auto-Post(s).');
     foreach ($posts as $post) {
-        $postId   = (int) $post['id'];
-        $channels = array_values(array_intersect(
-            array_map('trim', explode(',', (string) ($post['auto_versand_channels'] ?? ''))),
-            ['instagram', 'facebook']
-        ));
-        if ($channels === []) {
-            $channels = ['instagram', 'facebook'];
+        $postId = (int) $post['id'];
+
+        // Instagram postet der Timer NIE (§4a) -> nur Facebook, sofern der Post FB als Opt-in-Kanal
+        // hat. IG-only-Opt-in (oder kein FB) -> kein Auto-Versand, IG laeuft ueber die Handoff-Kachel.
+        $optIn = array_map('trim', explode(',', (string) ($post['auto_versand_channels'] ?? '')));
+        if ($optIn === [''] || $optIn === []) {
+            $optIn = ['facebook']; // leer = Default FB (IG ist ohnehin Handoff)
         }
+        if (!in_array('facebook', $optIn, true)) {
+            svLog("Post $postId uebersprungen — nur Instagram gewaehlt, laeuft ueber Meta-Business-Handoff.");
+            continue;
+        }
+        $channels = ['facebook'];
+
+        // Zielzeit: Wunsch-Sendezeit › bester FB-Slot fuer den Wochentag › 12:00 (Fallback mittags).
+        $zieldatum = (string) ($post['f_zieldatum'] ?? '');
+        $wochentag = $zieldatum !== '' ? (int) date('N', (int) strtotime($zieldatum)) : 0;
+        $uhrzeit   = '';
+        if (!empty($post['geplante_uhrzeit'])) {
+            $uhrzeit = substr((string) $post['geplante_uhrzeit'], 0, 5);
+        } elseif ($wochentag > 0) {
+            $uhrzeit = besteSlotFuer($bszStruktur, 'facebook', $wochentag);
+        }
+        if ($uhrzeit === '') {
+            $uhrzeit = '12:00';
+        }
+        // Slot-Zeit ist als Europe/Berlin gemeint (die Best-Zeiten sind lokale Uhrzeiten) — explizit
+        // in dieser Zone bilden, unabhaengig von der php.ini-Default-TZ des Servers (sonst wuerde der
+        // Slot um den Offset verschoben terminiert).
+        $slotDt = DateTimeImmutable::createFromFormat('Y-m-d H:i', $zieldatum . ' ' . $uhrzeit, new DateTimeZone('Europe/Berlin'));
+        $slotTs = $slotDt ? $slotDt->getTimestamp() : (int) strtotime($zieldatum . ' ' . $uhrzeit);
+
+        // >15 Min in der Zukunft -> FB terminieren; sonst (Catch-up / Slot vorbei) -> sofort.
+        $scheduledTime = ($slotTs > $jetzt + $vorlaufSek) ? $slotTs : null;
+
         // Erster Kommentar: gespeicherter Wert am Post (im CLI gibt es keinen Screen).
         $ersterKommentar = trim((string) ($post['erster_kommentar'] ?? ''));
 
         try {
-            $r = versendePost($pdo, $post, $channels, $ersterKommentar);
+            $r = versendePost($pdo, $post, $channels, $ersterKommentar, $scheduledTime);
             if (!empty($r['ok'])) {
-                svLog("Post $postId gesendet an " . implode('+', $channels) . '.');
+                $wie = $scheduledTime !== null
+                    ? ('terminiert fuer ' . (new DateTimeImmutable('@' . $scheduledTime))->setTimezone(new DateTimeZone('Europe/Berlin'))->format('d.m. H:i'))
+                    : 'sofort gesendet';
+                svLog("Post $postId $wie (facebook).");
             } else {
                 // Fallback/Fehler: Post bleibt 'approved' fuer den naechsten Lauf (bis Catch-up-Grenze).
                 logError("social_versand: Post $postId nicht gesendet: " . (string) ($r['message'] ?? '?'));

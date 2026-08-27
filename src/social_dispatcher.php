@@ -30,9 +30,13 @@ require_once __DIR__ . '/logger.php';
  *                           richtigen Post zugeordnet wird.
  * @param string   $firstComment Erster Kommentar (Link+Hashtags). Make setzt ihn nach dem Post
  *                           als ersten Kommentar; leer = Make ueberspringt den Schritt.
+ * @param ?int     $scheduledTime Unix-Zeit (Epoch, Sekunden) fuer die geplante Veroeffentlichung
+ *                           (Spec §4a/S3): gesetzt -> Make terminiert FB nativ via
+ *                           scheduled_publish_time und ueberspringt IG (Handoff). null = sofort
+ *                           (manueller Klick / Catch-up).
  * @return array{ok:bool,message:string,channels:string[],fallback?:bool}
  */
-function socialDispatch(string $text, string $imageUrl, array $channels, int $postId = 0, string $firstComment = ''): array
+function socialDispatch(string $text, string $imageUrl, array $channels, int $postId = 0, string $firstComment = '', ?int $scheduledTime = null): array
 {
     $config     = getConfig();
     $webhookUrl = trim((string) ($config['make_webhook_url'] ?? ''));
@@ -48,14 +52,32 @@ function socialDispatch(string $text, string $imageUrl, array $channels, int $po
         ];
     }
 
-    $payload = json_encode([
-        'post_id'       => $postId,
-        'text'          => $text,
-        'image_url'     => $imageUrl,
-        'channels'      => array_values($channels),
-        'first_comment' => $firstComment,
-        'secret'        => $secret,
-    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    $daten = [
+        'post_id'   => $postId,
+        'text'      => $text,
+        'image_url' => $imageUrl,
+        'channels'  => array_values($channels),
+        'secret'    => $secret,
+    ];
+    // Ersten Kommentar nur mitschicken, wenn vorhanden. Der make-Filter vor dem Kommentar-Modul
+    // prueft `first_comment` mit "Exists" — ein leerer String koennte dort als vorhanden gelten und
+    // den Kommentar-Schritt auf einen (bei terminierten Posts) noch UNveroeffentlichten Beitrag
+    // laufen lassen -> Meta-Fehler. Feld ganz weglassen => "Exists" ist garantiert false => der
+    // Kommentar-Schritt wird sauber uebersprungen (Spec §4c). Beim terminierten Versand wandert der
+    // CTA+Link ohnehin in die Caption (versendePost).
+    if ($firstComment !== '') {
+        $daten['first_comment'] = $firstComment;
+    }
+    // Terminierter Versand (Spec §4a): Zielzeit als ISO 8601 mit Berlin-Offset mitgeben. Make parst
+    // das nativ in sein FB-Pages-Feld "Publish date" (Zeitzone Europe/Berlin) -> Meta terminiert
+    // exakt; im Webhook-Log ist es menschenlesbar. Nur anhaengen, wenn gesetzt — sonst bleibt der
+    // Payload sofort-kompatibel (leer/fehlend = Make published sofort).
+    if ($scheduledTime !== null) {
+        $daten['scheduled_time'] = (new DateTimeImmutable('@' . $scheduledTime))
+            ->setTimezone(new DateTimeZone('Europe/Berlin'))
+            ->format('c');
+    }
+    $payload = json_encode($daten, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
     // make.com-Optimierung #4 (Haertung): HMAC-Signatur ueber den exakten Body mitschicken
     // (Header `X-Signature: sha256=…`). Das `secret` im Body bleibt zusaetzlich erhalten, damit
