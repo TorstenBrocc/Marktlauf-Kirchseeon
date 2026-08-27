@@ -100,6 +100,15 @@ Vault-Specs sind unter `intern/` abgelegt; **MO1 Insights-Rückkanal, Erster-Kom
 Stale-Branch `claude/social-post-impact-spec-0vlwns` ✅ gelöscht. Offen bleibt: make.com-Callback +
 Kommentar-Modul + Insights-Lieferung einrichten (Aufgabe 5, Inhaber-Login), Kernkompetenz-CSV, TikTok.
 
+**Nachtrag „Beste Sendezeit"-Timer 2026-08-25 (Commit `7708022` + Migration `089`, deployt/migriert):**
+**S1+S2 live** — strukturierte Best-Zeiten je Kanal×Wochentag (Einstellungen-Grid, Key
+`beste_sendezeiten_struktur`, Helfer `besteSlotFuer()` in `src/social_anlaesse.php`) + per-Post
+**Wunsch-Sendezeit** (`post_race_contents.geplante_uhrzeit`, Vorschlag je Kanal im Post-Detail,
+Autosave `api/post_feld.php`). Entscheid: **IG=Meta Business Suite, FB=make-terminiert**.
+**Offen: S3/S4 (FB `scheduled_publish_time`) + IG-Handoff-Kachel** — make.com (Szenario 6642115) +
+Meta Business Suite sind im Chrome offen, Claude kann sie selbst einrichten. **Übergabe-Block +
+Start-Prompt:** Vault `intern/social-auto-versand-beste-zeit-spec.md` (oben).
+
 Offen / vertagt (drei Vault-Specs im Chat-Transkript zum Ablegen unter `intern/`):
 - `make-com-optimierung-spec.md` — **Musik NICHT per API** (muss ins Video eingebettet sein);
   Reichweiten-Automatik: Erster-Kommentar-Link, Insights-Rückkanal (MO1).
