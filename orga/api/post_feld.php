@@ -34,7 +34,7 @@ $postId = isset($_POST['post_id']) && ctype_digit((string) $_POST['post_id']) ? 
 $feld   = (string) ($_POST['feld'] ?? '');
 
 // Whitelist erlaubter Spalten (Schluessel = Feldname, sicher fuer die Query-Interpolation).
-$erlaubt = ['erster_kommentar', 'auto_versand', 'auto_versand_channels'];
+$erlaubt = ['erster_kommentar', 'auto_versand', 'auto_versand_channels', 'geplante_uhrzeit'];
 if ($postId <= 0 || !in_array($feld, $erlaubt, true)) {
     http_response_code(422);
     postFeldJson(false, 'post_id/feld ungültig.');
@@ -56,6 +56,11 @@ switch ($feld) {
             ['instagram', 'facebook']
         ));
         $val = $teile === [] ? null : implode(',', $teile);
+        break;
+    case 'geplante_uhrzeit':
+        // Wunsch-Sendezeit 'HH:MM' → TIME 'HH:MM:00'; leer/ungültig = NULL (Fallback mittags).
+        $wert = trim($wert);
+        $val  = preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $wert) ? $wert . ':00' : null;
         break;
     default:
         $val = $wert !== '' ? $wert : null;

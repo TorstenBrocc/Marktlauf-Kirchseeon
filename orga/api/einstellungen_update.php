@@ -61,6 +61,7 @@ $allowedKeys = [
     'drive_root_helfer_id',
     'social_hashtags',
     'beste_sendezeiten',
+    'beste_sendezeiten_struktur',
     'raceresult_api_url',
     'sponsor_merkfeld',
     'reminder_versandtage',
@@ -81,6 +82,22 @@ $driveRootHelfer = trim((string) ($_POST['drive_root_helfer_id'] ?? ''));
 // Social Media (umgezogen aus dem Orchestrator, Schnitt 5 Redesign-Spec)
 $socialHashtags   = mb_substr(trim((string) ($_POST['social_hashtags'] ?? '')), 0, 500);
 $besteSendezeiten = mb_substr(trim((string) ($_POST['beste_sendezeiten'] ?? '')), 0, 2000);
+// Strukturierte Best-Zeiten (Grid je Kanal × Wochentag) → JSON. Nur schreiben, wenn das Grid
+// wirklich im POST stand (Marker bsz_gesendet) — sonst würde jeder fremde POST es leeren.
+$bszStrukturJson = null;
+$bszGesendet     = ($_POST['bsz_gesendet'] ?? '') === '1';
+if ($bszGesendet) {
+    $bszStruct = [];
+    foreach (['instagram', 'facebook'] as $ch) {
+        for ($n = 1; $n <= 7; $n++) {
+            $t = trim((string) ($_POST["bsz_{$ch}_{$n}"] ?? ''));
+            if (preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $t)) {
+                $bszStruct[$ch][$n] = $t;
+            }
+        }
+    }
+    $bszStrukturJson = $bszStruct === [] ? null : json_encode($bszStruct, JSON_UNESCAPED_UNICODE);
+}
 $raceresultApiUrl = trim((string) ($_POST['raceresult_api_url'] ?? ''));
 
 // Sponsoren-Merkfeld (Bank-/Vereinsdaten), umgezogen aus der Sponsoren-Übersicht.
@@ -178,6 +195,10 @@ try {
     // Nur schreiben, wenn die Checkbox-Gruppe wirklich im POST stand (Marker, s. o.).
     if ($reminderVersandtage !== null) {
         $settings['reminder_versandtage'] = $reminderVersandtage;
+    }
+    // Strukturierte Best-Zeiten nur schreiben, wenn das Grid im POST stand (Marker bsz_gesendet).
+    if ($bszGesendet) {
+        $settings['beste_sendezeiten_struktur'] = $bszStrukturJson;
     }
 
     $stmt = $pdo->prepare('INSERT INTO einstellungen (`key`, `value`) VALUES (:key, :value) ON DUPLICATE KEY UPDATE `value` = :value2');

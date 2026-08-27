@@ -137,6 +137,13 @@ if ($ersterKommentar === '') {
 // Checkboxen; ohne gespeicherte Wahl beide vorgewaehlt (Default fuer den manuellen Klick).
 $autoVersand  = !$frisch && (int) ($post['auto_versand'] ?? 0) === 1;
 $autoChannels = $frisch ? '' : trim((string) ($post['auto_versand_channels'] ?? ''));
+// Wunsch-Sendezeit + bester Slot je Kanal für den Wochentag des Stichtags (Spec S2/E5).
+$geplanteUhrzeit = (!$frisch && !empty($post['geplante_uhrzeit'])) ? substr((string) $post['geplante_uhrzeit'], 0, 5) : '';
+$bszStruktur = besteSendezeitenStruktur($pdo);
+$ztN         = !empty($eintrag['zieldatum']) ? (int) date('N', strtotime((string) $eintrag['zieldatum'])) : 0;
+$slotIg      = $ztN ? besteSlotFuer($bszStruktur, 'instagram', $ztN) : '';
+$slotFb      = $ztN ? besteSlotFuer($bszStruktur, 'facebook', $ztN) : '';
+$wtNameKurz  = [1 => 'Mo', 2 => 'Di', 3 => 'Mi', 4 => 'Do', 5 => 'Fr', 6 => 'Sa', 7 => 'So'][$ztN] ?? '';
 $igChecked = $autoChannels === '' ? true : in_array('instagram', explode(',', $autoChannels), true);
 $fbChecked = $autoChannels === '' ? true : in_array('facebook', explode(',', $autoChannels), true);
 ?>
@@ -512,6 +519,18 @@ $fbChecked = $autoChannels === '' ? true : in_array('facebook', explode(',', $au
                 <input type="checkbox" id="sp-auto-versand" <?= $autoVersand ? 'checked' : '' ?> style="margin-top:0.15rem">
                 <span>Am Stichtag <strong><?= htmlspecialchars(date('d.m.Y', strtotime($eintrag['zieldatum']))) ?></strong> automatisch senden (mittags, Make.com) — nutzt die oben gewählten Kanäle, sobald der Post <strong>freigegeben</strong> und fällig ist. <span class="sp-msg" id="sp-av-msg"></span></span>
             </label>
+            <div class="sp-hinweis" style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin:-0.3rem 0 0.3rem">
+                <label for="sp-geplante-uhrzeit" style="margin:0">Wunsch-Sendezeit:</label>
+                <input type="time" id="sp-geplante-uhrzeit" value="<?= htmlspecialchars($geplanteUhrzeit) ?>" style="width:6.5rem">
+                <span class="sp-msg" id="sp-gu-msg"></span>
+                <?php if ($slotIg !== '' || $slotFb !== ''): ?>
+                <span>Beste Zeit <?= htmlspecialchars($wtNameKurz) ?>:
+                    <?php if ($slotIg !== ''): ?>IG <strong><?= htmlspecialchars($slotIg) ?></strong><?php endif; ?><?php if ($slotFb !== ''): ?><?= $slotIg !== '' ? ' · ' : '' ?>FB <strong><?= htmlspecialchars($slotFb) ?></strong><?php endif; ?>
+                    — <a href="#" id="sp-gu-vorschlag" data-zeit="<?= htmlspecialchars($slotIg !== '' ? $slotIg : $slotFb) ?>" style="color:var(--primary-dark)">übernehmen</a>
+                </span>
+                <?php endif; ?>
+            </div>
+            <p class="sp-hinweis" style="margin:0 0 0.9rem;font-size:0.8rem">Wird für den terminierten Versand genutzt, sobald der make.com-Timer eingerichtet ist. Bis dahin sendet der Auto-Versand mittags.</p>
             <?php endif; ?>
             <details class="sp-ausbau" style="border-top:1px solid var(--border);padding-top:0.8rem">
                 <summary style="cursor:pointer;font-size:0.88rem;color:var(--primary-dark)">Reichweite ausbauen — so holst du mehr raus</summary>
@@ -658,6 +677,19 @@ if (avCheckbox) {
     };
     avCheckbox.addEventListener('change', avSpeichern);
     ['sp-ch-ig', 'sp-ch-fb'].forEach(id => document.getElementById(id).addEventListener('change', () => { if (avCheckbox.checked) avSpeichern(); }));
+
+    // Wunsch-Sendezeit je Post (Spec S2) — autospeichern via post_feld; „übernehmen" setzt den besten Slot.
+    const guInput = document.getElementById('sp-geplante-uhrzeit');
+    if (guInput) {
+        const guSave = () => avSave('geplante_uhrzeit', guInput.value)
+            .then(d => zeige('sp-gu-msg', d.ok ? '✓ gespeichert' : '⚠️ ' + (d.message || 'Fehler'), d.ok ? '#16a34a' : '#dc2626'))
+            .catch(() => zeige('sp-gu-msg', '⚠️ Netzwerkfehler', '#dc2626'));
+        guInput.addEventListener('change', guSave);
+        const guVorschlag = document.getElementById('sp-gu-vorschlag');
+        if (guVorschlag) {
+            guVorschlag.addEventListener('click', (ev) => { ev.preventDefault(); guInput.value = guVorschlag.dataset.zeit || ''; guSave(); });
+        }
+    }
 }
 
 // Entwuerfe generieren (manueller Klick). Auto-Feuern beim Oeffnen ist bewusst GEGATED
