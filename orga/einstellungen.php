@@ -54,6 +54,10 @@ $reminderVersandtage = reminderVersandtage($settings['reminder_versandtage'] ?? 
 $reminderPauseBis    = trim((string) ($settings['reminder_pause_bis'] ?? ''));
 $socialHashtags   = trim((string) ($settings['social_hashtags'] ?? '')) ?: socialHashtagsDefault();
 $besteSendezeiten = trim((string) ($settings['beste_sendezeiten'] ?? '')) ?: besteSendezeitenDefault();
+$bszStruktur = (function () use ($settings): array {
+    $d = json_decode((string) ($settings['beste_sendezeiten_struktur'] ?? ''), true);
+    return is_array($d) && $d !== [] ? $d : besteSendezeitenStrukturDefault();
+})();
 $raceresultApiUrl = $settings['raceresult_api_url'] ?? '';
 $raceresultHinweis = $settings['raceresult_hinweis'] ?? '';
 $trelloHinweis = $settings['trello_hinweis'] ?? '';
@@ -355,6 +359,30 @@ $makeWebhookSecret = (string) ($config['make_webhook_secret'] ?? '');
                                 <li>4 · Getaggte Partner per DM bitten, in Story zu teilen</li>
                                 <li>5 · Meilensteine über 2–3 Tage in lokale FB-Gruppen</li>
                             </ul>
+                        </div>
+                    </div>
+                    <?php $wtLabels = [1 => 'Mo', 2 => 'Di', 3 => 'Mi', 4 => 'Do', 5 => 'Fr', 6 => 'Sa', 7 => 'So']; ?>
+                    <div class="form-row single">
+                        <div class="form-group">
+                            <label>Beste Sendezeiten — strukturiert für den Auto-Versand-Timer <span style="font-weight:400">(je Kanal &amp; Wochentag; leer = kein bevorzugter Slot)</span></label>
+                            <input type="hidden" name="bsz_gesendet" value="1">
+                            <div style="overflow-x:auto">
+                                <table style="border-collapse:collapse;font-size:0.82rem">
+                                    <thead><tr><th style="padding:0.2rem 0.5rem"></th>
+                                        <?php foreach ($wtLabels as $n => $lbl): ?><th style="padding:0.2rem 0.4rem;font-weight:600;color:var(--text-light)"><?= $lbl ?></th><?php endforeach; ?>
+                                    </tr></thead>
+                                    <tbody>
+                                        <?php foreach (['instagram' => 'Instagram', 'facebook' => 'Facebook'] as $ch => $chLbl): ?>
+                                        <tr><td style="padding:0.2rem 0.5rem;font-weight:600;white-space:nowrap"><?= $chLbl ?></td>
+                                            <?php for ($n = 1; $n <= 7; $n++): $v = $bszStruktur[$ch][$n] ?? ($bszStruktur[$ch][(string) $n] ?? ''); ?>
+                                            <td style="padding:0.15rem 0.25rem"><input type="time" name="bsz_<?= $ch ?>_<?= $n ?>" value="<?= htmlspecialchars(preg_match('/^\d{2}:\d{2}$/', (string) $v) ? (string) $v : '') ?>" style="width:6.2rem;font-size:0.82rem;padding:0.2rem 0.3rem"></td>
+                                            <?php endfor; ?>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <p class="settings-hint" style="margin:0.4rem 0 0">Diese Zeiten speisen den geplanten „zur besten Zeit senden"-Timer und die Zeit-Vorbelegung je Post. Der Freitext oben bleibt die menschenlesbare Notiz.</p>
                         </div>
                     </div>
                     <div class="form-row single">

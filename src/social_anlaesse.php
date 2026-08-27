@@ -53,6 +53,40 @@ function besteSendezeiten(PDO $pdo): string
 }
 
 /**
+ * Maschinenlesbare Best-Zeiten je Kanal × Wochentag (1=Mo … 7=So) → 'HH:MM'.
+ * Grundlage für den „beste Sendezeit"-Timer (Spec social-auto-versand-beste-zeit-spec.md, E4).
+ * Deckungsgleich mit dem Freitext-Default (besteSendezeitenDefault): IG Mi/Do/So, FB Di.
+ * @return array<string, array<int, string>>
+ */
+function besteSendezeitenStrukturDefault(): array
+{
+    return [
+        'instagram' => [3 => '12:00', 4 => '08:30', 7 => '20:00'],
+        'facebook'  => [2 => '12:30'],
+    ];
+}
+
+/** Gespeicherte Struktur (JSON, Key `beste_sendezeiten_struktur`) lesen, sonst Default. */
+function besteSendezeitenStruktur(PDO $pdo): array
+{
+    try {
+        $stmt = $pdo->query("SELECT `value` FROM einstellungen WHERE `key` = 'beste_sendezeiten_struktur'");
+        $raw  = $stmt ? (string) ($stmt->fetchColumn() ?: '') : '';
+    } catch (PDOException $e) {
+        $raw = '';
+    }
+    $decoded = $raw !== '' ? json_decode($raw, true) : null;
+    return is_array($decoded) && $decoded !== [] ? $decoded : besteSendezeitenStrukturDefault();
+}
+
+/** Bester Slot 'HH:MM' für Kanal + Wochentag (1=Mo … 7=So), sonst '' wenn keiner hinterlegt. */
+function besteSlotFuer(array $struktur, string $kanal, int $wochentag): string
+{
+    $slot = $struktur[$kanal][$wochentag] ?? ($struktur[$kanal][(string) $wochentag] ?? '');
+    return preg_match('/^\d{2}:\d{2}$/', (string) $slot) ? (string) $slot : '';
+}
+
+/**
  * Verbindliche Event-Eckdaten fuer jeden Text-Prompt — aus den Einstellungen
  * (renntag_datum, veranstaltungsname), damit das LLM keine Daten erfindet.
  */
