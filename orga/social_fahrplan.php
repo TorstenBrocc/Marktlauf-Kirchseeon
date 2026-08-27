@@ -152,6 +152,15 @@ $icons = [
         .fp-badge.offen        { background: var(--bg); color: var(--text-light); border: 1px solid var(--border); }
         .fp-badge.erledigt     { background: var(--bg); color: var(--text-light); }
         .fp-wiederkehr { font-size: 0.78rem; color: var(--text-light); white-space: nowrap; }
+        /* Zuständig-Inline-Dropdown je Zeile */
+        .fp-zust-select {
+            font-family: inherit; font-size: 0.85rem; padding: 0.25rem 0.4rem; max-width: 100%;
+            border: 1px solid var(--border); border-radius: 6px; background: var(--white); color: var(--text);
+        }
+        /* Plattformen-Buttons nebeneinander (statt gestapelt wie im Cockpit) */
+        .pf-links { display: flex; gap: 1.5rem; flex-wrap: wrap; align-items: flex-start; }
+        .pf-links li { border-bottom: none; padding: 0; }
+        .pf-links .qc-note { min-width: 240px; }
         .fp-form { display: none; margin-bottom: 1rem; padding: 0.9rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); }
         .fp-form.offen { display: block; }
         .fp-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 0.7rem; }
@@ -380,7 +389,14 @@ $icons = [
                         <span class="fp-wiederkehr">↻ alle <?= (int) $e['frequenz_tage'] ?> Tage<?= $e['ende'] ? ' bis ' . htmlspecialchars(date('d.m.', strtotime($e['ende']))) : '' ?></span>
                         <?php endif; ?>
                     </td>
-                    <td><?= $e['zustaendig_name'] ? htmlspecialchars($e['zustaendig_name']) : '<span style="color:var(--text-light)">—</span>' ?></td>
+                    <td>
+                        <select class="fp-zust-select" data-id="<?= (int) $e['id'] ?>" aria-label="Zuständig ändern">
+                            <option value=""<?= !$e['zustaendig_user_id'] ? ' selected' : '' ?>>— niemand —</option>
+                            <?php foreach ($nutzer as $n): ?>
+                            <option value="<?= (int) $n['id'] ?>"<?= (int) $e['zustaendig_user_id'] === (int) $n['id'] ? ' selected' : '' ?>><?= htmlspecialchars($n['name']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </td>
                     <td><span class="fp-badge <?= $badge[0] ?>"><?= $badge[1] ?></span></td>
                     <td class="fp-actions">
                         <button type="button" class="fp-icon fp-termin"
@@ -406,10 +422,10 @@ $icons = [
             <?php endif; ?>
         </div>
 
-        <!-- Werkzeuge — Schnellzugriff im Cockpit-Muster (ⓘ = Zugangsdaten je Button, nur Admin) -->
+        <!-- Plattformen — Schnellzugriff im Cockpit-Muster (ⓘ = Zugangsdaten je Button, nur Admin) -->
         <div class="hd-card fp-notiz">
-            <h2 style="font-size:0.95rem;margin:0 0 0.7rem">Werkzeuge</h2>
-            <ul class="quick-links">
+            <h2 style="font-size:0.95rem;margin:0 0 0.7rem">Plattformen</h2>
+            <ul class="quick-links pf-links">
                 <li><a href="<?= htmlspecialchars($metaBusinessUrl ?: 'https://business.facebook.com/latest/home?nav_ref=bm_home_redirect&asset_id=1236742862857199') ?>"
                        target="_blank" rel="noopener" class="btn-brand btn-brand-meta">Meta Business</a><?= $renderHinweis('meta_business_hinweis') ?></li>
                 <?php if ($stravaUrl): ?>
@@ -484,6 +500,13 @@ document.querySelectorAll('.fp-loeschen').forEach(btn => btn.addEventListener('c
     if (!confirm('Eintrag wirklich löschen?')) { return; }
     fpPost({ action: 'loeschen', id: btn.dataset.id }).then(d => {
         if (d.ok) { location.reload(); } else { fpMsg('⚠️ ' + (d.message || 'Fehler'), false); }
+    }).catch(() => fpMsg('⚠️ Netzwerkfehler', false));
+}));
+
+// Zuständigkeit direkt per Inline-Dropdown setzen (dedizierte Action, kein Formular nötig)
+document.querySelectorAll('.fp-zust-select').forEach(sel => sel.addEventListener('change', () => {
+    fpPost({ action: 'zustaendig', id: sel.dataset.id, zustaendig_user_id: sel.value }).then(d => {
+        if (d.ok) { fpMsg('Zuständigkeit gespeichert.', true); } else { fpMsg('⚠️ ' + (d.message || 'Fehler'), false); }
     }).catch(() => fpMsg('⚠️ Netzwerkfehler', false));
 }));
 

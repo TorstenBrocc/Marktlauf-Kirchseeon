@@ -1,7 +1,7 @@
 <?php
 /**
  * Social-Fahrplan CRUD (POST + CSRF) — nur Admin/Orga.
- * Aktionen: create, update, erledigt, loeschen.
+ * Aktionen: create, update, erledigt, loeschen, zustaendig.
  * Wiederkehr: beim Erledigen rueckt ein Eintrag mit frequenz_tage aufs naechste
  * Datum vor (bis einschliesslich ende), statt auf erledigt zu wechseln.
  * Response: {"ok":true} oder {"ok":false,"message":"..."}
@@ -131,6 +131,25 @@ try {
             )->execute(['pid' => $postId]);
         }
         $pdo->prepare('DELETE FROM social_fahrplan WHERE id = :id')->execute(['id' => $id]);
+        fahrplanJson(true);
+    }
+
+    if ($action === 'zustaendig') {
+        // Inline-Dropdown der Fahrplan-Liste: setzt NUR die Zuständigkeit (kein Formular,
+        // schreibt bewusst nicht die anderen Felder — vermeidet die "update schreibt alles"-Falle).
+        $id         = (int) ($_POST['id'] ?? 0);
+        $zustaendig = (int) ($_POST['zustaendig_user_id'] ?? 0);
+        if ($zustaendig > 0) {
+            $gueltig = array_map('intval', array_column(orgaUserListe($pdo), 'id'));
+            if (!in_array($zustaendig, $gueltig, true)) {
+                http_response_code(422);
+                fahrplanJson(false, 'Unbekannter Zuständiger.');
+            }
+        } else {
+            $zustaendig = null;
+        }
+        $pdo->prepare('UPDATE social_fahrplan SET zustaendig_user_id = :z WHERE id = :id')
+            ->execute(['z' => $zustaendig, 'id' => $id]);
         fahrplanJson(true);
     }
 
