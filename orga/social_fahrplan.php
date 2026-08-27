@@ -12,6 +12,7 @@ require_once __DIR__ . '/api/_auth.php';
 require_once __DIR__ . '/../src/db.php';
 require_once __DIR__ . '/../src/auth.php';
 require_once __DIR__ . '/../src/social_anlaesse.php';
+require_once __DIR__ . '/../src/social_insights.php';
 
 $user    = getCurrentUserFromGuard();
 $isAdmin = isAdminFromGuard();
@@ -33,6 +34,15 @@ try {
 } catch (PDOException $e) {
     // Einstellungen evtl. noch leer
 }
+
+// Ansicht-Umschalter: Planung (Contentplan/Versand) vs. Auswertung (Insights-Rücklauf).
+$ansicht = $_GET['ansicht'] ?? 'planung';
+if (!in_array($ansicht, ['planung', 'auswertung'], true)) {
+    $ansicht = 'planung';
+}
+
+// Auswertung liest nur — den Datenzug erst holen, wenn die Ansicht ihn braucht.
+$insightsPosts = $ansicht === 'auswertung' ? socialInsightsPosts($pdo) : [];
 
 $filter = $_GET['filter'] ?? 'offen';
 if (!in_array($filter, ['offen', 'meine', 'erledigt', 'alle'], true)) {
@@ -128,6 +138,38 @@ $icons = [
             .hd-table tr { display: block; border-bottom: 1px solid var(--border); padding: 0.5rem 0; }
             .hd-table td { display: block; border: none; padding: 0.15rem 0.4rem; }
         }
+        /* --- Ansicht-Umschalter (Planung | Auswertung) --- */
+        .sp-tabs { display: flex; gap: 0.25rem; margin: 0 0 1rem; border-bottom: 1px solid var(--border); }
+        .sp-tabs a {
+            padding: 0.5rem 1.05rem; font-size: 0.9rem; text-decoration: none; color: var(--text-light);
+            border: 1px solid transparent; border-bottom: none; border-radius: 8px 8px 0 0; margin-bottom: -1px;
+        }
+        .sp-tabs a:hover { color: var(--primary-dark); }
+        .sp-tabs a.aktiv {
+            color: var(--primary-dark); font-weight: 600; background: var(--white);
+            border-color: var(--border); border-bottom-color: var(--white);
+        }
+        /* --- Kennzahlen-Kopf (B) --- */
+        .sp-kpi { display: flex; gap: 0.8rem; flex-wrap: wrap; margin-bottom: 1.1rem; }
+        .sp-kpi-item { flex: 1 1 150px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 0.7rem 0.9rem; }
+        .sp-kpi-val { display: block; font-size: 1.4rem; font-weight: 700; color: var(--primary-dark); line-height: 1.2; word-break: break-word; }
+        .sp-kpi-lbl { display: block; font-size: 0.78rem; color: var(--text-light); margin-top: 0.25rem; }
+        /* --- Auswertungs-Tabelle --- */
+        .sp-table-wrap { overflow-x: auto; }
+        .sp-auswertung th.sp-sortable { cursor: pointer; white-space: nowrap; user-select: none; }
+        .sp-auswertung th.sp-asc::after  { content: ' \25B2'; font-size: 0.7em; }
+        .sp-auswertung th.sp-desc::after { content: ' \25BC'; font-size: 0.7em; }
+        .sp-auswertung td { vertical-align: middle; }
+        .sp-links a { color: var(--primary-dark); text-decoration: none; margin-right: 0.45rem; font-size: 0.85rem; white-space: nowrap; }
+        .sp-links a:hover { text-decoration: underline; }
+        .sp-none { color: var(--text-light); }
+        .sp-empty { color: var(--text-light); font-size: 0.9rem; margin: 0.4rem 0 0; }
+        .sp-hint { color: var(--text-light); font-size: 0.78rem; margin: 0.8rem 0 0; }
+        @media (max-width: 720px) {
+            .sp-auswertung tr { display: block; border-bottom: 1px solid var(--border); padding: 0.5rem 0; }
+            .sp-auswertung td { display: flex; justify-content: space-between; gap: 1rem; border: none; padding: 0.2rem 0.4rem; text-align: right; }
+            .sp-auswertung td::before { content: attr(data-label); color: var(--text-light); font-size: 0.78rem; font-weight: 600; text-align: left; }
+        }
     </style>
 </head>
 <body>
@@ -136,9 +178,85 @@ $icons = [
     <main class="main-content">
         <header class="content-header">
             <h1>Social-Pipeline</h1>
+            <?php if ($ansicht === 'auswertung'): ?>
+            <p class="content-subtitle">Auswertung — was die versendeten Posts an Reichweite und Likes zurückgemeldet haben (make.com-Rücklauf)</p>
+            <?php else: ?>
             <p class="content-subtitle">Terminierter Contentplan — Thema anklicken für einen neuen Entwurf · ✎ öffnet den gespeicherten Stand · 📅 ändert den Termin</p>
+            <?php endif; ?>
         </header>
 
+        <nav class="sp-tabs" aria-label="Ansicht wechseln">
+            <a href="?ansicht=planung"<?= $ansicht === 'planung' ? ' class="aktiv"' : '' ?>>Planung</a>
+            <a href="?ansicht=auswertung"<?= $ansicht === 'auswertung' ? ' class="aktiv"' : '' ?>>Auswertung</a>
+        </nav>
+
+<?php if ($ansicht === 'auswertung'):
+    $kpi = socialInsightsKennzahlen($insightsPosts);
+?>
+        <div class="hd-card">
+            <div class="sp-kpi">
+                <div class="sp-kpi-item">
+                    <span class="sp-kpi-val"><?= number_format($kpi['gesamt_reichweite'], 0, ',', '.') ?></span>
+                    <span class="sp-kpi-lbl">Reichweite gesamt (IG)</span>
+                </div>
+                <div class="sp-kpi-item">
+                    <span class="sp-kpi-val"><?= $kpi['schnitt_likes'] !== null ? htmlspecialchars(number_format($kpi['schnitt_likes'], 1, ',', '.')) : '—' ?></span>
+                    <span class="sp-kpi-lbl">Ø Likes pro Post</span>
+                </div>
+                <div class="sp-kpi-item">
+                    <?php if ($kpi['bester']): $bd = $anlaesse[$kpi['bester']['anlass_key']] ?? null; ?>
+                    <span class="sp-kpi-val"><?= htmlspecialchars($bd ? $bd['ui'] : (string) $kpi['bester']['anlass_key']) ?></span>
+                    <span class="sp-kpi-lbl">Bester Post<?= $kpi['bester']['ig_reichweite'] !== null ? ' · ' . (int) $kpi['bester']['ig_reichweite'] . ' Reichweite' : '' ?></span>
+                    <?php else: ?>
+                    <span class="sp-kpi-val">—</span>
+                    <span class="sp-kpi-lbl">Bester Post</span>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <?php if (!$insightsPosts): ?>
+            <p class="sp-empty">Noch keine Insights — sie erscheinen, sobald versendete Posts Reichweite/Likes zurückmelden (nächster Sammler-Lauf).</p>
+            <?php else: ?>
+            <div class="sp-table-wrap">
+            <table class="hd-table sp-auswertung" id="sp-tbl">
+                <thead>
+                    <tr>
+                        <th class="sp-sortable" data-sort="text">Thema</th>
+                        <th class="sp-sortable" data-sort="num">Datum</th>
+                        <th class="sp-sortable" data-sort="num">IG Reichw.</th>
+                        <th class="sp-sortable" data-sort="num">IG Likes</th>
+                        <th class="sp-sortable" data-sort="num">FB Likes</th>
+                        <th>Stand</th>
+                        <th>Links</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php foreach ($insightsPosts as $p):
+                    $pdef  = $anlaesse[$p['anlass_key']] ?? null;
+                    $thema = $pdef ? $pdef['ui'] : ((string) $p['anlass_key'] !== '' ? (string) $p['anlass_key'] : '—');
+                    $ts    = $p['gesendet_am'] ? strtotime((string) $p['gesendet_am']) : 0;
+                ?>
+                <tr>
+                    <td data-label="Thema" data-v="<?= htmlspecialchars($thema) ?>"><strong><?= htmlspecialchars($thema) ?></strong></td>
+                    <td data-label="Datum" data-v="<?= $ts ?>"><?= $ts ? htmlspecialchars(date('d.m.Y', $ts)) : '—' ?></td>
+                    <td data-label="IG Reichw." data-v="<?= $p['ig_reichweite'] !== null ? (int) $p['ig_reichweite'] : -1 ?>"><?= $p['ig_reichweite'] !== null ? (int) $p['ig_reichweite'] : '<span class="sp-none">—</span>' ?></td>
+                    <td data-label="IG Likes" data-v="<?= $p['ig_likes'] !== null ? (int) $p['ig_likes'] : -1 ?>"><?= $p['ig_likes'] !== null ? (int) $p['ig_likes'] : '<span class="sp-none">—</span>' ?></td>
+                    <td data-label="FB Likes" data-v="<?= $p['fb_likes'] !== null ? (int) $p['fb_likes'] : -1 ?>"><?= $p['fb_likes'] !== null ? (int) $p['fb_likes'] : '<span class="sp-none">—</span>' ?></td>
+                    <td data-label="Stand"><?= $p['versand_insights_am'] ? htmlspecialchars(date('d.m. H:i', strtotime((string) $p['versand_insights_am']))) : '<span class="sp-none">ausstehend</span>' ?></td>
+                    <td data-label="Links" class="sp-links">
+                        <?php if (!empty($p['ig_permalink'])): ?><a href="<?= htmlspecialchars((string) $p['ig_permalink']) ?>" target="_blank" rel="noopener">IG&#8599;</a><?php endif; ?>
+                        <?php if (!empty($p['fb_permalink'])): ?><a href="<?= htmlspecialchars((string) $p['fb_permalink']) ?>" target="_blank" rel="noopener">FB&#8599;</a><?php endif; ?>
+                        <?php if (empty($p['ig_permalink']) && empty($p['fb_permalink'])): ?><span class="sp-none">—</span><?php endif; ?>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+            </div>
+            <p class="sp-hint">Klick auf eine Spaltenüberschrift sortiert. FB-Reichweite wird bewusst nicht erhoben (nur Likes/Reaktionen).</p>
+            <?php endif; ?>
+        </div>
+<?php else: ?>
         <div class="hd-card">
             <div class="fp-kopfzeile">
                 <div class="fp-filter">
@@ -275,12 +393,14 @@ $icons = [
                        placeholder="Arbeitsnotiz — keine Zugangsdaten (die gehören in Einstellungen → Meta Business)">
             </div>
         </div>
+<?php endif; ?>
     </main>
 </div>
 
 <script>
 const csrf = <?= json_encode($csrf) ?>;
 
+<?php if ($ansicht === 'planung'): ?>
 function fpMsg(text, ok) {
     const el = document.getElementById('fp-msg');
     el.textContent = text;
@@ -350,6 +470,33 @@ document.getElementById('fp-merkfeld').addEventListener('blur', (ev) => {
     body.set('merkfeld', ev.target.value);
     fetch('api/social_merkfeld.php', { method: 'POST', headers: { 'X-Requested-With': 'fetch' }, body });
 });
+<?php endif; ?>
+
+<?php if ($ansicht === 'auswertung'): ?>
+// Auswertungs-Tabelle: Client-seitiges Sortieren per Klick auf die Spaltenüberschrift.
+(function () {
+    const tbl = document.getElementById('sp-tbl');
+    if (!tbl) { return; }
+    const tbody = tbl.tBodies[0];
+    const heads = Array.from(tbl.querySelectorAll('th.sp-sortable'));
+    let sortIdx = -1, dir = 1;
+    heads.forEach((th, idx) => th.addEventListener('click', () => {
+        const type = th.dataset.sort;
+        dir = (sortIdx === idx) ? -dir : (type === 'text' ? 1 : -1);
+        sortIdx = idx;
+        const rows = Array.from(tbody.rows);
+        rows.sort((a, b) => {
+            const av = a.cells[idx].dataset.v, bv = b.cells[idx].dataset.v;
+            return type === 'num'
+                ? (Number(av) - Number(bv)) * dir
+                : av.toLowerCase().localeCompare(bv.toLowerCase(), 'de') * dir;
+        });
+        rows.forEach(r => tbody.appendChild(r));
+        heads.forEach(h => h.classList.remove('sp-asc', 'sp-desc'));
+        th.classList.add(dir === 1 ? 'sp-asc' : 'sp-desc');
+    }));
+})();
+<?php endif; ?>
 
 // Burger-Menü (wie alle anderen Orga-Seiten)
 const burgerBtn      = document.getElementById('burger-btn');
