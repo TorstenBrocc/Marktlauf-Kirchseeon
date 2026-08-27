@@ -105,9 +105,18 @@ Kommentar-Modul + Insights-Lieferung einrichten (Aufgabe 5, Inhaber-Login), Kern
 `beste_sendezeiten_struktur`, Helfer `besteSlotFuer()` in `src/social_anlaesse.php`) + per-Post
 **Wunsch-Sendezeit** (`post_race_contents.geplante_uhrzeit`, Vorschlag je Kanal im Post-Detail,
 Autosave `api/post_feld.php`). Entscheid: **IG=Meta Business Suite, FB=make-terminiert**.
-**Offen: S3/S4 (FB `scheduled_publish_time`) + IG-Handoff-Kachel** — make.com (Szenario 6642115) +
-Meta Business Suite sind im Chrome offen, Claude kann sie selbst einrichten. **Übergabe-Block +
-Start-Prompt:** Vault `intern/social-auto-versand-beste-zeit-spec.md` (oben).
+**Übergabe-Block + Start-Prompt:** Vault `intern/social-auto-versand-beste-zeit-spec.md` (oben).
+
+**Nachtrag S3/S4 + IG-Handoff — GEBAUT + DEPLOYT + MIGRIERT 2026-08-27 (Commit `fb7bfdb`, Migration
+`090`):** Voller Status `terminiert` + `terminiert_fuer` (§4b). `socialDispatch()` sendet
+`scheduled_time` (ISO 8601 Europe/Berlin) und lässt `first_comment` bei leer weg (make-Filter „Exists";
+sonst Kommentar auf unveröffentlichtem Post → Fehler). `versendePost()`: Terminiert-Zweig (keine
+Live-Mail), CTA+Link in die FB-Caption; `socialLiveMail()` ausgelagert; `finalisiereTerminiertePosts()`
+schaltet zum Slot live + Mail. `bin/social_versand.php` zweiphasig (finalisieren + terminieren), FB-only,
+Slot in Europe/Berlin; **Cron stündlich** 06:00–22:00 CEST. IG-Handoff-Kachel + `terminiert`-Status im
+Post-Detail. **make-Prod-Szenario 6642115 live angepasst (verifiziert):** FB „Publish date" =
+`{{2.scheduled_time}}`, Router-Filter `channels contains instagram`/`facebook`. **Offen nur:**
+Live-Beobachtung am ersten realen terminierten FB-Post + Inhaber-Sichtprüfung der IG-Kachel.
 
 Offen / vertagt (drei Vault-Specs im Chat-Transkript zum Ablegen unter `intern/`):
 - `make-com-optimierung-spec.md` — **Musik NICHT per API** (muss ins Video eingebettet sein);
