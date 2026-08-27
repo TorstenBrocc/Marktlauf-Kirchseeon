@@ -22,18 +22,54 @@ $pdo     = getDbConnection();
 $anlaesse = socialAnlaesse();
 $nutzer   = orgaUserListe($pdo);
 
-// Strava-Absprung (wie Orchestrator-Kopf) + Merkfeld-Notiz
-$stravaUrl = '';
-$merkfeld  = '';
+// Werkzeug-Links (Strava/Meta) + Zugangsdaten-Hinweise je Button — Cockpit-Muster.
+$stravaUrl       = '';
+$metaBusinessUrl = '';
 try {
-    $stmt = $pdo->query("SELECT `key`, `value` FROM einstellungen WHERE `key` IN ('strava_url', 'social_merkfeld')");
+    $stmt = $pdo->query("SELECT `key`, `value` FROM einstellungen WHERE `key` IN ('strava_url', 'meta_business_url')");
     foreach ($stmt->fetchAll(PDO::FETCH_KEY_PAIR) as $k => $v) {
-        if ($k === 'strava_url')      { $stravaUrl = (string) ($v ?? ''); }
-        if ($k === 'social_merkfeld') { $merkfeld  = (string) ($v ?? ''); }
+        if ($k === 'strava_url')        { $stravaUrl       = (string) ($v ?? ''); }
+        if ($k === 'meta_business_url') { $metaBusinessUrl = (string) ($v ?? ''); }
     }
 } catch (PDOException $e) {
     // Einstellungen evtl. noch leer
 }
+
+// Zugangsdaten-Hinweise je Werkzeug-Button — NUR für Admins (Klartext bleibt DB-intern).
+$linkHinweise = [];
+if ($isAdmin) {
+    try {
+        $hinweisStmt = $pdo->query("SELECT `key`, `value` FROM einstellungen WHERE `key` IN ('strava_hinweis', 'meta_business_hinweis')");
+        foreach ($hinweisStmt as $row) {
+            $linkHinweise[$row['key']] = $row['value'];
+        }
+    } catch (PDOException $e) {
+        // Tabelle evtl. noch nicht da
+    }
+}
+
+/**
+ * ⓘ-Button + aufklappbare, kopierbare Zugangsdaten-Notiz (identisch zum Cockpit, index.php).
+ * Leerer String, wenn kein Admin oder kein Hinweis hinterlegt.
+ */
+$renderHinweis = function (string $key) use ($isAdmin, $linkHinweise): string {
+    if (!$isAdmin) {
+        return '';
+    }
+    $text = trim((string) ($linkHinweise[$key] ?? ''));
+    if ($text === '') {
+        return '';
+    }
+    $id      = 'hint-' . $key;
+    $anzRows = min(6, max(2, substr_count($text, "\n") + 1));
+    return '<button type="button" class="qc-info" aria-expanded="false" aria-controls="' . $id . '" onclick="toggleHint(this)" title="' . htmlspecialchars($text) . '">&#9432;</button>'
+        . '<div class="qc-note" id="' . $id . '" hidden>'
+        . '<textarea class="qc-note-text" readonly rows="' . $anzRows . '" onclick="this.select()">' . htmlspecialchars($text) . '</textarea>'
+        . '<div class="qc-note-actions">'
+        . '<button type="button" class="qc-copy" onclick="copyHint(this)">Kopieren</button>'
+        . '<a class="qc-edit" href="einstellungen.php#link-' . htmlspecialchars($key) . '">Bearbeiten &rarr;</a>'
+        . '</div></div>';
+};
 
 // Ansicht-Umschalter: Planung (Contentplan/Versand) vs. Auswertung (Insights-Rücklauf).
 $ansicht = $_GET['ansicht'] ?? 'planung';
@@ -100,9 +136,7 @@ $icons = [
         .fp-icon:hover { border-color: var(--primary-dark); color: var(--primary-dark); background: var(--bg); }
         .fp-icon:focus-visible { outline: 2px solid var(--primary-dark); outline-offset: 1px; }
         .fp-icon svg { width: 15px; height: 15px; display: block; }
-        /* Termin (Kalender) bewusst vom Post-Stift abgesetzt */
-        .fp-icon.fp-termin { margin-left: 0.35rem; }
-        /* Thema öffnet einen neuen Entwurf von Grund auf */
+        /* Thema öffnet den gespeicherten Entwurf */
         .fp-thema-link { color: var(--primary-dark); text-decoration: none; font-weight: 600; }
         .fp-thema-link:hover { text-decoration: underline; }
         .fp-kopfzeile { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.9rem; }
@@ -118,10 +152,6 @@ $icons = [
         .fp-badge.offen        { background: var(--bg); color: var(--text-light); border: 1px solid var(--border); }
         .fp-badge.erledigt     { background: var(--bg); color: var(--text-light); }
         .fp-wiederkehr { font-size: 0.78rem; color: var(--text-light); white-space: nowrap; }
-        .fp-notiz input {
-            width: 100%; box-sizing: border-box; font-family: inherit; font-size: 0.85rem;
-            padding: 0.45rem 0.6rem; border: 1px solid var(--border); border-radius: 6px;
-        }
         .fp-form { display: none; margin-bottom: 1rem; padding: 0.9rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); }
         .fp-form.offen { display: block; }
         .fp-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 0.7rem; }
@@ -181,7 +211,7 @@ $icons = [
             <?php if ($ansicht === 'auswertung'): ?>
             <p class="content-subtitle">Auswertung — was die versendeten Posts an Reichweite und Likes zurückgemeldet haben (make.com-Rücklauf)</p>
             <?php else: ?>
-            <p class="content-subtitle">Terminierter Contentplan — Thema anklicken für einen neuen Entwurf · ✎ öffnet den gespeicherten Stand · 📅 ändert den Termin</p>
+            <p class="content-subtitle">Terminierter Contentplan — Thema anklicken öffnet den gespeicherten Entwurf · 📅 ändert den Termin</p>
             <?php endif; ?>
         </header>
 
@@ -344,8 +374,8 @@ $icons = [
                 <tr>
                     <td><?= $e['zieldatum'] ? htmlspecialchars(date('d.m.Y', strtotime($e['zieldatum']))) : '—' ?></td>
                     <td>
-                        <a class="fp-thema-link" href="social_post.php?fahrplan=<?= (int) $e['id'] ?>&amp;neu=1"
-                           title="Öffnen – neuer Entwurf von Grund auf"><?= htmlspecialchars($themaLabel) ?></a>
+                        <a class="fp-thema-link" href="social_post.php?fahrplan=<?= (int) $e['id'] ?>"
+                           title="Öffnen – gespeicherter Entwurf"><?= htmlspecialchars($themaLabel) ?></a>
                         <?php if ($e['frequenz_tage']): ?>
                         <span class="fp-wiederkehr">↻ alle <?= (int) $e['frequenz_tage'] ?> Tage<?= $e['ende'] ? ' bis ' . htmlspecialchars(date('d.m.', strtotime($e['ende']))) : '' ?></span>
                         <?php endif; ?>
@@ -353,14 +383,6 @@ $icons = [
                     <td><?= $e['zustaendig_name'] ? htmlspecialchars($e['zustaendig_name']) : '<span style="color:var(--text-light)">—</span>' ?></td>
                     <td><span class="fp-badge <?= $badge[0] ?>"><?= $badge[1] ?></span></td>
                     <td class="fp-actions">
-                        <a class="fp-icon fp-bearbeiten" href="social_post.php?fahrplan=<?= (int) $e['id'] ?>"
-                           title="Bearbeiten – zuletzt gespeicherter Entwurf" aria-label="Gespeicherten Entwurf bearbeiten"><?= $icons['edit'] ?></a>
-                        <?php if ($e['status'] === 'offen'): ?>
-                        <button type="button" class="fp-icon fp-erledigt" data-id="<?= (int) $e['id'] ?>"
-                            title="Als erledigt markieren" aria-label="Als erledigt markieren"><?= $icons['check'] ?></button>
-                        <?php endif; ?>
-                        <button type="button" class="fp-icon fp-loeschen" data-id="<?= (int) $e['id'] ?>"
-                            title="Eintrag löschen" aria-label="Eintrag löschen"><?= $icons['trash'] ?></button>
                         <button type="button" class="fp-icon fp-termin"
                             title="Termin &amp; Planung dieser Zeile (Datum, Anlass, Zuständig)"
                             aria-label="Termin bearbeiten"
@@ -370,6 +392,12 @@ $icons = [
                             data-zustaendig="<?= (int) $e['zustaendig_user_id'] ?>"
                             data-frequenz="<?= (int) $e['frequenz_tage'] ?>"
                             data-ende="<?= htmlspecialchars((string) $e['ende']) ?>"><?= $icons['calendar'] ?></button>
+                        <?php if ($e['status'] === 'offen'): ?>
+                        <button type="button" class="fp-icon fp-erledigt" data-id="<?= (int) $e['id'] ?>"
+                            title="Als erledigt markieren" aria-label="Als erledigt markieren"><?= $icons['check'] ?></button>
+                        <?php endif; ?>
+                        <button type="button" class="fp-icon fp-loeschen" data-id="<?= (int) $e['id'] ?>"
+                            title="Eintrag löschen" aria-label="Eintrag löschen"><?= $icons['trash'] ?></button>
                     </td>
                 </tr>
                 <?php endforeach; ?>
@@ -378,20 +406,16 @@ $icons = [
             <?php endif; ?>
         </div>
 
-        <!-- Werkzeuge & Notizen — bewusst unten, nicht im Kopf (Inhaber 2026-08-14) -->
+        <!-- Werkzeuge — Schnellzugriff im Cockpit-Muster (ⓘ = Zugangsdaten je Button, nur Admin) -->
         <div class="hd-card fp-notiz">
-            <h2 style="font-size:0.95rem;margin:0 0 0.7rem">Werkzeuge &amp; Notizen</h2>
-            <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap">
-                <a class="btn btn-small" style="background:#1877F2;color:#fff;white-space:nowrap"
-                   href="https://business.facebook.com/latest/home?nav_ref=bm_home_redirect&amp;asset_id=1236742862857199"
-                   target="_blank" rel="noopener noreferrer">Meta Business Account öffnen ↗</a>
+            <h2 style="font-size:0.95rem;margin:0 0 0.7rem">Werkzeuge</h2>
+            <ul class="quick-links">
+                <li><a href="<?= htmlspecialchars($metaBusinessUrl ?: 'https://business.facebook.com/latest/home?nav_ref=bm_home_redirect&asset_id=1236742862857199') ?>"
+                       target="_blank" rel="noopener" class="btn-brand btn-brand-meta">Meta Business</a><?= $renderHinweis('meta_business_hinweis') ?></li>
                 <?php if ($stravaUrl): ?>
-                <a class="btn-brand btn-brand-strava" style="white-space:nowrap"
-                   href="<?= htmlspecialchars($stravaUrl) ?>" target="_blank" rel="noopener">Strava öffnen</a>
+                <li><a href="<?= htmlspecialchars($stravaUrl) ?>" target="_blank" rel="noopener" class="btn-brand btn-brand-strava">Strava</a><?= $renderHinweis('strava_hinweis') ?></li>
                 <?php endif; ?>
-                <input type="text" id="fp-merkfeld" value="<?= htmlspecialchars($merkfeld) ?>" style="flex:1 1 260px"
-                       placeholder="Arbeitsnotiz — keine Zugangsdaten (die gehören in Einstellungen → Meta Business)">
-            </div>
+            </ul>
         </div>
 <?php endif; ?>
     </main>
@@ -463,13 +487,30 @@ document.querySelectorAll('.fp-loeschen').forEach(btn => btn.addEventListener('c
     }).catch(() => fpMsg('⚠️ Netzwerkfehler', false));
 }));
 
-// Merkfeld: speichert beim Verlassen des Feldes (bestehender Endpoint)
-document.getElementById('fp-merkfeld').addEventListener('blur', (ev) => {
-    const body = new URLSearchParams();
-    body.set('csrf_token', csrf);
-    body.set('merkfeld', ev.target.value);
-    fetch('api/social_merkfeld.php', { method: 'POST', headers: { 'X-Requested-With': 'fetch' }, body });
-});
+// Zugangsdaten-Hinweis je Werkzeug-Button: aufklappen + kopieren (identisch zum Cockpit)
+function toggleHint(btn) {
+    const note = document.getElementById(btn.getAttribute('aria-controls'));
+    if (!note) { return; }
+    const willOpen = note.hasAttribute('hidden');
+    if (willOpen) { note.removeAttribute('hidden'); } else { note.setAttribute('hidden', ''); }
+    btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+}
+function copyHint(btn) {
+    const ta = btn.closest('.qc-note').querySelector('.qc-note-text');
+    if (!ta) { return; }
+    ta.select();
+    const done = () => {
+        const label = btn.textContent;
+        btn.textContent = 'Kopiert ✓';
+        setTimeout(() => { btn.textContent = label; }, 1500);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(ta.value).then(done).catch(() => { document.execCommand('copy'); done(); });
+    } else {
+        document.execCommand('copy');
+        done();
+    }
+}
 <?php endif; ?>
 
 <?php if ($ansicht === 'auswertung'): ?>
