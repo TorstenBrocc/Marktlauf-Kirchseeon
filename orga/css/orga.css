@@ -774,6 +774,25 @@ a.card-tile:hover {
         z-index: 1002;
         transform: translateX(-100%);
         transition: transform 0.3s ease;
+        /* Der Schubladen-Rahmen selbst scrollt nicht — Kopf/Fuß bleiben gepinnt,
+           das Menü scrollt in sich (siehe .nav-menu unten). Ohne dies liefe der
+           Menü-Überlauf ins Nichts. */
+        overflow: hidden;
+    }
+
+    /* Menü scrollt innerhalb der fixierten Schublade. Ohne das war das lange Menü
+       auf niedrigen Viewports (v. a. Safari/iPhone) unter der Falz nicht mehr
+       erreichbar: die Schublade ist top:0/bottom:0 = Viewport-hoch, das Menü aber
+       höher, und ohne Scrollcontainer verschwand der Rest unerreichbar nach unten.
+       min-height:0 ist Pflicht, damit das Flex-Kind unter seine Inhaltshöhe
+       schrumpfen und intern scrollen darf; -webkit-overflow-scrolling für den
+       Momentum-Scroll auf älterem iOS, overscroll-behavior verhindert, dass die
+       Geste auf die (gesperrte) Seite dahinter durchschlägt. */
+    .nav-menu {
+        overflow-y: auto;
+        min-height: 0;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
     }
 
     .sidebar.open {
