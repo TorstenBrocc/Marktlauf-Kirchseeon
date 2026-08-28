@@ -1117,11 +1117,15 @@ function rechnungMailInlineFromRow(array $r): array {
 }
 
 /**
- * Kontext für die Rechnungs-Begleitmail. {{signatur}} ist hier die allgemeine
- * Orga-Signatur (info@) — die Rechnung kommt vom Team, nicht von einer Person.
+ * Kontext für die Rechnungs-Begleitmail. {{signatur}} trägt die volle Signatur
+ * des versendenden Benutzers (Name/Aufgabe/Telefon/E-Mail aus seinem Profil) —
+ * eine Rechnung soll die Handschrift dessen tragen, der sie verschickt. Ohne
+ * gültigen Benutzer greift die allgemeine Team-Signatur nur als Fallback.
  */
-function rechnungMailContext(array $r): array {
-    $sig = sponsorSignaturBlocks(sponsorAllgemeineSignatur());
+function rechnungMailContext(array $r, ?PDO $pdo = null, int $userId = 0): array {
+    $sig = sponsorSignaturBlocks(
+        $pdo !== null && $userId > 0 ? sponsorSignatur($pdo, $userId) : sponsorAllgemeineSignatur()
+    );
     return [
         'inline'     => rechnungMailInlineFromRow($r),
         'blocksHtml' => ['signatur' => $sig['html']],
@@ -1129,8 +1133,12 @@ function rechnungMailContext(array $r): array {
     ];
 }
 
-/** Beispiel-Kontext für die Editor-Vorschau der Rechnungs-Begleitmail. */
-function rechnungMailBeispielContext(): array {
+/**
+ * Beispiel-Kontext für die Editor-Vorschau der Rechnungs-Begleitmail. Nimmt
+ * denselben Absender-Benutzer wie der echte Versand, damit die Vorschau die
+ * spätere Signatur zeigt (leer = Fallback auf die Team-Signatur).
+ */
+function rechnungMailBeispielContext(?PDO $pdo = null, int $userId = 0): array {
     return rechnungMailContext([
         'empfaenger_firma' => 'Muster GmbH',
         'rechnungsnummer'  => '05-2026',
@@ -1138,7 +1146,7 @@ function rechnungMailBeispielContext(): array {
         'netto'            => 1000.00,
         'leistung'         => 'Gold-Sponsoring Marktlauf 2026',
         'zeitraum'         => 'Marktlauf 2026',
-    ]);
+    ], $pdo, $userId);
 }
 
 /* ---- Rendering ----------------------------------------------------------- */

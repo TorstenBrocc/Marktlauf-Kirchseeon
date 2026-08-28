@@ -105,7 +105,7 @@ try {
 
 // --- Mail an den Sponsor (HTML-Layout wie die Anschreiben), CC an Kassier ---
 $vorlage = sponsorBriefLoad($pdo, 'rechnung', 0);
-$ctx     = rechnungMailContext($row);
+$ctx     = rechnungMailContext($row, $pdo, (int) ($user['id'] ?? 0));
 $subject = sponsorBriefBetreff($vorlage['betreff'], $ctx);
 $html    = sponsorBriefRenderHtml($vorlage['koerper_md'], $ctx);
 $text    = sponsorBriefRenderText($vorlage['koerper_md'], $ctx);
