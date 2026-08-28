@@ -33,7 +33,7 @@ $slug = (string) ($_POST['slug'] ?? '');
 // Gutscheincode) statt mit „Musterfrau". Ohne den Parameter bleibt alles wie bisher.
 $sponsorId = (int) ($_POST['sponsor_id'] ?? 0);
 if ($slug === 'rechnung') {
-    $ctx = rechnungMailBeispielContext();
+    $ctx = rechnungMailBeispielContext($pdo, (int) ($previewUser['id'] ?? 0));
 } elseif ($sponsorId > 0) {
     $ctx = sponsorBriefKontextFuerSponsor($pdo, $sponsorId, (int) ($previewUser['id'] ?? 0))
         ?? sponsorBriefBeispielContext($pdo, (int) ($previewUser['id'] ?? 0));
