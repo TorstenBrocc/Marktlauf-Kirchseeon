@@ -67,6 +67,27 @@ neuer Lauf / ein vergleichbarer Workstream direkt wirksam arbeiten kann.
   über die Fördergruppen-Reiter (`?zielgruppe=fg_<gruppe>`) Empfänger UND Variantentext um.
 - Zielgruppen/Empfänger-Filter je Anschreiben-Seite: `src/sponsor_zielgruppen.php`.
 
+## Aktueller Stand / Übergabe (Stand 2026-08-30)
+
+**Social-Insights-Sammler („Stage C") — Dauer-Fehler behoben (Commits `4254212` Migration 091 +
+`17225b3` Code, deployt/migriert; Make-Szenario „Social Insights (Stage C)" 7094793 angepasst):**
+Das Make-Szenario warf seit 29.08. **täglich** einen Fehler (GraphMethodException 100 „Object …
+does not exist") und mailte ihn. Ursache war zweiteilig und ist dauerhaft gelöst:
+- **Endlos-Wiedervorlage:** `posts_pending_insights.php` liefert einen Post bis `versand_insights_am`
+  gesetzt ist — das wird aber **nur bei Erfolg** gesetzt (`post_status_callback.php`), also nie für
+  einen nicht abrufbaren Post. Fix: neue Spalte `post_race_contents.insights_versuche` (Migration
+  091); der Callback nimmt jetzt `{"insights_status":"failed"}` aus dem Make-Error-Handler und zählt
+  hoch, Erfolg setzt auf 0 zurück; der Pending-Endpoint schließt `insights_versuche >= 3` aus. Schwelle
+  3 muss in **beiden** Dateien übereinstimmen (Konstante `INSIGHTS_MAX_VERSUCHE` im Callback).
+- **Ein fauler Post kippte den ganzen Lauf:** Modul „Get post insights" hatte keinen Error-Handler.
+  Fix im Make-Szenario: Error-Handler → HTTP-POST `{post_id, channel:"instagram",
+  insights_status:"failed", secret}` an `post_status_callback.php` → **Skip**. Lauf endet grün,
+  keine Fehler-Mail. Verifiziert: Testlauf grün, id=7 `insights_versuche=1`, id=3 weiter Reichweite 76.
+- **Ursache des toten Posts id=7** („trainingstipp", 29.08.): Posting-Szenario 6642115 hat die von IG
+  gelieferte Media-ID (`17976709392095722`) korrekt gespeichert, der Folge-Kommentar lief erfolgreich
+  → Media war beim Posten real; ~8 h später „does not exist" → **IG-Post wurde nach dem Posten
+  gelöscht**. Kein Pipeline-Bug (id=3 mit derselben Pipeline lieferte sauber Insights).
+
 ## Aktueller Stand / Übergabe (Stand 2026-08-25)
 
 Social-Post-Wirkung (Spec) + make.com-Optimierung — alles auf `main`, deployt, migriert:
