@@ -58,12 +58,19 @@ if (!$authOk) {
 try {
     $pdo  = getDbConnection();
     $stmt = $pdo->query(
+        // insights_versuche < 3: dauerhaftes Aufgeben nach zu vielen Fehlversuchen (Migration
+        // 090). Der Make-Error-Handler meldet Fehlschlaege via post_status_callback.php
+        // (insights_status=failed) zurueck, das den Zaehler hochsetzt — so verschwindet ein
+        // nicht abrufbarer Post (ungueltige/geloeschte Media-ID) leise aus der Wiedervorlage,
+        // statt den Sammler-Lauf jeden Durchgang scheitern zu lassen. Schwelle = 3, muss zur
+        // INSIGHTS_MAX_VERSUCHE-Logik im Callback passen.
         "SELECT id, ig_media_id, fb_post_id
            FROM post_race_contents
           WHERE status = 'gesendet'
             AND gesendet_am >= (NOW() - INTERVAL 7 DAY)
             AND (ig_media_id IS NOT NULL OR fb_post_id IS NOT NULL)
             AND (versand_insights_am IS NULL OR versand_insights_am < (NOW() - INTERVAL 6 HOUR))
+            AND insights_versuche < 3
           ORDER BY gesendet_am DESC
           LIMIT 100"
     );
