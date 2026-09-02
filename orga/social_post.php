@@ -420,7 +420,7 @@ $wtNameKurz  = [1 => 'Mo', 2 => 'Di', 3 => 'Mi', 4 => 'Do', 5 => 'Fr', 6 => 'Sa'
         </div>
 
         <div class="hd-card <?= $schrittGrafik ? '' : 'sp-locked' ?>" id="sp-card-4">
-            <h2>4 · Veröffentlichen <span class="sp-info" tabindex="0" role="img" aria-label="Reichweiten-Tipp Versand" data-tip="Facebook = echter klickbarer Link-Post. Instagram-Feed ist nicht klickbar → „Link in Bio“ + QR-Code auf der Grafik.">i</span></h2>
+            <h2 style="display:flex;align-items:center;gap:0.5rem">4 · Veröffentlichen <span class="sp-info" tabindex="0" role="img" aria-label="Reichweiten-Tipp Versand" data-tip="Facebook = echter klickbarer Link-Post. Instagram-Feed ist nicht klickbar → „Link in Bio“ + QR-Code auf der Grafik.">i</span><?php if (!empty($eintrag['zieldatum'])): ?><span style="margin-left:auto;font-size:0.78rem;font-weight:400;color:var(--text-light);background:#f1f4f6;border-radius:999px;padding:0.15rem 0.65rem">Stichtag <?= htmlspecialchars(date('d.m.Y', strtotime((string) $eintrag['zieldatum']))) ?></span><?php endif; ?></h2>
             <p class="sp-lockhint">Zuerst ein Bild in Schritt 3 erstellen — Facebook und Instagram brauchen beide ein Bild. Danach: Facebook geht automatisch zur besten Zeit raus, Instagram planst du in 2 Minuten selbst ein.</p>
             <div class="sp-body">
             <?php if ($schrittVersand): ?>
@@ -497,22 +497,28 @@ $wtNameKurz  = [1 => 'Mo', 2 => 'Di', 3 => 'Mi', 4 => 'Do', 5 => 'Fr', 6 => 'Sa'
             <?php
             // Konkrete Zeit fuer DIESEN Post aus dem strukturierten Raster (= was der Timer nutzt):
             // Wunsch-Sendezeit vor bester FB-Slot vor 12:00-Standard.
-            $stichtagStr = !empty($eintrag['zieldatum']) ? date('d.m.Y', strtotime((string) $eintrag['zieldatum'])) : '';
-            $fbZeit      = $geplanteUhrzeit !== '' ? $geplanteUhrzeit : ($slotFb !== '' ? $slotFb : '12:00');
-            $fbStandard  = ($geplanteUhrzeit === '' && $slotFb === '');
+            $fbZeit     = $geplanteUhrzeit !== '' ? $geplanteUhrzeit : ($slotFb !== '' ? $slotFb : '12:00');
+            $fbStandard = ($geplanteUhrzeit === '' && $slotFb === '');
+            $svgFb   = '<svg width="22" height="22" viewBox="0 0 24 24" style="flex:0 0 auto" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#1877F2"/><path fill="#fff" d="M13.4 19v-6.2h2.08l.31-2.42h-2.39V8.83c0-.7.2-1.18 1.2-1.18h1.28V5.49c-.22-.03-.98-.09-1.87-.09-1.85 0-3.12 1.13-3.12 3.21v1.79H8.6v2.42h2.09V19z"/></svg>';
+            $svgIg   = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E4405F" stroke-width="2" style="flex:0 0 auto" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5.5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1.1" fill="#E4405F" stroke="none"/></svg>';
+            $svgWarn = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 auto;margin-top:1px" aria-hidden="true"><path d="M12 3.6 22 20H2z"/><path d="M12 10v4"/><circle cx="12" cy="17.2" r="0.5" fill="#b45309"/></svg>';
+            $svgCopy = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>';
+            $svgDl   = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px" aria-hidden="true"><path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M4 21h16"/></svg>';
+            $svgExt  = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px" aria-hidden="true"><path d="M14 4h6v6"/><path d="M20 4l-8.5 8.5"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>';
+            $mbsUrl  = 'https://business.facebook.com/latest/home?nav_ref=bm_home_redirect&amp;asset_id=1236742862857199';
             ?>
-            <div style="border:1px solid var(--border);border-radius:8px;padding:0.9rem 1rem;margin:0 0 0.9rem">
-                <p style="margin:0 0 0.5rem;font-weight:600;color:#1877F2">Facebook — läuft automatisch</p>
+            <div style="border:1px solid var(--border);border-radius:10px;padding:1rem 1.1rem;margin:0 0 0.9rem;background:#fff">
+                <div style="display:flex;align-items:center;gap:0.5rem;margin:0 0 0.6rem"><?= $svgFb ?><span style="font-weight:600;font-size:1.02rem;color:var(--text)">Facebook — läuft automatisch</span></div>
                 <?php if (!$schrittVersand && !$istTerminiert): ?>
-                    <?php if ($stichtagStr !== ''): ?>
-                    <p class="sp-hinweis" style="margin:0 0 0.6rem">Wenn du den Haken setzt und den Post freigibst, veröffentlicht der Marktlauf den Facebook-Beitrag am <strong><?= htmlspecialchars($stichtagStr) ?></strong> um <strong><?= htmlspecialchars($fbZeit) ?> Uhr</strong> von selbst — du musst nichts weiter tun.</p>
+                    <?php if (!empty($eintrag['zieldatum'])): ?>
+                    <p style="margin:0 0 0.7rem;font-size:0.92rem;line-height:1.55;color:var(--text)">Setz den Haken und gib den Post frei — dann veröffentlicht der Marktlauf den Facebook-Beitrag am <strong><?= htmlspecialchars(date('d.m.Y', strtotime((string) $eintrag['zieldatum']))) ?></strong> um <strong><?= htmlspecialchars($fbZeit) ?> Uhr</strong> von selbst. Du musst nichts weiter tun.</p>
                     <?php if ($fbStandard): ?>
-                    <p class="sp-hinweis" style="margin:0 0 0.6rem;color:#b45309"><strong>Hinweis:</strong> Für <?= htmlspecialchars($wtNameKurz !== '' ? $wtNameKurz : 'diesen Tag') ?> ist keine feste Facebook-Zeit hinterlegt — <strong>12:00 Uhr</strong> ist die Standardzeit. <a href="einstellungen.php#social-section" style="color:var(--primary-dark)">Zeit festlegen</a></p>
+                    <div style="display:flex;gap:0.4rem;background:#fef6ec;border:1px solid #f6d9a8;border-radius:8px;padding:0.5rem 0.7rem;margin:0 0 0.7rem;font-size:0.84rem;line-height:1.45;color:#92400e"><?= $svgWarn ?><span>Für <strong><?= htmlspecialchars($wtNameKurz !== '' ? $wtNameKurz : 'diesen Tag') ?></strong> ist keine feste Facebook-Zeit hinterlegt — <strong>12:00 Uhr</strong> ist die Standardzeit. <a href="einstellungen.php#social-section" style="color:#b45309;text-decoration:underline">Zeit festlegen</a></span></div>
                     <?php endif; ?>
-                    <label style="display:flex;align-items:center;gap:0.45rem;font-size:0.95rem;margin:0 0 0.5rem;cursor:pointer">
-                        <input type="checkbox" id="sp-auto-versand" <?= $autoVersand ? 'checked' : '' ?>> Automatisch veröffentlichen <span class="sp-msg" id="sp-av-msg"></span>
+                    <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.98rem;font-weight:500;margin:0 0 0.6rem;cursor:pointer">
+                        <input type="checkbox" id="sp-auto-versand" <?= $autoVersand ? 'checked' : '' ?> style="width:1.05rem;height:1.05rem"> Automatisch veröffentlichen <span class="sp-msg" id="sp-av-msg"></span>
                     </label>
-                    <div class="sp-hinweis" style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin:0 0 0.5rem">
+                    <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;font-size:0.86rem;color:var(--text-light);margin:0 0 0.6rem">
                         <label for="sp-geplante-uhrzeit" style="margin:0">Andere Zeit?</label>
                         <input type="time" id="sp-geplante-uhrzeit" value="<?= htmlspecialchars($geplanteUhrzeit) ?>" style="width:6.5rem">
                         <span class="sp-msg" id="sp-gu-msg"></span>
@@ -520,24 +526,24 @@ $wtNameKurz  = [1 => 'Mo', 2 => 'Di', 3 => 'Mi', 4 => 'Do', 5 => 'Fr', 6 => 'Sa'
                         <span>beste Zeit <?= htmlspecialchars($wtNameKurz) ?>: <strong><?= htmlspecialchars($slotFb) ?></strong> — <a href="#" id="sp-gu-vorschlag" data-zeit="<?= htmlspecialchars($slotFb) ?>" style="color:var(--primary-dark)">übernehmen</a></span>
                         <?php endif; ?>
                     </div>
-                    <p class="sp-hinweis" style="margin:0">Lieber sofort raus? <a href="#" id="sp-fb-jetzt" style="color:var(--primary-dark)">Jetzt auf Facebook posten</a> <span class="sp-msg" id="sp-send-msg"></span><span class="sp-hinweis" id="sp-send-spinner" style="display:none"> ⏳ sendet …</span></p>
+                    <p style="margin:0;font-size:0.86rem;color:var(--text-light)">Lieber sofort raus? <a href="#" id="sp-fb-jetzt" style="color:var(--primary-dark)">Jetzt auf Facebook posten</a> <span class="sp-msg" id="sp-send-msg"></span><span id="sp-send-spinner" style="display:none">⏳ sendet …</span></p>
                     <?php else: ?>
-                    <p class="sp-hinweis" style="margin:0">Kein Stichtag gesetzt — im <a href="social_fahrplan.php" style="color:var(--primary-dark)">Fahrplan</a> ein Zieldatum wählen, dann kann Facebook automatisch senden. Oder <a href="#" id="sp-fb-jetzt" style="color:var(--primary-dark)">jetzt sofort posten</a>. <span class="sp-msg" id="sp-send-msg"></span><span class="sp-hinweis" id="sp-send-spinner" style="display:none"> ⏳ sendet …</span></p>
+                    <p style="margin:0;font-size:0.9rem;color:var(--text)">Kein Stichtag gesetzt — im <a href="social_fahrplan.php" style="color:var(--primary-dark)">Fahrplan</a> ein Zieldatum wählen, dann kann Facebook automatisch senden. Oder <a href="#" id="sp-fb-jetzt" style="color:var(--primary-dark)">jetzt sofort posten</a>. <span class="sp-msg" id="sp-send-msg"></span><span id="sp-send-spinner" style="display:none">⏳ sendet …</span></p>
                     <?php endif; ?>
                 <?php else: ?>
-                    <p class="sp-hinweis" style="margin:0"><a href="#" id="sp-fb-jetzt" style="color:var(--primary-dark)">Erneut auf Facebook posten</a> <span class="sp-msg" id="sp-send-msg"></span><span class="sp-hinweis" id="sp-send-spinner" style="display:none"> ⏳ sendet …</span></p>
+                    <p style="margin:0;font-size:0.9rem;color:var(--text)"><a href="#" id="sp-fb-jetzt" style="color:var(--primary-dark)">Erneut auf Facebook posten</a> <span class="sp-msg" id="sp-send-msg"></span><span id="sp-send-spinner" style="display:none">⏳ sendet …</span></p>
                 <?php endif; ?>
             </div>
-            <div style="border:1px solid var(--border);border-radius:8px;padding:0.9rem 1rem;margin:0 0 0.9rem">
-                <p style="margin:0 0 0.5rem;font-weight:600;color:#E4405F">Instagram — kurz selbst einstellen (2 Minuten)</p>
-                <p class="sp-hinweis" style="margin:0 0 0.5rem">Instagram lässt sich technisch nicht automatisch einplanen. So planst du diesen Beitrag selbst ein:</p>
-                <ol class="sp-hinweis" style="margin:0 0 0.4rem 1.1rem;line-height:2;padding:0">
-                    <li><button class="btn btn-small btn-secondary" id="sp-ig-copy-text">Text kopieren</button><?php if ($schrittGrafik): ?> <a class="btn btn-small btn-secondary" href="../<?= htmlspecialchars($bildPfad) ?>" download>Bild herunterladen</a><?php endif; ?></li>
-                    <li><a class="btn btn-small" style="background:#E4405F;color:#fff" href="https://business.facebook.com/latest/home?nav_ref=bm_home_redirect&amp;asset_id=1236742862857199" target="_blank" rel="noopener noreferrer">Instagram-Planer öffnen ↗</a> — das kostenlose Planungs-Tool von Instagram</li>
+            <div style="border:1px solid var(--border);border-radius:10px;padding:1rem 1.1rem;margin:0 0 0.9rem;background:#fff">
+                <div style="display:flex;align-items:center;gap:0.5rem;margin:0 0 0.6rem"><?= $svgIg ?><span style="font-weight:600;font-size:1.02rem;color:var(--text)">Instagram — kurz selbst einstellen <span style="font-weight:400;color:var(--text-light);font-size:0.85rem">· 2 Minuten</span></span></div>
+                <p style="margin:0 0 0.6rem;font-size:0.92rem;line-height:1.55;color:var(--text)">Instagram lässt sich technisch nicht automatisch einplanen — du planst diesen Beitrag einmal selbst ein:</p>
+                <ol style="margin:0;padding-left:1.3rem;font-size:0.92rem;line-height:2.05;color:var(--text)">
+                    <li><button class="btn btn-small btn-secondary" id="sp-ig-copy-text"><?= $svgCopy ?> Text kopieren</button><?php if ($schrittGrafik): ?> <a class="btn btn-small btn-secondary" href="../<?= htmlspecialchars($bildPfad) ?>" download><?= $svgDl ?> Bild herunterladen</a><?php endif; ?></li>
+                    <li><a class="btn btn-small" style="background:#E4405F;color:#fff;border-color:#E4405F" href="<?= $mbsUrl ?>" target="_blank" rel="noopener noreferrer"><?= $svgExt ?> Instagram-Planer öffnen</a> <span style="color:var(--text-light);font-size:0.85rem">— das kostenlose Tool von Instagram</span></li>
                     <li>Dort: <strong>Beitrag erstellen → nur Instagram → Bild hochladen, Text einfügen</strong></li>
                     <li>Auf <strong>Terminieren</strong> → <?= $slotIg !== '' ? '<strong>' . htmlspecialchars($slotIg) . ' Uhr</strong>' : 'die beste Zeit' ?> wählen → speichern. Fertig.</li>
                 </ol>
-                <p class="sp-hinweis" style="margin:0"><?php if ($slotIg !== ''): ?><?= htmlspecialchars($slotIg) ?> Uhr ist die beste Instagram-Zeit für <?= htmlspecialchars($wtNameKurz) ?>. · <?php endif; ?><a href="#" id="sp-ig-copy-ek" style="color:var(--primary-dark)">Ersten Kommentar kopieren</a></p>
+                <p style="margin:0.5rem 0 0;font-size:0.85rem;color:var(--text-light)"><?php if ($slotIg !== ''): ?><strong><?= htmlspecialchars($slotIg) ?> Uhr</strong> ist die beste Instagram-Zeit für <?= htmlspecialchars($wtNameKurz) ?>. · <?php endif; ?><a href="#" id="sp-ig-copy-ek" style="color:var(--primary-dark)">Ersten Kommentar kopieren</a></p>
             </div>
             <details class="sp-ausbau" style="border-top:1px solid var(--border);padding-top:0.8rem">
                 <summary style="cursor:pointer;font-size:0.88rem;color:var(--primary-dark)">Reichweite ausbauen — so holst du mehr raus</summary>
