@@ -165,7 +165,6 @@ const routesConfig = {
   },
   "elite-5km": {
     gpx: "assets/courses/5km.gpx",
-    blocked: true,
   },
   "elite-10km": {
     gpx: "assets/courses/10km.gpx",
