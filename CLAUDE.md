@@ -69,6 +69,16 @@ neuer Lauf / ein vergleichbarer Workstream direkt wirksam arbeiten kann.
 
 ## Aktueller Stand / Übergabe (Stand 2026-09-03)
 
+**Strecke 5 km (Alternativ-/Ost-Schleife) LIVE (Commit `dc56f12`, deployt, keine Migration):**
+`assets/courses/5km.gpx` = Orga-Drive „Strecken/5km alternat.gpx" (5,33 km, +26 hm; ersetzt die
+verworfene West-Variante, Drive „verboten wg. 100m"). `js/maps.js`: `blocked`-Flag für `elite-5km`
+entfernt → Vorschaukarte + Höhenprofil-Modal sichtbar. **10 km bleibt gesperrt** (Drive „10km ohne
+Zielloop.gpx", 10,06 km, von TT noch nicht freigegeben). **Offen (TT-Entscheid):** Hinweis
+„* Streckenverlauf unter Vorbehalt" (`strecke.disclaimer`, index.html 5-km-Karte) entfernen?
+Streckenposten-Excel „Durchlaufzeiten je km (5 km + 10 km)" liegt im Orga-Drive `Strecken/`
+(Parameter-Blatt: Start/Zielschluss aus RR14-Protokoll, Tempi aus Holzkirchner Marktlauf 2025).
+Vault: MKL-T32 + build-log 2026-09-03.
+
 **Social-Pipeline Schritt 4 + Instagram wieder automatisch (Commit `05a44e5`, deployt, keine Migration;
 Vault-Backlog WP-M9…M13, Spec `intern/social-auto-versand-beste-zeit-spec.md` §4d):** Anlass war Anjas
 Mail „wollte gleich posten, geht nach wie vor nicht" — der FB-Post war live, die UI sagte es nicht.
