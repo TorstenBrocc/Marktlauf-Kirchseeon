@@ -392,7 +392,7 @@ $makeWebhookSecret = (string) ($config['make_webhook_secret'] ?? '');
                         </div>
                         <div class="form-group">
                             <label for="raceresult_api_url">RaceResult SimpleAPI-Link (Datenquelle „Renntag-Nachbericht")</label>
-                            <input type="url" id="raceresult_api_url" name="raceresult_api_url" value="<?= htmlspecialchars($raceresultApiUrl) ?>" placeholder="https://my.raceresult.com/377952/RRPublish/data/list?...">
+                            <input type="url" id="raceresult_api_url" name="raceresult_api_url" value="<?= htmlspecialchars($raceresultApiUrl) ?>" placeholder="https://my.raceresult.com/412617/RRPublish/data/list?...">
                             <p class="settings-hint" style="margin:0.3rem 0 0">In RaceResult unter „Zugriffsrechte/Freigabe → Freigabe (SimpleAPI)", Typ „Liste" anlegen. Ohne Link werden Beispiel-Daten verwendet.</p>
                         </div>
                     </div>
