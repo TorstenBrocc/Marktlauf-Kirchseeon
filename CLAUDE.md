@@ -67,6 +67,30 @@ neuer Lauf / ein vergleichbarer Workstream direkt wirksam arbeiten kann.
   über die Fördergruppen-Reiter (`?zielgruppe=fg_<gruppe>`) Empfänger UND Variantentext um.
 - Zielgruppen/Empfänger-Filter je Anschreiben-Seite: `src/sponsor_zielgruppen.php`.
 
+## Aktueller Stand / Übergabe (Stand 2026-09-03)
+
+**Social-Pipeline Schritt 4 + Instagram wieder automatisch (Commit `05a44e5`, deployt, keine Migration;
+Vault-Backlog WP-M9…M13, Spec `intern/social-auto-versand-beste-zeit-spec.md` §4d):** Anlass war Anjas
+Mail „wollte gleich posten, geht nach wie vor nicht" — der FB-Post war live, die UI sagte es nicht.
+- `orga/api/social_save.php`: Speichern/Freigeben setzt `gesendet`/`terminiert` **nicht** mehr auf
+  `approved` zurück (Antwort enthält `status`); Post 11 war so am 02.09. „ungesendet" geworden.
+- `orga/social_post.php` Schritt 4: Live-Zeile „Auf Facebook + Instagram veröffentlicht … · Bestätigt HH:MM"
+  + Permalink-Buttons; ohne Callback Auto-Reload alle 10 s (max 12×, `sessionStorage` `spWarte<id>`);
+  terminierte Posts ohne Callback: „Facebook hat den Beitrag zum Termin veröffentlicht"; Kachel-Titel
+  zustandsabhängig; Stichtag-Chip „— erledigt"; **Sofort-Button postet Facebook + Instagram**
+  (`sofortPosten()`); „noch einmal posten" nur im Fallback-Details mit Doppelpost-Warnung.
+- `src/social_versand.php`: `socialVersandHashtagsAnhaengen()`, `socialVersandBildUrl()` (aus
+  `versendePost` extrahiert), **`sendeInstagramNach()`** — der Finalizer postet Instagram sofort, wenn FB
+  zum Slot live geht (nur `channels=['instagram']`; make-FB-Kante filtert `array:contain facebook`,
+  per Blueprint-GET verifiziert); `socialLiveMail($pdo,$post,$channels)` nennt „Veröffentlicht auf: …"
+  + Permalinks. `bin/social_versand.php`: Catch-up sendet FB+IG, terminiert nur FB (IG folgt im Finalizer).
+- `src/social_dispatcher.php`: Erfolgsmeldung nennt die Kanäle.
+- **Bekannte Make-Lücke:** Callback-HTTP-Module (10/11) hängen hinter dem Kommentar-Filter → terminierte
+  FB-Posts (ohne first_comment) melden nie Post-ID/Permalink. Fix nur im Make-Szenario 6642115
+  (Callback vor den Filter). Inhaber-Entscheid offen.
+- Verifikation: `php -l` grün, Deploy-Workflow grün, md5 der fünf Dateien auf Strato = Repo.
+  Kein Runtime-Test mit DB (kein lokales Setup) — erster realer Post/Timer-Lauf beobachten.
+
 ## Aktueller Stand / Übergabe (Stand 2026-08-30)
 
 **Social-Insights-Sammler („Stage C") — Dauer-Fehler behoben (Commits `4254212` Migration 091 +
