@@ -122,9 +122,14 @@ function socialDispatch(string $text, string $imageUrl, array $channels, int $po
             ];
         }
 
+        // WP-M10: name the channels that were actually requested (was a fixed "Instagram/Facebook").
+        $kanalNamen = array_map(
+            static fn (string $c): string => $c === 'instagram' ? 'Instagram' : ($c === 'facebook' ? 'Facebook' : ucfirst($c)),
+            array_values($channels)
+        );
         return [
             'ok'       => true,
-            'message'  => 'An Make.com übergeben. Instagram/Facebook posten in Kürze.',
+            'message'  => 'An Make.com übergeben. ' . implode(' + ', $kanalNamen) . ' postet in Kürze.',
             'channels' => array_values($channels),
         ];
     } catch (\Throwable $e) {

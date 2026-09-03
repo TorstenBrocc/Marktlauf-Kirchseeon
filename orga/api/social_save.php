@@ -42,6 +42,16 @@ try {
     $pdo = getDbConnection();
 
     if ($id !== null) {
+        // WP-M9: a post that is already sent or scheduled at Meta keeps its status. Saving or
+        // re-approving text must not downgrade 'gesendet'/'terminiert' to 'approved' — otherwise
+        // step 4 shows the post as unsent and offers "post now" again (double-post risk, seen on
+        // post 11, 2026-09-02).
+        $aktuell = $pdo->prepare('SELECT status FROM post_race_contents WHERE id = :id');
+        $aktuell->execute(['id' => $id]);
+        $statusAlt = (string) ($aktuell->fetchColumn() ?: '');
+        $statusGeschuetzt = in_array($statusAlt, ['gesendet', 'terminiert'], true);
+        $statusNeu = $statusGeschuetzt ? $statusAlt : $status;
+
         $stmt = $pdo->prepare(
             'UPDATE post_race_contents
                 SET llm_text_article = :article,
@@ -54,11 +64,11 @@ try {
         $stmt->execute([
             'article'  => $artikel ?: null,
             'social'   => $social  ?: null,
-            'status'   => $status,
+            'status'   => $statusNeu,
             'provider' => $provider,
             'id'       => $id,
         ]);
-        echo json_encode(['ok' => true, 'id' => $id]);
+        echo json_encode(['ok' => true, 'id' => $id, 'status' => $statusNeu]);
     } else {
         $stmt = $pdo->prepare(
             'INSERT INTO post_race_contents
