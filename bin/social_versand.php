@@ -11,8 +11,10 @@
  *   auto_versand=1 UND faellig). Faellig = Fahrplan-Stichtag heute bis 2 Tage alt (Catch-up gegen
  *   GitHub-Actions-Verzug/Wochenende). Zielzeit = geplante_uhrzeit › bester FB-Slot › 12:00.
  *   Liegt sie >15 Min in der Zukunft -> FB nativ terminiert (Meta scheduled_publish_time);
- *   sonst (Catch-up) -> FB sofort. INSTAGRAM postet der Timer NIE (§4a) -> Handoff-Kachel im
- *   Post-Detail. Gemeinsame Versandlogik (src/social_versand.php), identisch zum manuellen Klick.
+ *   sonst (Catch-up) -> FB + IG sofort. Instagram kennt kein natives Terminieren -> beim
+ *   terminierten Fall postet Phase 1 (Finalizer) Instagram, sobald FB zum Slot live ist
+ *   (Spec §4d, Inhaber-Entscheid 2026-09-03; ersetzt §4a "IG nie"). Gemeinsame Versandlogik
+ *   (src/social_versand.php), identisch zum manuellen Klick.
  *
  * Cron: stuendlich 06:00-22:00 CEST (social_versand.yml) — frueh terminieren, nah am Slot finalisieren.
  *
@@ -94,8 +96,6 @@ try {
             svLog("Post $postId uebersprungen — nur Instagram gewaehlt, laeuft ueber Meta-Business-Handoff.");
             continue;
         }
-        $channels = ['facebook'];
-
         // Zielzeit: Wunsch-Sendezeit › bester FB-Slot fuer den Wochentag › 12:00 (Fallback mittags).
         $zieldatum = (string) ($post['f_zieldatum'] ?? '');
         $wochentag = $zieldatum !== '' ? (int) date('N', (int) strtotime($zieldatum)) : 0;
@@ -117,6 +117,14 @@ try {
         // >15 Min in der Zukunft -> FB terminieren; sonst (Catch-up / Slot vorbei) -> sofort.
         $scheduledTime = ($slotTs > $jetzt + $vorlaufSek) ? $slotTs : null;
 
+        // Kanaele (WP-M12, Inhaber-Entscheid B 2026-09-03): terminiert -> nur Facebook (Meta kann
+        // Instagram nicht terminieren; IG folgt im Finalizer, sobald FB live ist). Catch-up/Slot
+        // vorbei -> beide Kanaele sofort.
+        $channels = $scheduledTime !== null ? ['facebook'] : ['facebook', 'instagram'];
+        if (trim((string) ($post['bild_pfad'] ?? '')) === '') {
+            $channels = ['facebook']; // Instagram braucht ein Bild
+        }
+
         // Erster Kommentar: gespeicherter Wert am Post (im CLI gibt es keinen Screen).
         $ersterKommentar = trim((string) ($post['erster_kommentar'] ?? ''));
 
@@ -126,7 +134,7 @@ try {
                 $wie = $scheduledTime !== null
                     ? ('terminiert fuer ' . (new DateTimeImmutable('@' . $scheduledTime))->setTimezone(new DateTimeZone('Europe/Berlin'))->format('d.m. H:i'))
                     : 'sofort gesendet';
-                svLog("Post $postId $wie (facebook).");
+                svLog("Post $postId $wie (" . implode('+', $channels) . ').');
             } else {
                 // Fallback/Fehler: Post bleibt 'approved' fuer den naechsten Lauf (bis Catch-up-Grenze).
                 logError("social_versand: Post $postId nicht gesendet: " . (string) ($r['message'] ?? '?'));

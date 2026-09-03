@@ -420,28 +420,46 @@ $wtNameKurz  = [1 => 'Mo', 2 => 'Di', 3 => 'Mi', 4 => 'Do', 5 => 'Fr', 6 => 'Sa'
         </div>
 
         <div class="hd-card <?= $schrittGrafik ? '' : 'sp-locked' ?>" id="sp-card-4">
-            <h2 style="display:flex;align-items:center;gap:0.5rem">4 · Veröffentlichen <span class="sp-info" tabindex="0" role="img" aria-label="Reichweiten-Tipp Versand" data-tip="Facebook = echter klickbarer Link-Post. Instagram-Feed ist nicht klickbar → „Link in Bio“ + QR-Code auf der Grafik.">i</span><?php if (!empty($eintrag['zieldatum'])): ?><span style="margin-left:auto;font-size:0.78rem;font-weight:400;color:var(--text-light);background:#f1f4f6;border-radius:999px;padding:0.15rem 0.65rem">Stichtag <?= htmlspecialchars(date('d.m.Y', strtotime((string) $eintrag['zieldatum']))) ?></span><?php endif; ?></h2>
-            <p class="sp-lockhint">Zuerst ein Bild in Schritt 3 erstellen — Facebook und Instagram brauchen beide ein Bild. Danach: Facebook geht automatisch zur besten Zeit raus, Instagram planst du in 2 Minuten selbst ein.</p>
+            <h2 style="display:flex;align-items:center;gap:0.5rem">4 · Veröffentlichen <span class="sp-info" tabindex="0" role="img" aria-label="Reichweiten-Tipp Versand" data-tip="Facebook = echter klickbarer Link-Post. Instagram-Feed ist nicht klickbar → „Link in Bio“ + QR-Code auf der Grafik.">i</span><?php if (!empty($eintrag['zieldatum'])): ?><span style="margin-left:auto;font-size:0.78rem;font-weight:400;color:var(--text-light);background:#f1f4f6;border-radius:999px;padding:0.15rem 0.65rem">Stichtag <?= htmlspecialchars(date('d.m.Y', strtotime((string) $eintrag['zieldatum']))) ?><?= $schrittVersand ? ' — erledigt' : '' ?></span><?php endif; ?></h2>
+            <p class="sp-lockhint">Zuerst ein Bild in Schritt 3 erstellen — Facebook und Instagram brauchen beide ein Bild. Danach: „Jetzt posten" veröffentlicht sofort auf Facebook + Instagram, oder der Auto-Versand macht es zur besten Zeit (Facebook zur Minute, Instagram folgt innerhalb einer Stunde).</p>
             <div class="sp-body">
-            <?php if ($schrittVersand): ?>
-            <p class="sp-hinweis" style="color:#065f46;margin:0 0 0.8rem">
-                ✓ Gesendet <?= htmlspecialchars(date('d.m.Y H:i', strtotime($post['gesendet_am']))) ?>
-                an <?= htmlspecialchars(str_replace(',', ' + ', (string) $post['gesendet_kanaele'])) ?>
-                — <?= htmlspecialchars((string) $post['gesendet_ergebnis']) ?>
-            </p>
             <?php
-            // make.com-Optimierung #1/#2: von Make.com zurueckgemeldeter Live-Permalink je Kanal
-            // (Callback orga/api/post_status_callback.php). Erscheint erst, wenn die Rueckmeldung da ist.
+            // WP-M10/M11: state of step 4 after dispatch. Channels come from gesendet_kanaele; the
+            // Make.com callback (orga/api/post_status_callback.php) sets versand_bestaetigt_am +
+            // permalinks a few seconds after dispatch — the page polls itself until it arrives.
             $versandBestaetigt = $post['versand_bestaetigt_am'] ?? null;
-            if ($versandBestaetigt):
-                $igLink = trim((string) ($post['ig_permalink'] ?? ''));
-                $fbLink = trim((string) ($post['fb_permalink'] ?? ''));
+            $igLink   = trim((string) ($post['ig_permalink'] ?? ''));
+            $fbLink   = trim((string) ($post['fb_permalink'] ?? ''));
+            $kanaele  = array_values(array_filter(array_map('trim', explode(',', (string) ($post['gesendet_kanaele'] ?? '')))));
+            $kanalLabel = implode(' + ', array_filter([
+                in_array('facebook', $kanaele, true) ? 'Facebook' : '',
+                in_array('instagram', $kanaele, true) ? 'Instagram' : '',
+            ]));
+            if ($kanalLabel === '') { $kanalLabel = 'Facebook'; }
+            $warTerminiert = !empty($post['terminiert_fuer']);
+            $gesendetAm    = !empty($post['gesendet_am']) ? date('d.m.Y H:i', strtotime((string) $post['gesendet_am'])) : '';
             ?>
-            <p class="sp-hinweis" style="margin:-0.4rem 0 0.9rem">
-                ✓ Von Make.com bestätigt <?= htmlspecialchars(date('d.m.Y H:i', strtotime((string) $versandBestaetigt))) ?>
-                <?php if ($igLink !== ''): ?> · <a href="<?= htmlspecialchars($igLink) ?>" target="_blank" rel="noopener noreferrer" style="color:var(--primary-dark)">Instagram ↗</a><?php endif; ?>
-                <?php if ($fbLink !== ''): ?> · <a href="<?= htmlspecialchars($fbLink) ?>" target="_blank" rel="noopener noreferrer" style="color:var(--primary-dark)">Facebook ↗</a><?php endif; ?>
+            <?php if ($schrittVersand): ?>
+            <?php if ($versandBestaetigt): ?>
+            <p class="sp-hinweis" style="color:#065f46;margin:0 0 0.6rem;font-size:0.95rem">
+                ✓ <strong>Auf <?= htmlspecialchars($kanalLabel) ?> veröffentlicht</strong> am <?= htmlspecialchars($gesendetAm) ?>
+                · Bestätigt <?= htmlspecialchars(date('H:i', strtotime((string) $versandBestaetigt))) ?> Uhr
             </p>
+            <p style="margin:0 0 0.9rem;display:flex;gap:0.5rem;flex-wrap:wrap">
+                <?php if ($fbLink !== ''): ?><a class="btn btn-small" style="background:#1877F2;color:#fff;border-color:#1877F2" href="<?= htmlspecialchars($fbLink) ?>" target="_blank" rel="noopener noreferrer">Beitrag auf Facebook ansehen ↗</a><?php endif; ?>
+                <?php if ($igLink !== ''): ?><a class="btn btn-small" style="background:#E4405F;color:#fff;border-color:#E4405F" href="<?= htmlspecialchars($igLink) ?>" target="_blank" rel="noopener noreferrer">Beitrag auf Instagram ansehen ↗</a><?php endif; ?>
+                <?php if ($fbLink === '' && $igLink === ''): ?><span class="sp-hinweis">Bestätigt, aber ohne Link — bitte auf der <a href="https://www.facebook.com/profile.php?id=61591689790244" target="_blank" rel="noopener noreferrer" style="color:var(--primary-dark)">Facebook-Seite ↗</a> nachsehen.</span><?php endif; ?>
+            </p>
+            <?php elseif ($warTerminiert): ?>
+            <p class="sp-hinweis" style="color:#065f46;margin:0 0 0.9rem;font-size:0.95rem">
+                ✓ <strong>Facebook hat den Beitrag zum Termin veröffentlicht</strong> (<?= htmlspecialchars(date('d.m.Y H:i', strtotime((string) $post['terminiert_fuer']))) ?> Uhr).
+                Terminierte Beiträge melden keinen Link zurück — bei Bedarf auf der <a href="https://www.facebook.com/profile.php?id=61591689790244" target="_blank" rel="noopener noreferrer" style="color:var(--primary-dark)">Facebook-Seite ↗</a> nachsehen.
+            </p>
+            <?php else: ?>
+            <p class="sp-hinweis" style="color:#92400e;margin:0 0 0.9rem;font-size:0.95rem" id="sp-warte-bestaetigung">
+                ⏳ <strong>An Make.com übergeben</strong> (<?= htmlspecialchars($gesendetAm) ?>, <?= htmlspecialchars($kanalLabel) ?>) — warte auf Bestätigung … <span id="sp-warte-text">die Seite aktualisiert sich alle 10 Sekunden.</span>
+            </p>
+            <?php endif; ?>
             <?php
             // make.com-Optimierung MO1: Insights-Snapshot (Reichweite/Likes je Kanal) — erscheint
             // erst, wenn der (ggf. verzoegerte) Insights-Callback Zahlen gemeldet hat.
@@ -466,7 +484,6 @@ $wtNameKurz  = [1 => 'Mo', 2 => 'Di', 3 => 'Mi', 4 => 'Do', 5 => 'Fr', 6 => 'Sa'
                 📊 <?php if ($igStr !== ''): ?>Instagram: <?= $igStr ?><?php endif; ?><?php if ($igStr !== '' && $fbStr !== ''): ?> · <?php endif; ?><?php if ($fbStr !== ''): ?>Facebook: <?= $fbStr ?><?php endif; ?><?php if ($insightsAm): ?> <span style="opacity:0.7">(Stand <?= htmlspecialchars(date('d.m. H:i', strtotime((string) $insightsAm))) ?>)</span><?php endif; ?>
             </p>
             <?php endif; ?>
-            <?php endif; ?>
             <div style="background:#eef7f0;border:1px solid #bfe3c8;border-radius:8px;padding:0.7rem 1rem;margin:0 0 0.9rem">
                 <p style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#065f46;margin:0 0 0.4rem">Jetzt zählt die erste Stunde</p>
                 <ul style="list-style:none;padding:0;margin:0;font-size:0.85rem;line-height:1.8">
@@ -478,7 +495,7 @@ $wtNameKurz  = [1 => 'Mo', 2 => 'Di', 3 => 'Mi', 4 => 'Do', 5 => 'Fr', 6 => 'Sa'
             <?php elseif ($wartetAufStichtag): ?>
             <p class="sp-hinweis" style="margin:0 0 0.8rem">
                 <?php if ($autoVersand): ?>
-                Freigegeben — <strong>Facebook</strong> wird am <strong><?= htmlspecialchars(date('d.m.Y', strtotime($eintrag['zieldatum']))) ?></strong> automatisch zur besten Zeit veröffentlicht; <strong>Instagram</strong> planst du selbst ein (Block „Instagram" unten). Du kannst Facebook auch jederzeit sofort posten.
+                Freigegeben — <strong>Facebook</strong> wird am <strong><?= htmlspecialchars(date('d.m.Y', strtotime($eintrag['zieldatum']))) ?></strong> automatisch zur besten Zeit veröffentlicht, <strong>Instagram</strong> folgt automatisch innerhalb einer Stunde. Du kannst beide auch jederzeit sofort posten.
                 <?php else: ?>
                 Freigegeben — <strong>wartet auf den Stichtag <?= htmlspecialchars(date('d.m.Y', strtotime($eintrag['zieldatum']))) ?></strong>.
                 Die tägliche Mail erinnert bei Fälligkeit; gesendet wird per Klick — oder unten „am Stichtag automatisch senden“ aktivieren.
@@ -486,7 +503,7 @@ $wtNameKurz  = [1 => 'Mo', 2 => 'Di', 3 => 'Mi', 4 => 'Do', 5 => 'Fr', 6 => 'Sa'
             </p>
             <?php elseif ($istTerminiert): ?>
             <p class="sp-hinweis" style="margin:0 0 0.8rem">
-                ⏰ <strong>Bei Facebook terminiert</strong><?php if (!empty($post['terminiert_fuer'])): ?> für <strong><?= htmlspecialchars(date('d.m.Y H:i', strtotime((string) $post['terminiert_fuer']))) ?> Uhr</strong><?php endif; ?> — geht automatisch live; der Timer meldet es dann dem Orga-Team. <strong>Instagram</strong> planst du selbst ein (Block „Instagram" unten).
+                ⏰ <strong>Bei Facebook terminiert</strong><?php if (!empty($post['terminiert_fuer'])): ?> für <strong><?= htmlspecialchars(date('d.m.Y H:i', strtotime((string) $post['terminiert_fuer']))) ?> Uhr</strong><?php endif; ?> — geht automatisch live; der Timer meldet es dann dem Orga-Team. <strong>Instagram</strong> folgt automatisch innerhalb einer Stunde danach.
             </p>
             <?php endif; ?>
             <div class="sp-feld" style="margin:0 0 0.9rem">
@@ -508,15 +525,25 @@ $wtNameKurz  = [1 => 'Mo', 2 => 'Di', 3 => 'Mi', 4 => 'Do', 5 => 'Fr', 6 => 'Sa'
             $mbsUrl  = 'https://business.facebook.com/latest/home?nav_ref=bm_home_redirect&amp;asset_id=1236742862857199';
             ?>
             <div style="border:1px solid var(--border);border-radius:10px;padding:1rem 1.1rem;margin:0 0 0.9rem;background:#fff">
-                <div style="display:flex;align-items:center;gap:0.5rem;margin:0 0 0.6rem"><?= $svgFb ?><span style="font-weight:600;font-size:1.02rem;color:var(--text)">Facebook — läuft automatisch</span></div>
+                <?php
+                // WP-M10: card title follows the post state (before / scheduled / sent).
+                if ($schrittVersand) {
+                    $fbTitel = 'Facebook — veröffentlicht ' . ($gesendetAm !== '' ? date('d.m. H:i', strtotime((string) $post['gesendet_am'])) : '');
+                } elseif ($istTerminiert) {
+                    $fbTitel = 'Facebook — terminiert für ' . (!empty($post['terminiert_fuer']) ? date('d.m. H:i', strtotime((string) $post['terminiert_fuer'])) : '…');
+                } else {
+                    $fbTitel = 'Facebook — läuft automatisch';
+                }
+                ?>
+                <div style="display:flex;align-items:center;gap:0.5rem;margin:0 0 0.6rem"><?= $svgFb ?><span style="font-weight:600;font-size:1.02rem;color:var(--text)"><?= htmlspecialchars($fbTitel) ?></span></div>
                 <?php if (!$schrittVersand && !$istTerminiert): ?>
                     <?php if (!empty($eintrag['zieldatum'])): ?>
-                    <p style="margin:0 0 0.7rem;font-size:0.92rem;line-height:1.55;color:var(--text)">Setz den Haken und gib den Post frei — dann veröffentlicht der Marktlauf den Facebook-Beitrag am <strong><?= htmlspecialchars(date('d.m.Y', strtotime((string) $eintrag['zieldatum']))) ?></strong> um <strong><?= htmlspecialchars($fbZeit) ?> Uhr</strong> von selbst. Du musst nichts weiter tun.</p>
+                    <p style="margin:0 0 0.7rem;font-size:0.92rem;line-height:1.55;color:var(--text)">Setz den Haken und gib den Post frei — dann veröffentlicht der Marktlauf den Facebook-Beitrag am <strong><?= htmlspecialchars(date('d.m.Y', strtotime((string) $eintrag['zieldatum']))) ?></strong> um <strong><?= htmlspecialchars($fbZeit) ?> Uhr</strong> von selbst; Instagram folgt automatisch innerhalb einer Stunde. Du musst nichts weiter tun.</p>
                     <?php if ($fbStandard): ?>
                     <div style="display:flex;gap:0.4rem;background:#fef6ec;border:1px solid #f6d9a8;border-radius:8px;padding:0.5rem 0.7rem;margin:0 0 0.7rem;font-size:0.84rem;line-height:1.45;color:#92400e"><?= $svgWarn ?><span>Für <strong><?= htmlspecialchars($wtNameKurz !== '' ? $wtNameKurz : 'diesen Tag') ?></strong> ist keine feste Facebook-Zeit hinterlegt — <strong>12:00 Uhr</strong> ist die Standardzeit. <a href="einstellungen.php#social-section" style="color:#b45309;text-decoration:underline">Zeit festlegen</a></span></div>
                     <?php endif; ?>
                     <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.98rem;font-weight:500;margin:0 0 0.6rem;cursor:pointer">
-                        <input type="checkbox" id="sp-auto-versand" <?= $autoVersand ? 'checked' : '' ?> style="width:1.05rem;height:1.05rem"> Automatisch veröffentlichen <span class="sp-msg" id="sp-av-msg"></span>
+                        <input type="checkbox" id="sp-auto-versand" <?= $autoVersand ? 'checked' : '' ?> style="width:1.05rem;height:1.05rem"> Automatisch veröffentlichen <span style="font-weight:400;color:var(--text-light);font-size:0.86rem">(Facebook zur Zeit, Instagram folgt innerhalb einer Stunde)</span> <span class="sp-msg" id="sp-av-msg"></span>
                     </label>
                     <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;font-size:0.86rem;color:var(--text-light);margin:0 0 0.6rem">
                         <label for="sp-geplante-uhrzeit" style="margin:0">Andere Zeit?</label>
@@ -526,17 +553,19 @@ $wtNameKurz  = [1 => 'Mo', 2 => 'Di', 3 => 'Mi', 4 => 'Do', 5 => 'Fr', 6 => 'Sa'
                         <span>beste Zeit <?= htmlspecialchars($wtNameKurz) ?>: <strong><?= htmlspecialchars($slotFb) ?></strong> — <a href="#" id="sp-gu-vorschlag" data-zeit="<?= htmlspecialchars($slotFb) ?>" style="color:var(--primary-dark)">übernehmen</a></span>
                         <?php endif; ?>
                     </div>
-                    <p style="margin:0;font-size:0.86rem;color:var(--text-light)">Lieber sofort raus? <a href="#" id="sp-fb-jetzt" style="color:var(--primary-dark)">Jetzt auf Facebook posten</a> <span class="sp-msg" id="sp-send-msg"></span><span id="sp-send-spinner" style="display:none">⏳ sendet …</span></p>
+                    <p style="margin:0;font-size:0.86rem;color:var(--text-light);display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">Lieber sofort raus? <button class="btn btn-small btn-secondary" id="sp-fb-jetzt" type="button">Jetzt auf Facebook + Instagram posten</button> <span class="sp-msg" id="sp-send-msg"></span><span id="sp-send-spinner" style="display:none">⏳ sendet …</span></p>
                     <?php else: ?>
-                    <p style="margin:0;font-size:0.9rem;color:var(--text)">Kein Stichtag gesetzt — im <a href="social_fahrplan.php" style="color:var(--primary-dark)">Fahrplan</a> ein Zieldatum wählen, dann kann Facebook automatisch senden. Oder <a href="#" id="sp-fb-jetzt" style="color:var(--primary-dark)">jetzt sofort posten</a>. <span class="sp-msg" id="sp-send-msg"></span><span id="sp-send-spinner" style="display:none">⏳ sendet …</span></p>
+                    <p style="margin:0;font-size:0.9rem;color:var(--text);display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap"><span>Kein Stichtag gesetzt — im <a href="social_fahrplan.php" style="color:var(--primary-dark)">Fahrplan</a> ein Zieldatum wählen, dann kann der Auto-Versand senden. Oder:</span> <button class="btn btn-small btn-secondary" id="sp-fb-jetzt" type="button">Jetzt auf Facebook + Instagram posten</button> <span class="sp-msg" id="sp-send-msg"></span><span id="sp-send-spinner" style="display:none">⏳ sendet …</span></p>
                     <?php endif; ?>
+                <?php elseif ($istTerminiert): ?>
+                    <p style="margin:0;font-size:0.9rem;color:var(--text)">Bei Meta eingeplant — geht zur Zeit von selbst live. Kein weiterer Klick nötig.</p>
                 <?php else: ?>
-                    <p style="margin:0;font-size:0.9rem;color:var(--text)"><a href="#" id="sp-fb-jetzt" style="color:var(--primary-dark)">Erneut auf Facebook posten</a> <span class="sp-msg" id="sp-send-msg"></span><span id="sp-send-spinner" style="display:none">⏳ sendet …</span></p>
+                    <p style="margin:0;font-size:0.9rem;color:var(--text)"><?= $fbLink !== '' ? 'Der Beitrag ist live — Link oben.' : 'Der Beitrag wurde übergeben. Ein zweites Posten findest du unten unter „Manuell posten (Fallback)".' ?></p>
                 <?php endif; ?>
             </div>
             <div style="border:1px solid var(--border);border-radius:10px;padding:1rem 1.1rem;margin:0 0 0.9rem;background:#fff">
-                <div style="display:flex;align-items:center;gap:0.5rem;margin:0 0 0.6rem"><?= $svgIg ?><span style="font-weight:600;font-size:1.02rem;color:var(--text)">Instagram — kurz selbst einstellen <span style="font-weight:400;color:var(--text-light);font-size:0.85rem">· 2 Minuten</span></span></div>
-                <p style="margin:0 0 0.6rem;font-size:0.92rem;line-height:1.55;color:var(--text)">Instagram lässt sich technisch nicht automatisch einplanen — du planst diesen Beitrag einmal selbst ein:</p>
+                <div style="display:flex;align-items:center;gap:0.5rem;margin:0 0 0.6rem"><?= $svgIg ?><span style="font-weight:600;font-size:1.02rem;color:var(--text)"><?php if ($schrittVersand && in_array('instagram', $kanaele, true)): ?>Instagram — veröffentlicht<?php elseif ($schrittVersand): ?>Instagram — noch selbst einstellen <span style="font-weight:400;color:var(--text-light);font-size:0.85rem">· 2 Minuten</span><?php else: ?>Instagram — automatisch oder selbst einplanen <span style="font-weight:400;color:var(--text-light);font-size:0.85rem">· 2 Minuten</span><?php endif; ?></span></div>
+                <p style="margin:0 0 0.6rem;font-size:0.92rem;line-height:1.55;color:var(--text)">„Jetzt posten" oben veröffentlicht sofort auch auf Instagram; mit Auto-Versand kommt Instagram automatisch bis zu einer Stunde nach Facebook. Willst du Instagram <strong>zu einer bestimmten Minute</strong> veröffentlichen, planst du ihn selbst ein:</p>
                 <ol style="margin:0;padding-left:1.3rem;font-size:0.92rem;line-height:2.05;color:var(--text)">
                     <li><button class="btn btn-small btn-secondary" id="sp-ig-copy-text"><?= $svgCopy ?> Text kopieren</button><?php if ($schrittGrafik): ?> <a class="btn btn-small btn-secondary" href="../<?= htmlspecialchars($bildPfad) ?>" download><?= $svgDl ?> Bild herunterladen</a><?php endif; ?></li>
                     <li><a class="btn btn-small" style="background:#E4405F;color:#fff;border-color:#E4405F" href="<?= $mbsUrl ?>" target="_blank" rel="noopener noreferrer"><?= $svgExt ?> Instagram-Planer öffnen</a> <span style="color:var(--text-light);font-size:0.85rem">— das kostenlose Tool von Instagram</span></li>
@@ -568,6 +597,9 @@ $wtNameKurz  = [1 => 'Mo', 2 => 'Di', 3 => 'Mi', 4 => 'Do', 5 => 'Fr', 6 => 'Sa'
                     <?php endif; ?>
                     <a class="btn btn-small" style="background:#1877F2;color:#fff" href="https://business.facebook.com/latest/home?nav_ref=bm_home_redirect&amp;asset_id=1236742862857199" target="_blank" rel="noopener noreferrer">Meta Business Account öffnen ↗</a>
                 </div>
+                <?php if ($schrittVersand): ?>
+                <p class="sp-hinweis" style="margin:0 0 0.6rem">Der Beitrag ist bereits raus. Nur wenn er auf Facebook/Instagram fehlt: <a href="#" id="sp-fb-erneut" style="color:#b45309">noch einmal auf Facebook + Instagram posten</a> <span class="sp-msg" id="sp-send-msg"></span><span id="sp-send-spinner" style="display:none">⏳ sendet …</span></p>
+                <?php endif; ?>
                 <ul class="sp-hinweis" style="margin:0 0 0.3rem 1.1rem;line-height:1.5">
                     <li>Meta Business Suite → „Beiträge &amp; Reels" → Beitrag erstellen → Kanäle IG + FB anhaken.</li>
                     <li>Bild hochladen, Social-Text als Caption einfügen, Vorschau prüfen → veröffentlichen oder terminieren.</li>
@@ -763,7 +795,9 @@ function speichern(status) {
         .then(r => r.json())
         .then(d => {
             if (d.ok) {
-                zeige('sp-save-msg', status === 'approved' ? 'Freigegeben.' : 'Gespeichert.', '#16a34a');
+                // WP-M9: a sent/scheduled post keeps its status — say so instead of "Freigegeben".
+                const geschuetzt = d.status === 'gesendet' || d.status === 'terminiert';
+                zeige('sp-save-msg', geschuetzt ? 'Text gespeichert — Post bleibt ' + (d.status === 'gesendet' ? 'veröffentlicht' : 'terminiert') + '.' : (status === 'approved' ? 'Freigegeben.' : 'Gespeichert.'), '#16a34a');
                 if (document.getElementById('sp-social').value.trim() !== '') { stepDone('sp-step-text', '1 Text'); markTextVorhanden(); }
             } else {
                 zeige('sp-save-msg', '⚠️ ' + (d.error || 'Fehler'), '#dc2626');
@@ -806,31 +840,53 @@ document.getElementById('sp-pruefen').addEventListener('click', async (ev) => {
     }
 });
 
-// Facebook sofort posten (FB-only; Instagram laeuft immer ueber den Instagram-Block/Planer).
-const fbJetzt = document.getElementById('sp-fb-jetzt');
-if (fbJetzt) fbJetzt.addEventListener('click', async (ev) => {
-    ev.preventDefault();
+// Sofort posten (WP-M11: Facebook + Instagram; Inhaber-Entscheid 2026-09-03). Der Klick im
+// Facebook-Block und der "noch einmal"-Link im Fallback nutzen denselben Weg, nur mit anderem
+// Bestaetigungstext (der zweite warnt vor dem Doppelpost).
+async function sofortPosten(frage) {
     const msg = document.getElementById('sp-send-msg');
     const spinner = document.getElementById('sp-send-spinner');
     if (msg) msg.style.display = 'none';
-    if (!confirm('Veröffentlicht diesen Beitrag JETZT sofort öffentlich auf Facebook. Fortfahren?')) return;
+    if (!confirm(frage)) return;
     if (spinner) spinner.style.display = 'inline';
     try {
         const body = new URLSearchParams();
         body.set('csrf_token', csrf);
         body.set('post_id', postId);
         body.append('channels[]', 'facebook');
+        body.append('channels[]', 'instagram');
         if (ekFeld) { body.set('erster_kommentar', ekFeld.value); }
         const r = await fetch('api/post_dispatch.php', { method: 'POST', body });
         const d = await r.json();
-        if (d.ok) { location.reload(); return; }
+        if (d.ok) { try { sessionStorage.removeItem('spWarte' + postId); } catch (e) {} location.reload(); return; }
         if (msg) { msg.textContent = '⚠️ ' + (d.message || 'Versand fehlgeschlagen — bitte manuell posten (Fallback unten).'); msg.style.color = '#dc2626'; msg.style.display = 'inline'; }
     } catch (e) {
         if (msg) { msg.textContent = '⚠️ Netzwerkfehler — bitte manuell posten (Fallback unten).'; msg.style.color = '#dc2626'; msg.style.display = 'inline'; }
     } finally {
         if (spinner) spinner.style.display = 'none';
     }
-});
+}
+const fbJetzt = document.getElementById('sp-fb-jetzt');
+if (fbJetzt) fbJetzt.addEventListener('click', (ev) => { ev.preventDefault(); sofortPosten('Veröffentlicht diesen Beitrag JETZT sofort öffentlich auf Facebook und Instagram. Fortfahren?'); });
+const fbErneut = document.getElementById('sp-fb-erneut');
+if (fbErneut) fbErneut.addEventListener('click', (ev) => { ev.preventDefault(); sofortPosten('Der Beitrag ist bereits auf Facebook/Instagram live. Wirklich ein zweites Mal posten?'); });
+
+// WP-M10: after dispatch the Make.com callback arrives a few seconds later — reload every 10 s
+// (max. 12x = 2 min) until versand_bestaetigt_am is set; then tell the user to check Facebook.
+const warteBox = document.getElementById('sp-warte-bestaetigung');
+if (warteBox) {
+    let n = 0;
+    try { n = parseInt(sessionStorage.getItem('spWarte' + postId) || '0', 10) || 0; } catch (e) {}
+    if (n < 12) {
+        try { sessionStorage.setItem('spWarte' + postId, String(n + 1)); } catch (e) {}
+        setTimeout(() => location.reload(), 10000);
+    } else {
+        const t = document.getElementById('sp-warte-text');
+        if (t) t.textContent = 'Noch keine Bestätigung von Make.com — bitte auf der Facebook-Seite prüfen, ob der Beitrag da ist.';
+    }
+} else {
+    try { sessionStorage.removeItem('spWarte' + postId); } catch (e) {}
+}
 
 // Manuelles Posten: Texte kopieren
 function spCopy(id) {
