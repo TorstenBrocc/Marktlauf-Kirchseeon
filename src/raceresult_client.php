@@ -2,8 +2,8 @@
 /**
  * RaceResult-Client — echter Ergebnis-Abruf über die RaceResult "Simple API".
  *
- * Event: 2. Marktlauf Kirchseeon, RaceResult-Event-ID 377952
- *   (https://events.raceresult.com/377952/ — Stand 2026-07-15 noch Testmodus).
+ * Event: Marktlauf Kirchseeon 2026, RaceResult-Event-ID 412617
+ *   (https://events.raceresult.com/412617/).
  *
  * Datenquelle ist eine in RaceResult angelegte SimpleAPI-"Freigabe" vom Typ
  * "Liste"; deren statischer Link wird in den Einstellungen (Key `raceresult_api_url`)
@@ -22,7 +22,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/raceresult_mock.php';
 require_once __DIR__ . '/logger.php';
 
-const RACERESULT_EVENT_ID = 377952;
+const RACERESULT_EVENT_ID = 412617;
 
 /**
  * Ergebnis-Daten für den Social-Flow. Versucht den echten Abruf, fällt bei
