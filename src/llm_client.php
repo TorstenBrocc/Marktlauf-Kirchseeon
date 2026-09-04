@@ -22,8 +22,13 @@ require_once __DIR__ . '/brand_voice.php';
 /** Gemini-Modell (v1beta). Zentral, damit ein Versionswechsel eine Ein-Zeilen-Sache ist. */
 const GEMINI_MODEL = 'gemini-3.6-flash';
 
-/** Groq-Modell (OpenAI-kompatibel). Ein-Zeilen-Swap, z. B. 'openai/gpt-oss-120b' fuer mehr Qualitaet. */
-const GROQ_MODEL = 'llama-3.3-70b-versatile';
+/**
+ * Groq-Modell (OpenAI-kompatibel). llama-3.3-70b ist "Enterprise" und auf unserem Free-Key
+ * NICHT verfuegbar (HTTP 404, live geprueft 2026-09-04) -> gpt-oss-120b (OpenAIs grosses
+ * offenes Modell, fuer den Key freigeschaltet, HTTP 200). Ein-Zeilen-Swap-Alternativen:
+ * 'openai/gpt-oss-20b' (schneller), 'qwen/qwen3.8-27b'.
+ */
+const GROQ_MODEL = 'openai/gpt-oss-120b';
 
 /**
  * Klartext-Grund, warum die letzte LLM-Antwort leer blieb (HTTP-Status/Key-Fehler,
