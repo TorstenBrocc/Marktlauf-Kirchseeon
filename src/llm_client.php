@@ -117,13 +117,14 @@ function llmGenerateGemini(string $systemPrompt, string $userInput): string
         ],
         'generationConfig' => [
             'maxOutputTokens' => 1200,
-            'temperature'     => 0.7,
+            'temperature'     => 0.8,
             // Gemini 3.x steuert Thinking ueber thinkingLevel (minimal|low|medium|high),
             // NICHT mehr ueber das Legacy-thinkingBudget — das gibt sonst HTTP 400
-            // INVALID_ARGUMENT (Vorfall 2026-09-04). 'minimal' haelt den Denk-Schritt klein,
-            // damit er das Output-Budget nicht auffrisst und die Antwort nicht leer bleibt.
-            // Doku: https://ai.google.dev/gemini-api/docs/generate-content/thinking
-            'thinkingConfig'  => ['thinkingLevel' => 'minimal'],
+            // INVALID_ARGUMENT (Vorfall 2026-09-04). 'low' laesst etwas Nachdenken zu
+            // (bessere Formulierung) ohne das Output-Budget zu sprengen — mit 90-s-Timeout
+            // vertretbar (TT 2026-09-04, Qualitaets-Nudge). Doku:
+            // https://ai.google.dev/gemini-api/docs/generate-content/thinking
+            'thinkingConfig'  => ['thinkingLevel' => 'low'],
         ],
     ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 
