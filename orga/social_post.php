@@ -472,6 +472,16 @@ $wtNameKurz  = [1 => 'Mo', 2 => 'Di', 3 => 'Mi', 4 => 'Do', 5 => 'Fr', 6 => 'Sa'
                 if ($l !== null) { $t[] = '<strong>' . number_format($l, 0, ',', '.') . '</strong> Likes'; }
                 return implode(' · ', $t);
             };
+            // TikTok liefert vier Kennzahlen (Display-API view/like/comment/share). "Reichweite" ist
+            // bei TikTok faktisch die View-Zahl -> hier bewusst als "Views" gelabelt (WP-T1).
+            $fmtTikTok = static function (?int $v, ?int $l, ?int $c, ?int $s): string {
+                $t = [];
+                if ($v !== null) { $t[] = '<strong>' . number_format($v, 0, ',', '.') . '</strong> Views'; }
+                if ($l !== null) { $t[] = '<strong>' . number_format($l, 0, ',', '.') . '</strong> Likes'; }
+                if ($c !== null) { $t[] = '<strong>' . number_format($c, 0, ',', '.') . '</strong> Kommentare'; }
+                if ($s !== null) { $t[] = '<strong>' . number_format($s, 0, ',', '.') . '</strong> Shares'; }
+                return implode(' · ', $t);
+            };
             $igStr = $fmtKanal(
                 isset($post['ig_reichweite']) ? (int) $post['ig_reichweite'] : null,
                 isset($post['ig_likes']) ? (int) $post['ig_likes'] : null
@@ -480,10 +490,20 @@ $wtNameKurz  = [1 => 'Mo', 2 => 'Di', 3 => 'Mi', 4 => 'Do', 5 => 'Fr', 6 => 'Sa'
                 isset($post['fb_reichweite']) ? (int) $post['fb_reichweite'] : null,
                 isset($post['fb_likes']) ? (int) $post['fb_likes'] : null
             );
-            if ($igStr !== '' || $fbStr !== ''):
+            $ttStr = $fmtTikTok(
+                isset($post['tt_reichweite']) ? (int) $post['tt_reichweite'] : null,
+                isset($post['tt_likes']) ? (int) $post['tt_likes'] : null,
+                isset($post['tt_kommentare']) ? (int) $post['tt_kommentare'] : null,
+                isset($post['tt_shares']) ? (int) $post['tt_shares'] : null
+            );
+            $insightsTeile = [];
+            if ($igStr !== '') { $insightsTeile[] = 'Instagram: ' . $igStr; }
+            if ($fbStr !== '') { $insightsTeile[] = 'Facebook: ' . $fbStr; }
+            if ($ttStr !== '') { $insightsTeile[] = 'TikTok: ' . $ttStr; }
+            if ($insightsTeile !== []):
             ?>
             <p class="sp-hinweis" style="margin:-0.4rem 0 0.9rem">
-                📊 <?php if ($igStr !== ''): ?>Instagram: <?= $igStr ?><?php endif; ?><?php if ($igStr !== '' && $fbStr !== ''): ?> · <?php endif; ?><?php if ($fbStr !== ''): ?>Facebook: <?= $fbStr ?><?php endif; ?><?php if ($insightsAm): ?> <span style="opacity:0.7">(Stand <?= htmlspecialchars(date('d.m. H:i', strtotime((string) $insightsAm))) ?>)</span><?php endif; ?>
+                📊 <?= implode(' · ', $insightsTeile) ?><?php if ($insightsAm): ?> <span style="opacity:0.7">(Stand <?= htmlspecialchars(date('d.m. H:i', strtotime((string) $insightsAm))) ?>)</span><?php endif; ?>
             </p>
             <?php endif; ?>
             <div style="background:#eef7f0;border:1px solid #bfe3c8;border-radius:8px;padding:0.7rem 1rem;margin:0 0 0.9rem">
