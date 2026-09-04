@@ -84,9 +84,10 @@ auf Prod weiß: der SELECT las `u.vorname, u.nachname`, die Tabelle `users` hat 
 
 ## Aktueller Stand / Übergabe (Stand 2026-09-03)
 
-**Strecke 5 km LIVE in finaler Laufrichtung (GEGENRICHTUNG, Commit `fba4316`, deployt, keine Migration):**
-`assets/courses/5km.gpx` = Orga-Drive „Strecken/5km alternat – Gegenrichtung.gpx" (5,33 km, +26 hm; Ost-Schleife mit
-umgekehrten Trackpunkten; GPX-Name für Läufer neutral „Marktlauf Kirchseeon 2026 – 5 km"). Vorher: 03.09. Ost-Schleife
+**Strecke 5 km LIVE, finale Fassung v3 (Commit `9c807fc`, deployt, keine Migration):** `assets/courses/5km.gpx` =
+Orga-Drive „Strecken/5 km-mit-km-Marken.gpx" ohne Wegpunkte (5,44 km, TT 04.09.: an den Schnittstellen deckungsgleich
+mit der 10 km; GPX-Name für Läufer neutral „Marktlauf Kirchseeon 2026 – 5 km"). Davor v2 = Gegenrichtung 5,33 km (`fba4316`).
+Vorher: 03.09. Ost-Schleife
 in Original-Richtung (`dc56f12`), Vorbehalts-Hinweis an der 5-km-Karte entfernt (`dc69e3c`). **10 km bleibt gesperrt**
 (`blocked` in `js/maps.js`): TT sortiert die 10-km-Strecke gerade neu; neue GPX kommt in den Orga-Drive, dann auf
 TT-Wort einpflegen (Datei ersetzen, `blocked` raus, Excel per `intern/scripts/strecken/run_all.sh` neu). 1/2/10 km tragen
