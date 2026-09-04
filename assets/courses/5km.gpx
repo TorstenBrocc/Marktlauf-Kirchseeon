@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<gpx xmlns="http://www.topografix.com/GPX/1/1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" creator="https://gpx.studio" version="1.1" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd http://www.garmin.com/xmlschemas/GpxExtensions/v3 http://www.garmin.com/xmlschemas/GpxExtensionsv3.xsd http://www.garmin.com/xmlschemas/TrackPointExtension/v1 http://www.garmin.com/xmlschemas/TrackPointExtensionv1.xsd http://www.garmin.com/xmlschemas/PowerExtension/v1 http://www.garmin.com/xmlschemas/PowerExtensionv1.xsd http://www.topografix.com/GPX/gpx_style/0/2 http://www.topografix.com/GPX/gpx_style/0/2/gpx_style.xsd">
+<gpx xmlns="http://www.topografix.com/GPX/1/1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" creator="https://gpx.studio" version="1.1" schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd http://www.garmin.com/xmlschemas/GpxExtensions/v3 http://www.garmin.com/xmlschemas/GpxExtensionsv3.xsd http://www.garmin.com/xmlschemas/TrackPointExtension/v1 http://www.garmin.com/xmlschemas/TrackPointExtensionv1.xsd http://www.garmin.com/xmlschemas/PowerExtension/v1 http://www.garmin.com/xmlschemas/PowerExtensionv1.xsd http://www.topografix.com/GPX/gpx_style/0/2 http://www.topografix.com/GPX/gpx_style/0/2/gpx_style.xsd" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd http://www.garmin.com/xmlschemas/GpxExtensions/v3 http://www.garmin.com/xmlschemas/GpxExtensionsv3.xsd http://www.garmin.com/xmlschemas/TrackPointExtension/v1 http://www.garmin.com/xmlschemas/TrackPointExtensionv1.xsd http://www.garmin.com/xmlschemas/PowerExtension/v1 http://www.garmin.com/xmlschemas/PowerExtensionv1.xsd http://www.topografix.com/GPX/gpx_style/0/2 http://www.topografix.com/GPX/gpx_style/0/2/gpx_style.xsd">
   <metadata>
     <name>Marktlauf Kirchseeon 2026 – 5 km</name>
     <author>
@@ -64,8 +64,8 @@
       <trkpt lat="48.074971" lon="11.857545">
         <ele>564</ele>
       </trkpt>
-      <trkpt lat="48.074199" lon="11.857517">
-        <ele>564.99</ele>
+      <trkpt lat="48.074971" lon="11.857545">
+        <ele>564</ele>
       </trkpt>
       <trkpt lat="48.074346" lon="11.857522">
         <ele>564.99</ele>
@@ -97,44 +97,68 @@
       <trkpt lat="48.07127" lon="11.854046">
         <ele>564</ele>
       </trkpt>
-      <trkpt lat="48.071178" lon="11.854069">
+      <trkpt lat="48.071238" lon="11.854013">
         <ele>564</ele>
+      </trkpt>
+      <trkpt lat="48.071017" lon="11.853909">
+        <ele>564</ele>
+      </trkpt>
+      <trkpt lat="48.070747" lon="11.85365">
+        <ele>565</ele>
+      </trkpt>
+      <trkpt lat="48.070363" lon="11.853204">
+        <ele>565</ele>
+      </trkpt>
+      <trkpt lat="48.070226" lon="11.853222">
+        <ele>565.09</ele>
+      </trkpt>
+      <trkpt lat="48.069659" lon="11.853297">
+        <ele>565.45</ele>
+      </trkpt>
+      <trkpt lat="48.068806" lon="11.853409">
+        <ele>569.86</ele>
+      </trkpt>
+      <trkpt lat="48.068106" lon="11.853511">
+        <ele>570</ele>
+      </trkpt>
+      <trkpt lat="48.06801" lon="11.854187">
+        <ele>570.12</ele>
       </trkpt>
       <trkpt lat="48.067766" lon="11.8549">
         <ele>571</ele>
       </trkpt>
-      <trkpt lat="48.067523" lon="11.855609">
-        <ele>571.22</ele>
+      <trkpt lat="48.067766" lon="11.8549">
+        <ele>571</ele>
       </trkpt>
-      <trkpt lat="48.067523" lon="11.855609">
-        <ele>571.22</ele>
-      </trkpt>
-      <trkpt lat="48.067523" lon="11.855609">
-        <ele>571.22</ele>
+      <trkpt lat="48.067766" lon="11.8549">
+        <ele>571</ele>
       </trkpt>
       <trkpt lat="48.0675" lon="11.855678">
         <ele>571.24</ele>
       </trkpt>
-      <trkpt lat="48.067486" lon="11.856461">
+      <trkpt lat="48.067207" lon="11.855629">
         <ele>572</ele>
       </trkpt>
-      <trkpt lat="48.067346" lon="11.857015">
-        <ele>572.91</ele>
+      <trkpt lat="48.066975" lon="11.855535">
+        <ele>572</ele>
       </trkpt>
-      <trkpt lat="48.067037" lon="11.857816">
+      <trkpt lat="48.06692" lon="11.855736">
+        <ele>572</ele>
+      </trkpt>
+      <trkpt lat="48.066728" lon="11.856643">
+        <ele>573.19</ele>
+      </trkpt>
+      <trkpt lat="48.066599" lon="11.857257">
         <ele>574</ele>
       </trkpt>
-      <trkpt lat="48.066737" lon="11.858235">
-        <ele>575</ele>
+      <trkpt lat="48.066582" lon="11.857554">
+        <ele>574.18</ele>
       </trkpt>
-      <trkpt lat="48.066671" lon="11.858635">
-        <ele>575</ele>
+      <trkpt lat="48.066598" lon="11.857786">
+        <ele>574.82</ele>
       </trkpt>
-      <trkpt lat="48.066832" lon="11.86053">
-        <ele>576</ele>
-      </trkpt>
-      <trkpt lat="48.066832" lon="11.86053">
-        <ele>576</ele>
+      <trkpt lat="48.06684" lon="11.860617">
+        <ele>576.05</ele>
       </trkpt>
       <trkpt lat="48.066907" lon="11.861249">
         <ele>577</ele>
@@ -183,6 +207,9 @@
       </trkpt>
       <trkpt lat="48.068956" lon="11.868138">
         <ele>578.99</ele>
+      </trkpt>
+      <trkpt lat="48.069197" lon="11.868698">
+        <ele>578</ele>
       </trkpt>
       <trkpt lat="48.069197" lon="11.868698">
         <ele>578</ele>
