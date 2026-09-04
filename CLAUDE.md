@@ -84,16 +84,14 @@ auf Prod weiß: der SELECT las `u.vorname, u.nachname`, die Tabelle `users` hat 
 
 ## Aktueller Stand / Übergabe (Stand 2026-09-03)
 
-**Strecke 5 km (Alternativ-/Ost-Schleife) LIVE (Commit `dc56f12`, deployt, keine Migration):**
-`assets/courses/5km.gpx` = Orga-Drive „Strecken/5km alternat.gpx" (5,33 km, +26 hm; ersetzt die
-verworfene West-Variante, Drive „verboten wg. 100m"). `js/maps.js`: `blocked`-Flag für `elite-5km`
-entfernt → Vorschaukarte + Höhenprofil-Modal sichtbar. **10 km bleibt gesperrt** (Drive „10km ohne
-Zielloop.gpx", 10,06 km, von TT noch nicht freigegeben). Hinweis „* Streckenverlauf unter
-Vorbehalt" an der 5-km-Karte auf TT-Wort entfernt (Commit `dc69e3c`, 04.09.); 1/2/10 km tragen ihn weiter.
-Streckenposten-Excel „Durchlaufzeiten je km (5 km + 10 km)" + GPX mit km-Wegpunkten liegen im
-Orga-Drive `Strecken/` (Parameter-Blatt: Start/Zielschluss aus RR14-Protokoll, Tempi aus
-Holzkirchner Marktlauf 2025; Blatt „Posten" = Straßenabschnitte mit allen Durchgängen beider Läufe).
-Vault: MKL-T32 + build-log 2026-09-03/04.
+**Strecke 5 km LIVE in finaler Laufrichtung (GEGENRICHTUNG, Commit `fba4316`, deployt, keine Migration):**
+`assets/courses/5km.gpx` = Orga-Drive „Strecken/5km alternat – Gegenrichtung.gpx" (5,33 km, +26 hm; Ost-Schleife mit
+umgekehrten Trackpunkten; GPX-Name für Läufer neutral „Marktlauf Kirchseeon 2026 – 5 km"). Vorher: 03.09. Ost-Schleife
+in Original-Richtung (`dc56f12`), Vorbehalts-Hinweis an der 5-km-Karte entfernt (`dc69e3c`). **10 km bleibt gesperrt**
+(`blocked` in `js/maps.js`): TT sortiert die 10-km-Strecke gerade neu; neue GPX kommt in den Orga-Drive, dann auf
+TT-Wort einpflegen (Datei ersetzen, `blocked` raus, Excel per `intern/scripts/strecken/run_all.sh` neu). 1/2/10 km tragen
+den Vorbehalts-Hinweis weiter — TT 04.09.: Website darüber hinaus nicht anfassen.
+Orga-Excel + km-GPX (Original- und Gegenrichtung) im Orga-Drive `Strecken/`. Vault: MKL-T32 + build-log 2026-09-03/04.
 
 **Social-Pipeline Schritt 4 + Instagram wieder automatisch (Commit `05a44e5`, deployt, keine Migration;
 Vault-Backlog WP-M9…M13, Spec `intern/social-auto-versand-beste-zeit-spec.md` §4d):** Anlass war Anjas
