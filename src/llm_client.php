@@ -20,7 +20,7 @@ require_once __DIR__ . '/logger.php';
 require_once __DIR__ . '/brand_voice.php';
 
 /** Gemini-Modell (v1beta). Zentral, damit ein Versionswechsel eine Ein-Zeilen-Sache ist. */
-const GEMINI_MODEL = 'gemini-3.6-flash';
+const GEMINI_MODEL = 'gemini-2.0-flash';
 
 /**
  * Klartext-Grund, warum die letzte LLM-Antwort leer blieb (HTTP-Status/Key-Fehler,
