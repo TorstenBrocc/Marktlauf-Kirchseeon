@@ -889,6 +889,7 @@
     (function () {
         var bar      = document.getElementById('live-ticker-bar');
         var messages = document.getElementById('live-ticker-messages');
+        var header   = document.querySelector('.main-header');
         if (!bar || !messages) return;
 
         var POLL_INTERVAL = 30000; // 30 Sekunden
@@ -896,10 +897,22 @@
 
         var typLabel = { info: 'Info', warnung: 'Warnung', ergebnis: 'Ergebnis' };
 
+        // The header is position:fixed (css/layout.css), so the band cannot push it
+        // down on its own. Keep the header right below the band while the band is
+        // in view; as the band scrolls away, the header slides up to the top edge.
+        function positionHeader() {
+            if (!header) return;
+            var bottom = bar.hidden ? 0 : bar.getBoundingClientRect().bottom;
+            header.style.top = Math.max(0, bottom) + 'px';
+        }
+        window.addEventListener('scroll', positionHeader, { passive: true });
+        window.addEventListener('resize', positionHeader);
+
         function renderTicker(data) {
             var eintraege = (data && Array.isArray(data.eintraege)) ? data.eintraege : [];
             if (eintraege.length === 0) {
                 bar.hidden = true;
+                positionHeader();
                 return;
             }
             messages.innerHTML = '';
@@ -920,6 +933,7 @@
                 messages.appendChild(entry);
             });
             bar.hidden = false;
+            positionHeader();
         }
 
         function fetchTicker() {
