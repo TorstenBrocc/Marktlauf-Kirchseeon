@@ -21,7 +21,7 @@ $pdo = getDbConnection();
 
 $posts = $pdo->query(
     'SELECT tp.id, tp.nachricht, tp.typ, tp.aktiv, tp.erstellt_am,
-            u.vorname, u.nachname
+            u.name
      FROM ticker_posts tp
      LEFT JOIN users u ON u.id = tp.erstellt_von
      ORDER BY tp.erstellt_am DESC
@@ -143,7 +143,7 @@ $typColors = ['info' => '#1a73e8', 'warnung' => '#e67e22', 'ergebnis' => '#00964
                     <?php
                     $color = $typColors[$p['typ']] ?? '#1a73e8';
                     $label = $typLabels[$p['typ']] ?? $p['typ'];
-                    $name  = trim(($p['vorname'] ?? '') . ' ' . ($p['nachname'] ?? ''));
+                    $name  = trim((string) ($p['name'] ?? ''));
                     $dt    = date('d.m. H:i', strtotime($p['erstellt_am']));
                     ?>
                     <div class="ticker-item <?= $p['aktiv'] ? '' : 'inaktiv' ?>">
