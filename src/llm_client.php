@@ -22,6 +22,9 @@ require_once __DIR__ . '/brand_voice.php';
 /** Gemini-Modell (v1beta). Zentral, damit ein Versionswechsel eine Ein-Zeilen-Sache ist. */
 const GEMINI_MODEL = 'gemini-3.6-flash';
 
+/** Groq-Modell (OpenAI-kompatibel). Ein-Zeilen-Swap, z. B. 'openai/gpt-oss-120b' fuer mehr Qualitaet. */
+const GROQ_MODEL = 'llama-3.3-70b-versatile';
+
 /**
  * Klartext-Grund, warum die letzte LLM-Antwort leer blieb (HTTP-Status/Key-Fehler,
  * Safety-Block, finishReason). Fuer die Admin-Fehlermeldung — nicht fuer Endnutzer.
@@ -45,7 +48,7 @@ function llmActiveProvider(PDO $pdo): string
     $stmt->execute();
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     $provider = $row['value'] ?? 'gemini';
-    return in_array($provider, ['gemini', 'mistral'], true) ? $provider : 'gemini';
+    return in_array($provider, ['gemini', 'mistral', 'groq'], true) ? $provider : 'gemini';
 }
 
 /**
@@ -66,33 +69,35 @@ function llmGenerate(string $systemPrompt, string $userInput, ?string $provider 
         }
     }
 
-    // Aktiver Provider zuerst, danach der andere als automatischer Fallback:
+    // Aktiver Provider zuerst, danach die anderen als automatischer Fallback:
     // Limit/Ausfall eines Providers soll die Generierung nicht komplett blockieren
     // (Lehre 2026-09-04: Mistral-429 + falsches Gemini-Modell = Totalausfall).
-    $reihenfolge = $provider === 'mistral' ? ['mistral', 'gemini'] : ['gemini', 'mistral'];
+    $praeferenz  = ['gemini', 'groq', 'mistral'];
+    $reihenfolge = array_values(array_unique(array_merge([$provider], $praeferenz)));
 
-    $primaerFehler = '';
+    $fehler = [];
     foreach ($reihenfolge as $i => $p) {
-        $text = $p === 'mistral'
-            ? llmGenerateMistral($systemPrompt, $userInput)
-            : llmGenerateGemini($systemPrompt, $userInput);
+        $text = match ($p) {
+            'mistral' => llmGenerateMistral($systemPrompt, $userInput),
+            'groq'    => llmGenerateGroq($systemPrompt, $userInput),
+            default   => llmGenerateGemini($systemPrompt, $userInput),
+        };
         if ($text !== '') {
             if ($i > 0) {
                 logError('llmGenerate: Fallback auf "' . $p . '" erfolgreich, nachdem "'
-                    . $reihenfolge[0] . '" ausfiel (' . ($primaerFehler ?: 'leer') . ').');
+                    . $reihenfolge[0] . '" ausfiel (' . ($fehler[$reihenfolge[0]] ?? 'leer') . ').');
             }
             return $text;
         }
-        if ($i === 0) {
-            $primaerFehler = llmLastError();
-        }
+        $fehler[$p] = llmLastError();
     }
 
-    // Beide Provider fehlgeschlagen -> sprechende Sammelmeldung fuer die Admin-Ansicht.
-    $fallbackFehler = llmLastError();
-    llmLastError('Beide KI-Provider nicht verfuegbar (' . $reihenfolge[0] . ': '
-        . ($primaerFehler ?: 'leer') . ' | ' . $reihenfolge[1] . ': '
-        . ($fallbackFehler ?: 'leer') . ').');
+    // Kein Provider lieferte Text -> sprechende Sammelmeldung fuer die Admin-Ansicht.
+    $teile = [];
+    foreach ($reihenfolge as $p) {
+        $teile[] = $p . ': ' . ($fehler[$p] ?: 'leer');
+    }
+    llmLastError('Kein KI-Provider verfuegbar (' . implode(' | ', $teile) . ').');
     return '';
 }
 
@@ -219,6 +224,52 @@ function llmGenerateMistral(string $systemPrompt, string $userInput): string
     } catch (JsonException $e) {
         llmLastError('Mistral-Antwort nicht lesbar (JSON-Fehler).');
         logError('llmGenerateMistral: JSON-Parse-Fehler: ' . $e->getMessage() . ' — ' . substr($raw, 0, 300));
+        return '';
+    }
+}
+
+function llmGenerateGroq(string $systemPrompt, string $userInput): string
+{
+    llmLastError('');
+    $config = getConfig();
+    $apiKey = $config['groq_api_key'] ?? '';
+    if ($apiKey === '') {
+        llmLastError('Groq-API-Key fehlt (storage/config.php: groq_api_key).');
+        logError('llmGenerateGroq: groq_api_key nicht konfiguriert');
+        return '';
+    }
+
+    // OpenAI-kompatibel (https://console.groq.com/docs/openai) — gleiche Body-Form wie Mistral.
+    $url  = 'https://api.groq.com/openai/v1/chat/completions';
+    $body = json_encode([
+        'model'    => GROQ_MODEL,
+        'messages' => [
+            ['role' => 'system', 'content' => $systemPrompt],
+            ['role' => 'user',   'content' => $userInput],
+        ],
+        'max_tokens'  => 1200,
+        'temperature' => 0.8,
+    ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+
+    $raw = llmCurlPost($url, $body, [
+        'Content-Type: application/json',
+        'Authorization: Bearer ' . $apiKey,
+    ]);
+    if ($raw === null) {
+        return '';
+    }
+
+    try {
+        $data = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
+        $text = $data['choices'][0]['message']['content'] ?? '';
+        if ($text === '') {
+            llmLastError('Groq lieferte keinen Text.');
+            logError('llmGenerateGroq: leere Antwort — ' . substr($raw, 0, 300));
+        }
+        return $text;
+    } catch (JsonException $e) {
+        llmLastError('Groq-Antwort nicht lesbar (JSON-Fehler).');
+        logError('llmGenerateGroq: JSON-Parse-Fehler: ' . $e->getMessage() . ' — ' . substr($raw, 0, 300));
         return '';
     }
 }

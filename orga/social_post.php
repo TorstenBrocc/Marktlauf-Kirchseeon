@@ -327,6 +327,7 @@ $wtNameKurz  = [1 => 'Mo', 2 => 'Di', 3 => 'Mi', 4 => 'Do', 5 => 'Fr', 6 => 'Sa'
                 </label>
                 <select id="sp-provider" title="KI-Anbieter">
                     <option value="gemini"  <?= $provider === 'gemini'  ? 'selected' : '' ?>>Gemini</option>
+                    <option value="groq"    <?= $provider === 'groq'    ? 'selected' : '' ?>>Groq (Llama 70B)</option>
                     <option value="mistral" <?= $provider === 'mistral' ? 'selected' : '' ?>>Mistral</option>
                 </select>
                 <span class="sp-hinweis" id="sp-spinner" style="display:none">⏳ KI läuft …</span>
