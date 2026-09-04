@@ -67,6 +67,21 @@ neuer Lauf / ein vergleichbarer Workstream direkt wirksam arbeiten kann.
   über die Fördergruppen-Reiter (`?zielgruppe=fg_<gruppe>`) Empfänger UND Variantentext um.
 - Zielgruppen/Empfänger-Filter je Anschreiben-Seite: `src/sponsor_zielgruppen.php`.
 
+## Aktueller Stand / Übergabe (Stand 2026-09-04)
+
+**Live-Ticker: `orga/ticker.php` repariert (Commit `552cfbe`, deployt, keine Migration).** Die Seite war
+auf Prod weiß: der SELECT las `u.vorname, u.nachname`, die Tabelle `users` hat seit `001_init.sql` nur
+`name` (PDO-Exception unbehandelt → Fatal ohne Ausgabe). Jetzt `u.name`; Ersteller-Name aus `name`.
+- **`data/status.json` → 404 auf der Startseite ist kein Defekt:** der Poller in `index.html` (30 s,
+  Live-Ticker-Band) liest eine Datei, die ausschließlich `orga/api/ticker_crud.php` nach der **ersten**
+  Ticker-Aktion schreibt. `ticker_posts` auf Prod: 0 Zeilen → Datei nie erzeugt. Der `deploy.yml`-EXCLUDE
+  ist richtig (Runtime-State; `--delete` würde Renntag-Meldungen löschen — gleiches Muster wie
+  `sponsoren.json`). Kein Workflow erzeugt die Datei, das ist so gewollt.
+- **Offen (Inhaber):** ersten Eintrag „Die Anmeldung ist offen" in `orga/ticker.php` anlegen → Datei
+  entsteht, Band erscheint auf der Startseite, der 404 verschwindet. Danach Konsole gegenprüfen.
+- Verifikation: `php -l` grün, Deploy-Workflow grün, md5 `orga/ticker.php` auf Strato = Repo, der
+  korrigierte SELECT read-only auf Prod ausgeführt (ok, 0 Zeilen). Kein Login-Test der Seite.
+
 ## Aktueller Stand / Übergabe (Stand 2026-09-03)
 
 **Strecke 5 km (Alternativ-/Ost-Schleife) LIVE (Commit `dc56f12`, deployt, keine Migration):**
