@@ -25,7 +25,7 @@ if (!verifyCsrfToken($_POST['csrf_token'] ?? '')) {
 }
 
 $provider = $_POST['provider'] ?? '';
-if (!in_array($provider, ['gemini', 'mistral'], true)) {
+if (!in_array($provider, ['gemini', 'mistral', 'groq'], true)) {
     http_response_code(400);
     echo json_encode(['error' => 'Ungültiger Provider.']);
     exit;

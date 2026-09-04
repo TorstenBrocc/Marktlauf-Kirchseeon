@@ -30,7 +30,7 @@ if (!verifyCsrfToken($_POST['csrf_token'] ?? '')) {
 }
 
 $provider = $_POST['provider'] ?? null;
-if ($provider !== null && !in_array($provider, ['gemini', 'mistral'], true)) {
+if ($provider !== null && !in_array($provider, ['gemini', 'mistral', 'groq'], true)) {
     $provider = null;
 }
 
