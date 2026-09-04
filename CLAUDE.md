@@ -93,8 +93,9 @@ auf Prod weiß: der SELECT las `u.vorname, u.nachname`, die Tabelle `users` hat 
   04.09.; Leserichtungs-Konvention für LTR-Schrift, gleiche Richtung wie das Sponsoren-Laufband). Nur
   `#live-ticker-messages` läuft, das LIVE-Label steht. Mechanik wie `sponsor-marquee`: Set aus
   Einträgen (+ Trennpunkt je Eintrag) wird geklont, bis der Viewport plus ein Set gefüllt ist; Shift pro
-  Runde = genau eine Set-Breite (`--ticker-shift`), Dauer = Set-Breite / **60 px/s** (`SPEED_PX_PER_S`,
-  kalibriert am Sponsoren-Band ≈ 61 px/s). Klone `aria-hidden`. **Pause** bei Hover, Fokus (`tabindex=0`)
+  Runde = genau eine Set-Breite (`--ticker-shift`), Dauer = Set-Breite / **45 px/s** (`SPEED_PX_PER_S`;
+  Start war 60 ≈ Sponsoren-Band, TT-Justage 04.09. auf 45, Commit `b1f48da`; Trennabstand dabei von
+  0,9 rem auf 2 rem je Seite verdoppelt). Klone `aria-hidden`. **Pause** bei Hover, Fokus (`tabindex=0`)
   und Klick/Tap (`is-paused`) — WCAG 2.2.2. `prefers-reduced-motion`: kein Lauf, ein Set umbrechend.
   Poller rendert nur bei geändertem Feed (`lastPayload`), sonst würde das Band alle 30 s neu starten.
   Tempo-Justage: nur `SPEED_PX_PER_S` in `index.html` ändern.
