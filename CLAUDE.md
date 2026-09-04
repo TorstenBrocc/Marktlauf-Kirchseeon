@@ -67,6 +67,28 @@ neuer Lauf / ein vergleichbarer Workstream direkt wirksam arbeiten kann.
   über die Fördergruppen-Reiter (`?zielgruppe=fg_<gruppe>`) Empfänger UND Variantentext um.
 - Zielgruppen/Empfänger-Filter je Anschreiben-Seite: `src/sponsor_zielgruppen.php`.
 
+## Aktueller Stand / Übergabe (Stand 2026-09-04, Nachtrag: LLM-Provider-Kette)
+
+**Social-/Presse-Generator: 3-Provider-Kette mit Auto-Fallback (mehrere Commits, deployt, keine Migration).**
+Anlass: Anjas Mail „Providerlimit erreicht" — Mistral-Free 429 UND Gemini gleichzeitig kaputt = Totalausfall.
+- **Aktiver Provider: Groq** (`einstellungen.llm_provider=groq`), Modell **`openai/gpt-oss-120b`** (Konstante
+  `GROQ_MODEL` in `src/llm_client.php`; `llama-3.3-70b-versatile` ist „Enterprise"/nicht auf dem Free-Key → 404).
+  OpenAI-kompatibel (`api.groq.com/openai/v1`, Key `groq_api_key`), live end-to-end getestet (HTTP 200), schnell,
+  kein Training auf Daten.
+- **Fallback-Kette** in `llmGenerate()`: `[gemini, groq, mistral]`, aktiver Provider vorn; liefert einer ''
+  (Fehler), springt automatisch der nächste ein. Sammelfehler nennt alle Provider.
+- **Gemini** `gemini-3.6-flash` + `thinkingConfig.thinkingLevel` (Gemini-3.x-Feld, NICHT Legacy-`thinkingBudget`
+  → sonst HTTP 400 INVALID_ARGUMENT), aktuell `low` + temperature 0.8. `gemini-2.0/2.5-flash` = „no longer
+  available" (404).
+- **Mistral** `mistral-small-latest`: Free = 1 Req/s / 20k TPM (admin.mistral.ai/plateforme/limits) → Selbst-
+  Drossel ≥1,1 s zwischen zwei Calls (`$letzterMistralCall`). Kein Kosten-/Monatslimit; 429 war reines Rate-Limit.
+- **cURL-Timeout 90 s** (`llmCurlPost`, Reasoning-Modelle langsam; PHP `max_execution_time` Strato = 240 s).
+  Provider-Dropdown (`orga/social_post.php`) mit `i`-Tooltip; Whitelists `social_provider.php` + `social_generate.php`.
+- **GitHub Models NICHT eingebaut**: Dienst zum 30.07.2026 eingestellt (docs.github.com/github-models).
+- **Offen**: echter GPT-4-Klasse-Tier nur über Azure OpenAI (Azure-Nonprofit-Grant) — der OpenAI-ChatGPT-
+  Nonprofit-Grant deckt KEINE API. Kernkompetenz-Feld (Migration 077, Tabelle `sponsors`, verdrahtet in
+  `src/social_sponsoren.php` → Sponsor-Posts) ist erst bei **7/108** Sponsoren gefüllt (Pflege in der Sponsor-Maske).
+
 ## Aktueller Stand / Übergabe (Stand 2026-09-04)
 
 **Live-Ticker: `orga/ticker.php` repariert (Commit `552cfbe`, deployt, keine Migration).** Die Seite war
