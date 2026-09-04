@@ -169,7 +169,7 @@
             max-width: 900px;
             margin: 0 auto;
             display: flex;
-            align-items: flex-start;
+            align-items: center;
             gap: 0.75rem;
         }
         .live-ticker-label {
@@ -196,16 +196,47 @@
             0%, 100% { opacity: 1; }
             50%       { opacity: 0.35; }
         }
+        /* Marquee viewport: the track runs right-to-left inside it, same direction
+           and mechanics as the sponsor marquee (css/components.css). Hover, focus
+           or a tap pause the run (WCAG 2.2.2 Pause, Stop, Hide). */
         .live-ticker-messages {
             flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            -webkit-mask-image: linear-gradient(to right, transparent 0, #000 1.25rem, #000 calc(100% - 1.25rem), transparent 100%);
+            mask-image: linear-gradient(to right, transparent 0, #000 1.25rem, #000 calc(100% - 1.25rem), transparent 100%);
+        }
+        .live-ticker-messages:focus { outline: none; }
+        .live-ticker-messages:focus-visible { outline: 2px solid #7dda8a; outline-offset: 2px; }
+        .live-ticker-track {
             display: flex;
-            flex-direction: column;
-            gap: 0.3rem;
+            width: max-content;
+            animation: liveTickerRun var(--ticker-duration, 20s) linear infinite;
+            will-change: transform;
+        }
+        .live-ticker-messages:hover .live-ticker-track,
+        .live-ticker-messages:focus-within .live-ticker-track,
+        .live-ticker-bar.is-paused .live-ticker-track {
+            animation-play-state: paused;
+        }
+        @keyframes liveTickerRun {
+            from { transform: translateX(0); }
+            to   { transform: translateX(var(--ticker-shift, -50%)); }
+        }
+        .live-ticker-set {
+            display: flex;
+            align-items: baseline;
         }
         .live-ticker-entry {
             display: flex;
             align-items: baseline;
             gap: 0.5rem;
+            white-space: nowrap;
+        }
+        .live-ticker-sep {
+            padding: 0 0.9rem;
+            color: #7dda8a;
+            opacity: 0.7;
         }
         .live-ticker-typ {
             font-size: 0.72rem;
@@ -217,7 +248,15 @@
         .live-ticker-typ-info     { background: #1a73e8; color: #fff; }
         .live-ticker-typ-warnung  { background: #e67e22; color: #fff; }
         .live-ticker-typ-ergebnis { background: #009640; color: #fff; }
-        .live-ticker-text { flex: 1; }
+        @media (prefers-reduced-motion: reduce) {
+            /* No run: show the message set once, wrapping like a normal paragraph. */
+            .live-ticker-inner { align-items: flex-start; }
+            .live-ticker-messages { -webkit-mask-image: none; mask-image: none; }
+            .live-ticker-track { animation: none; width: auto; }
+            .live-ticker-set { flex-wrap: wrap; row-gap: 0.3rem; }
+            .live-ticker-entry { white-space: normal; }
+            .live-ticker-set > .live-ticker-sep:last-child { display: none; }
+        }
     </style>
 </head>
 <body>
@@ -259,7 +298,10 @@
                     <span class="live-ticker-dot" aria-hidden="true"></span>
                     Live
                 </span>
-                <div id="live-ticker-messages" class="live-ticker-messages"></div>
+                <div id="live-ticker-messages" class="live-ticker-messages" tabindex="0"
+                     title="Klicken oder antippen: Laufband anhalten / weiterlaufen">
+                    <div id="live-ticker-track" class="live-ticker-track"></div>
+                </div>
             </div>
         </div>
 
@@ -889,13 +931,17 @@
     (function () {
         var bar      = document.getElementById('live-ticker-bar');
         var messages = document.getElementById('live-ticker-messages');
+        var track    = document.getElementById('live-ticker-track');
         var header   = document.querySelector('.main-header');
-        if (!bar || !messages) return;
+        if (!bar || !messages || !track) return;
 
-        var POLL_INTERVAL = 30000; // 30 Sekunden
-        var FEED_URL      = 'data/status.json';
+        var POLL_INTERVAL  = 30000; // 30 Sekunden
+        var FEED_URL       = 'data/status.json';
+        var SPEED_PX_PER_S = 60;    // calibrated on the sponsor marquee (~61 px/s)
 
-        var typLabel = { info: 'Info', warnung: 'Warnung', ergebnis: 'Ergebnis' };
+        var typLabel     = { info: 'Info', warnung: 'Warnung', ergebnis: 'Ergebnis' };
+        var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+        var lastPayload  = null;
 
         // The header is position:fixed (css/layout.css), so the band cannot push it
         // down on its own. Keep the header right below the band while the band is
@@ -908,14 +954,11 @@
         window.addEventListener('scroll', positionHeader, { passive: true });
         window.addEventListener('resize', positionHeader);
 
-        function renderTicker(data) {
-            var eintraege = (data && Array.isArray(data.eintraege)) ? data.eintraege : [];
-            if (eintraege.length === 0) {
-                bar.hidden = true;
-                positionHeader();
-                return;
-            }
-            messages.innerHTML = '';
+        // One message set: every entry is followed by a separator so that repeated
+        // sets join seamlessly in the running track.
+        function buildSet(eintraege) {
+            var set = document.createElement('div');
+            set.className = 'live-ticker-set';
             eintraege.forEach(function (e) {
                 var entry = document.createElement('div');
                 entry.className = 'live-ticker-entry';
@@ -928,11 +971,64 @@
                 text.className = 'live-ticker-text';
                 text.textContent = e.nachricht || '';
 
+                var sep = document.createElement('span');
+                sep.className = 'live-ticker-sep';
+                sep.setAttribute('aria-hidden', 'true');
+                sep.textContent = '\u2022';
+
                 entry.appendChild(pill);
                 entry.appendChild(text);
-                messages.appendChild(entry);
+                set.appendChild(entry);
+                set.appendChild(sep);
             });
+            return set;
+        }
+
+        // Repeat the set until the track covers the viewport plus one full set and
+        // shift by exactly one set width per loop — seamless for short and long
+        // messages alike. Clones are hidden from assistive tech.
+        function layoutTrack() {
+            var first = track.firstElementChild;
+            if (!first || bar.hidden) return;
+            while (track.children.length > 1) track.removeChild(track.lastElementChild);
+            var setWidth  = first.getBoundingClientRect().width;
+            var viewWidth = messages.getBoundingClientRect().width || window.innerWidth;
+            if (setWidth === 0) return;
+            var repeats = reduceMotion.matches ? 1 : Math.ceil(viewWidth / setWidth) + 1;
+            for (var i = 1; i < repeats; i++) {
+                var clone = first.cloneNode(true);
+                clone.setAttribute('aria-hidden', 'true');
+                track.appendChild(clone);
+            }
+            track.style.setProperty('--ticker-shift', (-setWidth) + 'px');
+            track.style.setProperty('--ticker-duration', (setWidth / SPEED_PX_PER_S) + 's');
+        }
+        window.addEventListener('resize', layoutTrack);
+        if (document.fonts && document.fonts.ready) { document.fonts.ready.then(layoutTrack); }
+        if (reduceMotion.addEventListener) { reduceMotion.addEventListener('change', layoutTrack); }
+
+        // Tap/click toggles the pause; hover and focus pause via CSS.
+        messages.addEventListener('click', function () { bar.classList.toggle('is-paused'); });
+
+        function renderTicker(data) {
+            var eintraege = (data && Array.isArray(data.eintraege)) ? data.eintraege : [];
+            var payload   = JSON.stringify(eintraege);
+            if (payload === lastPayload) return; // unchanged feed: don't restart the run
+            lastPayload = payload;
+
+            if (eintraege.length === 0) {
+                bar.hidden = true;
+                track.innerHTML = '';
+                positionHeader();
+                return;
+            }
+            track.innerHTML = '';
+            track.appendChild(buildSet(eintraege));
             bar.hidden = false;
+            layoutTrack();
+            // Re-measure after the first paint: right after unhiding, the viewport
+            // width can still read 0 in some engines.
+            window.requestAnimationFrame(layoutTrack);
             positionHeader();
         }
 
