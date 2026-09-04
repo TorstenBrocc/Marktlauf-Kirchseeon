@@ -73,11 +73,12 @@ neuer Lauf / ein vergleichbarer Workstream direkt wirksam arbeiten kann.
 `assets/courses/5km.gpx` = Orga-Drive „Strecken/5km alternat.gpx" (5,33 km, +26 hm; ersetzt die
 verworfene West-Variante, Drive „verboten wg. 100m"). `js/maps.js`: `blocked`-Flag für `elite-5km`
 entfernt → Vorschaukarte + Höhenprofil-Modal sichtbar. **10 km bleibt gesperrt** (Drive „10km ohne
-Zielloop.gpx", 10,06 km, von TT noch nicht freigegeben). **Offen (TT-Entscheid):** Hinweis
-„* Streckenverlauf unter Vorbehalt" (`strecke.disclaimer`, index.html 5-km-Karte) entfernen?
-Streckenposten-Excel „Durchlaufzeiten je km (5 km + 10 km)" liegt im Orga-Drive `Strecken/`
-(Parameter-Blatt: Start/Zielschluss aus RR14-Protokoll, Tempi aus Holzkirchner Marktlauf 2025).
-Vault: MKL-T32 + build-log 2026-09-03.
+Zielloop.gpx", 10,06 km, von TT noch nicht freigegeben). Hinweis „* Streckenverlauf unter
+Vorbehalt" an der 5-km-Karte auf TT-Wort entfernt (Commit `dc69e3c`, 04.09.); 1/2/10 km tragen ihn weiter.
+Streckenposten-Excel „Durchlaufzeiten je km (5 km + 10 km)" + GPX mit km-Wegpunkten liegen im
+Orga-Drive `Strecken/` (Parameter-Blatt: Start/Zielschluss aus RR14-Protokoll, Tempi aus
+Holzkirchner Marktlauf 2025; Blatt „Posten" = Straßenabschnitte mit allen Durchgängen beider Läufe).
+Vault: MKL-T32 + build-log 2026-09-03/04.
 
 **Social-Pipeline Schritt 4 + Instagram wieder automatisch (Commit `05a44e5`, deployt, keine Migration;
 Vault-Backlog WP-M9…M13, Spec `intern/social-auto-versand-beste-zeit-spec.md` §4d):** Anlass war Anjas
