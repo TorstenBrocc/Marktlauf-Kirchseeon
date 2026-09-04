@@ -174,6 +174,20 @@ function llmGenerateMistral(string $systemPrompt, string $userInput): string
         return '';
     }
 
+    // Selbst-Drosselung: Mistral-Free erlaubt nur 1 Request/Sekunde (admin.mistral.ai
+    // /plateforme/limits, mistral-small = 1,00 RPS). Beim Generieren feuern wir zwei
+    // Calls kurz hintereinander (Presse + Social) -> der zweite lief sonst in HTTP 429
+    // (Vorfall 2026-09-04). Mindestabstand 1,1 s zwischen zwei Mistral-Calls desselben
+    // Requests einhalten; greift nur, wenn Mistral zweimal drankommt (statisch je Prozess).
+    static $letzterMistralCall = 0.0;
+    if ($letzterMistralCall > 0.0) {
+        $abstand = microtime(true) - $letzterMistralCall;
+        if ($abstand < 1.1) {
+            usleep((int) ((1.1 - $abstand) * 1_000_000));
+        }
+    }
+    $letzterMistralCall = microtime(true);
+
     $url  = 'https://api.mistral.ai/v1/chat/completions';
     $body = json_encode([
         'model'    => 'mistral-small-latest',
