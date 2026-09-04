@@ -81,6 +81,14 @@ auf Prod weiß: der SELECT las `u.vorname, u.nachname`, die Tabelle `users` hat 
   entsteht, Band erscheint auf der Startseite, der 404 verschwindet. Danach Konsole gegenprüfen.
 - Verifikation: `php -l` grün, Deploy-Workflow grün, md5 `orga/ticker.php` auf Strato = Repo, der
   korrigierte SELECT read-only auf Prod ausgeführt (ok, 0 Zeilen). Kein Login-Test der Seite.
+- **Erster Eintrag angelegt (Inhaber, 04.09. 06:32):** `data/status.json` liefert 200, Konsolen-404 weg.
+- **Band lag hinter dem Header (Commit `4eacc84`, deployt):** das DS-Briefing §2 nahm einen
+  `position:sticky`-Header an, real ist er `position:fixed` (`css/layout.css:11`) und legte sich über das
+  Band. Fix nur im Ticker-Skript in `index.html`: `positionHeader()` setzt `header.style.top` auf die
+  Unterkante des Bands (scroll/resize + nach jedem Render) — Band im Fluss, scrollt weg, Header rückt an
+  den oberen Rand; ohne Meldungen `top: 0`. Header-CSS und andere Seiten unverändert. Live per Browser
+  verifiziert (Desktop 1280: Band 39 px, Header darunter; Scroll 300 → Header 0 px, `.scrolled` greift).
+  Entscheidung Inhaber 04.09. gegen „Band dauerhaft fixiert" und „Header global sticky".
 
 ## Aktueller Stand / Übergabe (Stand 2026-09-03)
 
