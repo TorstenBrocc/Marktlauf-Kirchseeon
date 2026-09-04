@@ -327,9 +327,10 @@ $wtNameKurz  = [1 => 'Mo', 2 => 'Di', 3 => 'Mi', 4 => 'Do', 5 => 'Fr', 6 => 'Sa'
                 </label>
                 <select id="sp-provider" title="KI-Anbieter">
                     <option value="gemini"  <?= $provider === 'gemini'  ? 'selected' : '' ?>>Gemini</option>
-                    <option value="groq"    <?= $provider === 'groq'    ? 'selected' : '' ?>>Groq (Llama 70B)</option>
+                    <option value="groq"    <?= $provider === 'groq'    ? 'selected' : '' ?>>Groq (GPT-OSS 120B)</option>
                     <option value="mistral" <?= $provider === 'mistral' ? 'selected' : '' ?>>Mistral</option>
                 </select>
+                <span class="sp-info" tabindex="0" role="img" aria-label="KI-Anbieter erklärt" data-tip="Wählt, welche KI den Entwurf schreibt. Gemini = Googles Standard, schnell &amp; solide. Groq / GPT-OSS 120B = großes offenes OpenAI-Modell, für kräftigere Texte. Mistral = kleines Schnellmodell, eher Rückfall. Fällt der gewählte Anbieter aus (Limit/Störung), springt automatisch der nächste ein.">i</span>
                 <span class="sp-hinweis" id="sp-spinner" style="display:none">⏳ KI läuft …</span>
             </div>
             <p class="sp-hinweis" style="margin:0 0 0.9rem">Hashtags (werden automatisch an die Caption angehängt):
