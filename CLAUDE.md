@@ -97,9 +97,11 @@ Orga-Drive „Strecken/5 km-mit-km-Marken.gpx" ohne Wegpunkte (5,44 km, TT 04.09
 mit der 10 km; GPX-Name für Läufer neutral „Marktlauf Kirchseeon 2026 – 5 km"). Davor v2 = Gegenrichtung 5,33 km (`fba4316`).
 Vorher: 03.09. Ost-Schleife
 in Original-Richtung (`dc56f12`), Vorbehalts-Hinweis an der 5-km-Karte entfernt (`dc69e3c`). **10 km bleibt gesperrt**
-(`blocked` in `js/maps.js`): TT sortiert die 10-km-Strecke gerade neu; neue GPX kommt in den Orga-Drive, dann auf
-TT-Wort einpflegen (Datei ersetzen, `blocked` raus, Excel per `intern/scripts/strecken/run_all.sh` neu). 1/2/10 km tragen
-den Vorbehalts-Hinweis weiter — TT 04.09.: Website darüber hinaus nicht anfassen.
+(`blocked` in `js/maps.js`): die finale 10 km (Drive `Strecken/10km.gpx`, 10,04 km) liegt **fertig committet auf Branch
+`claude/strecke-10km-final`** (Worktree `website-strecke-10km`; GPX + `blocked` raus + Vorbehalts-Hinweis raus).
+**Push nach main NUR auf TT-Wort „10 km freigeben"** — dann mechanisch nach
+`intern/docs/strecken-10km-freigabe-runbook.md`. 1/2 km tragen den Vorbehalts-Hinweis weiter — TT 04.09.: Website
+darüber hinaus nicht anfassen.
 Orga-Excel + km-GPX (Original- und Gegenrichtung) im Orga-Drive `Strecken/`. Vault: MKL-T32 + build-log 2026-09-03/04.
 
 **Social-Pipeline Schritt 4 + Instagram wieder automatisch (Commit `05a44e5`, deployt, keine Migration;
