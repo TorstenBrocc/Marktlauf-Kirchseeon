@@ -89,6 +89,15 @@ auf Prod weiß: der SELECT las `u.vorname, u.nachname`, die Tabelle `users` hat 
   den oberen Rand; ohne Meldungen `top: 0`. Header-CSS und andere Seiten unverändert. Live per Browser
   verifiziert (Desktop 1280: Band 39 px, Header darunter; Scroll 300 → Header 0 px, `.scrolled` greift).
   Entscheidung Inhaber 04.09. gegen „Band dauerhaft fixiert" und „Header global sticky".
+- **Meldungen laufen als Band (Commit `d6b2d6d`, deployt):** Richtung **rechts → links** (Inhaber-Entscheid
+  04.09.; Leserichtungs-Konvention für LTR-Schrift, gleiche Richtung wie das Sponsoren-Laufband). Nur
+  `#live-ticker-messages` läuft, das LIVE-Label steht. Mechanik wie `sponsor-marquee`: Set aus
+  Einträgen (+ Trennpunkt je Eintrag) wird geklont, bis der Viewport plus ein Set gefüllt ist; Shift pro
+  Runde = genau eine Set-Breite (`--ticker-shift`), Dauer = Set-Breite / **60 px/s** (`SPEED_PX_PER_S`,
+  kalibriert am Sponsoren-Band ≈ 61 px/s). Klone `aria-hidden`. **Pause** bei Hover, Fokus (`tabindex=0`)
+  und Klick/Tap (`is-paused`) — WCAG 2.2.2. `prefers-reduced-motion`: kein Lauf, ein Set umbrechend.
+  Poller rendert nur bei geändertem Feed (`lastPayload`), sonst würde das Band alle 30 s neu starten.
+  Tempo-Justage: nur `SPEED_PX_PER_S` in `index.html` ändern.
 
 ## Aktueller Stand / Übergabe (Stand 2026-09-03)
 
