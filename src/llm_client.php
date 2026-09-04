@@ -3,7 +3,7 @@
  * LLM-Bridge: Gemini (Google AI) + Mistral via rohem PHP-cURL.
  *
  * Verifizierte API-Shapes (2026-07-13):
- *   Gemini  POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=KEY
+ *   Gemini  POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=KEY
  *           Body: {"contents":[{"role":"user","parts":[{"text":"..."}]}],"systemInstruction":{"parts":[{"text":"..."}]}}
  *           Response: candidates[0].content.parts[0].text
  *
@@ -20,7 +20,7 @@ require_once __DIR__ . '/logger.php';
 require_once __DIR__ . '/brand_voice.php';
 
 /** Gemini-Modell (v1beta). Zentral, damit ein Versionswechsel eine Ein-Zeilen-Sache ist. */
-const GEMINI_MODEL = 'gemini-2.0-flash';
+const GEMINI_MODEL = 'gemini-3.6-flash';
 
 /**
  * Klartext-Grund, warum die letzte LLM-Antwort leer blieb (HTTP-Status/Key-Fehler,
@@ -66,10 +66,34 @@ function llmGenerate(string $systemPrompt, string $userInput, ?string $provider 
         }
     }
 
-    return match ($provider) {
-        'mistral' => llmGenerateMistral($systemPrompt, $userInput),
-        default   => llmGenerateGemini($systemPrompt, $userInput),
-    };
+    // Aktiver Provider zuerst, danach der andere als automatischer Fallback:
+    // Limit/Ausfall eines Providers soll die Generierung nicht komplett blockieren
+    // (Lehre 2026-09-04: Mistral-429 + falsches Gemini-Modell = Totalausfall).
+    $reihenfolge = $provider === 'mistral' ? ['mistral', 'gemini'] : ['gemini', 'mistral'];
+
+    $primaerFehler = '';
+    foreach ($reihenfolge as $i => $p) {
+        $text = $p === 'mistral'
+            ? llmGenerateMistral($systemPrompt, $userInput)
+            : llmGenerateGemini($systemPrompt, $userInput);
+        if ($text !== '') {
+            if ($i > 0) {
+                logError('llmGenerate: Fallback auf "' . $p . '" erfolgreich, nachdem "'
+                    . $reihenfolge[0] . '" ausfiel (' . ($primaerFehler ?: 'leer') . ').');
+            }
+            return $text;
+        }
+        if ($i === 0) {
+            $primaerFehler = llmLastError();
+        }
+    }
+
+    // Beide Provider fehlgeschlagen -> sprechende Sammelmeldung fuer die Admin-Ansicht.
+    $fallbackFehler = llmLastError();
+    llmLastError('Beide KI-Provider nicht verfuegbar (' . $reihenfolge[0] . ': '
+        . ($primaerFehler ?: 'leer') . ' | ' . $reihenfolge[1] . ': '
+        . ($fallbackFehler ?: 'leer') . ').');
+    return '';
 }
 
 function llmGenerateGemini(string $systemPrompt, string $userInput): string
@@ -94,9 +118,12 @@ function llmGenerateGemini(string $systemPrompt, string $userInput): string
         'generationConfig' => [
             'maxOutputTokens' => 1200,
             'temperature'     => 0.7,
-            // 2.5-flash ist ein Thinking-Modell: Thinking abschalten (thinkingBudget 0),
-            // sonst frisst der Denk-Schritt das Output-Budget und die Antwort bleibt leer.
-            'thinkingConfig'  => ['thinkingBudget' => 0],
+            // Gemini 3.x steuert Thinking ueber thinkingLevel (minimal|low|medium|high),
+            // NICHT mehr ueber das Legacy-thinkingBudget — das gibt sonst HTTP 400
+            // INVALID_ARGUMENT (Vorfall 2026-09-04). 'minimal' haelt den Denk-Schritt klein,
+            // damit er das Output-Budget nicht auffrisst und die Antwort nicht leer bleibt.
+            // Doku: https://ai.google.dev/gemini-api/docs/generate-content/thinking
+            'thinkingConfig'  => ['thinkingLevel' => 'minimal'],
         ],
     ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 
