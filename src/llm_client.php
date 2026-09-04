@@ -221,7 +221,12 @@ function llmCurlPost(string $url, string $body, array $headers): ?string
         CURLOPT_POSTFIELDS     => $body,
         CURLOPT_HTTPHEADER     => $headers,
         CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT        => 30,
+        CURLOPT_CONNECTTIMEOUT => 10,
+        // Reasoning-Modelle (Gemini 3.x) "denken" sichtbar; 30 s reichten nicht und
+        // rissen den Auto-Entwurf beim Oeffnen (Vorfall 2026-09-04, "timed out after
+        // 30004 ms"). 90 s je Call; PHP max_execution_time auf Strato = 240 s deckt die
+        // zwei sequentiellen Calls (Presse + Social) ab.
+        CURLOPT_TIMEOUT        => 90,
     ]);
 
     $raw      = curl_exec($ch);
