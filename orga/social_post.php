@@ -322,9 +322,6 @@ $wtNameKurz  = [1 => 'Mo', 2 => 'Di', 3 => 'Mi', 4 => 'Do', 5 => 'Fr', 6 => 'Sa'
             </div>
             <div class="sp-zeile" style="margin-bottom:0.9rem">
                 <button class="btn btn-primary" id="sp-generieren"><?= $schrittText ? 'Neu formulieren' : 'Entwürfe generieren' ?></button>
-                <label class="sp-hinweis" style="display:inline-flex;align-items:center;gap:0.35rem">
-                    <input type="checkbox" id="sp-mit-merkfeld"> Notiz (Merkfeld) mitgeben
-                </label>
                 <select id="sp-provider" title="KI-Anbieter">
                     <option value="gemini"  <?= $provider === 'gemini'  ? 'selected' : '' ?>>Gemini</option>
                     <option value="groq"    <?= $provider === 'groq'    ? 'selected' : '' ?>>Groq (GPT-OSS 120B)</option>
@@ -770,7 +767,6 @@ async function generiereEntwuerfe() {
                 stichpunkte:  document.getElementById('sp-fakten').value,
                 prompt:       document.getElementById('sp-prompt').value,
                 hashtags,
-                mit_merkfeld: document.getElementById('sp-mit-merkfeld').checked ? '1' : '0',
                 mit_presse:   mitPresse ? '1' : '0',
             }),
         });

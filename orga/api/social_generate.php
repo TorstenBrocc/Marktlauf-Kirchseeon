@@ -75,16 +75,6 @@ if ($stichpunkte !== '') {
 if ($userPrompt !== '') {
     $parts[] = "Zusätzliche Anweisung des Nutzers:\n" . $userPrompt;
 }
-// Merkfeld (interne Notiz) nur auf Wunsch mitgeben — serverseitig aus den
-// Einstellungen gelesen, damit der gespeicherte Stand zaehlt
-if (($_POST['mit_merkfeld'] ?? '') === '1') {
-    $stmt = getDbConnection()->prepare("SELECT `value` FROM einstellungen WHERE `key` = 'social_merkfeld'");
-    $stmt->execute();
-    $merkfeld = trim((string) ($stmt->fetchColumn() ?: ''));
-    if ($merkfeld !== '') {
-        $parts[] = "Interne Notizen (Merkfeld):\n" . $merkfeld;
-    }
-}
 $userInput = implode("\n\n", $parts);
 
 // Presse nur, wenn gewuenscht (Post-Detail sendet das Presse-Merkmal des Anlasses mit)
