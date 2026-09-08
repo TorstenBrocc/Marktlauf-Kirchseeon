@@ -878,7 +878,10 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
             });
             const bg = document.querySelector('input[name="bgmode"]:checked');
             const photo = (selectedPhotoUrl && !selectedPhotoUrl.startsWith('blob:')) ? selectedPhotoUrl : '';
-            return { felder, checks, bgmode: bg ? bg.value : '', photo, positions: thPositions };
+            // Logo-Auswahl mitsichern: sonst faellt sie beim Reload auf den Server-Default zurueck
+            // und ein gewaehltes Sponsor-Logo (z. B. Hoenninger) ginge verloren.
+            const logos = selectedLogos.map(l => ({ url: l.url, label: l.label }));
+            return { felder, checks, bgmode: bg ? bg.value : '', photo, positions: thPositions, logos };
         }
         let vtSaveT = null;
         function vtSpeichereDraft() { try { localStorage.setItem(VT_CACHE_KEY, JSON.stringify(vtSammleFelder())); } catch (e) {} }
@@ -896,6 +899,10 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                 // gehoerten zum Themen-Post -> dorthin migrieren.
                 const p = d.positions;
                 thPositions = (p.thema || p.renntag) ? p : (Object.keys(p).length ? { thema: p } : {});
+            }
+            if (Array.isArray(d.logos) && d.logos.length) {
+                selectedLogos = d.logos.filter(l => l && l.url).slice(0, LOGO_DECKEL);
+                renderLogoChips();
             }
             vorlageWechsel();
             $('vt-photo-block').style.display = $('bg-photo').checked ? 'block' : 'none';
@@ -1342,7 +1349,11 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                     const d = await r.json();
                     if (d.ok) {
                         if (embed && window.parent !== window) {
-                            // Kein Seitenwechsel: Elternseite (Post-Detail) neu laden lassen
+                            // Kein Seitenwechsel: Elternseite (Post-Detail) neu laden lassen.
+                            // Merken, dass gerade uebernommen wurde: der dadurch ausgeloeste Reload
+                            // soll NICHT erneut die "Foto?"-Abfrage + Auto-Render anstossen (sonst
+                            // wirkt es wie ein Reset). Einmalig, wird in autoErzeugen wieder geloescht.
+                            try { sessionStorage.setItem('vt-skip-auto', '1'); } catch (e) {}
                             window.parent.postMessage({ type: 'vt-uebernommen', fahrplanId: fahrplanId }, location.origin);
                         } else {
                             window.location.href = 'social_post.php?fahrplan=' + fahrplanId;
@@ -1377,6 +1388,9 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
         // Post-Kontext (der eingebettete Editor im Post-Detail). ?noauto=1 schaltet es ab.
         if (postKontext && !/[?&]noauto=1/.test(location.search)) {
             const autoErzeugen = () => {
+                // Direkt nach "Fuer Post uebernehmen" (Reload der Elternseite) NICHT erneut
+                // automatisch rendern/nachfragen -- der gespeicherte Entwurf ist schon wiederhergestellt.
+                try { if (sessionStorage.getItem('vt-skip-auto')) { sessionStorage.removeItem('vt-skip-auto'); return; } } catch (e) {}
                 const wollenFoto = window.confirm('Soll für die Grafik ein Foto als Hintergrund verwendet werden?\n\nOK = Foto   ·   Abbrechen = Farbverlauf');
                 if (wollenFoto) {
                     $('bg-photo').checked = true;
