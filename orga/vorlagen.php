@@ -220,6 +220,9 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
            die Bloecke im Flow und sind nicht frei ziehbar. */
         .sc-card.freilayout .vt-drag { position: absolute !important; cursor: grab; outline: 2px dashed rgba(255,255,255,0.6); outline-offset: 4px; touch-action: none; }
         .sc-card.freilayout .vt-drag:active { cursor: grabbing; }
+        /* Beim Export (snapDOM) die gestrichelten Drag-Hilfslinien ausblenden — nur das PNG
+           ist sauber, die interaktive Vorschau behaelt ihre Hilfslinien (Bloecke bleiben ziehbar). */
+        .sc-card.exporting .vt-drag { outline: none !important; }
         /* Footer (Wortmarke/URL + QR) bleibt fix unten — nicht ziehbar. Sobald die Textbloecke
            position:absolute werden, waere der Footer das einzige Flow-Element und rueckte im
            space-between-Flex nach oben; deshalb hier fest an die Padding-Box unten anheften.
@@ -1146,11 +1149,19 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                     ziel = card;
                 }
 
-                const canvas = await snapdom.toCanvas(ziel, {
-                    width: fmt.w, height: fmt.h, scale: 1, dpr: 1,
-                    backgroundColor: vorlage !== 'anmeldung' ? cssVar('--color-primary-dark', '#007230') : '#1f7a3a',
-                    embedFonts: true,
-                });
+                // Hilfslinien (gestrichelte Drag-Outlines) nicht ins PNG einbrennen:
+                // vor dem Snapshot ausblenden, danach zuverlaessig wieder einblenden.
+                ziel.classList.add('exporting');
+                let canvas;
+                try {
+                    canvas = await snapdom.toCanvas(ziel, {
+                        width: fmt.w, height: fmt.h, scale: 1, dpr: 1,
+                        backgroundColor: vorlage !== 'anmeldung' ? cssVar('--color-primary-dark', '#007230') : '#1f7a3a',
+                        embedFonts: true,
+                    });
+                } finally {
+                    ziel.classList.remove('exporting');
+                }
                 lastDataUrl = canvas.toDataURL('image/png');
                 $('vt-card-img').src = lastDataUrl;
                 if (istFrei()) {
