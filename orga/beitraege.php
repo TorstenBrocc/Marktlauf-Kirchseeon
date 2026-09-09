@@ -1,12 +1,15 @@
 <?php
 /**
- * Übersicht "Kuchen & Sonstiges" (Admin + Orga)
+ * Übersicht "Sonstige Unterstützung" (Admin + Orga)
  *
  * Trennt die Anmelde-Abfragen, die NICHTS mit dem Helferkontakt zu tun haben,
- * aus der Helferübersicht heraus: gesammelte Ausgabe der Kuchen-/Gebäck-Zusagen
- * und der sonstigen Unterstützung (Freitext). Pro Helfer zeigt ein "i"-Icon per
- * Mouseover, wobei er außerdem im Einsatzplan hilft (umgekehrter Inhalt zum
+ * aus der Helferübersicht heraus: gesammelte Ausgabe der sonstigen
+ * Unterstützung (Freitext). Pro Helfer zeigt ein "i"-Icon per Mouseover,
+ * wobei er außerdem im Einsatzplan hilft (umgekehrter Inhalt zum
  * "i"-Tooltip im Einsatzplan).
+ *
+ * Hinweis: Die Kuchen-Abfrage wurde entfernt (Reaktivierung:
+ * Vault 10_projects/marktlauf-kirchseeon/kuchenpart-deaktiviert.md).
  */
 
 declare(strict_types=1);
@@ -18,15 +21,6 @@ $user = getCurrentUserFromGuard();
 $isAdmin = isAdminFromGuard();
 
 $pdo = getDbConnection();
-
-// Kuchen-Zusagen
-$kuchen = $pdo->query('
-    SELECT h.id, h.vorname, h.nachname, h.email, h.phone, hb.freitext
-    FROM helfer_beitrag hb
-    JOIN helfer h ON h.id = hb.helfer_id
-    WHERE hb.typ = "kuchen"
-    ORDER BY h.nachname, h.vorname
-')->fetchAll();
 
 // Sonstige Unterstützung
 $sonstiges = $pdo->query('
@@ -49,14 +43,6 @@ foreach ($eStmt as $row) {
     $einsatzProHelfer[(int) $row['helfer_id']][] = trim($tag . ($row['aufgabe'] ?? '') . ' (' . ($row['zeitfenster'] ?? '') . ')');
 }
 
-/** Kuchen-Freitext in Art + Nüsse-Flag zerlegen (Marker aus der Anmeldung: " | enthält Nüsse"). */
-function kuchenParts(?string $freitext): array {
-    $freitext = (string) $freitext;
-    $nuesse = str_contains($freitext, 'enthält Nüsse');
-    $art = trim(str_replace(['| enthält Nüsse', 'enthält Nüsse', '|'], '', $freitext));
-    return ['art' => $art, 'nuesse' => $nuesse];
-}
-
 /** Tooltip: wobei der Helfer außerdem im Einsatzplan hilft. */
 function einsatzTooltip(array $einsatzProHelfer, int $helferId): string {
     $list = $einsatzProHelfer[$helferId] ?? [];
@@ -69,7 +55,7 @@ function einsatzTooltip(array $einsatzProHelfer, int $helferId): string {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
-    <title>Kuchen &amp; Sonstiges | ATSV Kirchseeon Marktlauf</title>
+    <title>Sonstige Unterstützung | ATSV Kirchseeon Marktlauf</title>
     <link rel="stylesheet" href="css/orga.css?v=<?= @filemtime(__DIR__ . '/css/orga.css') ?>">
     <link rel="icon" type="image/svg+xml" href="../assets/images/logo-final.svg">
     <style>
@@ -96,11 +82,6 @@ function einsatzTooltip(array $einsatzProHelfer, int $helferId): string {
         .bt-name { font-weight: 600; display: flex; align-items: center; overflow-wrap: anywhere; }
         .bt-kontakt a { display: block; font-size: 0.8rem; overflow-wrap: anywhere; }
         .bt-inhalt { overflow-wrap: anywhere; }
-        .nuesse-badge {
-            display: inline-block; margin-left: 0.4rem; padding: 0.1rem 0.45rem;
-            background: #fffbea; border: 1px solid #f59e0b; border-radius: 4px;
-            font-size: 0.7rem; font-weight: 600; white-space: nowrap;
-        }
         .info-i {
             display: inline-flex; align-items: center; justify-content: center;
             width: 15px; height: 15px; border-radius: 50%;
@@ -127,39 +108,8 @@ function einsatzTooltip(array $einsatzProHelfer, int $helferId): string {
 
         <main class="main-content">
             <header class="content-header">
-                <h1>Kuchen &amp; Sonstiges</h1>
+                <h1>Sonstige Unterstützung</h1>
             </header>
-
-            <!-- Kuchen -->
-            <section class="beitrag-section">
-                <h2>Kuchen / Gebäck <span style="font-weight:400;color:var(--text-light);font-size:0.9rem;">(<?= count($kuchen) ?>)</span></h2>
-                <?php if (empty($kuchen)): ?>
-                    <p class="empty-hint">Noch keine Kuchen-Zusagen.</p>
-                <?php else: ?>
-                    <div class="kachel bt-kachel">
-                        <div class="bt-kopf"><div>Name</div><div>Kontakt</div><div>Art des Kuchens</div></div>
-                        <?php foreach ($kuchen as $k): ?>
-                            <?php $p = kuchenParts($k['freitext']); $tt = einsatzTooltip($einsatzProHelfer, (int) $k['id']); ?>
-                            <div class="bt-zeile">
-                                <div class="bt-name" data-label="Name">
-                                    <?= htmlspecialchars($k['vorname'] . ' ' . $k['nachname']) ?>
-                                    <?php if ($tt !== ''): ?>
-                                        <span class="info-i" tabindex="0" title="Hilft außerdem im Einsatzplan — <?= htmlspecialchars($tt) ?>">i</span>
-                                    <?php endif; ?>
-                                </div>
-                                <div class="bt-kontakt" data-label="Kontakt">
-                                    <a href="mailto:<?= htmlspecialchars($k['email']) ?>"><?= htmlspecialchars($k['email']) ?></a>
-                                    <a href="tel:<?= htmlspecialchars($k['phone']) ?>"><?= htmlspecialchars($k['phone']) ?></a>
-                                </div>
-                                <div class="bt-inhalt" data-label="Art">
-                                    🍰 <?= $p['art'] !== '' ? htmlspecialchars($p['art']) : '<span class="empty-hint">ohne Angabe</span>' ?>
-                                    <?php if ($p['nuesse']): ?><span class="nuesse-badge">⚠️ enthält Nüsse</span><?php endif; ?>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                <?php endif; ?>
-            </section>
 
             <!-- Sonstige Unterstützung -->
             <section class="beitrag-section">

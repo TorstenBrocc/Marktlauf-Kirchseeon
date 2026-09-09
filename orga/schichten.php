@@ -53,16 +53,19 @@ foreach ($gStmt as $row) {
     $gemeldet[(int) $row['schicht_id']][] = $row;
 }
 
-// Beitraege je Helfer (Kuchen / Sonstiges) fuer das "i"-Tooltip im Einsatzplan
-// (umgekehrter Inhalt zur "Kuchen & Sonstiges"-Uebersicht).
+// Beitraege je Helfer (Sonstige Unterstuetzung) fuer das "i"-Tooltip im
+// Einsatzplan (umgekehrter Inhalt zur "Sonstige Unterstuetzung"-Uebersicht).
+// Kuchen-Abfrage entfernt; alte typ='kuchen'-Zeilen werden bewusst nicht mehr
+// gezogen (Reaktivierung: Vault 10_projects/marktlauf-kirchseeon/kuchenpart-deaktiviert.md).
 $beitragProHelfer = [];
 $bStmt = $pdo->query('
     SELECT helfer_id, typ, freitext
     FROM helfer_beitrag
+    WHERE typ = "sonstiges"
     ORDER BY typ
 ');
 foreach ($bStmt as $row) {
-    $label = $row['typ'] === 'kuchen' ? 'Kuchen' : 'Sonstiges';
+    $label = 'Sonstiges';
     if (!empty($row['freitext'])) {
         $label .= ': ' . $row['freitext'];
     }

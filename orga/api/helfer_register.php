@@ -76,10 +76,7 @@ $nachname = trim($_POST['nachname'] ?? '');
 $email = trim($_POST['email'] ?? '');
 $phone = trim($_POST['phone'] ?? '');
 $slots = $_POST['slots'] ?? [];
-$beitrag = $_POST['beitrag'] ?? [];
 $beitragFreitext = trim($_POST['beitrag_freitext'] ?? '');
-$kuchenArt       = trim($_POST['kuchen_art'] ?? '');
-$kuchenNuesse    = trim($_POST['kuchen_nuesse'] ?? '');
 $isMinorRaw      = $_POST['is_minor'] ?? '';
 $consentPhoto    = $_POST['consent_photo'] ?? '';
 $guardianName    = trim($_POST['guardian_name'] ?? '');
@@ -121,9 +118,6 @@ if (strlen($guardianName) > 255) {
 if (!is_array($slots)) {
     $slots = [];
 }
-if (!is_array($beitrag)) {
-    $beitrag = [];
-}
 
 // Slots nur aus angebotenen Schichten akzeptieren (Key = schicht_id).
 // schicht_id = verbindliche Referenz; tag/zeitfenster/aufgabe als Snapshot.
@@ -145,9 +139,9 @@ foreach ($slots as $slotKey) {
     }
 }
 
-// Beitrag: "kuchen" per Checkbox; "sonstiges" ergibt sich allein aus dem
-// Freitext (kein eigenes Auswahlfeld mehr).
-$validBeitrag = in_array('kuchen', $beitrag, true) ? ['kuchen'] : [];
+// Beitrag: nur noch "sonstiges" aus dem Freitext. Die Kuchen-Abfrage wurde
+// entfernt (Reaktivierung: Vault 10_projects/marktlauf-kirchseeon/kuchenpart-deaktiviert.md).
+$validBeitrag = [];
 if ($beitragFreitext !== '') {
     $validBeitrag[] = 'sonstiges';
 }
@@ -197,15 +191,7 @@ try {
             VALUES (:helfer_id, :typ, :freitext)
         ');
         foreach ($validBeitrag as $typ) {
-            if ($typ === 'kuchen') {
-                $nuesse = $kuchenNuesse === 'ja' ? 'enthält Nüsse' : '';
-                $freitext = trim($kuchenArt . ($kuchenArt !== '' && $nuesse !== '' ? ' | ' : '') . $nuesse);
-                $freitext = $freitext !== '' ? $freitext : null;
-            } elseif ($typ === 'sonstiges' && $beitragFreitext !== '') {
-                $freitext = $beitragFreitext;
-            } else {
-                $freitext = null;
-            }
+            $freitext = ($typ === 'sonstiges' && $beitragFreitext !== '') ? $beitragFreitext : null;
             $beitragStmt->execute([
                 'helfer_id' => $helferId,
                 'typ'       => $typ,

@@ -21,8 +21,8 @@ $filterStatus = $_GET['status'] ?? '';
 $pdo = getDbConnection();
 
 // Helferübersicht = Kontakt & Status. Verfügbarkeit/Slots leben im Einsatzplan,
-// Kuchen/Sonstiges in "Kuchen & Sonstiges". Hier bleibt als Einsatz-Kontext nur
-// die verbindliche Schicht-Zuteilung (nicht die Selbstmeldung).
+// die sonstige Unterstützung in "Sonstige Unterstützung". Hier bleibt als
+// Einsatz-Kontext nur die verbindliche Schicht-Zuteilung (nicht die Selbstmeldung).
 $sql = '
     SELECT h.*,
            GROUP_CONCAT(DISTINCT sc.titel ORDER BY sc.titel SEPARATOR ", ") AS schichten

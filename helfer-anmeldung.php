@@ -344,40 +344,6 @@ $basePath = '';
             grid-template-columns: 1fr;
             gap: var(--space-md);
         }
-        .kuchen-row {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-        .kuchen-nuesse-label {
-            display: flex;
-            align-items: center;
-            gap: var(--space-xs);
-            font-weight: normal;
-        }
-        .kuchen-details {
-            margin-left: calc(18px + var(--space-sm));
-            margin-top: var(--space-sm);
-            display: flex;
-            flex-direction: column;
-            gap: var(--space-sm);
-        }
-        .kuchen-art-input {
-            width: 100%;
-            padding: var(--space-sm);
-            border: 1px solid var(--gray-300);
-            border-radius: var(--radius-md);
-            font-size: var(--text-base);
-            font-family: inherit;
-        }
-        .kuchen-warning {
-            background: #fffbea;
-            border: 1px solid #f59e0b;
-            border-radius: var(--radius-md);
-            padding: var(--space-sm) var(--space-md);
-            font-size: var(--text-sm);
-            line-height: 1.5;
-        }
         .sonstige-block {
             margin-top: var(--space-sm);
             display: flex;
@@ -500,22 +466,6 @@ $basePath = '';
                             <label>Was kannst du mitbringen oder beitragen?</label>
                             <p class="form-hint">Optional, aber sehr willkommen!</p>
                             <div class="checkbox-group">
-                                <div class="kuchen-row">
-                                    <label>
-                                        <input type="checkbox" name="beitrag[]" value="kuchen" id="kuchen-checkbox">
-                                        Kuchen / Gebäck
-                                    </label>
-                                    <label class="kuchen-nuesse-label">
-                                        <input type="checkbox" name="kuchen_nuesse" id="kuchen_nuesse" value="ja">
-                                        enthält Nüsse
-                                    </label>
-                                </div>
-                                <div class="kuchen-details">
-                                    <input type="text" id="kuchen_art" name="kuchen_art" placeholder="Art des Kuchens, z.B. Apfelkuchen, Muffins" class="kuchen-art-input">
-                                    <div class="kuchen-warning">
-                                        ⚠️ Bitte nur durchgebackene Produkte ohne rohe Eier oder ungekühlte Sahne. Kuchen mit Sahne bitte gekühlt transportieren. Allergene werden am Stand ausgehängt.
-                                    </div>
-                                </div>
                                 <div class="sonstige-block">
                                     <label for="beitrag_freitext" class="sonstige-label">Sonstige Unterstützung:</label>
                                     <textarea id="beitrag_freitext" name="beitrag_freitext" rows="3"
