@@ -1,0 +1,15 @@
+name: no-claude-author
+on: [push, pull_request]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Reject anthropic author/committer
+        run: |
+          BAD=$(git log --format='%H %ae %ce' | grep -i 'noreply@anthropic.com' || true)
+          if [ -n "$BAD" ]; then
+            echo "::error::Commits mit Anthropic-Identitaet gefunden:"; echo "$BAD"; exit 1
+          fi
