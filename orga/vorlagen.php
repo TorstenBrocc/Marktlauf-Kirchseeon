@@ -192,6 +192,13 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
         /* Beide Spalten muessen ihren Inhalt zeigen (Inhaber 2026-08-14: keine abgeschnittenen Felder) */
         .vt-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); gap: 0.5rem; align-items: start; }
         .vt-hint { font-size: 0.78rem; color: var(--text-light); margin: 0.2rem 0 0; line-height: 1.45; }
+        /* Schriftgroessen-Regler (Themen-Post): kompakte Zeile mit Prozent-Anzeige */
+        .vt-size { display: flex; align-items: center; gap: 0.6rem; }
+        .vt-size label { flex: 0 0 auto; margin: 0; }
+        .vt-size input[type=range] { flex: 1 1 auto; min-width: 90px; }
+        .vt-size .vt-size-val { flex: 0 0 auto; min-width: 42px; text-align: right; font-weight: 700; font-size: 0.82rem; color: var(--text); }
+        .vt-check { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; cursor: pointer; margin: 0.2rem 0 0; }
+        .vt-check input { width: auto; }
         .vt-row { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
         .vt-seg { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
         .vt-seg label { margin: 0; padding: 0.4rem 0.75rem; font-size: 0.85rem; cursor: pointer; color: var(--text); background: var(--white); }
@@ -344,6 +351,9 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
         .sc-card .sc-bullet { display: flex; align-items: flex-start; gap: 18px; font-size: 30px; font-weight: 500; line-height: 1.3; }
         .sc-card .sc-bullet::before { content: ''; width: 14px; height: 14px; border-radius: 50%;
             background: var(--color-accent-yellow, #f4b81e); flex-shrink: 0; margin-top: 13px; }
+        /* Goldene Punkte optional ausblenden (Anja-Wunsch); Text rueckt buendig nach links. */
+        .sc-card .sc-bullets.sc-nodots .sc-bullet::before { display: none; }
+        .sc-card .sc-bullets.sc-nodots .sc-bullet { gap: 0; }
         .sc-card .sc-cta { align-self: flex-start; background: var(--color-accent-yellow, #f4b81e);
             border-radius: 18px; padding: 20px 44px; box-shadow: 0 12px 30px rgba(0,0,0,.2); }
         .sc-card .sc-cta span { font-family: 'Fredoka', 'Trebuchet MS', sans-serif; font-weight: 700;
@@ -507,21 +517,37 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                         <label for="vt-th-sub">Unterzeile</label>
                         <input type="text" id="vt-th-sub" maxlength="90" value="<?= htmlspecialchars($themaSub) ?>">
                     </div>
+                    <div class="vt-field vt-size">
+                        <label for="vt-th-sub-size">Größe Unterzeile</label>
+                        <input type="range" id="vt-th-sub-size" min="60" max="160" step="5" value="100">
+                        <span class="vt-size-val"><span id="vt-th-sub-size-val">100</span>%</span>
+                    </div>
                     <h3>Bis zu drei Zeilen</h3>
                     <?php foreach ($themaZeilen as $i => $zeile): ?>
                     <div class="vt-field">
                         <input type="text" id="vt-th-z<?= $i + 1 ?>" maxlength="80" value="<?= htmlspecialchars($zeile) ?>" aria-label="Zeile <?= $i + 1 ?>">
                     </div>
                     <?php endforeach; ?>
+                    <label class="vt-check" for="vt-th-nodots"><input type="checkbox" id="vt-th-nodots"> Punkte ausblenden</label>
                     <span class="vt-hint">Leere Zeilen erscheinen nicht auf der Grafik.</span>
                     <h3>Aktion &amp; Termin</h3>
                     <div class="vt-field">
                         <label for="vt-th-cta">Aktions-Button (leer = kein Button)</label>
                         <input type="text" id="vt-th-cta" maxlength="30" value="<?= htmlspecialchars($themaCta) ?>">
                     </div>
+                    <div class="vt-field vt-size">
+                        <label for="vt-th-cta-size">Größe Button</label>
+                        <input type="range" id="vt-th-cta-size" min="60" max="160" step="5" value="100">
+                        <span class="vt-size-val"><span id="vt-th-cta-size-val">100</span>%</span>
+                    </div>
                     <div class="vt-field vt-two">
                         <input type="text" id="vt-th-datum" maxlength="60" value="<?= htmlspecialchars($themaDatumDefault) ?>" aria-label="Datum-Zeile">
                         <input type="text" id="vt-th-ort" maxlength="60" value="JEK, Westring 6, Kirchseeon" aria-label="Ort-Zeile">
+                    </div>
+                    <div class="vt-field vt-size">
+                        <label for="vt-th-meta-size">Größe Termin-Zeilen</label>
+                        <input type="range" id="vt-th-meta-size" min="60" max="160" step="5" value="100">
+                        <span class="vt-size-val"><span id="vt-th-meta-size-val">100</span>%</span>
                     </div>
                     </div><!-- /vt-felder-thema -->
 
@@ -872,7 +898,7 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                 if (el.id === 'vt-photo-file') { return; }
                 const t = el.tagName;
                 if (t === 'INPUT' && el.type === 'checkbox') { checks[el.id] = el.checked; return; }
-                if (t === 'SELECT' || t === 'TEXTAREA' || (t === 'INPUT' && ['text', 'number'].includes(el.type))) {
+                if (t === 'SELECT' || t === 'TEXTAREA' || (t === 'INPUT' && ['text', 'number', 'range'].includes(el.type))) {
                     felder[el.id] = el.value;
                 }
             });
@@ -1081,6 +1107,24 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
             $('th-datum').style.display = datum ? 'block' : 'none';
             $('th-ort').textContent = ort ? '📍 ' + ort : '';
             $('th-ort').style.display = ort ? 'block' : 'none';
+
+            // Schriftgroessen je Abschnitt (Anja-Wunsch): Unterzeile, Button und Termin-Zeilen
+            // getrennt regelbar. Basiswerte spiegeln die CSS (.sc-sub 34, .sc-cta span 36,
+            // .sc-meta 26); der Regler skaliert nur die Schrift, nicht die Position.
+            const thPct = (id) => { const v = parseInt($(id).value, 10); return (v >= 60 && v <= 160) ? v : 100; };
+            const subPct = thPct('vt-th-sub-size');
+            $('th-sub').style.fontSize = (34 * subPct / 100).toFixed(1) + 'px';
+            $('vt-th-sub-size-val').textContent = subPct;
+            const ctaPct = thPct('vt-th-cta-size');
+            $('th-cta').style.fontSize = (36 * ctaPct / 100).toFixed(1) + 'px';
+            $('vt-th-cta-size-val').textContent = ctaPct;
+            const metaPct = thPct('vt-th-meta-size');
+            const metaPx = (26 * metaPct / 100).toFixed(1) + 'px';
+            $('th-datum').style.fontSize = metaPx;
+            $('th-ort').style.fontSize = metaPx;
+            $('vt-th-meta-size-val').textContent = metaPct;
+            // Goldene Punkte vor den drei Zeilen optional ausblenden
+            $('th-bullets').classList.toggle('sc-nodots', $('vt-th-nodots').checked);
 
             const thEvent = document.querySelector('#vt-card3 .sc-event');
             if (thEvent) { thEvent.style.display = $('vt-hide-event').checked ? 'none' : ''; }
