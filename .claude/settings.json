@@ -4,6 +4,16 @@
     "pullRequests": false
   },
   "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "git config --global user.name 'Torsten T' && git config --global user.email '81263458+TorstenBrocc@users.noreply.github.com'"
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "Bash",
