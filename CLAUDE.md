@@ -67,6 +67,46 @@ neuer Lauf / ein vergleichbarer Workstream direkt wirksam arbeiten kann.
   über die Fördergruppen-Reiter (`?zielgruppe=fg_<gruppe>`) Empfänger UND Variantentext um.
 - Zielgruppen/Empfänger-Filter je Anschreiben-Seite: `src/sponsor_zielgruppen.php`.
 
+## Aktueller Stand / Übergabe (Stand 2026-09-11)
+
+**Grafik-Editor „Grafik erstellen" (Themen-Post): Schriften regelbar + Punkte ausblendbar
+(Commit `d37271e`, deployt, keine Migration).** Anlass: Anjas Mail „Grafik erstellen –
+Schriftblöcke skalierbar machen" (10.09., von `anja.jost@gmx.de`; sie meinte NICHT den
+Postergenerator, sondern den Vorlagen-Editor `orga/vorlagen.php`, Reiter Themen-Post).
+Umgesetzt in `orga/vorlagen.php` (nur der Themen-Post `vt-felder-thema` / Karte `.sc-card`):
+- **Drei Schieberegler** (60–160 %, mit %-Anzeige) im Bedienfeld: **Unterzeile** (`#th-sub`,
+  Basis 34 px), **Button** (`#th-cta`, 36 px), **Termin-Zeilen** Datum/Ort (`#th-datum`/`#th-ort`,
+  26 px). Inhaber-Entscheid: Button und Termin **getrennt** regeln. Die Regler ändern nur die
+  `font-size` (bewusst KEIN `transform:scale`/Zoom — Anja: „es geht um die Schriften"), die
+  Drag-Position bleibt. Angewendet in `fillCard3()`; Basiswerte spiegeln die CSS.
+- **Schalter „Punkte ausblenden"** (`#vt-th-nodots`) blendet die goldenen Bullets vor den drei
+  Zeilen aus (`.sc-bullets.sc-nodots .sc-bullet::before{display:none}`, Text bündig links).
+- **Persistenz:** Range-Inputs sind in `vtSammleFelder()` aufgenommen (Liste um `'range'` ergänzt),
+  Checkbox läuft über den bestehenden `checks`-Zweig → Regler/Schalter überleben Reload und
+  „Für Post übernehmen". Verifikation: `php -l` grün, JS-Struktur per Node geprüft; **kein**
+  Browser-/Login-Test (Inhaber-Wunsch „kein Test"). Deploy-Workflow „SFTP Deployment" grün → live.
+- **Antwort an Anja** ist raus (Gmail-Reply im Thread „Grafik erstellen – Schriftblöcke …").
+
+**WICHTIG — Git-Identität in Web-Sessions (sonst roter CI-Check).** Der Default-Git-Autor in der
+Web-Sandbox ist `Claude <noreply@anthropic.com>`. Der Guard-Workflow `.github/workflows/no-claude-author.yml`
+scannt die **ganze** Historie auf diese Mail und wird sonst **rot** (Deploy läuft trotzdem, nur der
+required check „check" bleibt rot). Commit `d37271e` ging noch mit dieser Identität raus → Check rot.
+- **Dauerfix (vom Inhaber am 11.09. im GitHub-Browser erledigt):** `.claude/settings.json` hat jetzt
+  einen `SessionStart`-Hook, der `git config --global user.name/email` auf die Inhaber-Identität
+  `Torsten T <81263458+TorstenBrocc@users.noreply.github.com>` setzt. **Claude darf `.claude/settings.json`
+  NICHT selbst schreiben** (Classifier: Self-Modification) — Änderungen daran macht der Inhaber im
+  Browser/lokal. Für neue Sessions: der Hook greift automatisch; falls ein Commit ansteht, vorher
+  `git config user.name`/`user.email` prüfen (muss Inhaber sein, nicht „Claude").
+- **Roten Check von `d37271e` grün machen** (optional, rein kosmetisch): im lokalen Klon
+  `~/Repo/github/Marktlauf-Projekt/website-main` → `git commit --amend --reset-author --no-edit`
+  + `git push --force-with-lease origin main`. (Nicht dringend — live ist alles.)
+
+**Inhaber-Setup (lokal, für Übergabe-Notizen):** Basisordner `~/Repo/github/Marktlauf-Projekt/`.
+Darunter mehrere Git-Worktrees `website-*` (Haupt-`main` = **`website-main`**; feature-spezifische
+wie `website-strecke-10km`, `website-freilayout`, `website-poster-wf`, `website-versand-ux` …) plus
+`intern/`/`intern-rr14/` (Vault/intern, NICHT der Website-Code). Merke: die lokalen Ordner heißen
+`website-*`, nicht „Marktlauf-Kirchseeon" — ein `find ~ -name Marktlauf-Kirchseeon` findet daher nichts.
+
 ## Aktueller Stand / Übergabe (Stand 2026-09-04, Nachtrag: LLM-Provider-Kette)
 
 **Social-/Presse-Generator: 3-Provider-Kette mit Auto-Fallback (mehrere Commits, deployt, keine Migration).**
