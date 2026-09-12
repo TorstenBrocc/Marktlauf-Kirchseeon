@@ -7,26 +7,6 @@
       <link href="https://gpx.studio" />
     </author>
   </metadata>
-  <wpt lat="48.074971" lon="11.857427">
-    <name>km 1</name>
-    <desc>1000 m ab Start</desc>
-  </wpt>
-  <wpt lat="48.067797" lon="11.854808">
-    <name>km 2</name>
-    <desc>2000 m ab Start</desc>
-  </wpt>
-  <wpt lat="48.068577" lon="11.866464">
-    <name>km 3</name>
-    <desc>3000 m ab Start</desc>
-  </wpt>
-  <wpt lat="48.072375" lon="11.859708">
-    <name>km 4</name>
-    <desc>4000 m ab Start</desc>
-  </wpt>
-  <wpt lat="48.078035" lon="11.851957">
-    <name>km 5</name>
-    <desc>5000 m ab Start</desc>
-  </wpt>
   <trk>
     <name>Marktlauf Kirchseeon 2026 – 5 km</name>
     <trkseg>
