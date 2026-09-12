@@ -26,9 +26,13 @@ jobs:
             -e "s|src=\"js/main.js\"|src=\"js/main.js?v=$V\"|g" \
             -e "s|src=\"js/maps.js\"|src=\"js/maps.js?v=$V\"|g" \
             -e "s|src=\"js/consent.js\"|src=\"js/consent.js?v=$V\"|g" \
+            -e "s|assets/courses/\([0-9a-z]*\)\.gpx\"|assets/courses/\1.gpx?v=$V\"|g" \
             "$f"
         done
         sed -i "s|/lang/\${lang}.json|/lang/\${lang}.json?v=$V|g" js/main.js
+        # GPX-Strecken cache-busten (kein langes Cache-Control auf .gpx → sonst sehen
+        # Besucher nach Streckenwechseln die alte Route/Marken aus dem Browser-Cache).
+        sed -i "s|assets/courses/\([0-9a-z]*\)\.gpx\"|assets/courses/\1.gpx?v=$V\"|g" js/maps.js
         echo "Assets gestempelt mit v=$V"
 
     - name: SSH Deploy

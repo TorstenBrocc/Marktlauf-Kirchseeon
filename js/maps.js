@@ -121,8 +121,10 @@ let transparentIcon = null;
 // Marktlauf-Marke als Karten-Pin (assets/images/marktlauf-pin.svg).
 // Start/Ziel = volle Größe (60px); km-Marken = 20 % kleiner (48px).
 // Spitze im viewBox 0 0 24 24 bei (12,22) → Anker skaliert mit der Größe.
-let markePinFull = null; // Start & Ziel
-let markePinKm = null; // km-Marken (80 %)
+let markePinFull = null; // Start & Ziel (Modal)
+let markePinKm = null; // km-Marken (80 %, Modal)
+let markePinPreviewFull = null; // Start & Ziel (kleine Vorschau)
+let markePinPreviewKm = null; // km-Marken (kleine Vorschau)
 function ensureIcons() {
   if (!transparentIcon) {
     transparentIcon = L.icon({
@@ -143,6 +145,21 @@ function ensureIcons() {
       iconUrl: "assets/images/marktlauf-pin.svg",
       iconSize: [48, 48], // 20 % kleiner als Start/Ziel
       iconAnchor: [24, 44],
+    });
+  }
+  // Vorschau-Kacheln sind klein → halb so große Pins (behält die 20-%-Relation).
+  if (!markePinPreviewFull) {
+    markePinPreviewFull = L.icon({
+      iconUrl: "assets/images/marktlauf-pin.svg",
+      iconSize: [30, 30],
+      iconAnchor: [15, 27.5],
+    });
+  }
+  if (!markePinPreviewKm) {
+    markePinPreviewKm = L.icon({
+      iconUrl: "assets/images/marktlauf-pin.svg",
+      iconSize: [24, 24], // 20 % kleiner als Start/Ziel (Vorschau)
+      iconAnchor: [12, 22],
     });
   }
 }
@@ -249,11 +266,11 @@ function createPreviewMap(mapId, gpxFile) {
   new L.GPX(gpxFile, {
     async: true,
     marker_options: {
-      // Wie im Modal: Start/Ziel = Marktlauf-Marke voll, km-Marken = Marke 20 % kleiner.
+      // Kleine Vorschau → halb so große Marke-Pins (Start/Ziel voll, km 20 % kleiner).
       // (Ohne explizite wptIcons rendert das Plugin sonst sein Default "pin-icon-wpt.png" → 404/„?".)
-      startIcon: markePinFull,
-      endIcon: markePinFull,
-      wptIcons: { "": markePinKm },
+      startIcon: markePinPreviewFull,
+      endIcon: markePinPreviewFull,
+      wptIcons: { "": markePinPreviewKm },
       shadowUrl: null,
     },
     polyline_options: {
