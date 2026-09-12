@@ -191,7 +191,7 @@ function initLocationMap() {
 
 const routesConfig = {
   "bambini-500m": {
-    gpx: null,
+    gpx: "assets/courses/500m.gpx",
   },
   "schueler-1km": {
     gpx: "assets/courses/1km.gpx",
@@ -279,7 +279,12 @@ function createPreviewMap(mapId, gpxFile) {
     },
   })
     .on("loaded", function (e) {
-      map.fitBounds(e.target.getBounds());
+      // Padding, damit die Marke-Pins (ragen nach oben über ihren Punkt) nicht
+      // am Kachelrand abgeschnitten werden – v. a. der nördlichste Punkt (10 km).
+      map.fitBounds(e.target.getBounds(), {
+        paddingTopLeft: [16, 36],
+        paddingBottomRight: [16, 12],
+      });
     })
     .addTo(map);
 }
