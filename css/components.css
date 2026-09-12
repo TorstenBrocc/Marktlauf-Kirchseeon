@@ -845,7 +845,7 @@
 }
 
 .route-map-preview {
-    height: 180px;
+    height: 220px;
     background-color: var(--gray-100);
     display: flex;
     align-items: center;

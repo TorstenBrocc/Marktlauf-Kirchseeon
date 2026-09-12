@@ -1,48 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<gpx creator="https://gpx.studio" version="1.1" xmlns="http://www.topografix.com/GPX/1/1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd http://www.garmin.com/xmlschemas/GpxExtensions/v3 http://www.garmin.com/xmlschemas/GpxExtensionsv3.xsd http://www.garmin.com/xmlschemas/TrackPointExtension/v1 http://www.garmin.com/xmlschemas/TrackPointExtensionv1.xsd http://www.garmin.com/xmlschemas/PowerExtension/v1 http://www.garmin.com/xmlschemas/PowerExtensionv1.xsd http://www.topografix.com/GPX/gpx_style/0/2 http://www.topografix.com/GPX/gpx_style/0/2/gpx_style.xsd" xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1" xmlns:gpxx="http://www.garmin.com/xmlschemas/GpxExtensions/v3" xmlns:gpxpx="http://www.garmin.com/xmlschemas/PowerExtension/v1" xmlns:gpx_style="http://www.topografix.com/GPX/gpx_style/0/2">
+<gpx creator="atsv-marktlauf" version="1.1" xmlns="http://www.topografix.com/GPX/1/1">
   <metadata>
     <name>Marktlauf Kirchseeon 2026 – 500 m</name>
-    <author>
-      <name>gpx.studio</name>
-      <link href="https://gpx.studio"/>
-    </author>
   </metadata>
   <trk>
     <name>Marktlauf Kirchseeon 2026 – 500 m</name>
     <trkseg>
-      <trkpt lat="48.078873" lon="11.852888">
-        <ele>559.38</ele>
-      </trkpt>
-      <trkpt lat="48.079018" lon="11.853751">
-        <ele>559</ele>
-      </trkpt>
-      <trkpt lat="48.079131" lon="11.855105">
-        <ele>559</ele>
-      </trkpt>
-      <trkpt lat="48.079186" lon="11.855379">
-        <ele>559</ele>
-      </trkpt>
-      <trkpt lat="48.079255" lon="11.855407">
-        <ele>559</ele>
-      </trkpt>
-      <trkpt lat="48.079735" lon="11.855282">
-        <ele>559</ele>
-      </trkpt>
-      <trkpt lat="48.079255" lon="11.855407">
-        <ele>559</ele>
-      </trkpt>
-      <trkpt lat="48.079186" lon="11.855379">
-        <ele>559</ele>
-      </trkpt>
-      <trkpt lat="48.079131" lon="11.855105">
-        <ele>559</ele>
-      </trkpt>
-      <trkpt lat="48.079018" lon="11.853751">
-        <ele>559</ele>
-      </trkpt>
-      <trkpt lat="48.078875" lon="11.852896">
-        <ele>559.38</ele>
-      </trkpt>
+      <trkpt lat="48.079754" lon="11.855276"><ele>559</ele></trkpt>
+      <trkpt lat="48.079255" lon="11.855407"><ele>559</ele></trkpt>
+      <trkpt lat="48.079186" lon="11.855379"><ele>559</ele></trkpt>
+      <trkpt lat="48.079131" lon="11.855105"><ele>559</ele></trkpt>
+      <trkpt lat="48.079018" lon="11.853751"><ele>559</ele></trkpt>
+      <trkpt lat="48.078873" lon="11.852888"><ele>559.38</ele></trkpt>
+      <trkpt lat="48.079018" lon="11.853751"><ele>559</ele></trkpt>
+      <trkpt lat="48.079131" lon="11.855105"><ele>559</ele></trkpt>
+      <trkpt lat="48.079186" lon="11.855379"><ele>559</ele></trkpt>
+      <trkpt lat="48.079255" lon="11.855407"><ele>559</ele></trkpt>
+      <trkpt lat="48.079754" lon="11.855276"><ele>559</ele></trkpt>
     </trkseg>
   </trk>
 </gpx>
