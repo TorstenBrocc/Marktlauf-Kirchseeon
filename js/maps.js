@@ -138,6 +138,8 @@ function ensureIcons() {
       iconUrl: "assets/images/marktlauf-pin.svg",
       iconSize: [60, 60],
       iconAnchor: [30, 55],
+      // Popup über dem Pin öffnen (sonst verdeckt es den 60px-Pin) – Standortkarte.
+      popupAnchor: [0, -56],
     });
   }
   if (!markePinKm) {
