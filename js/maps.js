@@ -168,9 +168,11 @@ function initLocationMap() {
   const container = document.getElementById("location-map");
   if (!container) return;
 
-  // Manuell abgelesen von OSM: Straße "Am Westring" vor dem Vereinsheim
-  const lat = 48.080240;
-  const lng = 11.855224;
+  ensureIcons();
+
+  // Offizieller Start/Ziel-Ort (JEK, Westring 6) – identisch zu den Streckenkarten.
+  const lat = START_ZIEL[0];
+  const lng = START_ZIEL[1];
 
   const map = L.map("location-map", {
     center: [lat, lng],
@@ -183,11 +185,16 @@ function initLocationMap() {
     maxZoom: 19,
   }).addTo(map);
 
-  L.marker([lat, lng])
+  L.marker([lat, lng], { icon: markePinFull })
     .addTo(map)
     .bindPopup("<strong>Start & Ziel</strong><br>Westring 6<br>85614 Kirchseeon")
     .openPopup();
 }
+
+// Offizieller Start/Ziel-Ort (JEK, Westring 6). Alle Streckenkarten setzen die
+// Start&Ziel-Marke exakt hierher – unabhängig davon, wo der gezeichnete Track
+// beginnt/endet (der Track selbst bleibt unverändert → keine Verzerrung).
+const START_ZIEL = [48.079754, 11.855276];
 
 const routesConfig = {
   "bambini-500m": {
@@ -263,13 +270,17 @@ function createPreviewMap(mapId, gpxFile) {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   }).addTo(map);
 
+  // Fixe Start&Ziel-Marke exakt am offiziellen Ort (Track bleibt unberührt).
+  L.marker(START_ZIEL, { icon: markePinPreviewFull, interactive: false, keyboard: false }).addTo(map);
+
   new L.GPX(gpxFile, {
     async: true,
     marker_options: {
-      // Kleine Vorschau → halb so große Marke-Pins (Start/Ziel voll, km 20 % kleiner).
-      // (Ohne explizite wptIcons rendert das Plugin sonst sein Default "pin-icon-wpt.png" → 404/„?".)
-      startIcon: markePinPreviewFull,
-      endIcon: markePinPreviewFull,
+      // Start/Ziel des Tracks NICHT rendern (kommt als fixe Marke oben);
+      // km-Marken als Marktlauf-Marke (20 % kleiner). Ohne explizite wptIcons
+      // rendert das Plugin sonst sein Default "pin-icon-wpt.png" → 404/„?".
+      startIcon: transparentIcon,
+      endIcon: transparentIcon,
       wptIcons: { "": markePinPreviewKm },
       shadowUrl: null,
     },
@@ -279,9 +290,10 @@ function createPreviewMap(mapId, gpxFile) {
     },
   })
     .on("loaded", function (e) {
-      // Padding, damit die Marke-Pins (ragen nach oben über ihren Punkt) nicht
-      // am Kachelrand abgeschnitten werden – v. a. der nördlichste Punkt (10 km).
-      map.fitBounds(e.target.getBounds(), {
+      // Bounds um den fixen Start&Ziel-Punkt erweitern, damit die Marke sicher
+      // im Bild ist. Padding, damit die Pins (ragen nach oben) nicht abschneiden.
+      const bounds = e.target.getBounds().extend(START_ZIEL);
+      map.fitBounds(bounds, {
         paddingTopLeft: [16, 36],
         paddingBottomRight: [16, 12],
       });
@@ -341,9 +353,10 @@ function buildModalMap(config) {
     const gpxLayer = new L.GPX(config.gpx, {
       async: true,
       marker_options: {
-        // Start & Ziel: Marktlauf-Marke voll; km-Marken (wpt): Marke 20 % kleiner.
-        startIcon: markePinFull,
-        endIcon: markePinFull,
+        // Start/Ziel des Tracks NICHT rendern (kommt als fixe Marke am
+        // offiziellen Ort); km-Marken (wpt) als Marktlauf-Marke, 20 % kleiner.
+        startIcon: transparentIcon,
+        endIcon: transparentIcon,
         wptIcons: { "": markePinKm },
         shadowUrl: null,
       },
@@ -424,13 +437,16 @@ function buildModalMap(config) {
         totalAscentMeters = rawAscent;
       }
 
-      modalMap.fitBounds(gpx.getBounds());
+      modalMap.fitBounds(gpx.getBounds().extend(START_ZIEL));
 
       // Third, load the elevation data. This will trigger the 'eledata_loaded' event.
       elevationControl.load(config.gpx);
     });
 
     gpxLayer.addTo(modalMap);
+
+    // Fixe Start&Ziel-Marke exakt am offiziellen Ort (Track bleibt unberührt).
+    L.marker(START_ZIEL, { icon: markePinFull, interactive: false, keyboard: false }).addTo(modalMap);
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
