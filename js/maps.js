@@ -249,9 +249,11 @@ function createPreviewMap(mapId, gpxFile) {
   new L.GPX(gpxFile, {
     async: true,
     marker_options: {
-      startIcon: transparentIcon,
-      endIcon: transparentIcon,
-      wptIcon: transparentIcon,
+      // Wie im Modal: Start/Ziel = Marktlauf-Marke voll, km-Marken = Marke 20 % kleiner.
+      // (Ohne explizite wptIcons rendert das Plugin sonst sein Default "pin-icon-wpt.png" → 404/„?".)
+      startIcon: markePinFull,
+      endIcon: markePinFull,
+      wptIcons: { "": markePinKm },
       shadowUrl: null,
     },
     polyline_options: {
