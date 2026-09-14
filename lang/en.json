@@ -62,6 +62,7 @@
   "anmeldung.fact_nachmeldung": "Late entry on race day via QR code on site",
   "anmeldung.lead_zu": "Online registration has closed.",
   "anmeldung.fact_zu": "Late entry on site on race day – up to 30 minutes before your run starts",
+  "anmeldung.qr_hinweis": "Scan or tap",
   "anmeldung.cta_nachmeldung": "Go to late entry",
   "anmeldung.placeholder_title": "RaceResult Registration",
   "anmeldung.placeholder_text": "The RaceResult registration snippet will be embedded here.",

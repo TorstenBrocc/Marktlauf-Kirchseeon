@@ -1110,6 +1110,49 @@
     margin-top: 1.25rem;
 }
 
+/* Nachmelde-QR: Code und Button nebeneinander, auf schmalen Schirmen untereinander.
+   Der weisse Grund ist Pflicht - ein QR ohne helle Ruhezone wird nicht gelesen. */
+.anmeldung-qr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 1.25rem 1.75rem;
+    margin-top: 1.5rem;
+}
+
+.anmeldung-qr-code {
+    width: 150px;
+    height: 150px;
+    flex: 0 0 auto;
+    background: #fff;
+    padding: 0.5rem;
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+}
+
+.anmeldung-qr-aktion {
+    text-align: center;
+}
+
+.anmeldung-qr-hinweis {
+    margin: 0;
+    font-size: 0.9375rem;
+    color: var(--gray-600);
+}
+
+/* Der Button erbt sonst den 1.25rem-Abstand von .anmeldung-intro .btn und haengt schief. */
+.anmeldung-qr .btn {
+    margin-top: 0.625rem;
+}
+
+@media (max-width: 480px) {
+    .anmeldung-qr-code {
+        width: 128px;
+        height: 128px;
+    }
+}
+
 /* Anmeldung – Umschalter Einzel/Sammel, nutzt das Tab-Muster (.connect-card/.tab-*) */
 /* Höhere Spezifität als .connect-tabs (max-width:560px), sonst würde der 5-stufige
    RaceResult-Kopf gestaucht. Breitere Karte + weniger Innenabstand für den Formular-Platz. */

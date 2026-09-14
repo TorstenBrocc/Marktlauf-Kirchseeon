@@ -62,6 +62,7 @@
   "anmeldung.fact_nachmeldung": "Danach Nachmeldung am Renntag per QR-Code vor Ort",
   "anmeldung.lead_zu": "Die Online-Anmeldung ist beendet.",
   "anmeldung.fact_zu": "Nachmeldung am Renntag vor Ort – bis 30 Minuten vor dem Start deines Laufs",
+  "anmeldung.qr_hinweis": "Scannen oder antippen",
   "anmeldung.cta_nachmeldung": "Zur Nachmeldung",
   "anmeldung.placeholder_title": "RaceResult Anmeldung",
   "anmeldung.placeholder_text": "Hier wird das RaceResult-Anmelde-Snippet eingebunden.",

@@ -600,7 +600,18 @@
                             <span data-i18n="anmeldung.fact_zu">Nachmeldung am Renntag vor Ort - bis 30 Minuten vor dem Start deines Laufs</span>
                         </span>
                     </p>
-                    <a class="btn btn-primary" href="https://my.raceresult.com/412617/registration" target="_blank" rel="noopener noreferrer" data-mltrack="nachmeldung_start" data-i18n="anmeldung.cta_nachmeldung">Zur Nachmeldung</a>
+                    <!-- QR als fertige Datei (assets/images/qr-nachmeldung.svg), nicht im Browser gerechnet:
+                         das Ziel aendert sich nie. Deckt den Fall ab, dass die Seite auf einem Laptop
+                         oder Tablet gezeigt wird - am eigenen Handy fuehrt der Button ans selbe Ziel. -->
+                    <div class="anmeldung-qr">
+                        <img class="anmeldung-qr-code" src="assets/images/qr-nachmeldung.svg"
+                             alt="QR-Code zur Nachmeldung beim Marktlauf Kirchseeon 2026"
+                             width="150" height="150" loading="lazy" decoding="async">
+                        <div class="anmeldung-qr-aktion">
+                            <p class="anmeldung-qr-hinweis" data-i18n="anmeldung.qr_hinweis">Scannen oder antippen</p>
+                            <a class="btn btn-primary" href="https://my.raceresult.com/412617/registration" target="_blank" rel="noopener noreferrer" data-mltrack="nachmeldung_start" data-i18n="anmeldung.cta_nachmeldung">Zur Nachmeldung</a>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Umschalter Einzel- / Sammelanmeldung (gleiches Tab-Muster wie Newsletter|Kontakt) -->
