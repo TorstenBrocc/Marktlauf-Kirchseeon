@@ -575,12 +575,36 @@
         <section id="anmeldung" class="section-padding" style="background-color: var(--gray-50);">
             <div class="container">
                 <h2 class="text-center" data-i18n="anmeldung.title">Anmeldung</h2>
-                <p class="text-center" style="margin-bottom: var(--space-lg); color: var(--gray-600);" data-i18n="anmeldung.text">
-                    Sichere dir jetzt deinen Startplatz für den Marktlauf 2026! Anmeldeschluss: Montag, 14. September, 17:00 Uhr – danach digitale Nachmeldung am Renntag vor Ort.
-                </p>
-                
+
+                <!-- Zwei Zustände: vor und nach dem Anmeldeschluss. Das Skript am Ende der
+                     Section schaltet anhand ANMELDESCHLUSS um - kein Nachpflegen am Renntag. -->
+                <div class="anmeldung-intro" id="anmeldung-intro-offen">
+                    <p class="anmeldung-lead" data-i18n="anmeldung.lead">Sichere dir deinen Startplatz für den Marktlauf 2026.</p>
+                    <p class="anmeldung-facts">
+                        <span class="anmeldung-fact">
+                            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3.2 2"></path></svg>
+                            <span data-i18n="anmeldung.fact_frist">Online bis Mo, 14.09., 17:00 Uhr</span>
+                        </span>
+                        <span class="anmeldung-fact">
+                            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4" y="4" width="6" height="6" rx="1"></rect><rect x="14" y="4" width="6" height="6" rx="1"></rect><rect x="4" y="14" width="6" height="6" rx="1"></rect><path d="M14 14h2.5M20 14v2.5M14 20h6M17 17h.01"></path></svg>
+                            <span data-i18n="anmeldung.fact_nachmeldung">Danach Nachmeldung am Renntag per QR-Code vor Ort</span>
+                        </span>
+                    </p>
+                </div>
+
+                <div class="anmeldung-intro" id="anmeldung-intro-zu" hidden>
+                    <p class="anmeldung-lead" data-i18n="anmeldung.lead_zu">Die Online-Anmeldung ist beendet.</p>
+                    <p class="anmeldung-facts">
+                        <span class="anmeldung-fact">
+                            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4" y="4" width="6" height="6" rx="1"></rect><rect x="14" y="4" width="6" height="6" rx="1"></rect><rect x="4" y="14" width="6" height="6" rx="1"></rect><path d="M14 14h2.5M20 14v2.5M14 20h6M17 17h.01"></path></svg>
+                            <span data-i18n="anmeldung.fact_zu">Nachmeldung am Renntag vor Ort - bis 30 Minuten vor dem Start deines Laufs</span>
+                        </span>
+                    </p>
+                    <a class="btn btn-primary" href="https://my.raceresult.com/412617/registration" target="_blank" rel="noopener noreferrer" data-mltrack="nachmeldung_start" data-i18n="anmeldung.cta_nachmeldung">Zur Nachmeldung</a>
+                </div>
+
                 <!-- Umschalter Einzel- / Sammelanmeldung (gleiches Tab-Muster wie Newsletter|Kontakt) -->
-                <div class="connect-tabs anmeldung-tabs">
+                <div class="connect-tabs anmeldung-tabs" id="anmeldung-formulare">
                     <div class="connect-card">
                         <div class="tab-nav">
                             <button class="tab-btn active" data-tab="einzel">Einzelanmeldung</button>
@@ -654,6 +678,25 @@
                     });
                 })();
                 </script>
+
+                <script>
+                (function () {
+                    // Anmeldeschluss der Online-Anmeldung, Europe/Berlin (im September CEST = +02:00).
+                    // Ab diesem Zeitpunkt zeigt der Bereich die Nachmeldung statt der Formulare.
+                    // Der Wert muss mit "Aktiv bis" der RaceResult-Formulare uebereinstimmen.
+                    var ANMELDESCHLUSS = new Date('2026-09-14T17:00:00+02:00');
+                    if (Date.now() < ANMELDESCHLUSS.getTime()) return;
+
+                    // Rein kosmetisch: was wirklich moeglich ist, entscheidet RaceResult serverseitig.
+                    // Eine falsch gestellte Uhr beim Besucher zeigt also hoechstens den falschen Block.
+                    var offen = document.getElementById('anmeldung-intro-offen');
+                    var zu = document.getElementById('anmeldung-intro-zu');
+                    var formulare = document.getElementById('anmeldung-formulare');
+                    if (offen) { offen.hidden = true; }
+                    if (zu) { zu.hidden = false; }
+                    if (formulare) { formulare.hidden = true; }
+                })();
+                </script>
             </div>
         </section>
 
@@ -720,7 +763,7 @@
 
                     <details class="faq-item">
                         <summary data-i18n="faq.q1">Wie und bis wann kann ich mich anmelden?</summary>
-                        <div class="faq-answer" data-i18n="faq.a1">Die Anmeldung läuft online über den Bereich <a href="#anmeldung">Anmeldung</a> auf dieser Seite. Anmeldeschluss ist Montag, der 14. September 2026, 17:00 Uhr. Danach sind am Renntag noch digitale Nachmeldungen möglich – bis 30 Minuten vor dem Start des jeweiligen Laufs, spätestens bis 10:30 Uhr, solange Startplätze frei sind. Den QR-Code dafür findest du vor Ort an der Startnummern-Ausgabe.</div>
+                        <div class="faq-answer" data-i18n="faq.a1">Die Anmeldung läuft online über den Bereich <a href="#anmeldung">Anmeldung</a> auf dieser Seite. Anmeldeschluss ist Montag, der 14. September 2026, 17:00 Uhr. Danach ist am Renntag noch eine digitale Nachmeldung möglich – bis 30 Minuten vor dem Start des jeweiligen Laufs, solange Startplätze frei sind. Den QR-Code dafür findest du vor Ort an der Startnummern-Ausgabe.</div>
                     </details>
 
                     <details class="faq-item">

@@ -1063,6 +1063,53 @@
     text-align: center;
 }
 
+/* Anmeldung – Kurz-Intro statt Fliesstext: eine Aussage, darunter die Fakten mit Symbol.
+   Zwei Zustaende (vor/nach Anmeldeschluss) im Markup, das Skript in index.html schaltet um. */
+.anmeldung-intro {
+    text-align: center;
+    margin-bottom: var(--space-lg);
+}
+
+.anmeldung-lead {
+    font-size: 1.125rem;
+    line-height: 1.5;
+    color: var(--gray-700);
+    margin: 0 0 0.875rem;
+}
+
+.anmeldung-facts {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem 1.75rem;
+    margin: 0;
+}
+
+.anmeldung-fact {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9375rem;
+    line-height: 1.4;
+    color: var(--gray-600);
+}
+
+/* Strichzeichnung statt Emoji: bleibt in der Markenfarbe und auf jedem System gleich. */
+.anmeldung-fact svg {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 18px;
+    fill: none;
+    stroke: var(--color-primary);
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.anmeldung-intro .btn {
+    margin-top: 1.25rem;
+}
+
 /* Anmeldung – Umschalter Einzel/Sammel, nutzt das Tab-Muster (.connect-card/.tab-*) */
 /* Höhere Spezifität als .connect-tabs (max-width:560px), sonst würde der 5-stufige
    RaceResult-Kopf gestaucht. Breitere Karte + weniger Innenabstand für den Formular-Platz. */
