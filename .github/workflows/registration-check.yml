@@ -9,6 +9,12 @@ name: Registration Check
 # Quelle der Wahrheit sind die eingebetteten Snippets selbst — rname/key/eventid
 # werden aus den Live-Dateien extrahiert, nicht hier hartkodiert. So testet der
 # Check immer exakt das, was die Website an RaceResult schickt.
+#
+# Nach dem Anmeldeschluss antwortet RaceResult planmaessig mit HTTP 400
+# ("Die Online-Anmeldung ist beendet") — das ist kein Ausfall. Der Check liest
+# den Schluss deshalb aus derselben Konstante, nach der sich auch die Website
+# umschaltet (ANMELDESCHLUSS in index.html), und schlaeft danach von selbst ein.
+# Eine Wahrheitsquelle: wer den Schluss verschiebt, aendert nur index.html.
 
 on:
   schedule:
@@ -33,6 +39,25 @@ jobs:
             echo "::error::Test-Alarm — absichtlicher Fehlschlag zur Pruefung der Benachrichtigung."
             exit 1
           fi
+
+          # Anmeldeschluss aus index.html — dieselbe Konstante, nach der die Seite umschaltet.
+          schluss=$(grep -oE "ANMELDESCHLUSS = new Date\('[^']+'\)" index.html \
+            | head -1 | sed -E "s/.*'([^']+)'.*/\1/")
+          if [ -z "$schluss" ]; then
+            echo "::error::ANMELDESCHLUSS in index.html nicht gefunden — Umschalt-Skript umgebaut?"
+            exit 1
+          fi
+          schluss_ts=$(date -d "$schluss" +%s 2>/dev/null) || {
+            echo "::error::ANMELDESCHLUSS \"$schluss\" ist kein lesbares Datum."
+            exit 1
+          }
+          if [ "$(date +%s)" -ge "$schluss_ts" ]; then
+            echo "Anmeldeschluss $schluss ist vorbei — Online-Anmeldung planmaessig geschlossen."
+            echo "Nichts zu pruefen. Der Check wacht von selbst wieder auf, wenn"
+            echo "ANMELDESCHLUSS in index.html auf einen kuenftigen Zeitpunkt zeigt."
+            exit 0
+          fi
+          echo "Anmeldung offen bis $schluss — pruefe die Formulare."
 
           # "Anzeigename:Datei" — je Registrierung eine eingebettete Snippet-Datei.
           forms=(
