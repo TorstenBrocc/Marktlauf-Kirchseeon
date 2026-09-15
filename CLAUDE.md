@@ -4,6 +4,21 @@ Diese Datei wird von Claude Code beim Start automatisch gelesen. Sie hält das
 Betriebswissen fest, das sonst nur in einer einzelnen Session existiert — damit ein
 neuer Lauf / ein vergleichbarer Workstream direkt wirksam arbeiten kann.
 
+## Wie diese Datei gepflegt wird (Konvention)
+
+**Am Ende jeder Session:** den Abschnitt „Aktueller Stand / Übergabe" **ersetzen**, nicht
+einen weiteren anhängen. Dazu gehört: neue dauerhafte Fallen nach „Fallen & Lehren",
+neue/erledigte Aufgaben nach „Offene Punkte". Ohne Rückfrage — dafür gibt es die Konvention.
+
+**Was hier NICHT hingehört:** die Erzählung erledigter Arbeit. Was gebaut wurde, steht in
+den Commit-Nachrichten und im Diff; die Datei wird bei jedem Session-Start vollständig in
+den Kontext geladen, jede Zeile kostet also dauerhaft. Hier steht nur, was eine neue
+Session **nicht** aus Code, Commits oder `git log` herleiten kann: Fallen, Entscheide,
+Zugänge, offene Punkte.
+
+Wer die Vorgeschichte braucht: `git log -p -- CLAUDE.md`. Die acht Einzel-Übergabeblöcke
+vom 14.08.–11.09.2026 sind dort vollständig erhalten (zusammengeführt am 2026-09-15).
+
 ## Umgebung (Claude Code on the web)
 
 - Web-Sessions laufen in einem **frischen Klon ohne Datenbank**: `storage/config.php`
@@ -17,6 +32,13 @@ neuer Lauf / ein vergleichbarer Workstream direkt wirksam arbeiten kann.
     Stammdaten-Blick den **CSV-Export** nutzen (Sponsoren-Übersicht → Export, hinter Login)
     und vom Nutzer geben lassen.
 
+**Inhaber-Setup (lokal):** Basisordner `~/Repo/github/Marktlauf-Projekt/`. Darunter mehrere
+Git-Worktrees `website-*` (Haupt-`main` = **`website-main`**; feature-spezifische wie
+`website-strecke-10km`, `website-freilayout`, `website-poster-wf`, `website-versand-ux` …)
+plus `intern/`/`intern-rr14/` (Vault/intern, NICHT der Website-Code). Merke: die lokalen
+Ordner heißen `website-*`, nicht „Marktlauf-Kirchseeon" — ein
+`find ~ -name Marktlauf-Kirchseeon` findet daher nichts.
+
 ## Datenbank-Migrationen anwenden
 
 - Runner: `bin/migrate.php` (`status` zeigt offene, `migrate` wendet an). Tracking in
@@ -26,11 +48,11 @@ neuer Lauf / ein vergleichbarer Workstream direkt wirksam arbeiten kann.
   Datei: `.github/workflows/migrate.yml` (SSH via ssh-action, gleiche Secrets wie Deploy).
   Bewusst **nur manuell**, **nicht** an den Deploy gekoppelt (DDL committet auf MySQL
   implizit ohne Auto-Rollback).
-- Neue Sponsoren/Datensätze werden per Seed-Migration angelegt (Beispiele: `073` KJR,
-  `074` BSJ). INSERTs immer **guarded** (`WHERE NOT EXISTS (SELECT ... FROM (…) x)`,
-  `FROM DUAL`) — umgeht MySQL-Fehler 1093 und ist gegen bestehende Datensätze robust.
-  Bestehende Zeilen nur **additiv** ändern (z. B. Notizen via `CONCAT(COALESCE(...),…)`),
-  nie blind überschreiben — der DB-Stand ist von hier aus nicht einsehbar.
+- Neue Sponsoren/Datensätze werden per Seed-Migration angelegt. INSERTs immer **guarded**
+  (`WHERE NOT EXISTS (SELECT ... FROM (…) x)`, `FROM DUAL`) — umgeht MySQL-Fehler 1093 und
+  ist gegen bestehende Datensätze robust. Bestehende Zeilen nur **additiv** ändern (z. B.
+  Notizen via `CONCAT(COALESCE(...),…)`), nie blind überschreiben — der DB-Stand ist von
+  hier aus nicht einsehbar.
 
 ## Deployment
 
@@ -46,10 +68,78 @@ neuer Lauf / ein vergleichbarer Workstream direkt wirksam arbeiten kann.
   `Co-Authored-By: Claude`. Diesen Trailer **nicht** setzen.
 - **Öffentliches Repo, Datenhygiene:** `sponsor-data/`, `*.sponsor.csv`, `intern/`-Specs
   sind per `.gitignore` bewusst ausgeschlossen. Keine CRM-/Personendaten committen;
-  Migrationen dürfen Organisations-/Programmnamen enthalten (wie 072), aber möglichst
-  keine privaten Personendaten.
+  Migrationen dürfen Organisations-/Programmnamen enthalten, aber möglichst keine
+  privaten Personendaten. **Interne Specs gehören nie ins öffentliche Repo** — sie liegen
+  im Vault unter `intern/`.
 - Branch-Arbeit: Feature-Branch entwickeln, dann per Fast-Forward nach `main` (Deploy).
   `main` bewegt sich häufig → vor dem Push `git fetch origin main` + rebasen.
+
+## Fallen & Lehren (dauerhaft)
+
+**Git-Identität in Web-Sessions.** Der Default-Git-Autor in der Web-Sandbox ist
+`Claude <noreply@anthropic.com>`. Der Guard-Workflow `.github/workflows/no-claude-author.yml`
+scannt die **ganze** Historie auf diese Mail und wird sonst **rot** (Deploy läuft trotzdem,
+nur der required check „check" bleibt rot). Ein `SessionStart`-Hook in `.claude/settings.json`
+setzt die Identität inzwischen automatisch auf `Torsten T
+<81263458+TorstenBrocc@users.noreply.github.com>`. **Claude darf `.claude/settings.json` NICHT
+selbst schreiben** (Classifier: Self-Modification) — Änderungen daran macht der Inhaber.
+Vor einem Commit trotzdem `git config user.name`/`user.email` prüfen.
+
+**`update`-Endpunkte schreiben ALLE Felder.** Jedes Edit-Formular muss sämtliche Felder
+mitsenden (z. B. `notiz` **und** `status` bei `orga/api/aufgabe_orga_crud.php`), sonst leert
+das Speichern die nicht gesendeten. Gleiche Falle historisch bei `einstellungen_update.php`.
+
+**Unangehakte Checkbox-Gruppen fehlen im POST komplett.** Deshalb braucht jede solche Gruppe
+ein Marker-Feld (Muster: `reminder_versandtage_gesendet`), ohne das der Key nicht geschrieben
+wird — sonst ist „alles abgewählt" nicht von „Formular kennt das Feld nicht" unterscheidbar.
+
+**Fertige Branch-Arbeit sofort nach `main` bringen.** Sechs fertige Commits lagen einmal nur
+auf einem Session-Branch — jeder `main`-Deploy hat den bestätigten Live-Fix zurückgerollt.
+
+**Optik nie ohne Blick auf die ECHTE Seite als erledigt melden.** Ein Fix, der nur am Mockup
+oder im Desktop-Media-Query verifiziert war, war bei schmaler Ansicht wirkungslos.
+
+**CSS-Fallen aus dem Sponsoren-Kopf (teuer erkauft):**
+1. Ein `position:sticky`-Element stickt relativ zum nächsten `overflow`-Scrollcontainer,
+   nicht zwingend zum Viewport.
+2. `min-height:0` ist Pflicht, damit ein Flex-Kind unter seine Inhaltshöhe schrumpfen und
+   intern scrollen kann.
+3. Media-Queries erhöhen die Spezifität **nicht** — ein Desktop-Block muss in der Quelle
+   NACH der Mobil-Basisregel stehen, sonst gewinnt die Basis.
+4. Der Header ist `position:fixed` (`css/layout.css:11`), nicht sticky — wer das annimmt,
+   baut Bänder, die dahinter verschwinden.
+
+**Natives HTML5-Drag-and-Drop greift nicht auf Touch/Mobil.** Sortieren (Ansprechpartner,
+Datei-Baum) ist ein Desktop-Vorgang.
+
+**`data/status.json` ist Runtime-State, kein Deploy-Artefakt.** Der `deploy.yml`-EXCLUDE ist
+richtig: `--delete` würde Renntag-Meldungen löschen. Gleiches Muster wie `sponsoren.json`.
+
+**`INSIGHTS_MAX_VERSUCHE`** muss in `orga/api/post_status_callback.php` und
+`orga/api/posts_pending_insights.php` übereinstimmen, sonst läuft die Wiedervorlage endlos.
+
+## Externe Dienste — Konfigurationsstand
+
+**LLM-Provider-Kette** (`src/llm_client.php`, `llmGenerate()`): Fallback-Reihenfolge
+`[gemini, groq, mistral]`, aktiver Provider vorn; liefert einer '' (Fehler), springt der
+nächste ein.
+- Aktiv: **Groq** (`einstellungen.llm_provider=groq`), Modell **`openai/gpt-oss-120b`**
+  (Konstante `GROQ_MODEL`). `llama-3.3-70b-versatile` ist nicht auf dem Free-Key → 404.
+- **Gemini** `gemini-3.6-flash` + `thinkingConfig.thinkingLevel` (Gemini-3.x-Feld, NICHT
+  Legacy-`thinkingBudget` → sonst HTTP 400 INVALID_ARGUMENT). `gemini-2.0/2.5-flash` = 404.
+- **Mistral** `mistral-small-latest`: Free = 1 Req/s / 20k TPM → Selbst-Drossel ≥1,1 s
+  zwischen zwei Calls (`$letzterMistralCall`).
+- cURL-Timeout 90 s (`llmCurlPost`); PHP `max_execution_time` auf Strato = 240 s.
+- **GitHub Models** ist zum 30.07.2026 eingestellt — nicht einbauen.
+
+**RaceResult:** Event `412617`. Die ausführliche Setup-Doku liegt im Vault unter
+`intern-rr14/docs/raceresult/setup-protokoll.md` — dort stehen Formulare, Keys, Fenster und
+die Renntags-Nachmeldung. Für die Website relevant: siehe „Anmeldung & Nachmeldung" unten.
+
+**make.com** Szenario 6642115 (Posting) und 7094793 (Social Insights Stage C).
+Bekannte Lücke: die Callback-HTTP-Module (10/11) hängen hinter dem Kommentar-Filter →
+terminierte FB-Posts ohne `first_comment` melden nie Post-ID/Permalink. Fix nur im
+Szenario (Callback vor den Filter) — Inhaber-Entscheid offen.
 
 ## Sponsoren-/Fördergruppen-Modell
 
@@ -66,325 +156,79 @@ neuer Lauf / ein vergleichbarer Workstream direkt wirksam arbeiten kann.
   Schema-/Enum-Eingriff. Die Erstanschreiben-Seite (`orga/_anschreiben_seite.php`) schaltet
   über die Fördergruppen-Reiter (`?zielgruppe=fg_<gruppe>`) Empfänger UND Variantentext um.
 - Zielgruppen/Empfänger-Filter je Anschreiben-Seite: `src/sponsor_zielgruppen.php`.
+- Konzern-Tag: Gruppe `[6] Kreissparkasse (KSK)` klammert Bank (`id 8`) und Stiftung
+  (`id 104`).
 
-## Aktueller Stand / Übergabe (Stand 2026-09-11)
+## Anmeldung & Nachmeldung (Website-Seite)
 
-**Grafik-Editor „Grafik erstellen" (Themen-Post): Schriften regelbar + Punkte ausblendbar
-(Commit `d37271e`, deployt, keine Migration).** Anlass: Anjas Mail „Grafik erstellen –
-Schriftblöcke skalierbar machen" (10.09., von `anja.jost@gmx.de`; sie meinte NICHT den
-Postergenerator, sondern den Vorlagen-Editor `orga/vorlagen.php`, Reiter Themen-Post).
-Umgesetzt in `orga/vorlagen.php` (nur der Themen-Post `vt-felder-thema` / Karte `.sc-card`):
-- **Drei Schieberegler** (60–160 %, mit %-Anzeige) im Bedienfeld: **Unterzeile** (`#th-sub`,
-  Basis 34 px), **Button** (`#th-cta`, 36 px), **Termin-Zeilen** Datum/Ort (`#th-datum`/`#th-ort`,
-  26 px). Inhaber-Entscheid: Button und Termin **getrennt** regeln. Die Regler ändern nur die
-  `font-size` (bewusst KEIN `transform:scale`/Zoom — Anja: „es geht um die Schriften"), die
-  Drag-Position bleibt. Angewendet in `fillCard3()`; Basiswerte spiegeln die CSS.
-- **Schalter „Punkte ausblenden"** (`#vt-th-nodots`) blendet die goldenen Bullets vor den drei
-  Zeilen aus (`.sc-bullets.sc-nodots .sc-bullet::before{display:none}`, Text bündig links).
-- **Persistenz:** Range-Inputs sind in `vtSammleFelder()` aufgenommen (Liste um `'range'` ergänzt),
-  Checkbox läuft über den bestehenden `checks`-Zweig → Regler/Schalter überleben Reload und
-  „Für Post übernehmen". Verifikation: `php -l` grün, JS-Struktur per Node geprüft; **kein**
-  Browser-/Login-Test (Inhaber-Wunsch „kein Test"). Deploy-Workflow „SFTP Deployment" grün → live.
-- **Antwort an Anja** ist raus (Gmail-Reply im Thread „Grafik erstellen – Schriftblöcke …").
+Der Anmeldebereich in `index.html` hat **zwei Zustände** und schaltet per JavaScript anhand
+der Konstante `ANMELDESCHLUSS` um — davor die eingebetteten RaceResult-Formulare, danach
+„Die Online-Anmeldung ist beendet." plus QR-Code und Button auf
+`https://my.raceresult.com/412617/registration`.
 
-**WICHTIG — Git-Identität in Web-Sessions (sonst roter CI-Check).** Der Default-Git-Autor in der
-Web-Sandbox ist `Claude <noreply@anthropic.com>`. Der Guard-Workflow `.github/workflows/no-claude-author.yml`
-scannt die **ganze** Historie auf diese Mail und wird sonst **rot** (Deploy läuft trotzdem, nur der
-required check „check" bleibt rot). Commit `d37271e` ging noch mit dieser Identität raus → Check rot.
-- **Dauerfix (vom Inhaber am 11.09. im GitHub-Browser erledigt):** `.claude/settings.json` hat jetzt
-  einen `SessionStart`-Hook, der `git config --global user.name/email` auf die Inhaber-Identität
-  `Torsten T <81263458+TorstenBrocc@users.noreply.github.com>` setzt. **Claude darf `.claude/settings.json`
-  NICHT selbst schreiben** (Classifier: Self-Modification) — Änderungen daran macht der Inhaber im
-  Browser/lokal. Für neue Sessions: der Hook greift automatisch; falls ein Commit ansteht, vorher
-  `git config user.name`/`user.email` prüfen (muss Inhaber sein, nicht „Claude").
-- **Roten Check von `d37271e` grün machen** (optional, rein kosmetisch): im lokalen Klon
-  `~/Repo/github/Marktlauf-Projekt/website-main` → `git commit --amend --reset-author --no-edit`
-  + `git push --force-with-lease origin main`. (Nicht dringend — live ist alles.)
+⚠️ **`ANMELDESCHLUSS` muss mit „Aktiv bis" der beiden regulären RaceResult-Formulare
+übereinstimmen.** Ein Auseinanderlaufen ist real passiert (RaceResult stand auf 13.09.,
+die Website auf 14.09.) und hat Fehlalarme ausgelöst. Die Umschaltung ist rein kosmetisch —
+was wirklich geht, entscheidet RaceResult serverseitig.
 
-**Inhaber-Setup (lokal, für Übergabe-Notizen):** Basisordner `~/Repo/github/Marktlauf-Projekt/`.
-Darunter mehrere Git-Worktrees `website-*` (Haupt-`main` = **`website-main`**; feature-spezifische
-wie `website-strecke-10km`, `website-freilayout`, `website-poster-wf`, `website-versand-ux` …) plus
-`intern/`/`intern-rr14/` (Vault/intern, NICHT der Website-Code). Merke: die lokalen Ordner heißen
-`website-*`, nicht „Marktlauf-Kirchseeon" — ein `find ~ -name Marktlauf-Kirchseeon` findet daher nichts.
+**Der QR liegt als fertige Datei** (`assets/images/qr-nachmeldung.svg`), erzeugt mit der
+repo-eigenen `assets/js/qrcode.js`. Ändert sich das Ziel, muss die Datei neu erzeugt werden —
+sie wird **nicht** im Browser gerechnet (die Bibliothek sind 55 KB, das Ziel ändert sich nie).
+Ziel-URL identisch mit `orga/poster_generator.php`.
 
-## Aktueller Stand / Übergabe (Stand 2026-09-04, Nachtrag: LLM-Provider-Kette)
+**Workflow „Registration Check"** (`.github/workflows/registration-check.yml`) ruft den
+RaceResult-Endpoint direkt auf, weil der Uptime-Check nur den HTTP-Status der eigenen Seiten
+misst und ein clientseitiger 404 dort unsichtbar bliebe. Er liest `ANMELDESCHLUSS` aus
+`index.html` und schläft nach dem Schluss von selbst ein (grün, kein Alarm). Wer den Schluss
+verschiebt, ändert **nur** `index.html`; der Check wacht dann von allein wieder auf.
 
-**Social-/Presse-Generator: 3-Provider-Kette mit Auto-Fallback (mehrere Commits, deployt, keine Migration).**
-Anlass: Anjas Mail „Providerlimit erreicht" — Mistral-Free 429 UND Gemini gleichzeitig kaputt = Totalausfall.
-- **Aktiver Provider: Groq** (`einstellungen.llm_provider=groq`), Modell **`openai/gpt-oss-120b`** (Konstante
-  `GROQ_MODEL` in `src/llm_client.php`; `llama-3.3-70b-versatile` ist „Enterprise"/nicht auf dem Free-Key → 404).
-  OpenAI-kompatibel (`api.groq.com/openai/v1`, Key `groq_api_key`), live end-to-end getestet (HTTP 200), schnell,
-  kein Training auf Daten.
-- **Fallback-Kette** in `llmGenerate()`: `[gemini, groq, mistral]`, aktiver Provider vorn; liefert einer ''
-  (Fehler), springt automatisch der nächste ein. Sammelfehler nennt alle Provider.
-- **Gemini** `gemini-3.6-flash` + `thinkingConfig.thinkingLevel` (Gemini-3.x-Feld, NICHT Legacy-`thinkingBudget`
-  → sonst HTTP 400 INVALID_ARGUMENT), aktuell `low` + temperature 0.8. `gemini-2.0/2.5-flash` = „no longer
-  available" (404).
-- **Mistral** `mistral-small-latest`: Free = 1 Req/s / 20k TPM (admin.mistral.ai/plateforme/limits) → Selbst-
-  Drossel ≥1,1 s zwischen zwei Calls (`$letzterMistralCall`). Kein Kosten-/Monatslimit; 429 war reines Rate-Limit.
-- **cURL-Timeout 90 s** (`llmCurlPost`, Reasoning-Modelle langsam; PHP `max_execution_time` Strato = 240 s).
-  Provider-Dropdown (`orga/social_post.php`) mit `i`-Tooltip; Whitelists `social_provider.php` + `social_generate.php`.
-- **GitHub Models NICHT eingebaut**: Dienst zum 30.07.2026 eingestellt (docs.github.com/github-models).
-- **Offen**: echter GPT-4-Klasse-Tier nur über Azure OpenAI (Azure-Nonprofit-Grant) — der OpenAI-ChatGPT-
-  Nonprofit-Grant deckt KEINE API. Kernkompetenz-Feld (Migration 077, Tabelle `sponsors`, verdrahtet in
-  `src/social_sponsoren.php` → Sponsor-Posts) ist erst bei **7/108** Sponsoren gefüllt (Pflege in der Sponsor-Maske).
+## Aktueller Stand / Übergabe (Stand 2026-09-15)
 
-## Aktueller Stand / Übergabe (Stand 2026-09-04)
+**Anmeldeschluss ist durch** (14.09., 17:00). Die Website zeigt den Nachmelde-Zustand, die
+Online-Formulare sind ausgeblendet. Nachmeldung läuft am Renntag über das RaceResult-Portal
+(fünf Formulare je Lauf, im Portal hinterlegt — **nicht** auf der Website eingebettet).
 
-**Live-Ticker: `orga/ticker.php` repariert (Commit `552cfbe`, deployt, keine Migration).** Die Seite war
-auf Prod weiß: der SELECT las `u.vorname, u.nachname`, die Tabelle `users` hat seit `001_init.sql` nur
-`name` (PDO-Exception unbehandelt → Fatal ohne Ausgabe). Jetzt `u.name`; Ersteller-Name aus `name`.
-- **`data/status.json` → 404 auf der Startseite ist kein Defekt:** der Poller in `index.html` (30 s,
-  Live-Ticker-Band) liest eine Datei, die ausschließlich `orga/api/ticker_crud.php` nach der **ersten**
-  Ticker-Aktion schreibt. `ticker_posts` auf Prod: 0 Zeilen → Datei nie erzeugt. Der `deploy.yml`-EXCLUDE
-  ist richtig (Runtime-State; `--delete` würde Renntag-Meldungen löschen — gleiches Muster wie
-  `sponsoren.json`). Kein Workflow erzeugt die Datei, das ist so gewollt.
-- **Offen (Inhaber):** ersten Eintrag „Die Anmeldung ist offen" in `orga/ticker.php` anlegen → Datei
-  entsteht, Band erscheint auf der Startseite, der 404 verschwindet. Danach Konsole gegenprüfen.
-- Verifikation: `php -l` grün, Deploy-Workflow grün, md5 `orga/ticker.php` auf Strato = Repo, der
-  korrigierte SELECT read-only auf Prod ausgeführt (ok, 0 Zeilen). Kein Login-Test der Seite.
-- **Erster Eintrag angelegt (Inhaber, 04.09. 06:32):** `data/status.json` liefert 200, Konsolen-404 weg.
-- **Band lag hinter dem Header (Commit `4eacc84`, deployt):** das DS-Briefing §2 nahm einen
-  `position:sticky`-Header an, real ist er `position:fixed` (`css/layout.css:11`) und legte sich über das
-  Band. Fix nur im Ticker-Skript in `index.html`: `positionHeader()` setzt `header.style.top` auf die
-  Unterkante des Bands (scroll/resize + nach jedem Render) — Band im Fluss, scrollt weg, Header rückt an
-  den oberen Rand; ohne Meldungen `top: 0`. Header-CSS und andere Seiten unverändert. Live per Browser
-  verifiziert (Desktop 1280: Band 39 px, Header darunter; Scroll 300 → Header 0 px, `.scrolled` greift).
-  Entscheidung Inhaber 04.09. gegen „Band dauerhaft fixiert" und „Header global sticky".
-- **Meldungen laufen als Band (Commit `d6b2d6d`, deployt):** Richtung **rechts → links** (Inhaber-Entscheid
-  04.09.; Leserichtungs-Konvention für LTR-Schrift, gleiche Richtung wie das Sponsoren-Laufband). Nur
-  `#live-ticker-messages` läuft, das LIVE-Label steht. Mechanik wie `sponsor-marquee`: Set aus
-  Einträgen (+ Trennpunkt je Eintrag) wird geklont, bis der Viewport plus ein Set gefüllt ist; Shift pro
-  Runde = genau eine Set-Breite (`--ticker-shift`), Dauer = Set-Breite / **45 px/s** (`SPEED_PX_PER_S`;
-  Start war 60 ≈ Sponsoren-Band, TT-Justage 04.09. auf 45, Commit `b1f48da`; Trennabstand dabei von
-  0,9 rem auf 2 rem je Seite verdoppelt). Klone `aria-hidden`. **Pause** bei Hover, Fokus (`tabindex=0`)
-  und Klick/Tap (`is-paused`) — WCAG 2.2.2. `prefers-reduced-motion`: kein Lauf, ein Set umbrechend.
-  Poller rendert nur bei geändertem Feed (`lastPayload`), sonst würde das Band alle 30 s neu starten.
-  Tempo-Justage: nur `SPEED_PX_PER_S` in `index.html` ändern.
+**Zwei Commits, deployt, keine Migration:**
+- `dc6d0f3` — QR-Code zur Nachmeldung in der Anmelde-Kachel. Neue Datei
+  `assets/images/qr-nachmeldung.svg` (Fehlerkorrektur Q, 33×33 Module), eingebaut neben dem
+  bestehenden Button, neuer i18n-Schlüssel `anmeldung.qr_hinweis` (de/en). Live geholt,
+  gerastert und mit einem Decoder zurückgelesen → korrekte Ziel-URL. Optik in Chrome geprüft
+  (Desktop + 375 px, kein horizontaler Überlauf).
+- `6026399` — „Registration Check" kennt den Anmeldeschluss. Vorher hätte er bis zum Renntag
+  alle paar Stunden ntfy-Alarm gepusht, weil RaceResult nach Schluss planmäßig **HTTP 400**
+  mit `CUSTOMERROR:` antwortet. Drei Zweige auf `ubuntu:latest` gegen die echten Dateien
+  gefahren (Schluss vorbei → exit 0; Schluss in der Zukunft → prüft wie bisher; Konstante
+  entfernt → exit 1). Im echten Runner bestätigt (Lauf 34885508473, grün).
 
-## Aktueller Stand / Übergabe (Stand 2026-09-03)
+**Beobachtung für den Renntag:** GitHubs Schedule-Drosselung ist erheblich — `*/15` lief real
+mit 1,5–5,5 h Abstand. Auf zeitkritische Fenster ist ein GitHub-Cron deshalb nicht verlässlich.
 
-**Strecke 5 km LIVE, finale Fassung v3 (Commit `9c807fc`, deployt, keine Migration):** `assets/courses/5km.gpx` =
-Orga-Drive „Strecken/5 km-mit-km-Marken.gpx" ohne Wegpunkte (5,44 km, TT 04.09.: an den Schnittstellen deckungsgleich
-mit der 10 km; GPX-Name für Läufer neutral „Marktlauf Kirchseeon 2026 – 5 km"). Davor v2 = Gegenrichtung 5,33 km (`fba4316`).
-Vorher: 03.09. Ost-Schleife
-in Original-Richtung (`dc56f12`), Vorbehalts-Hinweis an der 5-km-Karte entfernt (`dc69e3c`). **10 km bleibt gesperrt**
-(`blocked` in `js/maps.js`): die finale 10 km (Drive `Strecken/10km.gpx`, 10,04 km) liegt **fertig committet auf Branch
-`claude/strecke-10km-final`** (Worktree `website-strecke-10km`; GPX + `blocked` raus + Vorbehalts-Hinweis raus).
-**Push nach main NUR auf TT-Wort „10 km freigeben"** — dann mechanisch nach
-`intern/docs/strecken-10km-freigabe-runbook.md`. 1/2 km tragen den Vorbehalts-Hinweis weiter — TT 04.09.: Website
-darüber hinaus nicht anfassen.
-Orga-Excel + km-GPX (Original- und Gegenrichtung) im Orga-Drive `Strecken/`. Vault: MKL-T32 + build-log 2026-09-03/04.
+## Offene Punkte
 
-**Social-Pipeline Schritt 4 + Instagram wieder automatisch (Commit `05a44e5`, deployt, keine Migration;
-Vault-Backlog WP-M9…M13, Spec `intern/social-auto-versand-beste-zeit-spec.md` §4d):** Anlass war Anjas
-Mail „wollte gleich posten, geht nach wie vor nicht" — der FB-Post war live, die UI sagte es nicht.
-- `orga/api/social_save.php`: Speichern/Freigeben setzt `gesendet`/`terminiert` **nicht** mehr auf
-  `approved` zurück (Antwort enthält `status`); Post 11 war so am 02.09. „ungesendet" geworden.
-- `orga/social_post.php` Schritt 4: Live-Zeile „Auf Facebook + Instagram veröffentlicht … · Bestätigt HH:MM"
-  + Permalink-Buttons; ohne Callback Auto-Reload alle 10 s (max 12×, `sessionStorage` `spWarte<id>`);
-  terminierte Posts ohne Callback: „Facebook hat den Beitrag zum Termin veröffentlicht"; Kachel-Titel
-  zustandsabhängig; Stichtag-Chip „— erledigt"; **Sofort-Button postet Facebook + Instagram**
-  (`sofortPosten()`); „noch einmal posten" nur im Fallback-Details mit Doppelpost-Warnung.
-- `src/social_versand.php`: `socialVersandHashtagsAnhaengen()`, `socialVersandBildUrl()` (aus
-  `versendePost` extrahiert), **`sendeInstagramNach()`** — der Finalizer postet Instagram sofort, wenn FB
-  zum Slot live geht (nur `channels=['instagram']`; make-FB-Kante filtert `array:contain facebook`,
-  per Blueprint-GET verifiziert); `socialLiveMail($pdo,$post,$channels)` nennt „Veröffentlicht auf: …"
-  + Permalinks. `bin/social_versand.php`: Catch-up sendet FB+IG, terminiert nur FB (IG folgt im Finalizer).
-- `src/social_dispatcher.php`: Erfolgsmeldung nennt die Kanäle.
-- **Bekannte Make-Lücke:** Callback-HTTP-Module (10/11) hängen hinter dem Kommentar-Filter → terminierte
-  FB-Posts (ohne first_comment) melden nie Post-ID/Permalink. Fix nur im Make-Szenario 6642115
-  (Callback vor den Filter). Inhaber-Entscheid offen.
-- Verifikation: `php -l` grün, Deploy-Workflow grün, md5 der fünf Dateien auf Strato = Repo.
-  Kein Runtime-Test mit DB (kein lokales Setup) — erster realer Post/Timer-Lauf beobachten.
+**Website / Strecke**
+- **10 km freigeben:** fertig committet auf Branch `claude/strecke-10km-final` (Worktree
+  `website-strecke-10km`; GPX + `blocked` raus + Vorbehalts-Hinweis raus). **Push nach `main`
+  NUR auf TT-Wort** — dann mechanisch nach `intern/docs/strecken-10km-freigabe-runbook.md`.
+  1 km / 2 km tragen den Vorbehalts-Hinweis weiter.
+- `assets/images/qr-anmeldung.png` liegt seit `ecd0599` im Repo und wird **nirgends**
+  eingebunden; enthält `https://atsv-kirchseeon-marktlauf.de/#anmeldung`. Löschen?
 
-## Aktueller Stand / Übergabe (Stand 2026-08-30)
+**Sponsoren / CRM**
+- **Kernkompetenz** der bestätigten Sponsoren füllen (Feld existiert, Migration 077) —
+  erst **7/108** gepflegt. Die KI baut daraus den Marktlauf-Bezug selbst.
+- **Test-Datensätze** `98 _torsten`, `102 _Anja Jost GmbH`, `65 Testfirma` — Löschen ist
+  destruktiv, daher Rückfrage offen.
+- Mögliche Dublette `30` vs `80` (Allianz Waldhör/Schrödinger).
+- **75 VR-Förderpreis:** Notiz steht auf „vermutlich", sollte auf „bestätigt" (Prod-Write).
+  Recherchiert: „Sterne des Sports" (DOSB + Volksbanken, Bewerbung 1.4.–30.6., lokal bis
+  1.500 €) passt, Weg über Raiffeisen-Volksbank Ebersberg (id 7), Ziel 2027.
+- **78 VK-Stiftung:** Hebel = Ehrenamtspreis (kein Sport-Projektantrag). **112
+  Sportjugendstiftung:** nur überregional → jährlich/regionsübergreifend argumentieren.
+  **BSJ/BLSV** (074): `jugendfoerderung@blsv.de`.
 
-**Social-Insights-Sammler („Stage C") — Dauer-Fehler behoben (Commits `4254212` Migration 091 +
-`17225b3` Code, deployt/migriert; Make-Szenario „Social Insights (Stage C)" 7094793 angepasst):**
-Das Make-Szenario warf seit 29.08. **täglich** einen Fehler (GraphMethodException 100 „Object …
-does not exist") und mailte ihn. Ursache war zweiteilig und ist dauerhaft gelöst:
-- **Endlos-Wiedervorlage:** `posts_pending_insights.php` liefert einen Post bis `versand_insights_am`
-  gesetzt ist — das wird aber **nur bei Erfolg** gesetzt (`post_status_callback.php`), also nie für
-  einen nicht abrufbaren Post. Fix: neue Spalte `post_race_contents.insights_versuche` (Migration
-  091); der Callback nimmt jetzt `{"insights_status":"failed"}` aus dem Make-Error-Handler und zählt
-  hoch, Erfolg setzt auf 0 zurück; der Pending-Endpoint schließt `insights_versuche >= 3` aus. Schwelle
-  3 muss in **beiden** Dateien übereinstimmen (Konstante `INSIGHTS_MAX_VERSUCHE` im Callback).
-- **Ein fauler Post kippte den ganzen Lauf:** Modul „Get post insights" hatte keinen Error-Handler.
-  Fix im Make-Szenario: Error-Handler → HTTP-POST `{post_id, channel:"instagram",
-  insights_status:"failed", secret}` an `post_status_callback.php` → **Skip**. Lauf endet grün,
-  keine Fehler-Mail. Verifiziert: Testlauf grün, id=7 `insights_versuche=1`, id=3 weiter Reichweite 76.
-- **Ursache des toten Posts id=7** („trainingstipp", 29.08.): Posting-Szenario 6642115 hat die von IG
-  gelieferte Media-ID (`17976709392095722`) korrekt gespeichert, der Folge-Kommentar lief erfolgreich
-  → Media war beim Posten real; ~8 h später „does not exist" → **IG-Post wurde nach dem Posten
-  gelöscht**. Kein Pipeline-Bug (id=3 mit derselben Pipeline lieferte sauber Insights).
-
-## Aktueller Stand / Übergabe (Stand 2026-08-25)
-
-Social-Post-Wirkung (Spec) + make.com-Optimierung — alles auf `main`, deployt, migriert:
-- **Wirkungs-Spec** liegt im **VAULT** unter `intern/social-post-wirkung-spec.md` (NICHT im Repo —
-  `intern/` ist per `.gitignore` + Deploy-EXCLUDE gesperrt; interne Specs gehören nie ins öffentliche
-  Repo). §5 (A–D) gefüllt/abgenickt; Bau-Schnitte S1–S6 wurden umgesetzt (Themen-Katalog schärfen,
-  Prompt/Stimme, Seiten-IA „Thema zuerst", Grafik-Regeln, Sponsor-Kopplung `src/social_sponsoren.php`,
-  Verstärker-Quelle `src/social_verstaerker.php`).
-- **make.com-Rückkanal (#1/#2):** `orga/api/post_status_callback.php` (nur POST, HMAC- bzw.
-  secret-verifiziert) nimmt je Kanal `{post_id, channel, permalink, status}`; Migration **083** legt
-  `ig_permalink/fb_permalink/versand_bestaetigt_am/versand_callback_info` an; der ausgehende Webhook
-  sendet jetzt `post_id`; Post-Detail zeigt die bestätigten Live-Links. **GET auf den Endpoint gibt
-  bewusst „POST erwartet." — korrekt, kein Fehler.**
-- **#4 Härtung:** `X-Signature: sha256=HMAC(secret, body)` am Webhook; Body-`secret` bleibt kompatibel.
-- **Sponsor-Post-Anleitung** (`socialSponsorPostAnleitung`) aufgeklappt auf Sponsor-Themen im Post-Detail.
-
-Make.com-Seite (Inhaber, einmalig): nach dem IG/FB-Post-Modul ein HTTP-POST an
-`…/orga/api/post_status_callback.php` mit `{post_id, channel, permalink, status}` + Header
-`X-Signature` (HMAC-SHA256 des Bodys mit `make_webhook_secret`) **oder** `secret` im Body.
-
-**Nachtrag 2026-08-25 (Commit `224e7d2`, deployt, keine Migration):** „Post ist live"-Mail
-entschärft — EINE Sammel-Mail (To: info@, Orga/Admins in BCC) statt Mail je Empfänger (info@
-bekam ~12 BCC-Kopien je Post); neuer Motivator-Betreff/-Text (Inhaber-Wortlaut); IG/FB-
-Profil-Links statt `social_post.php?fahrplan=…` (der zeigte den vorgerückten Eintrag und legte
-beim Öffnen einen Leer-Draft an); Verstärker-Katalog mit Emoji + echten Umlauten, Panel/Vorschau
-nachgezogen. Details: Vault `intern/social-live-mail-flut-handoff.md`.
-
-**Nachtrag Folge-Session 2026-08-25 (Commit `b6ad46b`, deployt + migriert 084/085/086):** Die drei
-Vault-Specs sind unter `intern/` abgelegt; **MO1 Insights-Rückkanal, Erster-Kommentar-Automatik und
-#3 Auto-Versand am Stichtag sind gebaut** (MVP live — Details/Reste in `intern/VAULT_SNAPSHOT.md`).
-Stale-Branch `claude/social-post-impact-spec-0vlwns` ✅ gelöscht. Offen bleibt: make.com-Callback +
-Kommentar-Modul + Insights-Lieferung einrichten (Aufgabe 5, Inhaber-Login), Kernkompetenz-CSV, TikTok.
-
-**Nachtrag „Beste Sendezeit"-Timer 2026-08-25 (Commit `7708022` + Migration `089`, deployt/migriert):**
-**S1+S2 live** — strukturierte Best-Zeiten je Kanal×Wochentag (Einstellungen-Grid, Key
-`beste_sendezeiten_struktur`, Helfer `besteSlotFuer()` in `src/social_anlaesse.php`) + per-Post
-**Wunsch-Sendezeit** (`post_race_contents.geplante_uhrzeit`, Vorschlag je Kanal im Post-Detail,
-Autosave `api/post_feld.php`). Entscheid: **IG=Meta Business Suite, FB=make-terminiert**.
-**Übergabe-Block + Start-Prompt:** Vault `intern/social-auto-versand-beste-zeit-spec.md` (oben).
-
-**Nachtrag S3/S4 + IG-Handoff — GEBAUT + DEPLOYT + MIGRIERT 2026-08-27 (Commit `fb7bfdb`, Migration
-`090`):** Voller Status `terminiert` + `terminiert_fuer` (§4b). `socialDispatch()` sendet
-`scheduled_time` (ISO 8601 Europe/Berlin) und lässt `first_comment` bei leer weg (make-Filter „Exists";
-sonst Kommentar auf unveröffentlichtem Post → Fehler). `versendePost()`: Terminiert-Zweig (keine
-Live-Mail), CTA+Link in die FB-Caption; `socialLiveMail()` ausgelagert; `finalisiereTerminiertePosts()`
-schaltet zum Slot live + Mail. `bin/social_versand.php` zweiphasig (finalisieren + terminieren), FB-only,
-Slot in Europe/Berlin; **Cron stündlich** 06:00–22:00 CEST. IG-Handoff-Kachel + `terminiert`-Status im
-Post-Detail. **make-Prod-Szenario 6642115 live angepasst (verifiziert):** FB „Publish date" =
-`{{2.scheduled_time}}`, Router-Filter `channels contains instagram`/`facebook`. **Offen nur:**
-Live-Beobachtung am ersten realen terminierten FB-Post + Inhaber-Sichtprüfung der IG-Kachel.
-
-Offen / vertagt (drei Vault-Specs im Chat-Transkript zum Ablegen unter `intern/`):
-- `make-com-optimierung-spec.md` — **Musik NICHT per API** (muss ins Video eingebettet sein);
-  Reichweiten-Automatik: Erster-Kommentar-Link, Insights-Rückkanal (MO1).
-- `social-auto-versand-stichtag-spec.md` — #3 Auto-Versand am Stichtag (vertagt).
-- `social-tiktok-integration-spec.md` — TikTok (Kollegin hat begonnen), später in die EINE Pipeline einhängen.
-- **Kernkompetenz** der bestätigten Sponsoren füllen (Feld existiert, Migration 077): Stammdaten-CSV-
-  Export in der Sponsoren-Übersicht → Daten → je Sponsor eine knappe Kernkompetenz (die KI baut daraus
-  den Marktlauf-Bezug selbst).
-- Stale Remote-Branch `claude/social-post-impact-spec-0vlwns` per GitHub-UI löschen (der Proxy in
-  Web-Sessions lässt Ref-Löschung nicht zu).
-
-## Aktueller Stand / Übergabe (Stand 2026-08-18)
-
-Erledigt am 2026-08-18 (lokale Session, alles auf `main` deployt):
-- **Ansprechpartner per Drag-and-Drop sortierbar** (Migration **079**, PR #34). Neue Spalte
-  `sponsor_ansprechpartner.sortierung` (additiv, Backfill `= id` → heutige Ordnung bleibt; ohne
-  Window-Funktion, damit versionsunabhängig). `orga/sponsor_form.php` lädt jetzt
-  `ORDER BY sortierung ASC, id ASC`; je Kontaktkarte ein Griff `.ap-drag` (nur der Griff ist
-  `draggable`, nicht die ganze Karte — sonst Konflikt mit Doppelklick-Edit), natives HTML5-DnD mit
-  Live-Umsortierung, Persist per neuem `action=reorder` in `orga/api/ansprechpartner_save.php`
-  (Transaktion, Ownership per `sponsor_id`, normalisiert 1..n). Neuanlage hängt ans Ende (`max+1`).
-  Grenze: natives DnD greift nicht auf Touch/Mobil (wie der Datei-Baum in `dateien.php`) — Sortieren
-  ist ein Desktop-Vorgang. Reihenfolge beim Livegang eingehalten: Merge → Migration 079 gefahren →
-  verifiziert (0 offen).
-- **Sponsor-Aufgaben bearbeitbar:** ✎-Button je Aufgabe in der Sponsor-Maske klappt ein
-  vorausgefülltes Edit-Formular auf (`orga/sponsor_form.php`), nutzt den vorhandenen
-  `action=update` in `orga/api/aufgabe_orga_crud.php`. ACHTUNG Muster: `update` schreibt
-  ALLE Felder — jedes Edit-Formular muss `notiz` und `status` mitsenden, sonst leert das
-  Speichern sie (gleiche Falle wie einst `einstellungen_update.php`).
-- **Digest-Routing:** Einträge ohne Zuständigen gehen NUR noch an
-  `TODO_HERRENLOS_EMPFAENGER_EMAIL` (TT; `src/offene_todos.php`), nicht mehr an alle
-  Admins. Zugewiesene Einträge unverändert an die Person; info@ liest jede Mail per
-  BCC mit (`mailBccAddress()`).
-- **Reminder-Zeitplan einstellbar (v2, gleicher Tag):** Einstellungen → „Erinnerungs-Mails" →
-  Wochentags-Pillen Mo–So (`reminder_versandtage`, ISO-Tagesliste als CSV; Sonderwert
-  `keine` = bewusst aus; Key fehlt/kaputt = täglich) + Schnellwahl-Presets (reine
-  Checkbox-Vorbelegung, `REMINDER_TAGE_PRESETS`) + „Pausiert bis einschließlich"
-  (`reminder_pause_bis`, Urlaubs-Pause). Gate `reminderVersandtagHeute()` greift nur im
-  `--modus=auto` des Digests; Cron bleibt täglich ~08:00. Das v1-Dropdown
-  (`reminder_frequenz`) ist ERSETZT; Migration **078** überführt den alten Wert in die
-  Tagesliste und löscht den Key. UI-Muster gegroundet an GitHub Scheduled Reminders /
-  Slack-DND (Wochentage + Pause-bis; Uhrzeit bewusst weggelassen — bräuchte stündlichen
-  Cron). ACHTUNG Endpoint-Muster: unangehakte Checkbox-Gruppen fehlen im POST komplett —
-  deshalb Marker-Feld `reminder_versandtage_gesendet`, ohne das der Key nicht geschrieben
-  wird. `bin/aufgaben_erinnerung.php` bleibt BEWUSST täglich (feuert nur exakt am
-  Fälligkeitstag — Drosselung würde Erinnerungen verschlucken).
-- **Branch-Aufräumung:** Die 6 fertigen Commits des Session-Branches
-  `claude/sponsor-seite-vorbereiten-yay6o0` (Überlauf-Fix sponsoren.php, Migration 076,
-  Doku) waren NICHT auf `main` — jeder main-Deploy hat den TT-bestätigten Live-Fix
-  zurückgerollt. Per Cherry-pick auf `main` geholt; der Branch selbst blieb unangetastet.
-  Lehre: fertige Branch-Arbeit sofort nach `main` bringen, sonst rollt der nächste
-  Deploy sie zurück.
-
-## Vorheriger Stand / Übergabe (Stand 2026-08-14)
-
-Fördergruppen-Feature steht und ist deployt: Reiter + **empfänger-getriebene** Vorlagen-
-Varianten im **Erst- und Folgeanschreiben**, Kern-Hinweis je Gruppe unter den Reitern
-(Anschreiben **und** Stammdaten). CSV-Export-Button oben in der Sponsoren-Übersicht.
-Angewandte Migrationen: **073** (KJR), **074** (BSJ + Strategie-Notizen an 75/78/104/112),
-**075** (Konzern-Tag „Kreissparkasse (KSK)").
-
-Erledigt in der lokalen DB-Session am 2026-08-14:
-- **UI-Bug rechter Rand — behoben & live (von TT an der echten Seite bestätigt).** Echte
-  DevTools-Messung war entscheidend: `.table-wrap.grouped` stand auf `overflow:visible` und fing
-  die breite Tabelle NICHT ein → der Überlauf landete auf `.main-content`/der Seite (kaputter
-  rechter Rand, v. a. schmal < 769px ohne fixierten Kopf). Fix: `.table-wrap.grouped
-  { overflow-x: auto }` (`orga/sponsoren.php` ~498) — die Tabelle scrollt in ihrer Karte, Kopf/
-  Filter/Reiter bleiben voll breit; wirkt an allen Breiten. **Lehre:** der frühere `left:0`-Ansatz
-  war nur im Desktop-Media-Query aktiv und wurde nur am Mockup „verifiziert" → bei schmaler Ansicht
-  wirkungslos; nie wieder Optik ohne Blick auf die ECHTE Seite als erledigt melden. Trade-off
-  bewusst akzeptiert (TT ok): der desktop-vertikale Sticky-Spaltenkopf friert nicht mehr ein
-  (`overflow-x:auto` koppelt `overflow-y` auf auto). Bei Bedarf per Scroll-Box-Muster nachrüstbar.
-- **Sponsoren-Kopf beim Scrollen — final gelöst via Scroll-Box/App-Shell (2026-08-18, TT gewählt).**
-  Die zwei Vorgänger-Fixes standen in einem Grundkonflikt: Kopf-Pinnen braucht `.main-content` als
-  Scroller (`.table-wrap.grouped{overflow:visible}`), aber sobald die Tabelle breiter als der
-  Viewport ist, scrollt `.main-content` horizontal und die (nur viewport-breite) Fixzone wandert
-  weg → ungedeckter rechter Rand. `left:0` fängt das nur fast (ein ~24px-Leck-Streifen neben der
-  Fixzone bleibt, live per Zoom bestätigt). Der Containment-Fix (`overflow-x:auto` auf der Karte)
-  erschlug den Streifen, machte die Karte aber zum Sticky-Scrollcontainer → Kopf verlor den
-  Viewport-Bezug (`top:var(--fixzone-h)` schob ihn bei Scroll 0 um ~263px nach unten auf
-  „Regionale Produkte"). Beides gleichzeitig ist im Seiten-Scroll-Modell nicht sauber möglich.
-  **Lösung (TT hat die Scroll-Box gewählt):** Desktop-App-Shell — `.main-content` ist
-  `display:flex; flex-direction:column`, Kopf-Zone (`flex:0 0 auto`) und `.action-bar`
-  (`flex:0 0 auto`) bleiben fix, die gruppierte Tabelle ist `flex:1 1 auto; min-height:0;
-  overflow:auto` und scrollt IN SICH (vertikal: Kopf `sticky top:0` am Box-Rand; horizontal: in der
-  Box statt auf der Seite). Kein Seiten-Overflow (0px), Aktionsleiste immer sichtbar. Live in Chrome
-  gemessen + Screenshots. Zwei **Lehren:** (1) ein Sticky-Element stickt relativ zum nächsten
-  `overflow`-Scrollcontainer, nicht zwingend zum Viewport. (2) `min-height:0` ist Pflicht, damit ein
-  Flex-Kind unter seine Inhaltshöhe schrumpfen und intern scrollen kann. (3) Media-Queries erhöhen
-  die Spezifität NICHT — der Desktop-Scroll-Box-Block muss in der Quelle NACH der
-  Mobil-Basisregel `.table-wrap.grouped{overflow-x:auto}` stehen, sonst gewinnt die Basis.
-- **Kontakt-Audit (107 Sponsoren, direkt aus der DB).** Verteilung: sponsoring 80 · foerderantrag 7
-  · ueber_dritte 7 · oeffentlichkeitsarbeit 13. Flags: Test-Datensätze `98 _torsten`, `65 Testfirma`,
-  `102 _Anja Jost GmbH` (Cleanup destruktiv → offen); mögliche Dublette `30` vs `80` (Allianz
-  Waldhör/Schrödinger); 9 ohne Ansprechpartner + 13 ohne E-Mail (fast nur die institutionellen
-  Förder-Programme — erwartbar). Zeilen-Detail bleibt außerhalb des Repos (CRM/DSGVO).
-- **75 „VR-Förderpreis" — Identität recherchiert:** „VR-Förderpreis" und „Sterne des Sports"
-  sind zwei verschiedene VR-Programme; für den Sportverein passt „Sterne des Sports" (DOSB +
-  Volksbanken, Bewerbung 1.4.–30.6., lokal bis 1.500 €, Vereine unter Landessportbund → ATSV
-  via BLSV), Weg über Raiffeisen-Volksbank Ebersberg (id 7). Ziel 2027. Notiz am Datensatz noch
-  „vermutlich" — auf „bestätigt" nachziehen (Prod-Write, offen).
-- **104 KSK-Stiftung ↔ Bank — Konzern-Tag verifiziert:** Gruppe `[6] Kreissparkasse (KSK)`;
-  Bank `id 8` und Stiftung `id 104` hängen beide an `gruppe_id=6`. 075-Verknüpfung greift,
-  kein Handnachziehen nötig.
-- **76 DSGV — Fördergruppe korrigiert (Migration 076, angewandt):** zurück auf `ueber_dritte`
-  (gegroundet gegen die Gruppen-Vorgaben: kein eigener Antragsweg, läuft über den
-  Sparkassen-Verbund/die KSK — so auch 072). Ist-Wert `foerderantrag` kam aus manueller Bearbeitung.
-
-Noch offen (dein Ok nötig):
-- **Kern-Hinweis Live-Pixel:** Code deployt + im Mockup bestätigt, aber ohne Admin-Login nicht
-  am Live-Pixel geprüft. Fehlt er auf der echten Seite: OPcache-Reset (aktuell keine OPcache-SAPI
-  nachweisbar + Datei frisch gestempelt → sehr wahrscheinlich sichtbar).
-- **Test-Datensätze** `98 _torsten`, `102 _Anja Jost GmbH` (beide angefragt, in der Übersicht
-  sichtbar) sowie `65 Testfirma` (abgelehnt → nur bei Status-Filter „Abgelehnt" sichtbar) —
-  Löschen ist destruktiv, daher Rückfrage.
-- **78 VK-Stiftung:** Hebel = Ehrenamtspreis (kein Sport-Projektantrag). **112 Sportjugendstiftung:**
-  nur überregional → jährlich/regionsübergreifend argumentieren. **BSJ/BLSV** (074):
-  `jugendfoerderung@blsv.de`.
+**Social / make.com**
+- make-Callback vor den Kommentar-Filter ziehen (Szenario 6642115) — sonst keine Permalinks
+  für terminierte FB-Posts. Inhaber-Entscheid offen.
+- **TikTok** in die eine Pipeline einhängen (Kollegin hat begonnen); Spec im Vault.
+- Echter GPT-4-Klasse-Tier nur über Azure OpenAI (Azure-Nonprofit-Grant) — der
+  OpenAI-ChatGPT-Nonprofit-Grant deckt **keine** API.
