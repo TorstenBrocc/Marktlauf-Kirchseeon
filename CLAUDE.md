@@ -109,6 +109,15 @@ oder im Desktop-Media-Query verifiziert war, war bei schmaler Ansicht wirkungslo
 4. Der Header ist `position:fixed` (`css/layout.css:11`), nicht sticky — wer das annimmt,
    baut Bänder, die dahinter verschwinden.
 
+**`overflow-wrap` rettet keine zu breite Tabelle.** Es senkt die *min-content*-Breite
+einer Auto-Layout-Tabelle nicht — die Spalten bleiben so breit wie das laengste Wort. Die
+Aufgaben-Tabelle der Helfer-Anmeldung war dadurch 440 px breit in einer 231 px schmalen
+Karte; die Checkbox-Spalte lag ausserhalb und war am Handy unerreichbar (gefixt 2026-09-16,
+`table-layout: fixed` unter 600 px). Wer eine Tabelle schmal bekommen muss: feste
+Spaltenbreiten, nicht Umbruch-Regeln. Und immer bei 375 px nachmessen, ob die letzte Spalte
+noch **innerhalb** ihres Containers liegt — das Dokument meldet dabei *keinen*
+horizontalen Ueberlauf.
+
 **Natives HTML5-Drag-and-Drop greift nicht auf Touch/Mobil.** Sortieren (Ansprechpartner,
 Datei-Baum) ist ein Desktop-Vorgang.
 
@@ -182,26 +191,27 @@ misst und ein clientseitiger 404 dort unsichtbar bliebe. Er liest `ANMELDESCHLUS
 `index.html` und schläft nach dem Schluss von selbst ein (grün, kein Alarm). Wer den Schluss
 verschiebt, ändert **nur** `index.html`; der Check wacht dann von allein wieder auf.
 
-## Aktueller Stand / Übergabe (Stand 2026-09-15)
+## Aktueller Stand / Übergabe (Stand 2026-09-16)
 
-**Anmeldeschluss ist durch** (14.09., 17:00). Die Website zeigt den Nachmelde-Zustand, die
-Online-Formulare sind ausgeblendet. Nachmeldung läuft am Renntag über das RaceResult-Portal
-(fünf Formulare je Lauf, im Portal hinterlegt — **nicht** auf der Website eingebettet).
+**Helfer-Anmeldung steht auf Restbedarf.** `in_anmeldung` ist seit Migration 093 dreiwertig:
+**0 = nur intern · 1 = buchbar · 2 = sichtbar, aber gesperrt**. Damit laesst sich eine Aufgabe
+schliessen, ohne sie zu verstecken — der Helfer sieht weiter, dass es den Termin gab. Der
+Riegel gegen gesperrte Buchungen sitzt in `helferAufgabeByKey()` (`in_anmeldung = 1`); das
+`disabled` im Formular ist reine Optik. Geschaltet wird im Einsatzplan ueber das bestehende
+Dropdown, das jetzt drei Optionen hat — **Datenpflege braucht ab hier keine Migration mehr**.
 
-**Zwei Commits, deployt, keine Migration:**
-- `dc6d0f3` — QR-Code zur Nachmeldung in der Anmelde-Kachel. Neue Datei
-  `assets/images/qr-nachmeldung.svg` (Fehlerkorrektur Q, 33×33 Module), eingebaut neben dem
-  bestehenden Button, neuer i18n-Schlüssel `anmeldung.qr_hinweis` (de/en). Live geholt,
-  gerastert und mit einem Decoder zurückgelesen → korrekte Ziel-URL. Optik in Chrome geprüft
-  (Desktop + 375 px, kein horizontaler Überlauf).
-- `6026399` — „Registration Check" kennt den Anmeldeschluss. Vorher hätte er bis zum Renntag
-  alle paar Stunden ntfy-Alarm gepusht, weil RaceResult nach Schluss planmäßig **HTTP 400**
-  mit `CUSTOMERROR:` antwortet. Drei Zweige auf `ubuntu:latest` gegen die echten Dateien
-  gefahren (Schluss vorbei → exit 0; Schluss in der Zukunft → prüft wie bisher; Konstante
-  entfernt → exit 1). Im echten Runner bestätigt (Lauf 34885508473, grün).
+Migration 094 hat den Stand fuer 2026 gesetzt: offen sind nur noch **Streckenposten
+(09:00–12:00)**, **Abbau Laufevent (13:00–15:00)** und die **freie Sonntags-Verfuegbarkeit**;
+neu und gesperrt dazu **Begleitradfahrer Laufstrecke (09:00–12:30, Bedarf 2)**. Fr/Sa starten
+eingeklappt (`<details>`, ohne JavaScript), innerhalb eines Tages sortieren buchbare Punkte
+nach oben. Live geprueft: 3 aktive / 13 gesperrte Checkboxen.
 
-**Beobachtung für den Renntag:** GitHubs Schedule-Drosselung ist erheblich — `*/15` lief real
-mit 1,5–5,5 h Abstand. Auf zeitkritische Fenster ist ein GitHub-Cron deshalb nicht verlässlich.
+**Anmeldeschluss ist durch** (14.09., 17:00). Die Website zeigt den Nachmelde-Zustand; die
+Nachmeldung laeuft am Renntag ueber das RaceResult-Portal (fuenf Formulare je Lauf, im Portal
+hinterlegt — **nicht** auf der Website eingebettet).
+
+**Beobachtung fuer den Renntag:** GitHubs Schedule-Drosselung ist erheblich — `*/15` lief real
+mit 1,5–5,5 h Abstand. Auf zeitkritische Fenster ist ein GitHub-Cron nicht verlaesslich.
 
 ## Offene Punkte
 
