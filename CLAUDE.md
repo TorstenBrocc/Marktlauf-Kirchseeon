@@ -210,8 +210,6 @@ mit 1,5–5,5 h Abstand. Auf zeitkritische Fenster ist ein GitHub-Cron deshalb n
   `website-strecke-10km`; GPX + `blocked` raus + Vorbehalts-Hinweis raus). **Push nach `main`
   NUR auf TT-Wort** — dann mechanisch nach `intern/docs/strecken-10km-freigabe-runbook.md`.
   1 km / 2 km tragen den Vorbehalts-Hinweis weiter.
-- `assets/images/qr-anmeldung.png` liegt seit `ecd0599` im Repo und wird **nirgends**
-  eingebunden; enthält `https://atsv-kirchseeon-marktlauf.de/#anmeldung`. Löschen?
 
 **Sponsoren / CRM**
 - **Kernkompetenz** der bestätigten Sponsoren füllen (Feld existiert, Migration 077) —
