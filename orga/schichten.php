@@ -188,6 +188,7 @@ function beitragTooltip(array $beitragProHelfer, int $helferId): string {
         .del-btn { border: none; background: transparent; cursor: pointer; font-size: 0.95rem; opacity: 0.55; }
         .del-btn:hover { opacity: 1; }
         .tag-anmeldung { color: var(--success); font-weight: 600; }
+        .tag-gesperrt { color: var(--warning, #f59e0b); font-weight: 600; }
         .tag-intern { color: var(--text-light); font-style: italic; }
         .info-i {
             display: inline-flex; align-items: center; justify-content: center;
@@ -298,10 +299,14 @@ function beitragTooltip(array $beitragProHelfer, int $helferId): string {
                         <label>Beschreibung (für Helfer sichtbar)</label>
                         <textarea name="beschreibung" placeholder="Was ist zu tun? Details, Ansprechpartner …"></textarea>
                     </div>
-                    <label class="anmeldung-toggle">
-                        <input type="checkbox" name="in_anmeldung" value="1" checked>
-                        In der Helfer-Anmeldung zum Eintragen anzeigen
-                    </label>
+                    <div class="form-group">
+                        <label>Sichtbarkeit in der Helfer-Anmeldung</label>
+                        <select name="in_anmeldung">
+                            <option value="1" selected>in Anmeldung — sichtbar und buchbar</option>
+                            <option value="2">gesperrt — sichtbar, aber nicht buchbar</option>
+                            <option value="0">nur intern — taucht im Formular nicht auf</option>
+                        </select>
+                    </div>
                     <button type="submit" class="btn btn-primary">Schicht anlegen</button>
                 </form>
                 </div>
@@ -488,15 +493,16 @@ function beitragTooltip(array $beitragProHelfer, int $helferId): string {
                                 </form>
                             </div>
 
-                            <!-- 8) Sichtbar (Dropdown schaltet in Anmeldung / nur intern) -->
+                            <!-- 8) Sichtbar (Dropdown schaltet in Anmeldung / gesperrt / nur intern) -->
                             <div class="col col-sichtbar" data-label="Sichtbar">
                                 <form method="post" action="api/schicht_field.php" class="ie ie-anm">
                                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                                     <input type="hidden" name="schicht_id" value="<?= $sid ?>">
-                                    <span class="ie-view" tabindex="0" title="Doppelklick zum Ändern"><?php if ((int) $s['in_anmeldung'] === 1): ?><span class="tag-anmeldung">in Anmeldung</span><?php else: ?><span class="tag-intern">nur intern</span><?php endif; ?></span>
+                                    <span class="ie-view" tabindex="0" title="Doppelklick zum Ändern"><?php if ((int) $s['in_anmeldung'] === 1): ?><span class="tag-anmeldung">in Anmeldung</span><?php elseif ((int) $s['in_anmeldung'] === 2): ?><span class="tag-gesperrt">gesperrt</span><?php else: ?><span class="tag-intern">nur intern</span><?php endif; ?></span>
                                     <span class="ie-edit">
                                         <select name="in_anmeldung" onchange="this.form.submit()">
                                             <option value="1" <?= (int) $s['in_anmeldung'] === 1 ? 'selected' : '' ?>>in Anmeldung</option>
+                                            <option value="2" <?= (int) $s['in_anmeldung'] === 2 ? 'selected' : '' ?>>gesperrt</option>
                                             <option value="0" <?= (int) $s['in_anmeldung'] === 0 ? 'selected' : '' ?>>nur intern</option>
                                         </select>
                                     </span>

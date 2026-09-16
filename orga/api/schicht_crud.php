@@ -34,8 +34,10 @@ if ($bedarf < 1) {
     $bedarf = 1;
 }
 $zeitfenster = trim($_POST['zeitfenster'] ?? '');
-// Checkbox: gesetzt => in Anmeldung anbieten, sonst nur intern.
-$inAnmeldung = isset($_POST['in_anmeldung']) ? 1 : 0;
+// Sichtbarkeit (Migration 093): 1 = in Anmeldung buchbar, 2 = sichtbar aber
+// gesperrt, alles andere (auch ein fehlendes Feld) = nur intern.
+$inAnmeldungRaw = (string) ($_POST['in_anmeldung'] ?? '');
+$inAnmeldung = in_array($inAnmeldungRaw, ['1', '2'], true) ? (int) $inAnmeldungRaw : 0;
 
 $params = [
     'titel' => $titel,

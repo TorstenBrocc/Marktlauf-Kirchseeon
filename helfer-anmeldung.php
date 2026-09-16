@@ -109,6 +109,7 @@ $basePath = '';
         .aufgaben-tag {
             margin-top: var(--space-md);
         }
+        /* Tag-Kopf ist zugleich der Aufklapp-Griff (<summary>) — ohne JavaScript. */
         .aufgaben-tag-titel {
             font-size: var(--text-base);
             font-weight: 700;
@@ -116,6 +117,41 @@ $basePath = '';
             padding: var(--space-sm) 0 var(--space-xs);
             border-bottom: 2px solid var(--primary);
             margin-bottom: var(--space-xs);
+            cursor: pointer;
+        }
+        .aufgaben-tag-titel:focus-visible {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+        /* Tage ohne einen einzigen buchbaren Punkt: Kopf gedaempft, zu per Default. */
+        .aufgaben-tag:not([open]) > .aufgaben-tag-titel {
+            border-bottom-color: var(--gray-300);
+            color: var(--gray-600);
+        }
+        .aufgaben-tag-hinweis {
+            font-weight: 400;
+            font-size: var(--text-sm);
+            color: var(--gray-500);
+        }
+        /* Gesperrt = sichtbar, aber nicht buchbar. Bewusst noch lesbar (gray-500,
+           nicht gray-400): der Helfer soll erkennen koennen, was es gab. */
+        .aufgabe-gesperrt td,
+        .aufgabe-gesperrt .aufgaben-zeit {
+            color: var(--gray-500);
+        }
+        .aufgabe-gesperrt .aufgaben-check-col input {
+            cursor: not-allowed;
+        }
+        .aufgaben-badge {
+            display: inline-block;
+            margin-left: var(--space-xs);
+            padding: 1px 6px;
+            border-radius: var(--radius-sm);
+            background: var(--gray-200);
+            color: var(--gray-600);
+            font-size: 0.75rem;
+            font-weight: 600;
+            white-space: nowrap;
         }
         .aufgaben-table {
             width: 100%;
@@ -434,8 +470,9 @@ $basePath = '';
                             <label>Wann und wobei kannst du helfen?</label>
                             <p class="form-hint">Wähle die Aufgaben aus, bei denen du dabei sein kannst – gern mehrere.</p>
                             <?php foreach (helferAufgabenKatalog() as $tag => $day): ?>
-                                <div class="aufgaben-tag">
-                                    <h3 class="aufgaben-tag-titel"><?= htmlspecialchars($day['label']) ?></h3>
+                                <?php /* Tage ohne buchbaren Punkt starten eingeklappt — nachschlagbar, aber nicht im Weg. */ ?>
+                                <details class="aufgaben-tag"<?= $day['hat_offene'] ? ' open' : '' ?>>
+                                    <summary class="aufgaben-tag-titel"><?= htmlspecialchars($day['label']) ?><?php if (!$day['hat_offene']): ?> <span class="aufgaben-tag-hinweis">— keine Anmeldung mehr nötig</span><?php endif; ?></summary>
                                     <table class="aufgaben-table">
                                         <thead>
                                             <tr>
@@ -446,19 +483,24 @@ $basePath = '';
                                         </thead>
                                         <tbody>
                                             <?php foreach ($day['aufgaben'] as $a): ?>
-                                                <tr>
+                                                <tr<?= $a['gesperrt'] ? ' class="aufgabe-gesperrt"' : '' ?>>
                                                     <td>
-                                                        <label for="slot_<?= htmlspecialchars($a['key']) ?>"><?= htmlspecialchars($a['beschreibung']) ?></label>
+                                                        <?php if ($a['gesperrt']): ?>
+                                                            <?php /* Kein <label for>: die Checkbox ist disabled, ein Klick darf nichts tun. */ ?>
+                                                            <?= htmlspecialchars($a['beschreibung']) ?><span class="aufgaben-badge">geschlossen</span>
+                                                        <?php else: ?>
+                                                            <label for="slot_<?= htmlspecialchars($a['key']) ?>"><?= htmlspecialchars($a['beschreibung']) ?></label>
+                                                        <?php endif; ?>
                                                     </td>
                                                     <td class="aufgaben-zeit"><?= htmlspecialchars($a['zeitfenster']) ?></td>
                                                     <td class="aufgaben-check-col">
-                                                        <input type="checkbox" name="slots[]" value="<?= htmlspecialchars($a['key']) ?>" id="slot_<?= htmlspecialchars($a['key']) ?>">
+                                                        <input type="checkbox" name="slots[]" value="<?= htmlspecialchars($a['key']) ?>" id="slot_<?= htmlspecialchars($a['key']) ?>"<?= $a['gesperrt'] ? ' disabled' : '' ?>>
                                                     </td>
                                                 </tr>
                                             <?php endforeach; ?>
                                         </tbody>
                                     </table>
-                                </div>
+                                </details>
                             <?php endforeach; ?>
                         </div>
 

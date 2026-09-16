@@ -31,8 +31,16 @@ function helferTagLabel(string $isoDate): string
 
 /**
  * Angebotene Schichten, gruppiert nach Tag — Struktur wie das bisherige Formular
- * erwartet: [tag => ['label' => ..., 'aufgaben' => [['key','beschreibung','zeitfenster'], ...]]].
+ * erwartet: [tag => ['label' => ..., 'aufgaben' => [['key','beschreibung','zeitfenster','gesperrt'], ...]]].
  * 'key' = schicht_id (string), 'beschreibung' = Schicht-Titel.
+ *
+ * Gezeigt werden beide sichtbaren Zustaende aus Migration 093: buchbar (1) und
+ * gesperrt (2). 'gesperrt' sagt dem Formular, welche Zeile ausgegraut wird;
+ * 'hat_offene' sagt ihm, ob der Tag aufgeklappt startet (ein Tag ohne einen
+ * einzigen buchbaren Punkt ist nur noch Nachschlagewerk).
+ *
+ * Sortierung: Tage chronologisch, innerhalb eines Tages die buchbaren zuerst —
+ * sonst versteckt sich der letzte offene Punkt zwischen zehn grauen Zeilen.
  */
 function helferAufgabenKatalog(): array
 {
@@ -43,10 +51,10 @@ function helferAufgabenKatalog(): array
 
     $pdo = getDbConnection();
     $rows = $pdo->query('
-        SELECT id, titel, tag, von, bis, zeitfenster
+        SELECT id, titel, tag, von, bis, zeitfenster, in_anmeldung
         FROM schichten
-        WHERE in_anmeldung = 1
-        ORDER BY (tag IS NULL), tag, (von IS NULL), von, id
+        WHERE in_anmeldung IN (1, 2)
+        ORDER BY (tag IS NULL), tag, (in_anmeldung <> 1), (von IS NULL), von, id
     ')->fetchAll();
 
     $katalog = [];
@@ -54,14 +62,20 @@ function helferAufgabenKatalog(): array
         $tag = (string) ($r['tag'] ?? '');
         if (!isset($katalog[$tag])) {
             $katalog[$tag] = [
-                'label'    => $tag !== '' ? helferTagLabel($tag) : 'Termin nach Absprache',
-                'aufgaben' => [],
+                'label'      => $tag !== '' ? helferTagLabel($tag) : 'Termin nach Absprache',
+                'hat_offene' => false,
+                'aufgaben'   => [],
             ];
+        }
+        $gesperrt = (int) $r['in_anmeldung'] === 2;
+        if (!$gesperrt) {
+            $katalog[$tag]['hat_offene'] = true;
         }
         $katalog[$tag]['aufgaben'][] = [
             'key'         => (string) $r['id'],
             'beschreibung' => (string) $r['titel'],
             'zeitfenster' => helferSchichtZeitfenster($r),
+            'gesperrt'    => $gesperrt,
         ];
     }
 
@@ -86,8 +100,12 @@ function helferSchichtZeitfenster(array $s): string
 
 /**
  * Angebotene Schicht per Key (= schicht_id) aufloesen. null wenn unbekannt oder
- * nicht (mehr) im Formular angeboten. Rueckgabe kompatibel zum bisherigen
- * Katalog: ['tag','zeitfenster','beschreibung'] (+ 'schicht_id').
+ * nicht (mehr) buchbar. Rueckgabe kompatibel zum bisherigen Katalog:
+ * ['tag','zeitfenster','beschreibung'] (+ 'schicht_id').
+ *
+ * WICHTIG: das `in_anmeldung = 1` unten ist der eigentliche Riegel fuer gesperrte
+ * Schichten (2). Das `disabled` im Formular ist reine Optik und per DevTools in
+ * einer Sekunde weg — erst diese Abfrage verhindert die Buchung.
  */
 function helferAufgabeByKey(string $key): ?array
 {

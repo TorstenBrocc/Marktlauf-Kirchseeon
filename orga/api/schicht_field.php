@@ -53,7 +53,8 @@ foreach ($allowed as $field) {
             $value = max(1, (int) $raw);
             break;
         case 'in_anmeldung':
-            $value = ((string) $raw === '1') ? 1 : 0;
+            // Migration 093: 1 = buchbar, 2 = sichtbar aber gesperrt, 0 = nur intern.
+            $value = in_array((string) $raw, ['1', '2'], true) ? (int) $raw : 0;
             break;
         case 'zeitfenster':
             $value = $raw !== '' ? mb_substr((string) $raw, 0, 80) : null;
