@@ -398,6 +398,38 @@ $basePath = '';
             font-family: inherit;
             resize: vertical;
         }
+        /* Schmale Geraete: die Aufgaben-Tabelle passte bisher nicht in die Karte —
+           die Spalte "Dabei?" mit den Checkboxen lag ausserhalb und war damit
+           unerreichbar. Am Handy melden sich die meisten Helfer an, deshalb hier
+           feste Spaltenbreiten (table-layout: fixed) statt Auto-Verteilung:
+           overflow-wrap allein reicht nicht, es senkt die min-content-Breite
+           einer Auto-Tabelle nicht. Das Karten-Padding gibt zusaetzlich Luft. */
+        @media (max-width: 599px) {
+            .helfer-form {
+                padding: var(--space-md);
+            }
+            .aufgaben-table {
+                table-layout: fixed;
+            }
+            .aufgaben-table th,
+            .aufgaben-table td {
+                padding: var(--space-sm) var(--space-xs);
+            }
+            .aufgaben-table td:first-child,
+            .aufgaben-zeit {
+                overflow-wrap: break-word;
+            }
+            .aufgaben-table th:nth-child(2) {
+                width: 5.5rem;
+            }
+            .aufgaben-zeit {
+                white-space: normal;
+            }
+            .aufgaben-table th.aufgaben-check-col,
+            .aufgaben-table td.aufgaben-check-col {
+                width: 2.75rem;
+            }
+        }
         @media (min-width: 600px) {
             .name-row {
                 grid-template-columns: 1fr 1fr;
@@ -487,7 +519,7 @@ $basePath = '';
                                                     <td>
                                                         <?php if ($a['gesperrt']): ?>
                                                             <?php /* Kein <label for>: die Checkbox ist disabled, ein Klick darf nichts tun. */ ?>
-                                                            <?= htmlspecialchars($a['beschreibung']) ?><span class="aufgaben-badge">geschlossen</span>
+                                                            <?= htmlspecialchars($a['beschreibung']) ?> <span class="aufgaben-badge">geschlossen</span>
                                                         <?php else: ?>
                                                             <label for="slot_<?= htmlspecialchars($a['key']) ?>"><?= htmlspecialchars($a['beschreibung']) ?></label>
                                                         <?php endif; ?>
