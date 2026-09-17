@@ -23,7 +23,8 @@ $root   = dirname(__DIR__);
 $config = require $root . '/storage/config.php';
 
 if (($config['app']['environment'] ?? '') !== 'staging') {
-    fwrite(STDERR, "ABBRUCH: app.environment ist nicht 'staging' — Seed laeuft nur auf der Buehne.\n");
+    // STDERR is undefined under Strato's cgi-fcgi SAPI — open it explicitly.
+    fwrite(fopen('php://stderr', 'w'), "ABBRUCH: app.environment ist nicht 'staging' — Seed laeuft nur auf der Buehne.\n");
     exit(2);
 }
 
