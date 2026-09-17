@@ -240,3 +240,23 @@ mit 1,5–5,5 h Abstand. Auf zeitkritische Fenster ist ein GitHub-Cron nicht ver
 - **TikTok** in die eine Pipeline einhängen (Kollegin hat begonnen); Spec im Vault.
 - Echter GPT-4-Klasse-Tier nur über Azure OpenAI (Azure-Nonprofit-Grant) — der
   OpenAI-ChatGPT-Nonprofit-Grant deckt **keine** API.
+
+## Bühne S — Staging für Claudex (Stand 2026-09-17)
+
+- **Zweck:** login-gated `orga/`-UI für das UI/UX-Gate des autonomen Bau-Loops sichtbar machen — auf einer
+  zweiten Bühne im selben Strato-Paket, **nie** auf Prod. Zugang nur mit Basic-Auth, `noindex`; ausschließlich
+  **synthetische** Daten (Prod-Schema ohne Zeilen + ein Test-Admin). Zugangsdaten und Pfade liegen **nicht im
+  Repo**, sondern serverseitig unter `storage/` und im privaten Vault-Plan.
+- **Deploy:** Push auf einen Branch `claudex/**` → Workflow **„Staging Deployment (Buehne S)"**
+  (`.github/workflows/deploy-staging.yml`): Guard gegen den Prod-Ordner, rsync ins Staging-Ziel (eigenes Secret),
+  Basic-Auth-Block wird der Repo-`.htaccess` vorangestellt, danach `migrate.php status/migrate`. Prod
+  (`main` → `deploy.yml`) bleibt unberührt. **Der Loop bekommt nie den Strato-Key** — nur der Actions-Runner deployt.
+- **Schema:** Die Migrationskette ist auf leerer DB **nicht** replaybar (`004` droppt einen Index, den `001` nie
+  anlegte — „Run manually on server"). Staging wird deshalb aus einem **Prod-Schema-Dump ohne Daten** aufgesetzt
+  und per `migrate.php baseline` markiert; neue Migrationen laufen danach normal über den Staging-Deploy.
+- **Seed:** `MARKTLAUF_CLI=1 /bin/php bin/seed_staging.php` im Staging-Ordner — legt nur den Test-Admin an und
+  **verweigert** den Lauf, wenn `app.environment !== 'staging'`.
+- **Stumm:** Mail/Make/Gemini/Brevo sind auf der Bühne durch leere Config-Keys deaktiviert.
+- **Regel (Incident 17.09.):** nach **jeder** Strato-Umleitungsänderung Prod **und** Ziel von außen prüfen.
+  MySQL-Client auf Strato liest `~/.my.cnf` (= Prod) — für Staging `--defaults-file` + `DATABASE()`-Guard.
+- **Kanon/Details:** Vault `00_meta/plans/claudex-marktlauf-onboarding.md`.
