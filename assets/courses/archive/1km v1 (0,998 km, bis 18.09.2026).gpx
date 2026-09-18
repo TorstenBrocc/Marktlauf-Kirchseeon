@@ -10,7 +10,13 @@
   <trk>
     <name>1km</name>
     <trkseg>
-      <trkpt lat="48.079842" lon="11.855255">
+      <trkpt lat="48.080227" lon="11.855212">
+        <ele>558</ele>
+      </trkpt>
+      <trkpt lat="48.080112" lon="11.855202">
+        <ele>558.27</ele>
+      </trkpt>
+      <trkpt lat="48.079914" lon="11.855236">
         <ele>559</ele>
       </trkpt>
       <trkpt lat="48.079255" lon="11.855407">
@@ -25,23 +31,17 @@
       <trkpt lat="48.079018" lon="11.853751">
         <ele>559</ele>
       </trkpt>
+      <trkpt lat="48.078642" lon="11.851512">
+        <ele>559.99</ele>
+      </trkpt>
+      <trkpt lat="48.078642" lon="11.851512">
+        <ele>559.99</ele>
+      </trkpt>
       <trkpt lat="48.07864" lon="11.851497">
         <ele>560</ele>
       </trkpt>
-      <trkpt lat="48.078007" lon="11.851978">
-        <ele>560.12</ele>
-      </trkpt>
-      <trkpt lat="48.077731" lon="11.852152">
-        <ele>560.56</ele>
-      </trkpt>
-      <trkpt lat="48.077579" lon="11.852297">
-        <ele>560.87</ele>
-      </trkpt>
-      <trkpt lat="48.077731" lon="11.852152">
-        <ele>560.56</ele>
-      </trkpt>
-      <trkpt lat="48.078007" lon="11.851978">
-        <ele>560.12</ele>
+      <trkpt lat="48.077961" lon="11.852007">
+        <ele>560.19</ele>
       </trkpt>
       <trkpt lat="48.07864" lon="11.851497">
         <ele>560</ele>
@@ -58,8 +58,17 @@
       <trkpt lat="48.079255" lon="11.855407">
         <ele>559</ele>
       </trkpt>
-      <trkpt lat="48.079842" lon="11.855255">
+      <trkpt lat="48.079914" lon="11.855236">
         <ele>559</ele>
+      </trkpt>
+      <trkpt lat="48.080112" lon="11.855202">
+        <ele>558.27</ele>
+      </trkpt>
+      <trkpt lat="48.08022" lon="11.85521">
+        <ele>558</ele>
+      </trkpt>
+      <trkpt lat="48.080211" lon="11.855271">
+        <ele>558</ele>
       </trkpt>
     </trkseg>
   </trk>
