@@ -187,6 +187,8 @@ Bitte bewahre diesen Link auf – er ist dein persönlicher Zugang zu allen Helf
 
 📧 Fragen? info@atsv-kirchseeon-marktlauf.de
 
+Der über den WhatsApp-Chat separat genannte Helfer-Briefing-Termin ist davon unberührt und unbedingt wahrzunehmen.
+
 Sportliche Grüße
 Dein Marktlauf-Team
 ──────────────────────────
