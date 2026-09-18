@@ -7,6 +7,46 @@
       <link href="https://gpx.studio"/>
     </author>
   </metadata>
+  <wpt lat="48.074972" lon="11.857319">
+    <name>km 1</name>
+    <desc>1000 m ab Start</desc>
+  </wpt>
+  <wpt lat="48.067830" lon="11.854712">
+    <name>km 2</name>
+    <desc>2000 m ab Start</desc>
+  </wpt>
+  <wpt lat="48.068541" lon="11.866371">
+    <name>km 3</name>
+    <desc>3000 m ab Start</desc>
+  </wpt>
+  <wpt lat="48.072350" lon="11.859809">
+    <name>km 4</name>
+    <desc>4000 m ab Start</desc>
+  </wpt>
+  <wpt lat="48.069713" lon="11.853290">
+    <name>km 5</name>
+    <desc>5000 m ab Start</desc>
+  </wpt>
+  <wpt lat="48.062042" lon="11.852944">
+    <name>km 6</name>
+    <desc>6000 m ab Start</desc>
+  </wpt>
+  <wpt lat="48.062934" lon="11.861825">
+    <name>km 7</name>
+    <desc>7000 m ab Start</desc>
+  </wpt>
+  <wpt lat="48.068150" lon="11.869241">
+    <name>km 8</name>
+    <desc>8000 m ab Start</desc>
+  </wpt>
+  <wpt lat="48.072552" lon="11.858992">
+    <name>km 9</name>
+    <desc>9000 m ab Start</desc>
+  </wpt>
+  <wpt lat="48.078598" lon="11.851529">
+    <name>km 10</name>
+    <desc>10000 m ab Start</desc>
+  </wpt>
   <trk>
     <name>10km</name>
     <trkseg>
