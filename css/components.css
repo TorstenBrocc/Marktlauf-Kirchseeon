@@ -927,6 +927,13 @@
     display: block;
 }
 
+.route-measured {
+    font-size: 0.85rem;
+    color: var(--gray-500);
+    margin-top: var(--space-sm);
+    display: block;
+}
+
 .route-distance {
     font-weight: 800;
     font-size: 1.25rem;
