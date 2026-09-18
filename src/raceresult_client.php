@@ -43,9 +43,12 @@ function raceResultData(?PDO $pdo = null): array
 
     $mapped = raceResultMapList($raw);
     if ($mapped === null) {
-        // Feld-Mapping noch nicht gegen die reale Liste finalisiert -> Fallback
+        // Antwortstruktur unerwartet -> Fallback, nichts raten
         return raceResultMock();
     }
+
+    // Name/Datum liefert die Ergebnisliste nicht; sie kommen aus den Einstellungen.
+    $mapped['event'] = raceResultEventMeta($pdo);
 
     return $mapped;
 }
@@ -97,21 +100,146 @@ function raceResultFetchRaw(string $url): ?array
 }
 
 /**
- * RaceResult-SimpleAPI-"Liste" auf das raceResultMock()-Shape abbilden.
+ * Veranstaltungs-Metadaten. Die Ergebnis-API liefert sie nicht mit, deshalb
+ * kommen sie aus den Orga-Einstellungen. Nicht ermittelbare Werte bleiben leer
+ * (bewusst kein Rueckgriff auf raceResultMock()).
+ */
+function raceResultEventMeta(?PDO $pdo): array
+{
+    $meta = ['name' => '', 'datum' => '', 'ort' => ''];
+    if (!$pdo instanceof PDO) {
+        return $meta;
+    }
+    try {
+        $stmt  = $pdo->query("SELECT `key`, `value` FROM einstellungen WHERE `key` IN ('veranstaltungsname','renntag_datum')");
+        $werte = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+        $meta['name']  = trim((string) ($werte['veranstaltungsname'] ?? ''));
+        $meta['datum'] = trim((string) ($werte['renntag_datum'] ?? ''));
+    } catch (PDOException $e) {
+        logError('raceResultEventMeta: ' . $e->getMessage());
+    }
+
+    return $meta;
+}
+
+/**
+ * Spaltenindizes der SimpleAPI-Antwort.
  *
- * OFFEN — finalisieren, sobald die SimpleAPI-Freigabe existiert UND eine
- * Beispiel-Antwort mit (Test-)Daten vorliegt: Die "Liste" liefert JSON in der
- * Form { "data": { "<Gruppe>": [ [feld1, feld2, ...], ... ] }, ... }; Auswahl
- * und Reihenfolge der Felder hängen an der konkret konfigurierten Liste. Bis das
- * gegen echte Daten verifiziert ist, wird bewusst NULL zurückgegeben, damit der
- * garantierte Mock-Fallback greift (Feldreihenfolge wird nicht geraten).
- * Redaktionelle Felder (highlight, wetter, laeufernationen) stammen nicht aus
- * der Ergebnisliste und bleiben manuell/abgeleitet.
+ * Die Reihenfolge ist die des &fields=-Ausdrucks der Freigabe "Social-Pipeline"
+ * (RaceResult 412617, Grundeinstellungen -> Zugriffsrechte/Freigabe, Typ
+ * "Benutzerdefiniert"):
+ *
+ *   data/list?lang=de&listformat=JSON&fields=Contest,Contest.Name,Bib,Firstname,
+ *   Lastname,Gender,Club,Nation,AgeGroup.Name,Status,MWPl,AKPl,Ziel.Chip
+ *
+ * Wer den Ausdruck dort aendert, MUSS diese Konstanten mitziehen.
+ * Am 18.09.2026 gegen die echte Antwort verifiziert: 95 Zeilen, 13 Spalten,
+ * flaches Array von Arrays (keine { "data": { ... } }-Huelle).
+ */
+const RR_SPALTEN      = 13;
+const RR_CONTEST      = 0;
+const RR_CONTEST_NAME = 1;
+const RR_BIB          = 2;
+const RR_FIRSTNAME    = 3;
+const RR_LASTNAME     = 4;
+const RR_GENDER       = 5;
+const RR_CLUB         = 6;
+const RR_NATION       = 7;
+const RR_AGEGROUP     = 8;
+const RR_STATUS       = 9;
+const RR_MWPL         = 10;
+const RR_AKPL         = 11;
+const RR_ZEIT_NETTO   = 12;
+
+/**
+ * SimpleAPI-Antwort auf das raceResultMock()-Shape abbilden.
+ *
+ * Erwartet ein flaches Array von Zeilen mit je RR_SPALTEN Werten. Weicht die
+ * Struktur davon ab, wird NULL geliefert, damit der Mock-Fallback greift statt
+ * halb gemappter Daten.
+ *
+ * Nicht befuellt werden 'wetter' und 'highlight': die stammen nicht aus
+ * RaceResult. Sie bleiben leer und werden NICHT aus raceResultMock() ergaenzt --
+ * der Mock-Highlight ist eine erfundene Tatsachenbehauptung und darf in keinen
+ * echten Nachbericht geraten.
  *
  * @param array $raw Rohe SimpleAPI-Antwort
- * @return array|null Gemapptes Shape wie raceResultMock() oder null (Fallback)
+ * @return array|null Gemapptes Shape ohne 'event' oder null (Fallback)
  */
 function raceResultMapList(array $raw): ?array
 {
-    return null;
+    $zeilen = [];
+    foreach ($raw as $zeile) {
+        if (!is_array($zeile) || count($zeile) !== RR_SPALTEN) {
+            return null;
+        }
+        $zeilen[] = array_values($zeile);
+    }
+    if ($zeilen === []) {
+        return null;
+    }
+
+    $rennen   = [];
+    $finisher = 0;
+    $nationen = [];
+
+    foreach ($zeilen as $z) {
+        $cid = (string) $z[RR_CONTEST];
+        if (!isset($rennen[$cid])) {
+            $rennen[$cid] = [
+                'kategorie'  => (string) $z[RR_CONTEST_NAME],
+                'teilnehmer' => 0,
+                // immer vorhanden: social_generate.php greift ungeprueft auf
+                // $r['sieger']['name'] zu.
+                'sieger'     => ['name' => '', 'zeit' => '', 'verein' => ''],
+                'ak_sieger'  => [],
+            ];
+        }
+        $rennen[$cid]['teilnehmer']++;
+
+        $zeit = trim((string) $z[RR_ZEIT_NETTO]);
+        if ($zeit !== '') {
+            $finisher++;
+        }
+
+        $nation = trim((string) $z[RR_NATION]);
+        if ($nation !== '') {
+            $nationen[$nation] = true;
+        }
+
+        $name   = trim(trim((string) $z[RR_FIRSTNAME]) . ' ' . trim((string) $z[RR_LASTNAME]));
+        $verein = trim((string) $z[RR_CLUB]);
+
+        // Vor dem Zieleinlauf stehen die Platzierungen auf -1, nicht auf 0/leer.
+        if ((int) $z[RR_MWPL] === 1) {
+            $key = strtolower(trim((string) $z[RR_GENDER])) === 'f' ? 'siegerin' : 'sieger';
+            $rennen[$cid][$key] = ['name' => $name, 'zeit' => $zeit, 'verein' => $verein];
+        }
+        if ((int) $z[RR_AKPL] === 1) {
+            $rennen[$cid]['ak_sieger'][] = [
+                'ak'   => (string) $z[RR_AGEGROUP],
+                'name' => $name,
+                'zeit' => $zeit,
+            ];
+        }
+    }
+
+    ksort($rennen, SORT_NUMERIC);
+    foreach ($rennen as &$r) {
+        if ($r['ak_sieger'] === []) {
+            unset($r['ak_sieger']);
+        }
+    }
+    unset($r);
+
+    return [
+        'gesamt' => [
+            'teilnehmer'      => count($zeilen),
+            'finisher'        => $finisher,
+            'laeufernationen' => count($nationen),
+            'wetter'          => '',
+        ],
+        'rennen'    => array_values($rennen),
+        'highlight' => '',
+    ];
 }
