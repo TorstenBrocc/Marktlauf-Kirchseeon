@@ -9,6 +9,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../src/db.php';
 require_once __DIR__ . '/../src/logger.php';
 require_once __DIR__ . '/../src/google_drive.php';
+require_once __DIR__ . '/../src/helfer_aufgaben.php'; // schichtenOrderBy()
 
 $uuid = trim($_GET['uuid'] ?? '');
 $helfer = null;
@@ -113,7 +114,7 @@ if (!$error) {
             FROM schicht_zuteilung sz
             JOIN schichten sc ON sc.id = sz.schicht_id
             WHERE sz.helfer_id = :id
-            ORDER BY (sc.tag IS NULL), sc.tag, (sc.von IS NULL), sc.von, sc.titel
+            ORDER BY ' . schichtenOrderBy($pdo, 'sc') . '
         ');
         $einsatzStmt->execute(['id' => $helfer['id']]);
         $einsaetze = $einsatzStmt->fetchAll();
@@ -346,6 +347,17 @@ $basePath = '../';
             color: var(--gray-700);
             margin-top: var(--space-xs);
         }
+        .einsatz-pdf {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: var(--space-sm);
+            margin-top: var(--space-md);
+        }
+        .einsatz-pdf-hinweis {
+            font-size: 0.75rem;
+            color: var(--gray-600);
+        }
         .btn-disabled {
             display: inline-block;
             padding: var(--space-sm) var(--space-md);
@@ -563,6 +575,12 @@ $basePath = '../';
                         </li>
                     <?php endforeach; ?>
                 </ul>
+                <p class="einsatz-pdf">
+                    <a href="plan_pdf.php?uuid=<?= urlencode($uuid) ?>" target="_blank" rel="noopener" class="file-download">
+                        📄 Einsatzplan als PDF
+                    </a>
+                    <span class="einsatz-pdf-hinweis">zum Ausdrucken oder Speichern aufs Handy</span>
+                </p>
                 <?php endif; ?>
             </section>
 

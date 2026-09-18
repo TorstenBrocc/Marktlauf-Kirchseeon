@@ -20,10 +20,11 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
 
 $pdo = getDbConnection();
 
-// Alle Schichten
+// Alle Schichten — in derselben Reihenfolge wie das Board (einsatzplan.php),
+// damit Pflege-Tabelle und Board nie unterschiedlich sortiert dastehen.
 $schichten = $pdo->query('
     SELECT * FROM schichten
-    ORDER BY (tag IS NULL), tag, (von IS NULL), von, titel
+    ORDER BY ' . schichtenOrderBy($pdo) . '
 ')->fetchAll();
 
 // Zuteilungen (Helfer je Schicht), gruppiert in PHP
@@ -248,6 +249,12 @@ function beitragTooltip(array $beitragProHelfer, int $helferId): string {
             <header class="content-header">
                 <h1>Einsatzplan</h1>
             </header>
+
+            <!-- Zuteilen geht bequemer im Board; hier bleibt das Pflegen der Schichten. -->
+            <p style="margin: 0 0 1rem; display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                <a class="btn btn-primary btn-small" href="einsatzplan.php">🧩 Helfer zuteilen (Board)</a>
+                <a class="btn btn-secondary btn-small" href="api/einsatzplan_download.php" target="_blank" rel="noopener">📄 Gesamtplan als PDF</a>
+            </p>
 
             <?php if ($flashSuccess): ?>
                 <div class="alert alert-success"><?= htmlspecialchars($flashSuccess) ?></div>

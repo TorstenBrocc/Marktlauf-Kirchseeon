@@ -137,8 +137,19 @@ function marktlaufMailBody(string $text): array {
     ];
 }
 
+/**
+ * Reine Eingangsbestaetigung OHNE Zugangslink.
+ *
+ * Wird seit der Umstellung der Anmeldung (Selbstanmeldung = bestaetigt) nicht
+ * mehr aufgerufen — die Registrierung verschickt direkt sendHelferBestaetigung()
+ * mit dem persoenlichen Link. Bleibt fuer den Fall, dass wieder ein zweistufiger
+ * Weg gebraucht wird (z. B. Warteliste bei Ueberbuchung).
+ *
+ * Der Betreff hiess frueher "Du bist dabei" und behauptete damit eine
+ * Bestaetigung, die der Datensatz gar nicht hatte (Status 'neu').
+ */
 function sendHelferEingangsbestaetigung(string $to, string $name): bool {
-    $subject = '✅ Du bist dabei – Marktlauf Kirchseeon';
+    $subject = '📬 Anmeldung eingegangen – Marktlauf Kirchseeon';
     $body = <<<TEXT
 Hallo {$name},
 
@@ -169,6 +180,8 @@ Deine Anmeldung als Helfer beim Marktlauf Kirchseeon wurde bestätigt!
 Über deinen persönlichen Zugangslink kannst du jederzeit deine Anmeldung einsehen und weitere Infos abrufen:
 
 {$zugangLink}
+
+Dort findest du, sobald die Einteilung steht, auch deinen Einsatzplan – als Seite und als PDF zum Ausdrucken oder Speichern aufs Handy.
 
 Bitte bewahre diesen Link auf – er ist dein persönlicher Zugang zu allen Helfer-Infos.
 

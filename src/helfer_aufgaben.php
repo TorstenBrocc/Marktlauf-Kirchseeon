@@ -30,6 +30,40 @@ function helferTagLabel(string $isoDate): string
 }
 
 /**
+ * ORDER-BY-Ausdruck fuer Schichten in Anzeigereihenfolge.
+ *
+ * Ab Migration 077 gewinnt die Handsortierung aus dem Board (`sortierung`)
+ * innerhalb eines Tages; Zeit und Titel bleiben Tie-Breaker. Solange die
+ * Migration auf einem Stand noch nicht angewandt ist, faellt der Ausdruck auf
+ * die bisherige reine Zeitsortierung zurueck — damit laeuft die Anwendung
+ * zwischen Deploy und Migration weiter (Deploy und Migration sind hier bewusst
+ * entkoppelt, siehe CLAUDE.md).
+ */
+function schichtenOrderBy(PDO $pdo, string $alias = '', string $tieBreak = 'titel'): string
+{
+    static $hatSortierung = null;
+
+    if ($hatSortierung === null) {
+        try {
+            $hatSortierung = $pdo->query("SHOW COLUMNS FROM schichten LIKE 'sortierung'")->fetch() !== false;
+        } catch (PDOException $e) {
+            $hatSortierung = false;
+        }
+    }
+
+    $p = $alias !== '' ? rtrim($alias, '.') . '.' : '';
+    $teile = ["({$p}tag IS NULL)", "{$p}tag"];
+    if ($hatSortierung) {
+        $teile[] = "{$p}sortierung";
+    }
+    $teile[] = "({$p}von IS NULL)";
+    $teile[] = "{$p}von";
+    $teile[] = $p . $tieBreak;
+
+    return implode(', ', $teile);
+}
+
+/**
  * Angebotene Schichten, gruppiert nach Tag — Struktur wie das bisherige Formular
  * erwartet: [tag => ['label' => ..., 'aufgaben' => [['key','beschreibung','zeitfenster','gesperrt'], ...]]].
  * 'key' = schicht_id (string), 'beschreibung' = Schicht-Titel.

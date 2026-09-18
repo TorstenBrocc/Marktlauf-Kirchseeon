@@ -93,6 +93,25 @@ return [
         },
     ],
     [
+        // Board = Zuteilen per Drag & Drop. Die Tabelle daneben (schichten.php)
+        // bleibt das Pflege-Werkzeug (anlegen, Zeiten, Bedarf, Sichtbarkeit).
+        'key'     => 'einsatzplan',
+        'label'   => 'Einsatzplan-Board',
+        'section' => 'HELFER-ORGA',
+        'href'    => 'einsatzplan.php',
+        'kpi'   => static function (PDO $pdo): array {
+            $ohne = (int) $pdo->query('
+                SELECT COUNT(*) FROM schichten s
+                WHERE (SELECT COUNT(*) FROM schicht_zuteilung sz WHERE sz.schicht_id = s.id) < s.bedarf
+            ')->fetchColumn();
+            return [
+                'value'  => (string) $ohne,
+                'label'  => $ohne === 1 ? 'Schicht unterbesetzt' : 'Schichten unterbesetzt',
+                'signal' => $ohne > 0 ? 'attention' : 'ok',
+            ];
+        },
+    ],
+    [
         'key'     => 'beitraege',
         'label'   => 'Sonstige Unterstützung',
         'section' => 'HELFER-ORGA',

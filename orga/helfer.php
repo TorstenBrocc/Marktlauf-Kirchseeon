@@ -20,6 +20,11 @@ $filterStatus = $_GET['status'] ?? '';
 
 $pdo = getDbConnection();
 
+// Altbestand aus der Zeit, als das Anmeldeformular auf Status 'neu' anlegte:
+// diese Helfer haben nie einen Zugangslink bekommen und kommen deshalb nicht auf
+// ihre persönliche Seite. Zahl steuert den Sammel-Knopf im Kopf.
+$offeneAnmeldungen = (int) $pdo->query("SELECT COUNT(*) FROM helfer WHERE status = 'neu'")->fetchColumn();
+
 // Helferübersicht = Kontakt & Status. Verfügbarkeit/Slots leben im Einsatzplan,
 // die sonstige Unterstützung in "Sonstige Unterstützung". Hier bleibt als
 // Einsatz-Kontext nur die verbindliche Schicht-Zuteilung (nicht die Selbstmeldung).
@@ -248,6 +253,23 @@ $totalCount = (int) $countStmt->fetchColumn();
 
             <?php if ($flashError): ?>
                 <div class="alert alert-error"><?= htmlspecialchars($flashError) ?></div>
+            <?php endif; ?>
+
+            <?php if ($offeneAnmeldungen > 0): ?>
+                <div class="alert alert-error" style="display:flex;flex-wrap:wrap;align-items:center;gap:0.75rem;">
+                    <span>
+                        <strong><?= $offeneAnmeldungen ?></strong>
+                        <?= $offeneAnmeldungen === 1 ? 'Anmeldung ist' : 'Anmeldungen sind' ?> noch nicht bestätigt —
+                        diese Helfer haben keinen Zugangslink und kommen nicht auf ihre persönliche Seite.
+                    </span>
+                    <form method="post" action="api/helfer_bestaetigen_alle.php" class="inline-form"
+                          onsubmit="return confirm('<?= $offeneAnmeldungen ?> Helfer bestätigen und jedem eine Mail mit dem persönlichen Zugangslink schicken?');">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                        <button type="submit" class="btn btn-primary btn-small">
+                            Alle bestätigen &amp; Zugangslink senden
+                        </button>
+                    </form>
+                </div>
             <?php endif; ?>
 
             <form method="get" class="filter-bar">

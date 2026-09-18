@@ -162,7 +162,12 @@ try {
         'nachname'      => $nachname,
         'email'         => $email,
         'phone'         => $phone,
-        'status'        => 'neu',
+        // Wer sich ueber das Formular selbst eintraegt, ist dabei — es gibt keinen
+        // Auswahlschritt dahinter. Der Status stand frueher auf 'neu' und musste
+        // von Hand bestaetigt werden; bis dahin kam der Helfer nicht auf seine
+        // persoenliche Seite (helfer/zugang.php verlangt 'bestaetigt') und bekam
+        // auch keinen Zugangslink. Genau diese Luecke faellt hiermit weg.
+        'status'        => 'bestaetigt',
         'is_minor'      => $isMinor,
         'consent_photo' => $consentPhoto,
         'guardian_name' => $isMinor ? $guardianName : null,
@@ -202,8 +207,18 @@ try {
 
     $pdo->commit();
 
+    // Eine Mail statt zweier: die Anmeldung IST die Bestaetigung, also geht der
+    // persoenliche Zugangslink sofort mit raus. Frueher kam hier nur eine
+    // Eingangsbestaetigung ("Das Orga-Team meldet sich"), und der Link folgte
+    // erst nach einem Klick in der Helferliste — der in der Praxis ausblieb.
     try {
-        sendHelferEingangsbestaetigung($email, $vorname . ' ' . $nachname);
+        $config = getConfig();
+        $appUrl = rtrim($config['app']['url'] ?? 'https://atsv-kirchseeon-marktlauf.de', '/');
+        sendHelferBestaetigung(
+            $email,
+            $vorname . ' ' . $nachname,
+            $appUrl . '/helfer/zugang.php?uuid=' . urlencode($uuid)
+        );
     } catch (Throwable $e) {
         logError('Mail send error: ' . $e->getMessage());
     }
