@@ -145,6 +145,27 @@ nächste ein.
 `intern-rr14/docs/raceresult/setup-protokoll.md` — dort stehen Formulare, Keys, Fenster und
 die Renntags-Nachmeldung. Für die Website relevant: siehe „Anmeldung & Nachmeldung" unten.
 
+**Mailversand aus RaceResult prüft man in Brevo, nicht in RaceResult** (verifiziert
+2026-09-18). RaceResult versendet über eigenen SMTP (`smtp-relay.brevo.com:587`, User
+`abd914001@smtp-brevo.com`, Absender `info@atsv-kirchseeon-marktlauf.de`). Der **Jobs-Tab
+einer Email-Vorlage bleibt leer**, wenn die Mail über „Anmelde-Formulare → <Formular> →
+Aktionen nach Speichern → EMAIL SENDEN" ausgelöst wird — er protokolliert nur manuelle
+Versände. Leerer Jobs-Tab heißt also **nicht** „nichts versendet".
+Der belastbare Nachweis: **Brevo → Transactional → Logs** (`app.brevo.com/transactional/email/logs`),
+Filter „Recipient (To)" + Empfängeradresse. Dort stehen Sent/Delivered/Opened/Clicked je Mail.
+⚠️ **Retention ~7 Tage** — am 18.09.2026 reichte das Log trotz Datumsfilter bis 2020 nur bis
+zum 11.09. zurück. Für ältere Vorgänge ist „0 logs" **kein** Beleg, dass nichts versendet
+wurde. Wer einen Versand beweisen können muss, exportiert vorher per „Download CSV".
+
+**Startnummernvergabe steht auf „Erste freie"** (RaceResult → Grundeinstellungen →
+Teilnehmerdaten → Startnummern; Blöcke: 1–99 Bambini, 100–199 1 km, 200–499 2 km,
+500–699 5 km, 1000–1999 10 km). „Erste freie" **füllt Lücken auf**. Wer also einen
+Teilnehmer-Datensatz löscht, gibt dessen Startnummer als niedrigste Lücke wieder frei — die
+Renntags-Nachmeldung teilt sie dann als erstes zu, obwohl das gedruckte Nummernblatt noch den
+Namen des Abgemeldeten trägt. Eine so freigewordene Nummer gehört deshalb **vor dem Löschen**
+in das Feld „Startnummern ausschließen" auf derselben Seite (Komma-/Zeilen-getrennt, Bereiche
+wie `1-50,77` erlaubt).
+
 **make.com** Szenario 6642115 (Posting) und 7094793 (Social Insights Stage C).
 Bekannte Lücke: die Callback-HTTP-Module (10/11) hängen hinter dem Kommentar-Filter →
 terminierte FB-Posts ohne `first_comment` melden nie Post-ID/Permalink. Fix nur im
