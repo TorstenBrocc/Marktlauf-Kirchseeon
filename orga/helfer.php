@@ -368,6 +368,9 @@ $totalCount = (int) $countStmt->fetchColumn();
                                         <a href="https://atsv-kirchseeon-marktlauf.de/helfer/zugang.php?uuid=<?= htmlspecialchars(urlencode($h['uuid'])) ?>"
                                            class="btn-action" target="_blank" rel="noopener noreferrer"
                                            title="Briefing-Ansicht dieses Helfers öffnen (zum Nachvollziehen der Darstellung)">Briefing</a>
+                                        <a href="api/einsatzplan_download.php?helfer_id=<?= (int) $h['id'] ?>"
+                                           class="btn-action" target="_blank" rel="noopener"
+                                           title="Persönlichen Einsatzplan als PDF öffnen — genau das, was dieser Helfer herunterlädt">PDF</a>
                                         <?php if ($isAdmin): ?>
                                         <form method="post" action="api/helfer_delete.php" class="inline-form" onsubmit="return confirm('Helfer wirklich löschen?');">
                                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
