@@ -152,6 +152,46 @@ const RR_AKPL         = 11;
 const RR_ZEIT_NETTO   = 12;
 
 /**
+ * Wettbewerbe, aus denen nur der VORNAME veroeffentlicht wird (Inhaber-Entscheid
+ * 2026-09-19): die Schuelerlaeufe 1 km und 2 km. Begruendung: Es sind Kinder, und
+ * ihre Nachnamen sollen nicht in oeffentliche Beitraege oder Grafiken geraten.
+ * Greift ueberall, wo raceResultData() gelesen wird -- also auch im Prompt-Text
+ * des Renntags-Nachberichts, nicht nur auf der Grafik.
+ *
+ * Werte sind die Wettbewerbs-IDs aus RaceResult (Contest):
+ *   1 = 500 m Bambini, 2 = 1 km Schueler, 3 = 2 km Schueler, 4 = 5 km, 5 = 10 km
+ *
+ * Bambini (1) ist mitaufgenommen, obwohl dort mangels Zeitnahme nie eine
+ * Platzierung und damit nie ein Name entsteht: Es sind die juengsten Kinder der
+ * Veranstaltung, und sollte dort jemals gemessen werden, greift die Regel ohne
+ * weiteres Zutun.
+ *
+ * NICHT erfasst: die Jugendklassen (U16/U18) im 5-km-Lauf. Dort laufen Kinder
+ * und Erwachsene im selben Wettbewerb, eine Regel je Wettbewerb greift also zu
+ * grob -- das braeuchte eine Regel je Teilnehmer ueber die Altersklasse.
+ * Deren Altersklassen-Sieger erscheinen weiterhin mit vollem Namen. Offen.
+ */
+const RR_NUR_VORNAME_WETTBEWERBE = [1, 2, 3];
+
+/**
+ * Anzeigename eines Teilnehmers fuer die Veroeffentlichung.
+ *
+ * In den Wettbewerben aus RR_NUR_VORNAME_WETTBEWERBE wird der Nachname
+ * weggelassen. Sonst "Vorname Nachname".
+ */
+function raceResultName(string $vorname, string $nachname, int $wettbewerb): string
+{
+    $vorname  = trim($vorname);
+    $nachname = trim($nachname);
+    if (in_array($wettbewerb, RR_NUR_VORNAME_WETTBEWERBE, true)) {
+        // Faellt der Vorname aus, lieber gar nichts als den Nachnamen allein.
+        return $vorname;
+    }
+
+    return trim($vorname . ' ' . $nachname);
+}
+
+/**
  * SimpleAPI-Antwort auf das raceResultMock()-Shape abbilden.
  *
  * Erwartet ein flaches Array von Zeilen mit je RR_SPALTEN Werten. Weicht die
@@ -207,7 +247,11 @@ function raceResultMapList(array $raw): ?array
             $nationen[$nation] = true;
         }
 
-        $name   = trim(trim((string) $z[RR_FIRSTNAME]) . ' ' . trim((string) $z[RR_LASTNAME]));
+        $name = raceResultName(
+            (string) $z[RR_FIRSTNAME],
+            (string) $z[RR_LASTNAME],
+            (int) $z[RR_CONTEST]
+        );
         $verein = trim((string) $z[RR_CLUB]);
 
         // Vor dem Zieleinlauf stehen die Platzierungen auf -1, nicht auf 0/leer.
