@@ -125,19 +125,47 @@ class EinsatzplanPdf extends FPDF
     }
 
     /**
-     * Ein Block: Schicht mit Zeit/Ort/Beschreibung und der Namensliste darunter.
+     * Ein Block: Posten/Schicht mit Nummer, Zeit, Ort, Aufgabe — und der
+     * Namensliste, wo sie hingehoert.
+     *
+     * $opt: titel, meta, beschreibung, bedarf, posten (Nummer), fenster
+     *       (Klartext "ab … bis …"), karte (Google-Maps-URL), koord (Text).
      * $namen = []   => "— noch offen —" (Gesamtplan: unbesetzte Schicht)
      * $namen = null => gar keine Namensliste (persönlicher Plan: der Helfer weiß,
      *                  dass er selbst gemeint ist; wer sonst dort eingeteilt ist,
      *                  geht ihn nichts an — und der Plan bleibt DSGVO-schlank).
      */
-    public function schichtBlock(string $titel, string $meta, string $beschreibung, ?array $namen, int $bedarf = 0): void
+    public function schichtBlock(array $opt, ?array $namen): void
     {
-        $this->ensureRaum(22);
+        $titel   = (string) ($opt['titel'] ?? '');
+        $meta    = (string) ($opt['meta'] ?? '');
+        $besch   = (string) ($opt['beschreibung'] ?? '');
+        $bedarf  = (int) ($opt['bedarf'] ?? 0);
+        $posten  = $opt['posten'] ?? null;
+        $fenster = (string) ($opt['fenster'] ?? '');
+        $karte   = (string) ($opt['karte'] ?? '');
+        $koord   = (string) ($opt['koord'] ?? '');
 
+        $this->ensureRaum(26);
+
+        // Postennummer als Marke vor dem Titel — am Renntag spricht die Orga
+        // ueber "Posten 7", nicht ueber den Namen des Standorts.
+        $x = $this->L;
+        if ($posten !== null && $posten !== '') {
+            $label = 'POSTEN ' . (int) $posten;
+            $this->SetFont('montbd', '', 8);
+            $breite = $this->GetStringWidth($this->t($label)) + 4;
+            $this->SetFillColor(...$this->green2);
+            $this->Rect($x, $this->GetY() + 0.6, $breite, 4.8, 'F');
+            $this->SetTextColor(255, 255, 255);
+            $this->SetXY($x, $this->GetY() + 0.6);
+            $this->Cell($breite, 4.8, $this->t($label), 0, 0, 'C');
+            $x += $breite + 2.5;
+        }
+
+        $this->SetXY($x, $this->GetY());
         $this->SetFont('popsb', '', 10);
         $this->SetTextColor(...$this->ink);
-        $this->SetX($this->L);
         $this->Cell(0, 5.5, $this->t($titel), 0, 1, 'L');
 
         if ($meta !== '') {
@@ -147,11 +175,32 @@ class EinsatzplanPdf extends FPDF
             $this->Cell(0, 4.5, $this->t($meta), 0, 1, 'L');
         }
 
-        if ($beschreibung !== '') {
+        // Zeitfenster im Klartext, damit niemand rechnen muss.
+        if ($fenster !== '') {
+            $this->SetFont('popsb', '', 9);
+            $this->SetTextColor(...$this->green2);
+            $this->SetX($this->L);
+            $this->Cell(0, 4.8, $this->t($fenster), 0, 1, 'L');
+        }
+
+        if ($besch !== '') {
             $this->SetFont('pop', '', 8);
             $this->SetTextColor(...$this->muted);
             $this->SetX($this->L);
-            $this->MultiCell($this->R - $this->L, 4, $this->t($beschreibung), 0, 'L');
+            $this->MultiCell($this->R - $this->L, 4, $this->t($besch), 0, 'L');
+        }
+
+        // Standort: klickbar im PDF, dazu die Koordinaten zum Abtippen/Vorlesen.
+        if ($karte !== '') {
+            $this->SetFont('pop', '', 8.5);
+            $this->SetTextColor(...$this->green1);
+            $this->SetX($this->L);
+            $this->Cell(0, 4.6, $this->t('Standort in Google Maps öffnen' . ($koord !== '' ? ' (' . $koord . ')' : '')), 0, 1, 'L', false, $karte);
+        } elseif ($koord !== '') {
+            $this->SetFont('pop', '', 8);
+            $this->SetTextColor(...$this->muted);
+            $this->SetX($this->L);
+            $this->Cell(0, 4.2, $this->t($koord), 0, 1, 'L');
         }
 
         if ($namen === null) {
@@ -231,10 +280,24 @@ class EinsatzplanPdf extends FPDF
  * Datenlader: kompletter Einsatzplan, gruppiert nach Tag, Schichten in der
  * Reihenfolge des Boards (Handsortierung), Helfer alphabetisch je Schicht.
  */
+function einsatzplanHatPostenfelder(PDO $pdo): bool
+{
+    static $da = null;
+    if ($da === null) {
+        try {
+            $da = $pdo->query("SHOW COLUMNS FROM schichten LIKE 'postennummer'")->fetch() !== false;
+        } catch (PDOException $e) {
+            $da = false;
+        }
+    }
+    return $da;
+}
+
 function einsatzplanDatenGesamt(PDO $pdo): array
 {
+    $extra = einsatzplanHatPostenfelder($pdo) ? ', postennummer, lat, lon' : '';
     $schichten = $pdo->query('
-        SELECT id, titel, beschreibung, ort, tag, von, bis, zeitfenster, bedarf
+        SELECT id, titel, beschreibung, ort, tag, von, bis, zeitfenster, bedarf' . $extra . '
         FROM schichten
         ORDER BY ' . schichtenOrderBy($pdo) . '
     ')->fetchAll();
@@ -263,8 +326,9 @@ function einsatzplanDatenGesamt(PDO $pdo): array
 /** Datenlader: die Einsätze eines Helfers in Board-Reihenfolge. */
 function einsatzplanDatenHelfer(PDO $pdo, int $helferId): array
 {
+    $extra = einsatzplanHatPostenfelder($pdo) ? ', sc.postennummer, sc.lat, sc.lon' : '';
     $stmt = $pdo->prepare('
-        SELECT sc.id, sc.titel, sc.beschreibung, sc.ort, sc.tag, sc.von, sc.bis, sc.zeitfenster
+        SELECT sc.id, sc.titel, sc.beschreibung, sc.ort, sc.tag, sc.von, sc.bis, sc.zeitfenster' . $extra . '
         FROM schicht_zuteilung sz
         JOIN schichten sc ON sc.id = sz.schicht_id
         WHERE sz.helfer_id = :id
@@ -272,6 +336,46 @@ function einsatzplanDatenHelfer(PDO $pdo, int $helferId): array
     ');
     $stmt->execute(['id' => $helferId]);
     return $stmt->fetchAll();
+}
+
+/**
+ * Zeitfenster im Klartext: ab wann vor Ort, bis wann bleiben.
+ * "ab 11:00 Uhr vor Ort, bis 12:30 Uhr" liest sich am Renntag schneller als
+ * "11:00–12:30".
+ */
+function einsatzplanFenster(array $s): string
+{
+    if (empty($s['von'])) {
+        return (string) ($s['zeitfenster'] ?? '');
+    }
+    $t = 'ab ' . substr((string) $s['von'], 0, 5) . ' Uhr vor Ort';
+    if (!empty($s['bis'])) {
+        $t .= ', bis ' . substr((string) $s['bis'], 0, 5) . ' Uhr';
+    }
+    return $t;
+}
+
+/** Google-Maps-Link zu einem Posten ('' wenn keine Koordinaten hinterlegt). */
+function einsatzplanKartenLink(array $s): string
+{
+    if (empty($s['lat']) || empty($s['lon'])) {
+        return '';
+    }
+    return 'https://www.google.com/maps/search/?api=1&query='
+        . rawurlencode($s['lat'] . ',' . $s['lon']);
+}
+
+/**
+ * Titel ohne den "Streckenposten N · "-Präfix, wenn die Nummer ohnehin als
+ * eigene Marke davorsteht — sonst liest der Helfer "POSTEN 7 Streckenposten 7 …".
+ */
+function einsatzplanKurzTitel(array $s): string
+{
+    $titel = (string) $s['titel'];
+    if (!empty($s['postennummer'])) {
+        $titel = preg_replace('/^Streckenposten\s+\d+\s*·\s*/u', '', $titel) ?? $titel;
+    }
+    return $titel;
 }
 
 /** Zeit-/Ortszeile einer Schicht für das PDF. */
@@ -308,13 +412,15 @@ function einsatzplanPdfGesamt(PDO $pdo): string
     foreach ($tage as $tag => $schichten) {
         $pdf->tagUeberschrift($tag !== '' ? helferTagLabel((string) $tag) : 'Ohne festen Termin');
         foreach ($schichten as $s) {
-            $pdf->schichtBlock(
-                (string) $s['titel'],
-                einsatzplanMetaZeile($s),
-                (string) ($s['beschreibung'] ?? ''),
-                $s['namen'],
-                (int) $s['bedarf']
-            );
+            $pdf->schichtBlock([
+                'titel'        => einsatzplanKurzTitel($s),
+                'meta'         => einsatzplanMetaZeile($s),
+                'beschreibung' => (string) ($s['beschreibung'] ?? ''),
+                'bedarf'       => (int) $s['bedarf'],
+                'posten'       => $s['postennummer'] ?? null,
+                'karte'        => einsatzplanKartenLink($s),
+                'koord'        => !empty($s['lat']) ? $s['lat'] . ', ' . $s['lon'] : '',
+            ], $s['namen']);
         }
     }
 
@@ -352,12 +458,15 @@ function einsatzplanPdfHelfer(PDO $pdo, array $helfer, string $orgaEmail = '', s
                 $pdf->tagUeberschrift($tag !== '' ? helferTagLabel($tag) : 'Ohne festen Termin');
                 $letzterTag = $tag;
             }
-            $pdf->schichtBlock(
-                (string) $s['titel'],
-                einsatzplanMetaZeile($s),
-                (string) ($s['beschreibung'] ?? ''),
-                null
-            );
+            $pdf->schichtBlock([
+                'titel'        => einsatzplanKurzTitel($s),
+                'meta'         => einsatzplanMetaZeile($s),
+                'beschreibung' => (string) ($s['beschreibung'] ?? ''),
+                'posten'       => $s['postennummer'] ?? null,
+                'fenster'      => einsatzplanFenster($s),
+                'karte'        => einsatzplanKartenLink($s),
+                'koord'        => !empty($s['lat']) ? $s['lat'] . ', ' . $s['lon'] : '',
+            ], null);
         }
     }
 

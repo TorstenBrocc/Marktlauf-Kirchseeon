@@ -109,8 +109,13 @@ $einsaetze = [];
 if (!$error) {
     try {
         $pdo = getDbConnection();
+        // postennummer/lat/lon gibt es erst ab Migration 097 — fehlt sie noch,
+        // faellt die Abfrage auf die Grundfelder zurueck, statt die Seite des
+        // Helfers mit einem SQL-Fehler abzuwerfen.
+        $hatPosten = $pdo->query("SHOW COLUMNS FROM schichten LIKE 'postennummer'")->fetch() !== false;
+        $postenFelder = $hatPosten ? ', sc.postennummer, sc.lat, sc.lon' : '';
         $einsatzStmt = $pdo->prepare('
-            SELECT sc.titel, sc.beschreibung, sc.ort, sc.tag, sc.von, sc.bis
+            SELECT sc.titel, sc.beschreibung, sc.ort, sc.tag, sc.von, sc.bis, sc.zeitfenster' . $postenFelder . '
             FROM schicht_zuteilung sz
             JOIN schichten sc ON sc.id = sz.schicht_id
             WHERE sz.helfer_id = :id
@@ -155,8 +160,35 @@ function formatEinsatzZeit(array $s): string {
             $zeit .= '–' . substr($s['bis'], 0, 5);
         }
         $parts[] = $zeit . ' Uhr';
+    } elseif (!empty($s['zeitfenster'])) {
+        // Posten ohne feste Uhrzeit ("während des Laufs") — sonst stünde hier nichts.
+        $parts[] = (string) $s['zeitfenster'];
     }
     return implode(' · ', $parts);
+}
+
+/**
+ * Klartext zum Zeitfenster: ab wann vor Ort, bis wann bleiben.
+ * Der Helfer liest "ab 11:00 Uhr … bis 12:30 Uhr" schneller als "11:00–12:30".
+ */
+function formatEinsatzFenster(array $s): string {
+    if (empty($s['von'])) {
+        return !empty($s['zeitfenster']) ? (string) $s['zeitfenster'] : '';
+    }
+    $text = 'ab ' . substr((string) $s['von'], 0, 5) . ' Uhr vor Ort';
+    if (!empty($s['bis'])) {
+        $text .= ', bis ' . substr((string) $s['bis'], 0, 5) . ' Uhr';
+    }
+    return $text;
+}
+
+/** Google-Maps-Link zu einem Posten (leer, wenn keine Koordinaten hinterlegt). */
+function einsatzKartenLink(array $s): string {
+    if (empty($s['lat']) || empty($s['lon'])) {
+        return '';
+    }
+    return 'https://www.google.com/maps/search/?api=1&query='
+        . rawurlencode($s['lat'] . ',' . $s['lon']);
 }
 
 function formatFileSizeHelfer(int $bytes): string {
@@ -346,6 +378,45 @@ $basePath = '../';
             font-size: var(--text-sm);
             color: var(--gray-700);
             margin-top: var(--space-xs);
+        }
+        .einsatz-kopf {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: var(--space-sm);
+        }
+        .posten-badge {
+            display: inline-block;
+            background: var(--color-primary);
+            color: #fff;
+            border-radius: var(--radius-sm);
+            padding: 0.1rem 0.5rem;
+            font-size: 0.8rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .einsatz-fenster {
+            margin-top: var(--space-xs);
+            font-size: var(--text-sm);
+            font-weight: 600;
+            color: var(--gray-800);
+        }
+        .einsatz-karte {
+            display: inline-block;
+            margin-top: var(--space-sm);
+            padding: var(--space-xs) var(--space-sm);
+            border: 1px solid var(--color-primary);
+            border-radius: var(--radius-sm);
+            color: var(--color-primary);
+            text-decoration: none;
+            font-size: 0.8rem;
+        }
+        .einsatz-karte:hover { background: var(--color-primary); color: #fff; }
+        .einsatz-koord {
+            margin-top: 0.2rem;
+            font-size: 0.7rem;
+            color: var(--gray-600);
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
         }
         .einsatz-pdf {
             display: flex;
@@ -562,15 +633,34 @@ $basePath = '../';
                 <?php else: ?>
                 <ul class="einsatz-list">
                     <?php foreach ($einsaetze as $e): ?>
-                        <?php $zeit = formatEinsatzZeit($e); ?>
+                        <?php
+                        $zeit    = formatEinsatzZeit($e);
+                        $fenster = formatEinsatzFenster($e);
+                        $karte   = einsatzKartenLink($e);
+                        $posten  = $e['postennummer'] ?? null;
+                        ?>
                         <li class="einsatz-item">
-                            <div class="einsatz-titel"><?= htmlspecialchars($e['titel']) ?></div>
+                            <div class="einsatz-kopf">
+                                <?php if ($posten): ?>
+                                    <span class="posten-badge" title="Deine Postennummer">Posten <?= (int) $posten ?></span>
+                                <?php endif; ?>
+                                <span class="einsatz-titel"><?= htmlspecialchars($e['titel']) ?></span>
+                            </div>
                             <div class="einsatz-meta">
                                 <?php if ($zeit !== ''): ?><?= htmlspecialchars($zeit) ?><?php endif; ?>
                                 <?php if (!empty($e['ort'])): ?><?= $zeit !== '' ? ' · ' : '' ?><?= htmlspecialchars($e['ort']) ?><?php endif; ?>
                             </div>
+                            <?php if ($fenster !== ''): ?>
+                                <div class="einsatz-fenster">🕒 <?= htmlspecialchars($fenster) ?></div>
+                            <?php endif; ?>
                             <?php if (!empty($e['beschreibung'])): ?>
                                 <div class="einsatz-desc"><?= nl2br(htmlspecialchars($e['beschreibung'])) ?></div>
+                            <?php endif; ?>
+                            <?php if ($karte !== ''): ?>
+                                <a class="einsatz-karte" href="<?= htmlspecialchars($karte) ?>" target="_blank" rel="noopener">
+                                    📍 Standort in Google Maps öffnen
+                                </a>
+                                <div class="einsatz-koord"><?= htmlspecialchars($e['lat'] . ', ' . $e['lon']) ?></div>
                             <?php endif; ?>
                         </li>
                     <?php endforeach; ?>
