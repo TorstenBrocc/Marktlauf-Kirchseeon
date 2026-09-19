@@ -27,6 +27,11 @@
 -- Posten 8 (Verkehr Ilching Mitte-Sued) bleibt unbesetzt -- in der Helferliste
 -- steht dort "?".
 
+-- HINWEIS: Diese Migration nannte urspruenglich Klarnamen. Das Repo ist
+-- oeffentlich; die Zuordnung laeuft deshalb ueber Helfer-IDs. Der Datenstand
+-- aendert sich dadurch nicht - die Migration ist laengst angewandt, und die
+-- IDs treffen dieselben Datensaetze.
+
 SET NAMES utf8mb4;
 
 
@@ -146,84 +151,84 @@ UPDATE `schichten`
 
 -- 6) Einteilung nach der Helferliste (Stand 19.09.2026), Nummern der gueltigen Fassung.
 
--- Posten 1: Riesmeyer Claudia
+-- Posten 1: Helfer #8
 INSERT INTO `schicht_zuteilung` (`schicht_id`, `helfer_id`)
 SELECT s.`id`, 8 FROM `schichten` s
  WHERE s.`tag` = '2026-09-20' AND s.`postennummer` = 1
    AND NOT EXISTS (SELECT 1 FROM (SELECT `schicht_id`, `helfer_id` FROM `schicht_zuteilung`) z
                     WHERE z.`schicht_id` = s.`id` AND z.`helfer_id` = 8);
 
--- Posten 2: Riesmeyer Claudia
+-- Posten 2: Helfer #8
 INSERT INTO `schicht_zuteilung` (`schicht_id`, `helfer_id`)
 SELECT s.`id`, 8 FROM `schichten` s
  WHERE s.`tag` = '2026-09-20' AND s.`postennummer` = 2
    AND NOT EXISTS (SELECT 1 FROM (SELECT `schicht_id`, `helfer_id` FROM `schicht_zuteilung`) z
                     WHERE z.`schicht_id` = s.`id` AND z.`helfer_id` = 8);
 
--- Posten 3: Betzl Anke
+-- Posten 3: Helfer #19
 INSERT INTO `schicht_zuteilung` (`schicht_id`, `helfer_id`)
 SELECT s.`id`, 19 FROM `schichten` s
  WHERE s.`tag` = '2026-09-20' AND s.`postennummer` = 3
    AND NOT EXISTS (SELECT 1 FROM (SELECT `schicht_id`, `helfer_id` FROM `schicht_zuteilung`) z
                     WHERE z.`schicht_id` = s.`id` AND z.`helfer_id` = 19);
 
--- Posten 4: Betzl Luisa
+-- Posten 4: Helfer #24
 INSERT INTO `schicht_zuteilung` (`schicht_id`, `helfer_id`)
 SELECT s.`id`, 24 FROM `schichten` s
  WHERE s.`tag` = '2026-09-20' AND s.`postennummer` = 4
    AND NOT EXISTS (SELECT 1 FROM (SELECT `schicht_id`, `helfer_id` FROM `schicht_zuteilung`) z
                     WHERE z.`schicht_id` = s.`id` AND z.`helfer_id` = 24);
 
--- Posten 5: Kilian Sandra
+-- Posten 5: Helfer #28
 INSERT INTO `schicht_zuteilung` (`schicht_id`, `helfer_id`)
 SELECT s.`id`, 28 FROM `schichten` s
  WHERE s.`tag` = '2026-09-20' AND s.`postennummer` = 5
    AND NOT EXISTS (SELECT 1 FROM (SELECT `schicht_id`, `helfer_id` FROM `schicht_zuteilung`) z
                     WHERE z.`schicht_id` = s.`id` AND z.`helfer_id` = 28);
 
--- Posten 6: Betzl Anke
+-- Posten 6: Helfer #19
 INSERT INTO `schicht_zuteilung` (`schicht_id`, `helfer_id`)
 SELECT s.`id`, 19 FROM `schichten` s
  WHERE s.`tag` = '2026-09-20' AND s.`postennummer` = 6
    AND NOT EXISTS (SELECT 1 FROM (SELECT `schicht_id`, `helfer_id` FROM `schicht_zuteilung`) z
                     WHERE z.`schicht_id` = s.`id` AND z.`helfer_id` = 19);
 
--- Posten 7: Richter Daniel
+-- Posten 7: Helfer #30
 INSERT INTO `schicht_zuteilung` (`schicht_id`, `helfer_id`)
 SELECT s.`id`, 30 FROM `schichten` s
  WHERE s.`tag` = '2026-09-20' AND s.`postennummer` = 7
    AND NOT EXISTS (SELECT 1 FROM (SELECT `schicht_id`, `helfer_id` FROM `schicht_zuteilung`) z
                     WHERE z.`schicht_id` = s.`id` AND z.`helfer_id` = 30);
 
--- Posten 9: Betzl Luisa
+-- Posten 9: Helfer #24
 INSERT INTO `schicht_zuteilung` (`schicht_id`, `helfer_id`)
 SELECT s.`id`, 24 FROM `schichten` s
  WHERE s.`tag` = '2026-09-20' AND s.`postennummer` = 9
    AND NOT EXISTS (SELECT 1 FROM (SELECT `schicht_id`, `helfer_id` FROM `schicht_zuteilung`) z
                     WHERE z.`schicht_id` = s.`id` AND z.`helfer_id` = 24);
 
--- Posten 10: Stiglbauer Jana
+-- Posten 10: Helfer #31
 INSERT INTO `schicht_zuteilung` (`schicht_id`, `helfer_id`)
 SELECT s.`id`, 31 FROM `schichten` s
  WHERE s.`tag` = '2026-09-20' AND s.`postennummer` = 10
    AND NOT EXISTS (SELECT 1 FROM (SELECT `schicht_id`, `helfer_id` FROM `schicht_zuteilung`) z
                     WHERE z.`schicht_id` = s.`id` AND z.`helfer_id` = 31);
 
--- Posten 11: King Christiane
+-- Posten 11: Helfer #15
 INSERT INTO `schicht_zuteilung` (`schicht_id`, `helfer_id`)
 SELECT s.`id`, 15 FROM `schichten` s
  WHERE s.`tag` = '2026-09-20' AND s.`postennummer` = 11
    AND NOT EXISTS (SELECT 1 FROM (SELECT `schicht_id`, `helfer_id` FROM `schicht_zuteilung`) z
                     WHERE z.`schicht_id` = s.`id` AND z.`helfer_id` = 15);
 
--- Posten 12: Lieske Marco
+-- Posten 12: Helfer #27
 INSERT INTO `schicht_zuteilung` (`schicht_id`, `helfer_id`)
 SELECT s.`id`, 27 FROM `schichten` s
  WHERE s.`tag` = '2026-09-20' AND s.`postennummer` = 12
    AND NOT EXISTS (SELECT 1 FROM (SELECT `schicht_id`, `helfer_id` FROM `schicht_zuteilung`) z
                     WHERE z.`schicht_id` = s.`id` AND z.`helfer_id` = 27);
 
--- Posten 13: Lieske Christine
+-- Posten 13: Helfer #26
 INSERT INTO `schicht_zuteilung` (`schicht_id`, `helfer_id`)
 SELECT s.`id`, 26 FROM `schichten` s
  WHERE s.`tag` = '2026-09-20' AND s.`postennummer` = 13

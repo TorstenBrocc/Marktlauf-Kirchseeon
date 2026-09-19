@@ -15,8 +15,13 @@
 -- NICHT enthalten: Auf- und Abbau. Diese Schichten sind im Formular noch
 -- buchbar (in_anmeldung = 1); eine Bedarfsaenderung wuerde dort Plaetze oeffnen.
 -- Ausserdem fehlen drei der sieben Personen aus dem Auf-/Abbau-Block als
--- Datensatz (Gramueller Matthias, Reinhart Stefan, Tyras Torsten) — ohne
+-- Datensatz (drei Personen des Kernteams) — ohne
 -- Datensatz keine Zuteilung und keine persoenliche Seite.
+
+-- HINWEIS: Diese Migration nannte urspruenglich Klarnamen. Das Repo ist
+-- oeffentlich; die Zuordnung laeuft deshalb ueber Helfer-IDs. Der Datenstand
+-- aendert sich dadurch nicht - die Migration ist laengst angewandt, und die
+-- IDs treffen dieselben Datensaetze.
 
 SET NAMES utf8mb4;
 
@@ -33,54 +38,54 @@ UPDATE `schichten` SET `bedarf` = 3
 INSERT INTO `schicht_zuteilung` (`schicht_id`, `helfer_id`)
 SELECT s.`id`, h.`id` FROM `schichten` s JOIN `helfer` h
  WHERE s.`tag` = '2026-09-20' AND s.`von` = '09:30:00' AND s.`titel` LIKE '%Getränkeverkauf%'
-   AND h.`vorname` = 'Olivia' AND h.`nachname` = 'Petrasova'
+   AND h.`id` = 20
    AND NOT EXISTS (SELECT 1 FROM (SELECT `schicht_id`, `helfer_id` FROM `schicht_zuteilung`) z
                     WHERE z.`schicht_id` = s.`id` AND z.`helfer_id` = h.`id`);
 
 INSERT INTO `schicht_zuteilung` (`schicht_id`, `helfer_id`)
 SELECT s.`id`, h.`id` FROM `schichten` s JOIN `helfer` h
  WHERE s.`tag` = '2026-09-20' AND s.`von` = '09:30:00' AND s.`titel` LIKE '%Getränkeverkauf%'
-   AND h.`vorname` = 'Alena' AND h.`nachname` = 'Petrasova'
+   AND h.`id` = 21
    AND NOT EXISTS (SELECT 1 FROM (SELECT `schicht_id`, `helfer_id` FROM `schicht_zuteilung`) z
                     WHERE z.`schicht_id` = s.`id` AND z.`helfer_id` = h.`id`);
 
 INSERT INTO `schicht_zuteilung` (`schicht_id`, `helfer_id`)
 SELECT s.`id`, h.`id` FROM `schichten` s JOIN `helfer` h
  WHERE s.`tag` = '2026-09-20' AND s.`von` = '12:00:00' AND s.`titel` LIKE '%Getränkeverkauf%'
-   AND h.`vorname` = 'Andrea' AND h.`nachname` = 'Bauer'
+   AND h.`id` = 12
    AND NOT EXISTS (SELECT 1 FROM (SELECT `schicht_id`, `helfer_id` FROM `schicht_zuteilung`) z
                     WHERE z.`schicht_id` = s.`id` AND z.`helfer_id` = h.`id`);
 
 INSERT INTO `schicht_zuteilung` (`schicht_id`, `helfer_id`)
 SELECT s.`id`, h.`id` FROM `schichten` s JOIN `helfer` h
  WHERE s.`tag` = '2026-09-20' AND s.`von` = '12:00:00' AND s.`titel` LIKE '%Getränkeverkauf%'
-   AND h.`vorname` = 'Charlotte' AND h.`nachname` = 'Bauer'
+   AND h.`id` = 13
    AND NOT EXISTS (SELECT 1 FROM (SELECT `schicht_id`, `helfer_id` FROM `schicht_zuteilung`) z
                     WHERE z.`schicht_id` = s.`id` AND z.`helfer_id` = h.`id`);
 
 INSERT INTO `schicht_zuteilung` (`schicht_id`, `helfer_id`)
 SELECT s.`id`, h.`id` FROM `schichten` s JOIN `helfer` h
  WHERE s.`tag` = '2026-09-20' AND s.`von` = '14:00:00' AND s.`titel` LIKE '%Getränkeverkauf%'
-   AND h.`vorname` = 'Jenny' AND h.`nachname` = 'Fischer'
+   AND h.`id` = 9
    AND NOT EXISTS (SELECT 1 FROM (SELECT `schicht_id`, `helfer_id` FROM `schicht_zuteilung`) z
                     WHERE z.`schicht_id` = s.`id` AND z.`helfer_id` = h.`id`);
 
 INSERT INTO `schicht_zuteilung` (`schicht_id`, `helfer_id`)
 SELECT s.`id`, h.`id` FROM `schichten` s JOIN `helfer` h
  WHERE s.`tag` = '2026-09-20' AND s.`von` = '08:00:00' AND s.`titel` LIKE '%Startnummernausgabe%'
-   AND h.`vorname` = 'Christine' AND h.`nachname` = 'Bullinger'
+   AND h.`id` = 11
    AND NOT EXISTS (SELECT 1 FROM (SELECT `schicht_id`, `helfer_id` FROM `schicht_zuteilung`) z
                     WHERE z.`schicht_id` = s.`id` AND z.`helfer_id` = h.`id`);
 
 INSERT INTO `schicht_zuteilung` (`schicht_id`, `helfer_id`)
 SELECT s.`id`, h.`id` FROM `schichten` s JOIN `helfer` h
  WHERE s.`tag` = '2026-09-20' AND s.`von` = '08:00:00' AND s.`titel` LIKE '%Startnummernausgabe%'
-   AND h.`vorname` = 'Jenny' AND h.`nachname` = 'Fischer'
+   AND h.`id` = 9
    AND NOT EXISTS (SELECT 1 FROM (SELECT `schicht_id`, `helfer_id` FROM `schicht_zuteilung`) z
                     WHERE z.`schicht_id` = s.`id` AND z.`helfer_id` = h.`id`);
 
--- Ohlberger Markus: der Datensatz traegt einen abgeschnittenen Namen ("Marku Ohlb", id 10).
--- Hier nur die Zuteilung; den Namen selbst ruehrt diese Migration nicht an.
+-- Helfer #10: der Datensatz traegt einen abgeschnittenen Namen. Hier nur die
+-- Zuteilung; den Namen selbst ruehrt diese Migration nicht an.
 INSERT INTO `schicht_zuteilung` (`schicht_id`, `helfer_id`)
 SELECT s.`id`, 10 FROM `schichten` s
  WHERE s.`tag` = '2026-09-20' AND s.`von` = '08:00:00' AND s.`titel` LIKE '%Startnummernausgabe%'

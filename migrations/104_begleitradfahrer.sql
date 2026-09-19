@@ -4,8 +4,8 @@
 --
 -- Bisher gab es nur die Anmeldekategorie "Begleitradfahrer Laufstrecke"
 -- (Bedarf 2, 09:00-12:30) — eine Zeile fuer zwei voellig verschiedene Aufgaben.
--- Die Helferliste vom 19.09. trennt sie: "Radfahrer Lauf vorne" (Mueller Simon,
--- Weber Werner) und "Radfahrer Lauf hinten" (Sowa Joshua, Sowa Luca).
+-- Die Helferliste vom 19.09. trennt sie: "Radfahrer Lauf vorne" (Helfer #29,
+-- Helfer #7) und "Radfahrer Lauf hinten" (Helfer #16, Helfer #17).
 -- Die Anmeldekategorie bleibt unangetastet (sie steht gesperrt im Formular);
 -- hier kommen zwei interne Eintraege dazu, wie bei den Streckenposten.
 --
@@ -27,6 +27,11 @@
 -- Einziger. Das Blatt 'Offene Punkte' der Excel fuehrt genau das als offen:
 -- "Vor- und Nachlaeufer ... niemand benannt - und der Nachlaeufer meldet den
 -- Freigabe-Schluesselpunkt." Mit dieser Migration ist es benannt.
+
+-- HINWEIS: Diese Migration nannte urspruenglich Klarnamen. Das Repo ist
+-- oeffentlich; die Zuordnung laeuft deshalb ueber Helfer-IDs. Der Datenstand
+-- aendert sich dadurch nicht - die Migration ist laengst angewandt, und die
+-- IDs treffen dieselben Datensaetze.
 
 SET NAMES utf8mb4;
 
@@ -52,27 +57,27 @@ SELECT 'Begleitradfahrer hinten (R2)', 'R2',
 INSERT INTO `schicht_zuteilung` (`schicht_id`, `helfer_id`)
 SELECT s.`id`, h.`id` FROM `schichten` s JOIN `helfer` h
  WHERE s.`tag` = '2026-09-20' AND s.`kennung` = 'R1'
-   AND h.`vorname` = 'Simon' AND h.`nachname` = 'Müller'
+   AND h.`id` = 29
    AND NOT EXISTS (SELECT 1 FROM (SELECT `schicht_id`, `helfer_id` FROM `schicht_zuteilung`) z
                     WHERE z.`schicht_id` = s.`id` AND z.`helfer_id` = h.`id`);
 
 INSERT INTO `schicht_zuteilung` (`schicht_id`, `helfer_id`)
 SELECT s.`id`, h.`id` FROM `schichten` s JOIN `helfer` h
  WHERE s.`tag` = '2026-09-20' AND s.`kennung` = 'R1'
-   AND h.`vorname` = 'Werner' AND h.`nachname` = 'Weber'
+   AND h.`id` = 7
    AND NOT EXISTS (SELECT 1 FROM (SELECT `schicht_id`, `helfer_id` FROM `schicht_zuteilung`) z
                     WHERE z.`schicht_id` = s.`id` AND z.`helfer_id` = h.`id`);
 
 INSERT INTO `schicht_zuteilung` (`schicht_id`, `helfer_id`)
 SELECT s.`id`, h.`id` FROM `schichten` s JOIN `helfer` h
  WHERE s.`tag` = '2026-09-20' AND s.`kennung` = 'R2'
-   AND h.`vorname` = 'Joshua' AND h.`nachname` = 'Sowa'
+   AND h.`id` = 16
    AND NOT EXISTS (SELECT 1 FROM (SELECT `schicht_id`, `helfer_id` FROM `schicht_zuteilung`) z
                     WHERE z.`schicht_id` = s.`id` AND z.`helfer_id` = h.`id`);
 
 INSERT INTO `schicht_zuteilung` (`schicht_id`, `helfer_id`)
 SELECT s.`id`, h.`id` FROM `schichten` s JOIN `helfer` h
  WHERE s.`tag` = '2026-09-20' AND s.`kennung` = 'R2'
-   AND h.`vorname` = 'Luca' AND h.`nachname` = 'Sowa'
+   AND h.`id` = 17
    AND NOT EXISTS (SELECT 1 FROM (SELECT `schicht_id`, `helfer_id` FROM `schicht_zuteilung`) z
                     WHERE z.`schicht_id` = s.`id` AND z.`helfer_id` = h.`id`);
