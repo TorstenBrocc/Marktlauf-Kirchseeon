@@ -141,7 +141,7 @@ class EinsatzplanPdf extends FPDF
         $meta    = (string) ($opt['meta'] ?? '');
         $besch   = (string) ($opt['beschreibung'] ?? '');
         $bedarf  = (int) ($opt['bedarf'] ?? 0);
-        $posten  = $opt['posten'] ?? null;
+        $marke   = (string) ($opt['marke'] ?? '');
         $fenster = (string) ($opt['fenster'] ?? '');
         $karte   = (string) ($opt['karte'] ?? '');
         $koord   = (string) ($opt['koord'] ?? '');
@@ -151,8 +151,8 @@ class EinsatzplanPdf extends FPDF
         // Postennummer als Marke vor dem Titel — am Renntag spricht die Orga
         // ueber "Posten 7", nicht ueber den Namen des Standorts.
         $x = $this->L;
-        if ($posten !== null && $posten !== '') {
-            $label = 'POSTEN ' . (int) $posten;
+        if ($marke !== '') {
+            $label = mb_strtoupper($marke);
             $this->SetFont('montbd', '', 8);
             $breite = $this->GetStringWidth($this->t($label)) + 4;
             $this->SetFillColor(...$this->green2);
@@ -285,7 +285,9 @@ function einsatzplanHatPostenfelder(PDO $pdo): bool
     static $da = null;
     if ($da === null) {
         try {
-            $da = $pdo->query("SHOW COLUMNS FROM schichten LIKE 'postennummer'")->fetch() !== false;
+            // `kennung` kam mit 102, `postennummer` mit 097 — beide zusammen abfragen,
+            // sonst waehlt die Abfrage eine Spalte, die es auf diesem Stand nicht gibt.
+            $da = $pdo->query("SHOW COLUMNS FROM schichten LIKE 'kennung'")->fetch() !== false;
         } catch (PDOException $e) {
             $da = false;
         }
@@ -295,7 +297,7 @@ function einsatzplanHatPostenfelder(PDO $pdo): bool
 
 function einsatzplanDatenGesamt(PDO $pdo): array
 {
-    $extra = einsatzplanHatPostenfelder($pdo) ? ', postennummer, lat, lon' : '';
+    $extra = einsatzplanHatPostenfelder($pdo) ? ', postennummer, kennung, lat, lon' : '';
     $schichten = $pdo->query('
         SELECT id, titel, beschreibung, ort, tag, von, bis, zeitfenster, bedarf' . $extra . '
         FROM schichten
@@ -326,7 +328,7 @@ function einsatzplanDatenGesamt(PDO $pdo): array
 /** Datenlader: die Einsätze eines Helfers in Board-Reihenfolge. */
 function einsatzplanDatenHelfer(PDO $pdo, int $helferId): array
 {
-    $extra = einsatzplanHatPostenfelder($pdo) ? ', sc.postennummer, sc.lat, sc.lon' : '';
+    $extra = einsatzplanHatPostenfelder($pdo) ? ', sc.postennummer, sc.kennung, sc.lat, sc.lon' : '';
     $stmt = $pdo->prepare('
         SELECT sc.id, sc.titel, sc.beschreibung, sc.ort, sc.tag, sc.von, sc.bis, sc.zeitfenster' . $extra . '
         FROM schicht_zuteilung sz
@@ -365,6 +367,15 @@ function einsatzplanKartenLink(array $s): string
     }
     return 'https://www.google.com/maps/search/?api=1&query='
         . rawurlencode($s['lat'] . ',' . $s['lon']);
+}
+
+/** Kennung fürs Etikett: "V2" bei den Stationen, sonst "Posten 7". */
+function einsatzplanMarke(array $s): string
+{
+    if (!empty($s['kennung'])) {
+        return (string) $s['kennung'];
+    }
+    return !empty($s['postennummer']) ? 'Posten ' . (int) $s['postennummer'] : '';
 }
 
 /**
@@ -419,7 +430,7 @@ function einsatzplanPdfGesamt(PDO $pdo): string
                 'meta'         => einsatzplanMetaZeile($s),
                 'beschreibung' => (string) ($s['beschreibung'] ?? ''),
                 'bedarf'       => (int) $s['bedarf'],
-                'posten'       => $s['postennummer'] ?? null,
+                'marke'        => einsatzplanMarke($s),
                 'karte'        => einsatzplanKartenLink($s),
                 'koord'        => !empty($s['lat']) ? $s['lat'] . ', ' . $s['lon'] : '',
             ], $s['namen']);
@@ -464,7 +475,7 @@ function einsatzplanPdfHelfer(PDO $pdo, array $helfer, string $orgaEmail = '', s
                 'titel'        => einsatzplanKurzTitel($s),
                 'meta'         => einsatzplanMetaZeile($s),
                 'beschreibung' => (string) ($s['beschreibung'] ?? ''),
-                'posten'       => $s['postennummer'] ?? null,
+                'marke'        => einsatzplanMarke($s),
                 'fenster'      => einsatzplanFenster($s),
                 'karte'        => einsatzplanKartenLink($s),
                 'koord'        => !empty($s['lat']) ? $s['lat'] . ', ' . $s['lon'] : '',

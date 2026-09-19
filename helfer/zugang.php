@@ -112,8 +112,10 @@ if (!$error) {
         // postennummer/lat/lon gibt es erst ab Migration 097 — fehlt sie noch,
         // faellt die Abfrage auf die Grundfelder zurueck, statt die Seite des
         // Helfers mit einem SQL-Fehler abzuwerfen.
-        $hatPosten = $pdo->query("SHOW COLUMNS FROM schichten LIKE 'postennummer'")->fetch() !== false;
+        $hatPosten  = $pdo->query("SHOW COLUMNS FROM schichten LIKE 'postennummer'")->fetch() !== false;
+        $hatKennung = $pdo->query("SHOW COLUMNS FROM schichten LIKE 'kennung'")->fetch() !== false;
         $postenFelder = $hatPosten ? ', sc.postennummer, sc.lat, sc.lon' : '';
+        $postenFelder .= $hatKennung ? ', sc.kennung' : '';
         $einsatzStmt = $pdo->prepare('
             SELECT sc.titel, sc.beschreibung, sc.ort, sc.tag, sc.von, sc.bis, sc.zeitfenster' . $postenFelder . '
             FROM schicht_zuteilung sz
@@ -690,12 +692,15 @@ $basePath = '../';
                         $zeit    = formatEinsatzZeit($e);
                         $fenster = formatEinsatzFenster($e);
                         $karte   = einsatzKartenLink($e);
-                        $posten  = $e['postennummer'] ?? null;
+                        // Streckenposten tragen Nummern, die Stationen Buchstaben (V1/V2).
+                        $marke = !empty($e['kennung'])
+                            ? $e['kennung']
+                            : (!empty($e['postennummer']) ? 'Posten ' . (int) $e['postennummer'] : '');
                         ?>
                         <li class="einsatz-item">
                             <div class="einsatz-kopf">
-                                <?php if ($posten): ?>
-                                    <span class="posten-badge" title="Deine Postennummer">Posten <?= (int) $posten ?></span>
+                                <?php if ($marke !== ''): ?>
+                                    <span class="posten-badge" title="Deine Kennung am Renntag"><?= htmlspecialchars($marke) ?></span>
                                 <?php endif; ?>
                                 <span class="einsatz-titel"><?= htmlspecialchars($e['titel']) ?></span>
                             </div>
