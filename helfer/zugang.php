@@ -172,8 +172,9 @@ function formatEinsatzZeit(array $s): string {
  * Der Helfer liest "ab 11:00 Uhr … bis 12:30 Uhr" schneller als "11:00–12:30".
  */
 function formatEinsatzFenster(array $s): string {
+    // Ohne feste Uhrzeit steht das Zeitfenster schon in der Meta-Zeile darüber.
     if (empty($s['von'])) {
-        return !empty($s['zeitfenster']) ? (string) $s['zeitfenster'] : '';
+        return '';
     }
     $text = 'ab ' . substr((string) $s['von'], 0, 5) . ' Uhr vor Ort';
     if (!empty($s['bis'])) {

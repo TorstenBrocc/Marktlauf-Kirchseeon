@@ -345,8 +345,10 @@ function einsatzplanDatenHelfer(PDO $pdo, int $helferId): array
  */
 function einsatzplanFenster(array $s): string
 {
+    // Ohne feste Uhrzeit steht das Zeitfenster schon in der Meta-Zeile — dann
+    // hier nichts, sonst liest der Helfer zweimal "während des Laufs".
     if (empty($s['von'])) {
-        return (string) ($s['zeitfenster'] ?? '');
+        return '';
     }
     $t = 'ab ' . substr((string) $s['von'], 0, 5) . ' Uhr vor Ort';
     if (!empty($s['bis'])) {
