@@ -54,9 +54,21 @@ if ($postId > 0) {
 // Renntag-Vorlage: Vorbefuellung aus RaceResult (Fallback Mock, wie Orchestrator)
 $rr = raceResultData($pdo);
 $rennen10 = null;
-foreach ($rr['rennen'] ?? [] as $r) {
-    if (isset($r['kategorie']) && str_contains((string) $r['kategorie'], '10')) { $rennen10 = $r; break; }
+$rennen10Idx = 0;
+foreach ($rr['rennen'] ?? [] as $i => $r) {
+    if (isset($r['kategorie']) && str_contains((string) $r['kategorie'], '10')) { $rennen10 = $r; $rennen10Idx = (int) $i; break; }
 }
+// Alle Laeufe fuer die Lauf-Auswahl der Renntag-Vorlage: je Lauf Sieger/Siegerin
+// mit Name und Zeit. Quelle ist dasselbe raceResultData(), das auch $rennen10 speist.
+$rennenAuswahl = [];
+foreach ($rr['rennen'] ?? [] as $r) {
+    $rennenAuswahl[] = [
+        'kategorie' => (string) ($r['kategorie'] ?? ''),
+        'sieger'    => ['name' => (string) ($r['sieger']['name'] ?? ''),   'zeit' => (string) ($r['sieger']['zeit'] ?? '')],
+        'siegerin'  => ['name' => (string) ($r['siegerin']['name'] ?? ''), 'zeit' => (string) ($r['siegerin']['zeit'] ?? '')],
+    ];
+}
+$rennenLabel = (string) ($rennen10['kategorie'] ?? '10 km');
 // Vorlagen-Vorwahl je Thema: Renntag -> Ergebnis-Card, Anmeldung -> Anmeldungs-Poster,
 // alles andere -> universelle Themen-Vorlage
 $vorlageDefault = $postKontext ? socialLayoutKey($postKontext['anlass_key']) : 'anmeldung';
@@ -562,6 +574,15 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                         <input type="text" id="vt-rt-headline" maxlength="40" value="Danke &amp; Glückwunsch!">
                     </div>
                     <h3>Ergebnisse (aus RaceResult vorbefuellt)</h3>
+                    <div class="vt-field">
+                        <label for="vt-rt-lauf">Lauf</label>
+                        <select id="vt-rt-lauf">
+                            <?php foreach ($rennenAuswahl as $i => $ra): ?>
+                            <option value="<?= (int) $i ?>"<?= $i === $rennen10Idx ? ' selected' : '' ?>><?= htmlspecialchars($ra['kategorie']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <span class="vt-hint">Umschalten f&uuml;llt Sieger, Siegerin und beide Zeiten neu &mdash; danach frei &uuml;berschreibbar.</span>
+                    </div>
                     <div class="vt-field vt-two">
                         <input type="text" id="vt-rt-s10" maxlength="40" value="<?= htmlspecialchars($rennen10['sieger']['name'] ?? '') ?>" aria-label="Sieger 10 km">
                         <input type="text" id="vt-rt-s10z" maxlength="20" value="<?= htmlspecialchars($rennen10['sieger']['zeit'] ?? '') ?>" aria-label="Zeit Sieger">
@@ -733,12 +754,12 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
                     <div class="sc-metrics vt-drag" data-drag="metrics">
                         <div class="sc-metric-row">
                             <div class="sc-metric">
-                                <span class="sc-metric-label">Sieger 10 km</span>
+                                <span class="sc-metric-label" id="rt-s10-lbl">Sieger <?= htmlspecialchars($rennenLabel) ?></span>
                                 <span class="sc-metric-value" id="rt-s10">–</span>
                                 <span class="sc-metric-sub" id="rt-s10z"></span>
                             </div>
                             <div class="sc-metric">
-                                <span class="sc-metric-label">Siegerin 10 km</span>
+                                <span class="sc-metric-label" id="rt-si10-lbl">Siegerin <?= htmlspecialchars($rennenLabel) ?></span>
                                 <span class="sc-metric-value" id="rt-si10">–</span>
                                 <span class="sc-metric-sub" id="rt-si10z"></span>
                             </div>
@@ -788,6 +809,7 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
         const fahrplanId  = <?= (int) $fahrplanId ?>;
         const embed       = <?= $embed ? 'true' : 'false' ?>;
         const repoAssets  = <?= json_encode($repoAssets, JSON_UNESCAPED_UNICODE) ?>;
+        const rennenAuswahl = <?= json_encode($rennenAuswahl, JSON_UNESCAPED_UNICODE) ?>;
         const sponsorLogos = <?= json_encode($sponsorLogos, JSON_UNESCAPED_UNICODE) ?>;
         const DEFAULT_LOGO   = '<?= htmlspecialchars($logoAtsv) ?>';
         const MARKTLAUF_LOGO = '<?= htmlspecialchars($logoWortmarke) ?>';
@@ -839,6 +861,40 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
         $('vt-photo-block').style.display = $('bg-photo').checked ? 'block' : 'none';
 
         // --- Foto-Picker aus der Datei-Ablage (same-origin -> snapDOM-tauglich) ---
+        // Lauf-Auswahl der Renntag-Vorlage: schaltet Sieger/Siegerin auf den gewaehlten
+        // Lauf um und zieht die Beschriftungen der Vorschau-Karte mit. Nur auf echtes
+        // Umschalten durch den Benutzer -- beim Wiederherstellen eines Entwurfs wird der
+        // Wert ohne change-Ereignis gesetzt, damit Handkorrekturen nicht ueberschrieben werden.
+        const laufSel = $('vt-rt-lauf');
+        // Beschriftungen der Vorschau-Karte an den gewaehlten Lauf angleichen.
+        // Wird auch nach dem Wiederherstellen eines Entwurfs gebraucht: dort wird der
+        // Auswahlwert ohne change-Ereignis gesetzt, sonst stuende "Sieger 10 km" ueber
+        // den Werten eines anderen Laufs.
+        function laufBeschriftung() {
+            if (!laufSel) { return null; }
+            const r = rennenAuswahl[parseInt(laufSel.value, 10)];
+            if (!r) { return null; }
+            const ls = $('rt-s10-lbl'), li = $('rt-si10-lbl');
+            if (ls) { ls.textContent = 'Sieger ' + r.kategorie; }
+            if (li) { li.textContent = 'Siegerin ' + r.kategorie; }
+            const fs = $('vt-rt-s10'), fi = $('vt-rt-si10');
+            if (fs) { fs.setAttribute('aria-label', 'Sieger ' + r.kategorie); }
+            if (fi) { fi.setAttribute('aria-label', 'Siegerin ' + r.kategorie); }
+            return r;
+        }
+        if (laufSel) {
+            laufSel.addEventListener('change', () => {
+                const r = laufBeschriftung();
+                if (!r) { return; }
+                $('vt-rt-s10').value   = r.sieger.name;
+                $('vt-rt-s10z').value  = r.sieger.zeit;
+                $('vt-rt-si10').value  = r.siegerin.name;
+                $('vt-rt-si10z').value = r.siegerin.zeit;
+                freiLiveRefresh();
+                vtSpeichereDebounced();
+            });
+        }
+
         const picker = $('vt-photo-picker');
         $('vt-pick-photo').addEventListener('click', async () => {
             if (picker.style.display === 'flex') { picker.style.display = 'none'; return; }
@@ -941,6 +997,8 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
             location.reload();
         });
         vtStelleWieder();
+        // Entwurf setzt den Auswahlwert ohne change-Ereignis -> Beschriftungen nachziehen.
+        laufBeschriftung();
 
         // --- Slots aus den Eingaben in die Karte schreiben ---
         function fillCard() {
