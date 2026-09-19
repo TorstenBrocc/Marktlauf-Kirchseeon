@@ -419,6 +419,58 @@ $basePath = '../';
             color: var(--gray-600);
             font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
         }
+        /* Streckenplan: Vorschau in der Seite */
+        .plan-vorschau { margin: var(--space-md) 0 0; }
+        .plan-knopf {
+            display: block; width: 100%; padding: 0; border: 1px solid var(--gray-200);
+            border-radius: var(--radius-md); overflow: hidden; background: var(--gray-100);
+            cursor: zoom-in; position: relative;
+        }
+        .plan-knopf img { display: block; width: 100%; height: auto; }
+        .plan-lupe {
+            position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%);
+            background: rgba(0,0,0,0.72); color: #fff; border-radius: 999px;
+            padding: 5px 12px; font-size: 0.75rem; white-space: nowrap;
+        }
+        .plan-vorschau figcaption {
+            margin-top: var(--space-xs); font-size: 0.75rem; color: var(--gray-600);
+        }
+
+        /* Streckenplan: Vollbild */
+        .plan-buehne {
+            position: fixed; inset: 0; z-index: 1000; background: #0d120e;
+            display: flex; flex-direction: column;
+            padding-top: env(safe-area-inset-top, 0px);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+        .plan-buehne[hidden] { display: none; }
+        .plan-leiste {
+            display: flex; align-items: center; gap: 8px; padding: 10px 12px;
+            background: rgba(255,255,255,0.06); color: #fff; flex: 0 0 auto;
+        }
+        .plan-titel { font-weight: 600; font-size: 0.9rem; margin-right: auto; }
+        .plan-aktion {
+            min-width: 40px; height: 36px; border-radius: 8px; cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.25); background: rgba(255,255,255,0.1);
+            color: #fff; font-size: 1rem; line-height: 1;
+        }
+        .plan-aktion:hover { background: rgba(255,255,255,0.2); }
+        .plan-schliessen { border-color: rgba(255,255,255,0.45); }
+        .plan-flaeche {
+            flex: 1 1 auto; overflow: hidden; display: flex;
+            align-items: center; justify-content: center;
+            touch-action: none; cursor: grab;
+        }
+        .plan-flaeche:active { cursor: grabbing; }
+        .plan-flaeche img {
+            max-width: 100%; max-height: 100%; transform-origin: center center;
+            will-change: transform; user-select: none; -webkit-user-drag: none;
+        }
+        .plan-hinweis {
+            margin: 0; padding: 8px 12px; text-align: center;
+            font-size: 0.72rem; color: rgba(255,255,255,0.65); flex: 0 0 auto;
+        }
+
         .einsatz-pdf {
             display: flex;
             align-items: center;
@@ -673,6 +725,17 @@ $basePath = '../';
                     <span class="einsatz-pdf-hinweis">zum Ausdrucken oder Speichern aufs Handy</span>
                 </p>
                 <?php endif; ?>
+
+                <!-- Streckenplan: klein in der Seite, auf Tipp groß und zoombar. -->
+                <figure class="plan-vorschau">
+                    <button type="button" class="plan-knopf" id="plan-oeffnen" aria-label="Streckenplan vergrößern">
+                        <img src="<?= $basePath ?>assets/images/strecke/streckenplan-luftbild-klein.jpg"
+                             width="452" height="640" loading="lazy"
+                             alt="Streckenplan Marktlauf Kirchseeon 2026 mit Strecken und Streckenposten">
+                        <span class="plan-lupe">🔍 Antippen zum Vergrößern</span>
+                    </button>
+                    <figcaption>Streckenplan mit allen Posten · im großen Bild mit zwei Fingern zoomen</figcaption>
+                </figure>
             </section>
 
             <section class="zugang-section">
@@ -722,5 +785,141 @@ $basePath = '../';
     </main>
 
     <?php require_once __DIR__ . '/../src/layout/footer.php'; ?>
+
+<?php if (!$error): ?>
+<!-- Vollbild-Streckenplan. Liegt außerhalb von <main>, damit ihn nichts überlagert. -->
+<div class="plan-buehne" id="plan-buehne" hidden>
+    <div class="plan-leiste">
+        <span class="plan-titel">Streckenplan</span>
+        <button type="button" class="plan-aktion" data-zoom="-1" aria-label="Verkleinern">−</button>
+        <button type="button" class="plan-aktion" data-zoom="1" aria-label="Vergrößern">+</button>
+        <button type="button" class="plan-aktion" id="plan-reset" aria-label="Ansicht zurücksetzen">↺</button>
+        <button type="button" class="plan-aktion plan-schliessen" id="plan-schliessen" aria-label="Schließen">✕</button>
+    </div>
+    <div class="plan-flaeche" id="plan-flaeche">
+        <img id="plan-bild" src="<?= $basePath ?>assets/images/strecke/streckenplan-luftbild.jpg"
+             alt="Streckenplan Marktlauf Kirchseeon 2026 – Strecken, Streckenposten, Vollsperrung">
+    </div>
+    <p class="plan-hinweis">Mit zwei Fingern zoomen · ziehen zum Verschieben · Doppeltipp für schnellen Zoom</p>
+</div>
+
+<script>
+(function () {
+    'use strict';
+    var oeffnen = document.getElementById('plan-oeffnen');
+    var buehne  = document.getElementById('plan-buehne');
+    if (!oeffnen || !buehne) { return; }
+
+    var flaeche = document.getElementById('plan-flaeche');
+    var bild    = document.getElementById('plan-bild');
+    var skala = 1, vx = 0, vy = 0;          // Zoomfaktor und Verschiebung
+    var MIN = 1, MAX = 8;
+
+    function zeichne() {
+        bild.style.transform = 'translate(' + vx + 'px,' + vy + 'px) scale(' + skala + ')';
+    }
+    function grenzen() {
+        // Nicht weiter schieben, als Bild über den Rand hinausragt.
+        var r = flaeche.getBoundingClientRect();
+        var bw = bild.offsetWidth * skala, bh = bild.offsetHeight * skala;
+        var maxX = Math.max(0, (bw - r.width) / 2), maxY = Math.max(0, (bh - r.height) / 2);
+        vx = Math.min(maxX, Math.max(-maxX, vx));
+        vy = Math.min(maxY, Math.max(-maxY, vy));
+    }
+    function setzeSkala(neu, mx, my) {
+        neu = Math.min(MAX, Math.max(MIN, neu));
+        var f = neu / skala;
+        // Zum Finger-/Mausmittelpunkt hin zoomen, nicht zur Bildmitte.
+        if (mx !== undefined) {
+            var r = flaeche.getBoundingClientRect();
+            var zx = mx - r.left - r.width / 2, zy = my - r.top - r.height / 2;
+            vx = zx - (zx - vx) * f;
+            vy = zy - (zy - vy) * f;
+        }
+        skala = neu; grenzen(); zeichne();
+    }
+    function zurueck() { skala = 1; vx = vy = 0; zeichne(); }
+
+    function auf() {
+        buehne.hidden = false;
+        document.body.style.overflow = 'hidden';
+        zurueck();
+        document.getElementById('plan-schliessen').focus();
+    }
+    function zu() {
+        buehne.hidden = true;
+        document.body.style.overflow = '';
+        oeffnen.focus();
+    }
+
+    oeffnen.addEventListener('click', auf);
+    document.getElementById('plan-schliessen').addEventListener('click', zu);
+    document.getElementById('plan-reset').addEventListener('click', zurueck);
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && !buehne.hidden) { zu(); }
+    });
+    buehne.querySelectorAll('[data-zoom]').forEach(function (b) {
+        b.addEventListener('click', function () {
+            setzeSkala(skala * (b.dataset.zoom === '1' ? 1.5 : 1 / 1.5));
+        });
+    });
+
+    // --- Finger und Maus -------------------------------------------------
+    var zeiger = new Map(), startAbstand = 0, startSkala = 1, letzte = null;
+
+    flaeche.addEventListener('pointerdown', function (e) {
+        flaeche.setPointerCapture(e.pointerId);
+        zeiger.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (zeiger.size === 2) {
+            var p = [...zeiger.values()];
+            startAbstand = Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y);
+            startSkala = skala;
+        } else {
+            letzte = { x: e.clientX, y: e.clientY };
+        }
+    });
+
+    flaeche.addEventListener('pointermove', function (e) {
+        if (!zeiger.has(e.pointerId)) { return; }
+        zeiger.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        e.preventDefault();
+
+        if (zeiger.size === 2) {                     // zwei Finger: zoomen
+            var p = [...zeiger.values()];
+            var abstand = Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y);
+            if (startAbstand > 0) {
+                setzeSkala(startSkala * (abstand / startAbstand),
+                           (p[0].x + p[1].x) / 2, (p[0].y + p[1].y) / 2);
+            }
+        } else if (letzte) {                          // ein Finger: schieben
+            vx += e.clientX - letzte.x;
+            vy += e.clientY - letzte.y;
+            letzte = { x: e.clientX, y: e.clientY };
+            grenzen(); zeichne();
+        }
+    }, { passive: false });
+
+    function los(e) {
+        zeiger.delete(e.pointerId);
+        if (zeiger.size < 2) { startAbstand = 0; }
+        if (zeiger.size === 0) { letzte = null; }
+        else { var p = [...zeiger.values()][0]; letzte = { x: p.x, y: p.y }; }
+    }
+    flaeche.addEventListener('pointerup', los);
+    flaeche.addEventListener('pointercancel', los);
+
+    // Doppeltipp / Doppelklick: zwischen Übersicht und 3x wechseln
+    flaeche.addEventListener('dblclick', function (e) {
+        setzeSkala(skala > 1.2 ? 1 : 3, e.clientX, e.clientY);
+    });
+
+    // Mausrad am Rechner
+    flaeche.addEventListener('wheel', function (e) {
+        e.preventDefault();
+        setzeSkala(skala * (e.deltaY < 0 ? 1.15 : 1 / 1.15), e.clientX, e.clientY);
+    }, { passive: false });
+})();
+</script>
+<?php endif; ?>
 </body>
 </html>
