@@ -12,14 +12,22 @@ Basis ist derselbe Marken-Rahmen wie `../03_html_master_template.md` (Design-Sys
 
 | Datei | RR14-Vorlage | Feld |
 |---|---|---|
+| `einzel-anmeldung.html` | „Einzel-Anmeldung" (Typ *EMail (Einzel): Eine E-Mail pro Teilnehmer*) | Text |
 | `letzte-infos.html` | „letzte Infos" (Typ *EMail (Einzel)*) | Text |
 | `sammel-anmeldung-1-kopf.html` | „Sammel-Anmeldung" (Typ *Email (Sammel): Eine Email pro Sammelanmeldung*) | Email-Kopf |
 | `sammel-anmeldung-2-text.html` | dieselbe | Text (**wird je Teilnehmer wiederholt**) |
 | `sammel-anmeldung-3-fuss.html` | dieselbe | Email-Fuß |
 
-**Nicht enthalten:** die Vorlage „Einzel-Anmeldung". Sie wurde 2026 nur an einzelnen Stellen
-bearbeitet (Jahrgang → Alter, Startzeiten-Zeile, Wortlaut) und existiert als Ganzes nur in RR14.
-Vor dem nächsten Einsatz dort über den „Source"-Knopf herausholen und hier ablegen.
+Damit sind alle drei produktiven Vorlagen gesichert.
+
+**An „Einzel-Anmeldung" hängen sechs von sieben Anmeldeformularen** — das reguläre
+Einzelformular und alle fünf Nachmeldungen des Renntags (geprüft 2026 über
+*Anmelde-Formulare → [Formular] → Aktionen nach Speichern → EMAIL SENDEN*). Wer sie ändert,
+ändert die Bestätigung für fast alle Anmeldungen. „Sammel-Anmeldung" hängt am Sammelformular.
+
+`einzel-anmeldung.html` ist ein **1:1-Abzug aus RR14** vom 19.09.2026 (7165 Bytes,
+SHA-256 gegen den Stand in der Vorlage geprüft), die drei anderen Dateien sind die
+Quelltexte, aus denen die Vorlagen gebaut wurden.
 
 ## Einsetzen
 
