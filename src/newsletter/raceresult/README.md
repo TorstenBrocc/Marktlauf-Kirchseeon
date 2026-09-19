@@ -29,7 +29,10 @@ Vor dem nächsten Einsatz dort über den „Source"-Knopf herausholen und hier a
 4. Kontrolle im Reiter **Senden**: Startnummer eines echten Teilnehmers eintragen und die
    Vorschau lesen — dort lösen die Platzhalter auf.
 
-## Was RR14 kann und was nicht (2026 am Live-System geprüft)
+## Was RR14 kann und was nicht
+
+Sofern nicht anders vermerkt, **2026 am Live-System gemessen** — in einer Wegwerf-Vorlage
+gegen einen echten Datensatz (Startnummer 1007), abgelesen in der Vorschau des Reiters *Senden*.
 
 - **Nur blanke Platzhalter.** `[Vorname]`, `[Nachname]`, `[Alter]`, `[Startnr]`,
   `[Wettbewerb.Name]`, `[Wettbewerb.Start]`, `[Veranstaltung.Name]` werden ersetzt.
@@ -46,11 +49,16 @@ Vor dem nächsten Einsatz dort über den „Source"-Knopf herausholen und hier a
   im Fuß geschlossen wird, zerreißt — genau das war 2026 der Grund für die kaputte
   Sammel-Bestätigung (Karte endete mitten im Text, Footer hell auf weiß).
   Deshalb: Radius und Rand oben nur im Kopf, links/rechts im Textteil, unten im Fuß.
-- **Bilder nur von der eigenen Domain.** Die RR-Bibliothek liefert 401. Wortmarke, Vereinswappen
-  und QR-Code liegen unter `https://atsv-kirchseeon-marktlauf.de/assets/images/`.
-  SVG rendern viele Mailclients nicht — der QR liegt deshalb zusätzlich als PNG
-  (`assets/images/qr-nachmeldung.png`, Ziel `https://my.raceresult.com/412617/registration`,
-  Fehlerkorrektur Q, modulgleich mit `qr-nachmeldung.svg`).
+- **Bilder von der eigenen Domain.** Wortmarke, Vereinswappen und QR-Code liegen unter
+  `https://atsv-kirchseeon-marktlauf.de/assets/images/`.
+  *Zweite Hand:* Laut `intern/docs/raceresult/setup-protokoll.md` ist die RR-Bibliothek
+  zugriffsgeschützt (401) und für öffentliche Mails ungeeignet — 2026 nicht nachgeprüft.
+  *Unverifiziert:* dass Mailclients SVG nicht rendern. Das war die Annahme, aus der heraus der
+  QR zusätzlich als PNG erzeugt wurde; getestet wurde es nicht. Wer es wissen will, schickt eine
+  Testmail mit `qr-nachmeldung.svg` an Outlook, Gmail und ein Handy.
+  Das PNG (`assets/images/qr-nachmeldung.png`) zeigt auf
+  `https://my.raceresult.com/412617/registration`, Fehlerkorrektur Q, und ist **modulgleich mit
+  `qr-nachmeldung.svg`** — geprüft: 553 dunkle Module in beiden, keine Abweichung.
 - **Absender prüfen.** Neue Vorlagen kommen mit leeren Absenderfeldern; „letzte Infos" stand bis
   2026 auf `noreply@raceresult.com`. Richtig ist Name **Marktlauf ORGA Team**, Absender und
   Antworten-An **info@atsv-kirchseeon-marktlauf.de**.
