@@ -598,6 +598,9 @@ $basePath = '../';
             margin: 0.45rem 0;
         }
         .briefing-block { margin-bottom: 1rem; }
+        /* Eigene, volle Zeile zwischen Briefings und Einsatzplan -- die
+           Renntags-Nummern sollen nicht neben dem Posten untergehen. */
+        .kontakt-block { margin-bottom: 1rem; }
         .briefing-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--space-sm); }
         .briefing-item { padding: var(--space-md); background: var(--gray-50); border-left: 3px solid var(--gray-300); border-radius: var(--radius-md); }
         .briefing-item.p-wichtig { border-left-color: var(--color-primary); background: #eef7f0; }
@@ -668,9 +671,8 @@ $basePath = '../';
             </section>
             <?php endif; ?>
 
-            <div class="zugang-grid">
             <?php if ($renntagKontakte !== []): ?>
-            <section class="zugang-section">
+            <section class="zugang-section kontakt-block">
                 <h2>Kontakt am Renntag</h2>
                 <div class="contact-grid">
                     <?php foreach ($renntagKontakte as $i => $k): ?>
@@ -684,6 +686,8 @@ $basePath = '../';
                 </div>
             </section>
             <?php endif; ?>
+
+            <div class="zugang-grid">
 
             <?php if ($zeigeKachelAnmeldung): ?>
             <section class="zugang-section">
