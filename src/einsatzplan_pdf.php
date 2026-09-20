@@ -483,7 +483,13 @@ function einsatzplanPdfHelfer(PDO $pdo, array $helfer, string $orgaEmail = '', s
         }
     }
 
+    // Die benannten Erreichbarkeiten stehen oben -- am Renntag ruft niemand eine
+    // Sammeladresse an, sondern die Person, die zustaendig ist. Gleiche Quelle und
+    // gleiche Reihenfolge wie die Kontakt-Kachel auf helfer/zugang.php.
     $kontakt = [];
+    foreach (renntagKontakte() as $k) {
+        $kontakt[] = $k['rolle'] . ': ' . $k['name'] . ' - ' . $k['tel'] . ' (' . $k['wann'] . ')';
+    }
     if ($orgaEmail !== '') {
         $kontakt[] = 'E-Mail: ' . $orgaEmail;
     }

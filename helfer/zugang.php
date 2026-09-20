@@ -11,6 +11,14 @@ require_once __DIR__ . '/../src/logger.php';
 require_once __DIR__ . '/../src/google_drive.php';
 require_once __DIR__ . '/../src/helfer_aufgaben.php'; // schichtenOrderBy()
 
+/*
+ * Kachel-Schalter Jahrgang 2026 (TT, 20.09.2026).
+ * "Meine Anmeldung" und "Dateien" sind NUR FUER DIESES JAHR aus -- das Konzept
+ * bleibt, der Code bleibt. Fuer 2027 hier auf true stellen, nichts weiter noetig.
+ */
+$zeigeKachelAnmeldung = false;
+$zeigeKachelDateien   = false;
+
 $uuid = trim($_GET['uuid'] ?? '');
 $helfer = null;
 $slots = [];
@@ -53,7 +61,7 @@ if ($uuid === '' || strlen($uuid) > 64) {
 
 // Helfer-Dateien: live aus dem Drive-Helfer-Ordner (Drive = Quelle der Wahrheit).
 $helferDateien = [];
-if (!$error && driveConfigured()) {
+if (!$error && $zeigeKachelDateien && driveConfigured()) {
     try {
         $pdo = getDbConnection();
         $helferRoot = driveRootFolderId($pdo, 'helfer');
@@ -75,7 +83,7 @@ if (!$error && driveConfigured()) {
 // Strang 3: einteilungsspezifische Sichtbarkeit. Eine Drive-Datei mit Schicht-Zuordnung
 // erscheint nur, wenn der Helfer einer der zugeordneten Schichten zugeteilt ist; Dateien
 // ohne Zuordnung (und lokaler Alt-Bestand) bleiben für alle sichtbar.
-if (!$error && $helfer && $helferDateien !== []) {
+if (!$error && $zeigeKachelDateien && $helfer && $helferDateien !== []) {
     try {
         $pdo = getDbConnection();
         $visMap = [];
@@ -224,6 +232,11 @@ try {
 $orgaEmail = $config['orga']['email'] ?? 'info@atsv-kirchseeon-marktlauf.de';
 $orgaPhone = $config['orga']['phone'] ?? '';
 $notfallPhone = $config['orga']['notfall_phone'] ?? '';
+
+// Erreichbarkeiten am Renntag -- eine Quelle fuer Seite und PDF, gepflegt in
+// storage/config.php unter orga.renntag_kontakte. Siehe renntagKontakte() in
+// src/helfer_aufgaben.php. Ohne Config bleibt die Kachel weg.
+$renntagKontakte = renntagKontakte();
 
 $basePath = '../';
 ?>
@@ -557,6 +570,31 @@ $basePath = '../';
         .contact-item a:hover {
             text-decoration: underline;
         }
+        /* Benannte Erreichbarkeiten am Renntag: Rolle, Person, Nummer untereinander.
+           Die Nummer ist der Tap-Target -- gross genug fuer Handschuh und Eile. */
+        .contact-person {
+            flex-direction: column;
+            gap: 0.1rem;
+            align-items: flex-start;
+        }
+        .contact-person .rolle {
+            font-weight: 600;
+            color: var(--gray-800);
+        }
+        .contact-person .name {
+            font-size: 0.78rem;
+            color: var(--gray-600);
+        }
+        .contact-person a.tel {
+            font-size: 1.05rem;
+            font-weight: 600;
+            letter-spacing: 0.01em;
+        }
+        .contact-sep {
+            height: 1px;
+            background: var(--gray-100);
+            margin: 0.45rem 0;
+        }
         .briefing-block { margin-bottom: 1rem; }
         .briefing-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--space-sm); }
         .briefing-item { padding: var(--space-md); background: var(--gray-50); border-left: 3px solid var(--gray-300); border-radius: var(--radius-md); }
@@ -629,6 +667,23 @@ $basePath = '../';
             <?php endif; ?>
 
             <div class="zugang-grid">
+            <?php if ($renntagKontakte !== []): ?>
+            <section class="zugang-section">
+                <h2>Kontakt am Renntag</h2>
+                <div class="contact-grid">
+                    <?php foreach ($renntagKontakte as $i => $k): ?>
+                    <?php if ($i > 0): ?><div class="contact-sep"></div><?php endif; ?>
+                    <div class="contact-item contact-person">
+                        <span class="rolle"><?= htmlspecialchars($k['rolle']) ?></span>
+                        <span class="name"><?= htmlspecialchars($k['name']) ?> · <?= htmlspecialchars($k['wann']) ?></span>
+                        <a class="tel" href="tel:<?= htmlspecialchars(preg_replace('/\s+/', '', $k['tel_e164'])) ?>"><?= htmlspecialchars($k['tel']) ?></a>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </section>
+            <?php endif; ?>
+
+            <?php if ($zeigeKachelAnmeldung): ?>
             <section class="zugang-section">
                 <h2>Meine Anmeldung</h2>
                 <div class="info-grid">
@@ -677,6 +732,7 @@ $basePath = '../';
                 </div>
                 <?php endif; ?>
             </section>
+            <?php endif; ?>
 
             <section class="zugang-section">
                 <h2>Einsatzplan</h2>
@@ -743,6 +799,7 @@ $basePath = '../';
                 </figure>
             </section>
 
+            <?php if ($zeigeKachelDateien): ?>
             <section class="zugang-section">
                 <h2>Dateien</h2>
                 <?php if (empty($helferDateien)): ?>
@@ -762,28 +819,8 @@ $basePath = '../';
                     </ul>
                 <?php endif; ?>
             </section>
+            <?php endif; ?>
 
-            <section class="zugang-section">
-                <h2>Kontakt</h2>
-                <div class="contact-grid">
-                    <div class="contact-item">
-                        <strong>E-Mail:</strong>
-                        <a href="mailto:<?= htmlspecialchars($orgaEmail) ?>"><?= htmlspecialchars($orgaEmail) ?></a>
-                    </div>
-                    <?php if ($orgaPhone): ?>
-                    <div class="contact-item">
-                        <strong>Telefon Orga:</strong>
-                        <a href="tel:<?= htmlspecialchars(preg_replace('/\s+/', '', $orgaPhone)) ?>"><?= htmlspecialchars($orgaPhone) ?></a>
-                    </div>
-                    <?php endif; ?>
-                    <?php if ($notfallPhone): ?>
-                    <div class="contact-item">
-                        <strong>Notfall (nur Veranstaltungstag):</strong>
-                        <a href="tel:<?= htmlspecialchars(preg_replace('/\s+/', '', $notfallPhone)) ?>"><?= htmlspecialchars($notfallPhone) ?></a>
-                    </div>
-                    <?php endif; ?>
-                </div>
-            </section>
             </div>
         </div>
         <?php endif; ?>

@@ -64,6 +64,26 @@ return [
         'email'         => 'info@atsv-kirchseeon-marktlauf.de',
         'phone'         => '',        // z.B. '08091 123456'
         'notfall_phone' => '',        // Nur am Veranstaltungstag
+
+        // Benannte Erreichbarkeiten am Renntag -- in dieser Reihenfolge auf der
+        // Helfer-Zugangsseite (Kachel "Kontakt am Renntag") UND im persoenlichen
+        // Einsatzplan-PDF. Leer lassen = Kachel und PDF-Zeilen entfallen.
+        //
+        // Warum hier und nicht im Code: das Repo ist oeffentlich, private
+        // Handynummern gehoeren nicht in die Git-Historie. Diese Datei ist
+        // per .gitignore ausgeschlossen und wird auf dem Server gepflegt.
+        //
+        // 'tel'      wird angezeigt (Schreibweise frei).
+        // 'tel_e164' ist optional -- fehlt sie, leitet renntagTelE164() sie aus
+        //            'tel' ab (fuehrende 0 -> +49).
+        'renntag_kontakte' => [
+            // [
+            //     'rolle' => 'Helferkoordination',
+            //     'name'  => 'Vorname Nachname',
+            //     'wann'  => 'durchgehend erreichbar',
+            //     'tel'   => '0160 0000000',
+            // ],
+        ],
     ],
 
     // Trello-Board für Orga-Aufgaben (optional)

@@ -166,3 +166,85 @@ function helferAufgabeByKey(string $key): ?array
         'beschreibung' => (string) $r['titel'],
     ];
 }
+
+/**
+ * Erreichbarkeiten am Renntag, in Anzeigereihenfolge.
+ *
+ * EINE Quelle fuer beide Ausgaben: die Kontakt-Kachel auf helfer/zugang.php und
+ * der Kasten "Fragen vor Ort oder vorher?" im persoenlichen Einsatzplan-PDF
+ * (src/einsatzplan_pdf.php). Liefen die auseinander, haette der Helfer auf dem
+ * Handy eine andere Nummer als auf dem Ausdruck in der Jackentasche.
+ *
+ * Die Werte stehen bewusst NICHT im Code, sondern in storage/config.php unter
+ * orga.renntag_kontakte: das Repo ist oeffentlich, private Handynummern gehoeren
+ * nicht in die Git-Historie (CLAUDE.md, "Oeffentliches Repo, Datenhygiene").
+ * Struktur und Beispiel: storage/config.sample.php.
+ *
+ * Ist nichts konfiguriert, kommt eine leere Liste zurueck und beide Ausgaben
+ * lassen den Block weg — lieber keine Nummer als eine falsche.
+ *
+ * @return list<array{rolle:string,name:string,wann:string,tel:string,tel_e164:string}>
+ */
+function renntagKontakte(): array
+{
+    try {
+        $config = getConfig();
+    } catch (Throwable $e) {
+        return [];
+    }
+
+    $roh = $config['orga']['renntag_kontakte'] ?? [];
+    if (!is_array($roh)) {
+        return [];
+    }
+
+    $kontakte = [];
+    foreach ($roh as $k) {
+        if (!is_array($k)) {
+            continue;
+        }
+        $tel = trim((string) ($k['tel'] ?? ''));
+        if ($tel === '') {
+            continue; // ohne Nummer ist der Eintrag wertlos
+        }
+        $kontakte[] = [
+            'rolle'    => trim((string) ($k['rolle'] ?? '')),
+            'name'     => trim((string) ($k['name'] ?? '')),
+            'wann'     => trim((string) ($k['wann'] ?? '')),
+            'tel'      => $tel,
+            'tel_e164' => renntagTelE164($tel, (string) ($k['tel_e164'] ?? '')),
+        ];
+    }
+
+    return $kontakte;
+}
+
+/**
+ * Waehlbare Fassung einer Nummer fuer href="tel:".
+ *
+ * Nimmt, was in der Config steht, wenn dort eine internationale Fassung
+ * hinterlegt ist. Sonst deutsche Ableitung: Leerzeichen und Trennzeichen raus,
+ * fuehrende 0 durch +49 ersetzen. Passt die Nummer in kein bekanntes Muster,
+ * bleibt sie unveraendert — ein Link, der den Waehler oeffnet, ist immer noch
+ * besser als gar keiner.
+ */
+function renntagTelE164(string $tel, string $vorgabe = ''): string
+{
+    $vorgabe = preg_replace('/[^\d+]/', '', $vorgabe) ?? '';
+    if ($vorgabe !== '') {
+        return $vorgabe;
+    }
+
+    $ziffern = preg_replace('/[^\d+]/', '', $tel) ?? '';
+    if (str_starts_with($ziffern, '+')) {
+        return $ziffern;
+    }
+    if (str_starts_with($ziffern, '00')) {
+        return '+' . substr($ziffern, 2);
+    }
+    if (str_starts_with($ziffern, '0')) {
+        return '+49' . substr($ziffern, 1);
+    }
+
+    return $ziffern;
+}
