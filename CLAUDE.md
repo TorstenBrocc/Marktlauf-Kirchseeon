@@ -121,6 +121,23 @@ horizontalen Ueberlauf.
 **Natives HTML5-Drag-and-Drop greift nicht auf Touch/Mobil.** Sortieren (Ansprechpartner,
 Datei-Baum) ist ein Desktop-Vorgang.
 
+**Der Deploy löscht auf dem Server alles, was nicht im Repo ist** (`deploy.yml`:
+`ARGS: "-rlgoDzvc -i --delete"`). Das trifft auch **selbst angelegte Sicherungen**: eine
+`storage/config.php.bak-<zeit>`, am 20.09.2026 vor einem Prod-Config-Schreibzugriff abgelegt,
+war nach dem nächsten Push spurlos weg — die EXCLUDE-Liste schützt `storage/config.php`,
+aber kein `*.bak*`. Die Rückfalllinie war damit ab dem ersten Deploy wertlos, ohne dass es
+auffiel. **Sicherungen vor Prod-Änderungen außerhalb des rsync-Ziels ablegen**, z. B. unter
+`~/.db_backups/` im Home. Zweite Begegnung mit demselben Muster (2026-07-12: manuell
+abgelegtes `src/Parsedown.php` wurde beim Deploy entfernt).
+
+**Streckenplan: die Quelle ist die PDF im Drive, nicht das JPG im Repo.** Die Helferseite
+zeigt `assets/images/strecke/streckenplan-luftbild{,-klein}.jpg`; erzeugt werden beide aus
+`Marktlauf Orga/Helfer/Einsatzplan/Streckenplan_Luftbild_A4.pdf` mit
+`bin/streckenplan_update.sh`. Bis zum 20.09.2026 gab es diese Verbindung nicht — die JPGs
+waren Handkopien, und am Lauftag war die ausgelieferte Karte einen halben Tag älter als der
+Plan. Bilder hängen wegen `Cache-Control: … immutable` (.htaccess) an `?v=<filemtime>`;
+wer die Masse ändert, muss `width`/`height` im Markup mitziehen.
+
 **`data/status.json` ist Runtime-State, kein Deploy-Artefakt.** Der `deploy.yml`-EXCLUDE ist
 richtig: `--delete` würde Renntag-Meldungen löschen. Gleiches Muster wie `sponsoren.json`.
 
