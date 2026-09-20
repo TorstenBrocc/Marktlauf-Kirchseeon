@@ -17,16 +17,35 @@ declare(strict_types=1);
 require_once __DIR__ . '/db.php';
 
 /**
+ * Deutscher Wochentag zu einem ISO-Datum (locale-unabhaengig).
+ *
+ * date('l') liefert auf dem Server Englisch. Die Helferseite hat dadurch
+ * "Sunday, 20.09.2026" gezeigt, waehrend im Einsatzplan-PDF desselben Helfers
+ * "Sonntag" stand -- deshalb holen sich Seite, PDF und Orga-Board den Wochentag
+ * ab jetzt hier.
+ *
+ * Leerer String, wenn das Datum nicht lesbar ist; die Aufrufer lassen den
+ * Wochentag dann einfach weg.
+ */
+function helferWochentag(string $isoDate): string
+{
+    static $wt = [1 => 'Montag', 2 => 'Dienstag', 3 => 'Mittwoch', 4 => 'Donnerstag', 5 => 'Freitag', 6 => 'Samstag', 7 => 'Sonntag'];
+    $ts = strtotime($isoDate);
+
+    return $ts === false ? '' : $wt[(int) date('N', $ts)];
+}
+
+/**
  * Deutsches Wochentag-Datum-Label aus einem ISO-Datum (locale-unabhaengig).
  */
 function helferTagLabel(string $isoDate): string
 {
-    static $wt = [1 => 'Montag', 2 => 'Dienstag', 3 => 'Mittwoch', 4 => 'Donnerstag', 5 => 'Freitag', 6 => 'Samstag', 7 => 'Sonntag'];
     $ts = strtotime($isoDate);
     if ($ts === false) {
         return $isoDate;
     }
-    return $wt[(int) date('N', $ts)] . ' · ' . date('d.m.Y', $ts);
+
+    return helferWochentag($isoDate) . ' · ' . date('d.m.Y', $ts);
 }
 
 /**

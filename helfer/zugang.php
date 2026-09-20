@@ -162,7 +162,9 @@ if (!$error) {
 function formatEinsatzZeit(array $s): string {
     $parts = [];
     if (!empty($s['tag'])) {
-        $parts[] = date('l, d.m.Y', strtotime($s['tag']));
+        // Wochentag deutsch -- date('l') waere Englisch und wich vom PDF ab.
+        $wt = helferWochentag((string) $s['tag']);
+        $parts[] = ($wt !== '' ? $wt . ', ' : '') . date('d.m.Y', strtotime($s['tag']));
     }
     if (!empty($s['von'])) {
         $zeit = substr($s['von'], 0, 5);
