@@ -793,10 +793,15 @@ $basePath = '../';
                 </p>
                 <?php endif; ?>
 
-                <!-- Streckenplan: klein in der Seite, auf Tipp groß und zoombar. -->
+                <!-- Streckenplan: klein in der Seite, auf Tipp gross und zoombar.
+                     ?v=<mtime>: .htaccess liefert Bilder mit "max-age=31536000, immutable"
+                     aus -- ohne Stempel haette ein Helfer, der die Seite schon offen
+                     hatte, nach einer Kartenaktualisierung weiter die alte Karte gesehen,
+                     weil der Browser bei "immutable" nicht einmal nachfragt. Der
+                     Dateizeitstempel aendert sich beim Austausch von selbst. -->
                 <figure class="plan-vorschau">
                     <button type="button" class="plan-knopf" id="plan-oeffnen" aria-label="Streckenplan vergrößern">
-                        <img src="<?= $basePath ?>assets/images/strecke/streckenplan-luftbild-klein.jpg"
+                        <img src="<?= $basePath ?>assets/images/strecke/streckenplan-luftbild-klein.jpg?v=<?= @filemtime(__DIR__ . '/../assets/images/strecke/streckenplan-luftbild-klein.jpg') ?>"
                              width="452" height="640" loading="lazy"
                              alt="Streckenplan Marktlauf Kirchseeon 2026 mit Strecken und Streckenposten">
                         <span class="plan-lupe">🔍 Antippen zum Vergrößern</span>
@@ -845,7 +850,7 @@ $basePath = '../';
         <button type="button" class="plan-aktion plan-schliessen" id="plan-schliessen" aria-label="Schließen">✕</button>
     </div>
     <div class="plan-flaeche" id="plan-flaeche">
-        <img id="plan-bild" src="<?= $basePath ?>assets/images/strecke/streckenplan-luftbild.jpg"
+        <img id="plan-bild" src="<?= $basePath ?>assets/images/strecke/streckenplan-luftbild.jpg?v=<?= @filemtime(__DIR__ . '/../assets/images/strecke/streckenplan-luftbild.jpg') ?>"
              alt="Streckenplan Marktlauf Kirchseeon 2026 – Strecken, Streckenposten, Vollsperrung">
     </div>
     <p class="plan-hinweis">Mit zwei Fingern zoomen · ziehen zum Verschieben · Doppeltipp für schnellen Zoom</p>
