@@ -1,0 +1,86 @@
+<!-- ============================================================
+     Marktlauf Kirchseeon - Dankesmail nach dem Lauf
+     Versand: RaceResult -> Emails/SMS (HTML-Inhalt hier einfuegen)
+
+     JAEHRLICH WIEDERVERWENDBAR. Zu ersetzen sind nur:
+       {{EDITION}}                  z. B. "2."
+       {{DATUM}}                    z. B. "20. September 2026"
+       {{STARTER}}                  Teilnehmerzahl
+       {{DISTANZEN}}                vermessene Laengen, z. B. "5,44 km &nbsp;&middot;&nbsp; 10,39 km"
+                                    Quelle: RaceResult -> Grundeinstellungen -> Wettbewerbe -> "Strecke"
+       {{ERGEBNIS_URL}}             my.raceresult.com/<EventID>/
+       {{TERMIN_NAECHSTES_JAHR}}    z. B. "Sonntag, 19. September 2027"
+       {{EDITION_NAECHSTES_JAHR}}   z. B. "3."
+     [Vorname] ist das RaceResult-Seriendruckfeld und bleibt stehen.
+
+     Social-Icons: assets/images/social/ - erzeugt mit bin/render_social_icons.py
+     aus index.html + css/layout.css. Nicht von Hand nachbauen.
+     ============================================================ -->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#ECEEE9;margin:0;padding:24px 12px;font-family:'Poppins',-apple-system,'Segoe UI',Arial,sans-serif;">
+<tr><td align="center">
+<table role="presentation" width="640" cellpadding="0" cellspacing="0" border="0" style="width:640px;max-width:100%;background:#ffffff;border-radius:12px;overflow:hidden;">
+
+  <!-- Kopf -->
+  <tr><td align="center" style="background:#009640;padding:26px 28px;color:#ffffff;">
+    <div style="display:inline-block;background:#F4B81E;color:#1F2A22;font-size:11px;font-weight:800;letter-spacing:2.4px;padding:6px 16px;border-radius:14px;font-family:'Montserrat',Arial,sans-serif;">{{EDITION}} MARKTLAUF KIRCHSEEON</div>
+    <div style="font-family:'Fredoka','Trebuchet MS',Arial,sans-serif;font-size:26px;font-weight:600;margin-top:12px;">Danke, dass du dabei warst!</div>
+    <div style="font-size:13px;opacity:.92;margin-top:3px;">{{DATUM}} &middot; Kirchseeon</div>
+  </td></tr>
+
+  <!-- Text -->
+  <tr><td style="padding:26px 30px;color:#1F2A22;font-size:15px;line-height:1.72;">
+    <p style="margin:0 0 14px;">Hallo [Vorname],</p>
+    <p style="margin:0 0 14px;font-family:'Fredoka','Trebuchet MS',Arial,sans-serif;font-size:21px;color:#007230;">Was f&uuml;r ein Lauf!</p>
+    <p style="margin:0 0 14px;">{{STARTER}} Starterinnen und Starter, vom Bambini-Lauf bis zur langen Runde &mdash; und du mittendrin. Danke, dass du den Marktlauf zu dem gemacht hast, was er ist.</p>
+    <p style="margin:0 0 16px;"><strong>Deine Urkunde steht bereit.</strong> Neu in diesem Jahr: Wir haben die tats&auml;chlich vermessenen Streckenl&auml;ngen aus unseren GPX-Tracks hinterlegt. Auf deiner Urkunde steht also, was du wirklich gelaufen bist:</p>
+
+    <!-- 10-km-Wert 10,39 km: von TT am 20.09.2026 bestaetigt (Quelle RaceResult-GPX). -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F1F7F2;border-left:4px solid #F4B81E;margin:0 0 20px;">
+      <tr><td style="padding:14px 18px;">
+        <div style="font-family:'Fredoka','Trebuchet MS',Arial,sans-serif;font-size:19px;color:#007230;">{{DISTANZEN}}</div>
+        <div style="font-size:13px;color:#475569;margin-top:2px;">statt der gerundeten Nennwerte &mdash; deine Pace ist damit besser, als du dachtest</div>
+      </td></tr>
+    </table>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px;">
+      <tr><td align="center" style="background:#009640;border-radius:10px;">
+        <a href="{{ERGEBNIS_URL}}" style="display:block;padding:14px;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;">Urkunde &amp; Ergebnis ansehen &rarr;</a>
+      </td></tr>
+    </table>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#1F2A22;border-radius:12px;margin:0 0 20px;">
+      <tr><td align="center" style="padding:18px 20px;color:#ffffff;">
+        <div style="font-family:'Montserrat',Arial,sans-serif;font-size:11px;letter-spacing:2.6px;color:#BCD531;font-weight:700;">SAVE THE DATE</div>
+        <div style="font-family:'Fredoka','Trebuchet MS',Arial,sans-serif;font-size:25px;margin-top:5px;">{{TERMIN_NAECHSTES_JAHR}}</div>
+        <div style="font-size:12px;opacity:.75;margin-top:3px;">{{EDITION_NAECHSTES_JAHR}} Marktlauf Kirchseeon &mdash; gleicher Sonntag, gleiches Wochenende</div>
+      </td></tr>
+    </table>
+
+    <p style="margin:0 0 14px;">Der Termin steht mit hoher Wahrscheinlichkeit. Wir w&uuml;rden uns riesig freuen, dich wieder an der Startlinie zu sehen &mdash; gern mit Freunden, Verein oder Familie.</p>
+    <p style="margin:0;">Sportliche Gr&uuml;&szlig;e<br><strong>Dein Team vom ATSV Marktlauf Kirchseeon</strong></p>
+  </td></tr>
+
+  <!-- Social: Markenfarben (Variante A), bildlos = wird immer angezeigt -->
+  <tr><td align="center" style="background:#ECEEE9;padding:22px 20px;">
+    <div style="font-family:'Fredoka','Trebuchet MS',Arial,sans-serif;font-size:17px;color:#1F2A22;">Bleib dran &mdash; folge uns!</div>
+    <div style="font-size:13px;color:#475569;margin:4px 0 14px;">Strecken, Termine, Fotos und der Countdown zur n&auml;chsten Auflage</div>
+    <!-- Icons: social-instagram.png / social-facebook.png / social-strava.png (je 128x128)
+         nach website/assets/social/ deployen. alt-Text traegt die Marke, falls ein Client
+         Bilder blockiert - dann bleibt die Zeile lesbar. -->
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center"><tr>
+      <td><a href="https://www.instagram.com/atsv_marktlauf_kirchseeon"><img src="https://atsv-kirchseeon-marktlauf.de/assets/images/social/social-instagram.png" width="46" height="46" alt="Instagram" style="display:block;border:0;border-radius:11px;"></a></td>
+      <td style="width:12px;">&nbsp;</td>
+      <td><a href="https://www.facebook.com/profile.php?id=61591689790244"><img src="https://atsv-kirchseeon-marktlauf.de/assets/images/social/social-facebook.png" width="46" height="46" alt="Facebook" style="display:block;border:0;border-radius:11px;"></a></td>
+      <td style="width:12px;">&nbsp;</td>
+      <td><a href="https://www.strava.com/clubs/2252807"><img src="https://atsv-kirchseeon-marktlauf.de/assets/images/social/social-strava.png" width="46" height="46" alt="Strava" style="display:block;border:0;border-radius:11px;"></a></td>
+    </tr></table>
+  </td></tr>
+
+  <!-- Fuss -->
+  <tr><td align="center" style="background:#1F2A22;color:#9FB0A4;font-size:11px;padding:16px 20px;line-height:1.7;">
+    ATSV Kirchseeon &middot; Abteilung Marktlauf &middot; <a href="https://atsv-kirchseeon-marktlauf.de" style="color:#BCD531;text-decoration:none;">atsv-kirchseeon-marktlauf.de</a><br>
+    Du erh&auml;ltst diese E-Mail als Teilnehmer/in des {{EDITION}} Marktlauf Kirchseeon.
+  </td></tr>
+
+</table>
+</td></tr></table>

@@ -48,6 +48,7 @@ $snippetItems = [
     ['preview' => 'newsletter-mail.html',      'canonical' => __DIR__ . '/../src/newsletter/03_html_master_template.md', 'name' => 'Newsletter-Master',    'sub' => 'HTML-Grundgerüst für Mailings (kanonische Quelle)'],
     ['preview' => 'newsletter-beispiel.html',  'copy' => 'newsletter-beispiel.html',       'name' => 'Newsletter-Beispiel',  'sub' => 'Ausgefülltes Beispiel-Mailing'],
     ['preview' => 'raceresult-infotext.html',  'copy' => 'raceresult-infotext.html',       'name' => 'RaceResult Info-Text', 'sub' => 'HTML-Block für das INFO-Feld'],
+    ['preview' => 'raceresult-dankesmail.html','copy' => 'raceresult-dankesmail-vorlage.html','name' => 'RaceResult-Dankesmail','sub' => 'Urkunden-Mail nach dem Lauf — Vorlage mit Platzhaltern, jährlich wiederverwendbar'],
 ];
 // Nur real vorhandene Snippets zeigen; Kopier-Inhalt serverseitig laden. Der Newsletter-Master
 // kommt aus der kanonischen Vorlage (Anti-Drift), die übrigen aus dem Snippet-Ordner.
