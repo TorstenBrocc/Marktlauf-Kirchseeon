@@ -297,4 +297,9 @@ mit 1,5–5,5 h Abstand. Auf zeitkritische Fenster ist ein GitHub-Cron nicht ver
 - **Stumm:** Mail/Make/Gemini/Brevo sind auf der Bühne durch leere Config-Keys deaktiviert.
 - **Regel (Incident 17.09.):** nach **jeder** Strato-Umleitungsänderung Prod **und** Ziel von außen prüfen.
   MySQL-Client auf Strato liest `~/.my.cnf` (= Prod) — für Staging `--defaults-file` + `DATABASE()`-Guard.
+  Die Basic-Auth-Passwortdatei unter `storage/` muss für Apache lesbar sein (Gruppe `www` → Modus 644; bei 600
+  antwortet Apache mit **500**, auch bei falschem Passwort). Serverseitig gepflegte Staging-Dateien gehören
+  **alle** in die `EXCLUDE`-Liste des Staging-Workflows, sonst löscht `rsync --delete` sie beim nächsten Deploy.
+  Datenabhängige Migrationen (Seeds mit Prod-IDs) brechen auf der leeren Bühne → Schema-Resync aus Prod
+  (`mysqldump --no-data` → `baseline` → Seed), Prozedur im Vault-Plan.
 - **Kanon/Details:** Vault `00_meta/plans/claudex-marktlauf-onboarding.md`.
