@@ -569,7 +569,7 @@ a.card-tile:hover {
     margin-top: 0.25rem;
     font-size: 0.9rem;
     font-weight: 500;
-    color: var(--primary);
+    color: var(--link);
 }
 
 .card-tile-disabled {
@@ -600,7 +600,7 @@ a.card-tile:hover {
 }
 
 .quick-links a {
-    color: var(--primary);
+    color: var(--link);
     text-decoration: none;
 }
 
