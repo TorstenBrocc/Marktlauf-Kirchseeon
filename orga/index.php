@@ -229,7 +229,7 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
             color: #856404;
             white-space: nowrap;
         }
-        .meine-aufgaben .aufgabe-faellig.ueberfaellig { color: #dc3545; font-weight: 600; }
+        .meine-aufgaben .aufgabe-faellig.ueberfaellig { color: var(--signal-crit); font-weight: 600; }
         .aufgaben-section {
             background: var(--white);
             border-radius: 8px;
@@ -305,8 +305,8 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
             cursor: pointer;
         }
         .btn-icon:hover { background: #ccc; }
-        .btn-icon.btn-danger { background: var(--error-bg); color: var(--error); }
-        .btn-icon.btn-danger:hover { background: var(--error); color: white; }
+        .btn-icon.btn-danger { background: var(--signal-crit-bg); color: var(--signal-crit); }
+        .btn-icon.btn-danger:hover { background: var(--signal-crit); color: white; }
         @media (max-width: 900px) {
             .aufgabe-form {
                 grid-template-columns: 1fr;
@@ -438,7 +438,7 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                                         $heute = strtotime('today');
                                         $ueberfaellig = $faelligDate < $heute && $aufgabe['status'] !== 'erledigt';
                                         ?>
-                                        <span style="<?= $ueberfaellig ? 'color:var(--error);font-weight:600' : '' ?>">
+                                        <span style="<?= $ueberfaellig ? 'color:var(--signal-crit);font-weight:600' : '' ?>">
                                             <?= date('d.m.Y', $faelligDate) ?>
                                         </span>
                                     <?php else: ?>

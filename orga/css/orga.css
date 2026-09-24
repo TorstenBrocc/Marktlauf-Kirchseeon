@@ -644,6 +644,7 @@ a.card-tile:hover {
     font-size: 0.8rem;
     color: var(--text-light);
 }
+.quick-links .quick-hint a { text-decoration: underline; }
 .btn-brand-strava { background: #FC4C02; }
 .btn-brand-meta { background: #0866FF; }
 
