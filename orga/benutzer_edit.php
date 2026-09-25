@@ -152,8 +152,8 @@ $pageTitle = $isSelf ? 'Mein Profil' : 'Benutzer bearbeiten';
                         </div>
                         <?php else: ?>
                         <div class="form-group">
-                            <label>Rolle</label>
-                            <input type="text" value="<?= ucfirst($targetUser['role']) ?>" disabled>
+                            <label for="role_anzeige">Rolle</label>
+                            <input type="text" id="role_anzeige" value="<?= ucfirst($targetUser['role']) ?>" disabled>
                             <?php if ($isSelf): ?>
                             <p class="role-info">Die eigene Rolle kann nicht geändert werden.</p>
                             <?php endif; ?>
