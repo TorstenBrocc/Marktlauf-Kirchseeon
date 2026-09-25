@@ -252,33 +252,33 @@ if ($postId > 0) {
                 <div class="pg-sel-panel" id="pg-sel-panel" style="display:none">
                     <b class="pg-sel-name" id="pg-sel-name">Kein Element ausgewählt</b>
 
-                    <div class="pg-row" id="pg-scale-row" style="margin:0.5rem 0 0"><label>Größe: <span id="pg-sel-scale-val">100</span> %</label>
+                    <div class="pg-row" id="pg-scale-row" style="margin:0.5rem 0 0"><label for="pg-sel-scale">Größe: <span id="pg-sel-scale-val">100</span> %</label>
                         <input type="range" id="pg-sel-scale" min="20" max="400" value="100"></div>
 
-                    <div class="pg-row" id="pg-text-row" style="display:none"><label>Beschriftung</label><input type="text" id="pg-el-text" value=""></div>
+                    <div class="pg-row" id="pg-text-row" style="display:none"><label for="pg-el-text">Beschriftung</label><input type="text" id="pg-el-text" value=""></div>
 
-                    <div class="pg-row" id="pg-icon-row" style="display:none"><label>Icon <span class="pg-icon-prev" id="pg-el-icon-prev"></span></label><select id="pg-el-icon"></select></div>
+                    <div class="pg-row" id="pg-icon-row" style="display:none"><label for="pg-el-icon">Icon <span class="pg-icon-prev" id="pg-el-icon-prev"></span></label><select id="pg-el-icon"></select></div>
 
-                    <div class="pg-row" id="pg-img-row" style="display:none"><label>Bild / Logo</label><select id="pg-el-img"></select>
+                    <div class="pg-row" id="pg-img-row" style="display:none"><label for="pg-el-img">Bild / Logo</label><select id="pg-el-img"></select>
                         <input type="file" id="pg-el-img-file" accept="image/*" style="display:none"></div>
 
-                    <div class="pg-row" id="pg-cap-row" style="display:none"><label>Über-Text</label><input type="text" id="pg-el-cap" value=""></div>
+                    <div class="pg-row" id="pg-cap-row" style="display:none"><label for="pg-el-cap">Über-Text</label><input type="text" id="pg-el-cap" value=""></div>
 
                     <div class="pg-row" id="pg-tile-row" style="display:none;margin-top:0.3rem"><label style="display:flex;align-items:center;gap:0.4rem;margin:0"><input type="checkbox" id="pg-el-tile"> weiße Kachel als Hintergrund</label></div>
 
                     <div class="pg-row" id="pg-hide-row" style="display:none;margin-top:0.3rem"><label style="display:flex;align-items:center;gap:0.4rem;margin:0"><input type="checkbox" id="pg-el-hidden"> Element ausblenden <span class="pg-hint">(nicht im Export)</span></label></div>
 
                     <div id="pg-scan-ctrl" style="display:none;margin-top:0.4rem;border-top:1px solid #fed7aa;padding-top:0.5rem">
-                        <div class="pg-row"><label>QR-Ziel-URL</label><input type="url" id="c-qr-url" value="https://atsv-kirchseeon-marktlauf.de/#anmeldung"></div>
-                        <div class="pg-row"><label>Beschriftung (leer = ausblenden)</label><input type="text" id="c-scan-head" value="JETZT SCANNEN & ANMELDEN!"></div>
-                        <div class="pg-row" style="margin-bottom:0"><label>Domain (leer = ausblenden)</label><input type="text" id="c-domain" value="atsv-kirchseeon-marktlauf.de"></div>
+                        <div class="pg-row"><label for="c-qr-url">QR-Ziel-URL</label><input type="url" id="c-qr-url" value="https://atsv-kirchseeon-marktlauf.de/#anmeldung"></div>
+                        <div class="pg-row"><label for="c-scan-head">Beschriftung (leer = ausblenden)</label><input type="text" id="c-scan-head" value="JETZT SCANNEN & ANMELDEN!"></div>
+                        <div class="pg-row" style="margin-bottom:0"><label for="c-domain">Domain (leer = ausblenden)</label><input type="text" id="c-domain" value="atsv-kirchseeon-marktlauf.de"></div>
                     </div>
 
                     <div id="pg-shape-ctrl" style="display:none">
-                        <div class="pg-row" style="margin-bottom:0.4rem"><label>Breite: <span id="pg-sh-wv">400</span> px</label><input type="range" id="pg-sh-w" min="30" max="1400" value="400"></div>
-                        <div class="pg-row" style="margin-bottom:0.4rem"><label>Höhe: <span id="pg-sh-hv">200</span> px</label><input type="range" id="pg-sh-h" min="30" max="1400" value="200"></div>
-                        <div class="pg-row" style="margin-bottom:0.4rem"><label>Eck-Radius: <span id="pg-sh-rv">24</span> px</label><input type="range" id="pg-sh-r" min="0" max="120" value="24"></div>
-                        <div class="pg-row" style="margin-bottom:0.2rem"><label>Füllfarbe</label>
+                        <div class="pg-row" style="margin-bottom:0.4rem"><label for="pg-sh-w">Breite: <span id="pg-sh-wv">400</span> px</label><input type="range" id="pg-sh-w" min="30" max="1400" value="400"></div>
+                        <div class="pg-row" style="margin-bottom:0.4rem"><label for="pg-sh-h">Höhe: <span id="pg-sh-hv">200</span> px</label><input type="range" id="pg-sh-h" min="30" max="1400" value="200"></div>
+                        <div class="pg-row" style="margin-bottom:0.4rem"><label for="pg-sh-r">Eck-Radius: <span id="pg-sh-rv">24</span> px</label><input type="range" id="pg-sh-r" min="0" max="120" value="24"></div>
+                        <div class="pg-row" style="margin-bottom:0.2rem"><label for="pg-sh-fill">Füllfarbe</label>
                             <div style="display:flex;gap:0.3rem;align-items:center;flex-wrap:wrap">
                                 <input type="color" id="pg-sh-fill" value="#ffffff" style="width:44px;height:30px;padding:2px;border:1px solid var(--border);border-radius:6px;background:#fff">
                                 <button class="btn btn-small btn-secondary pg-sh-preset" type="button" data-fill="#ffffff">Weiß</button>
@@ -306,38 +306,38 @@ if ($postId > 0) {
                     <button class="btn btn-secondary" id="c-add-shape" type="button" style="flex:1">+ Fläche / Kachel</button>
                 </div>
 
-                <div class="pg-row"><label>Format</label>
+                <div class="pg-row"><label for="c-format">Format</label>
                     <select id="c-format">
                         <option value="portrait">Portrait 1080×1350 (Feed)</option>
                         <option value="square">Quadratisch 1080×1080</option>
                         <option value="story">Story 1080×1920</option>
                     </select>
                 </div>
-                <div class="pg-row"><label>Headline</label><input type="text" id="c-headline" value="ANMELDUNG GEÖFFNET!"></div>
-                <div class="pg-row"><label>Subline</label><input type="text" id="c-subline" value="Sichert euch jetzt euren Startplatz!"></div>
-                <div class="pg-row"><label>Button-Text</label><input type="text" id="c-cta" value="JETZT ANMELDEN!"></div>
+                <div class="pg-row"><label for="c-headline">Headline</label><input type="text" id="c-headline" value="ANMELDUNG GEÖFFNET!"></div>
+                <div class="pg-row"><label for="c-subline">Subline</label><input type="text" id="c-subline" value="Sichert euch jetzt euren Startplatz!"></div>
+                <div class="pg-row"><label for="c-cta">Button-Text</label><input type="text" id="c-cta" value="JETZT ANMELDEN!"></div>
 
-                <div class="pg-row"><label>Feature 1 (Titel / Zusatz / Icon)</label><input type="text" id="c-f1t" value="Für alle Altersklassen"><input type="text" id="c-f1s" value="Bambini, Schüler, Jugend, Erwachsene"><div class="pg-feat-icons" style="margin-top:0.35rem"><select id="c-f1i"></select></div></div>
-                <div class="pg-row"><label>Feature 2 (Titel / Zusatz / Icon)</label><input type="text" id="c-f2t" value="Verschiedene Distanzen"><input type="text" id="c-f2s" value="500 m bis 10 km"><div class="pg-feat-icons" style="margin-top:0.35rem"><select id="c-f2i"></select></div></div>
-                <div class="pg-row"><label>Feature 3 (Titel / Zusatz / Icon)</label><input type="text" id="c-f3t" value="Gemeinsam für Umwelt & Energie"><input type="text" id="c-f3s" value="Jeder Schritt zählt!"><div class="pg-feat-icons" style="margin-top:0.35rem"><select id="c-f3i"></select></div></div>
+                <div class="pg-row"><label for="c-f1t">Feature 1 (Titel / Zusatz / Icon)</label><input type="text" id="c-f1t" value="Für alle Altersklassen"><input type="text" id="c-f1s" value="Bambini, Schüler, Jugend, Erwachsene" aria-label="Feature 1 Zusatz"><div class="pg-feat-icons" style="margin-top:0.35rem"><select id="c-f1i" aria-label="Feature 1 Icon"></select></div></div>
+                <div class="pg-row"><label for="c-f2t">Feature 2 (Titel / Zusatz / Icon)</label><input type="text" id="c-f2t" value="Verschiedene Distanzen"><input type="text" id="c-f2s" value="500 m bis 10 km" aria-label="Feature 2 Zusatz"><div class="pg-feat-icons" style="margin-top:0.35rem"><select id="c-f2i" aria-label="Feature 2 Icon"></select></div></div>
+                <div class="pg-row"><label for="c-f3t">Feature 3 (Titel / Zusatz / Icon)</label><input type="text" id="c-f3t" value="Gemeinsam für Umwelt & Energie"><input type="text" id="c-f3s" value="Jeder Schritt zählt!" aria-label="Feature 3 Zusatz"><div class="pg-feat-icons" style="margin-top:0.35rem"><select id="c-f3i" aria-label="Feature 3 Icon"></select></div></div>
 
-                <div class="pg-row"><label>Datum-Kachel (Titel · Zusatz)</label><input type="text" id="c-date" value="Sonntag 20.09.2026 · Start 10:00 Uhr"></div>
-                <div class="pg-row"><label>Ort-Kachel (Titel · Zusatz)</label><input type="text" id="c-loc" value="JEK, Westring 6 · Kirchseeon"></div>
-                <div class="pg-row"><label>Familien-Kachel (Titel · Zusatz)</label><input type="text" id="c-fam" value="Für die ganze Familie · Sport, Spaß & Gemeinschaft"></div>
+                <div class="pg-row"><label for="c-date">Datum-Kachel (Titel · Zusatz)</label><input type="text" id="c-date" value="Sonntag 20.09.2026 · Start 10:00 Uhr"></div>
+                <div class="pg-row"><label for="c-loc">Ort-Kachel (Titel · Zusatz)</label><input type="text" id="c-loc" value="JEK, Westring 6 · Kirchseeon"></div>
+                <div class="pg-row"><label for="c-fam">Familien-Kachel (Titel · Zusatz)</label><input type="text" id="c-fam" value="Für die ganze Familie · Sport, Spaß & Gemeinschaft"></div>
                 <div class="pg-row"><label><input type="checkbox" id="c-show-sponsors"> Sponsoren-Kacheln anzeigen</label></div>
                 <p class="pg-hint" style="margin:0 0 0.65rem">QR-Code, Beschriftung &amp; Domain bearbeitest du über die <strong>Scan/QR-Kachel</strong> im Poster (anklicken).</p>
 
                 <div class="pg-grad">
                     <label><input type="checkbox" id="c-grad-on" checked> Marken-Verlauf (Hintergrund)</label>
-                    <div class="pg-row" style="margin-bottom:0.5rem"><label>Winkel: <span id="c-grad-angle-val">120</span>°</label><input type="range" id="c-grad-angle" min="0" max="360" value="120"></div>
+                    <div class="pg-row" style="margin-bottom:0.5rem"><label for="c-grad-angle">Winkel: <span id="c-grad-angle-val">120</span>°</label><input type="range" id="c-grad-angle" min="0" max="360" value="120"></div>
                     <div style="display:flex;gap:0.6rem">
-                        <div class="pg-row" style="flex:1;margin-bottom:0.5rem"><label>Farbe 1</label><input type="color" id="c-grad-c1" value="#00562a" style="width:100%;height:34px;padding:2px;border:1px solid var(--border);border-radius:6px;background:#fff"></div>
-                        <div class="pg-row" style="flex:1;margin-bottom:0.5rem"><label>Farbe 2</label><input type="color" id="c-grad-c2" value="#007230" style="width:100%;height:34px;padding:2px;border:1px solid var(--border);border-radius:6px;background:#fff"></div>
+                        <div class="pg-row" style="flex:1;margin-bottom:0.5rem"><label for="c-grad-c1">Farbe 1</label><input type="color" id="c-grad-c1" value="#00562a" style="width:100%;height:34px;padding:2px;border:1px solid var(--border);border-radius:6px;background:#fff"></div>
+                        <div class="pg-row" style="flex:1;margin-bottom:0.5rem"><label for="c-grad-c2">Farbe 2</label><input type="color" id="c-grad-c2" value="#007230" style="width:100%;height:34px;padding:2px;border:1px solid var(--border);border-radius:6px;background:#fff"></div>
                     </div>
-                    <div class="pg-row" style="margin-bottom:0"><label>Foto-Durchsicht am Rand: <span id="c-grad-fade-val">15</span> %</label><input type="range" id="c-grad-fade" min="0" max="90" value="15"></div>
+                    <div class="pg-row" style="margin-bottom:0"><label for="c-grad-fade">Foto-Durchsicht am Rand: <span id="c-grad-fade-val">15</span> %</label><input type="range" id="c-grad-fade" min="0" max="90" value="15"></div>
                 </div>
 
-                <div class="pg-row"><label>Hintergrundfoto (optional)</label><input type="file" id="c-photo" accept="image/*"> <button class="btn btn-small btn-secondary" id="c-photo-clear" type="button">entfernen</button></div>
+                <div class="pg-row"><label for="c-photo">Hintergrundfoto (optional)</label><input type="file" id="c-photo" accept="image/*"> <button class="btn btn-small btn-secondary" id="c-photo-clear" type="button">entfernen</button></div>
                 <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.6rem">
 <?php if ($embed): ?>
                     <button class="btn btn-primary" id="pg-uebernehmen" type="button">Für Post übernehmen</button>
