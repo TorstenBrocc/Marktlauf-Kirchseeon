@@ -136,7 +136,7 @@ $prioLabel = ['normal' => 'Normal', 'wichtig' => 'Wichtig', 'notfall' => '⚠️
                     <textarea id="b-text" name="text" rows="3" placeholder="z. B. Treffpunkt 07:30 Uhr am Westring, Warnwesten am Zelt abholen …"></textarea>
                 </div>
                 <div class="hd-row">
-                    <select name="prioritaet" style="max-width:180px;padding:0.45rem 0.6rem;border:1px solid var(--border);border-radius:6px">
+                    <select name="prioritaet" aria-label="Priorität" style="max-width:180px;padding:0.45rem 0.6rem;border:1px solid var(--border);border-radius:6px">
                         <option value="normal">Normal</option>
                         <option value="wichtig">Wichtig</option>
                         <option value="notfall">⚠️ Notfall</option>
