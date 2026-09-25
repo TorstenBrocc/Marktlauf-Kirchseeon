@@ -116,9 +116,9 @@ $kopfLink = static function (array $params) use ($seite, $zielgruppe): string {
                                  „Ausgewählte anschreiben" darf nicht die ganze Zielgruppe anschreiben.
                                  Auswählen ist eine bewusste Handlung, „Alle" steht als Knopf bereit. -->
                             <input type="checkbox" class="empf-check" name="sponsor_ids[]" form="versand-form"
-                                   value="<?= (int) $k['id'] ?>" <?= $sperre === '' ? '' : 'disabled' ?>>
+                                   value="<?= (int) $k['id'] ?>" aria-labelledby="empf-firma-<?= (int) $k['id'] ?>" <?= $sperre === '' ? '' : 'disabled' ?>>
                         <?php endif; ?>
-                        <span class="firma"><?= htmlspecialchars((string) $k['firma']) ?></span>
+                        <span class="firma" id="empf-firma-<?= (int) $k['id'] ?>"><?= htmlspecialchars((string) $k['firma']) ?></span>
                         <span class="empf-tag"><?= htmlspecialchars(sponsorStatusLabel((string) $k['status'])) ?></span>
                         <?php foreach (isset($empfExtraTags) ? $empfExtraTags($k) : [] as $tag): ?>
                             <span class="empf-tag<?= !empty($tag['warn']) ? ' warn' : '' ?>"><?= htmlspecialchars((string) $tag['text']) ?></span>

@@ -214,10 +214,10 @@ if ($isUserScoped && $vorlage['draft'] && $vorlage['draft_ts'] !== '') {
                     <div class="brief-split">
                         <div>
                             <div class="brief-split-head">
-                                <h3>Markdown</h3>
+                                <h3 id="koerper-md-label">Markdown</h3>
                                 <?= sponsorMarkdownLegende() ?>
                             </div>
-                            <textarea id="koerper_md" name="koerper_md"><?= htmlspecialchars($vorlage['koerper_md']) ?></textarea>
+                            <textarea id="koerper_md" name="koerper_md" aria-labelledby="koerper-md-label"><?= htmlspecialchars($vorlage['koerper_md']) ?></textarea>
                         </div>
                         <div>
                             <div class="brief-split-head">

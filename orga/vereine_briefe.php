@@ -130,10 +130,10 @@ $plakate = plakateAnhang($pdo);
                     <div class="brief-split">
                         <div>
                             <div class="brief-split-head">
-                                <h3>Markdown</h3>
+                                <h3 id="koerper-md-label">Markdown</h3>
                                 <?= sponsorMarkdownLegende() ?>
                             </div>
-                            <textarea id="koerper_md" name="koerper_md"><?= htmlspecialchars($vorlage['koerper_md']) ?></textarea>
+                            <textarea id="koerper_md" name="koerper_md" aria-labelledby="koerper-md-label"><?= htmlspecialchars($vorlage['koerper_md']) ?></textarea>
                         </div>
                         <div>
                             <h3>Vorschau (Beispieldaten)</h3>
@@ -195,7 +195,7 @@ $plakate = plakateAnhang($pdo);
                         <input type="hidden" name="tab" value="orga">
                         <input type="hidden" name="folder" value="<?= htmlspecialchars($plakatFolder) ?>">
                         <input type="hidden" name="redirect_after" value="vereine_briefe.php?slug=<?= urlencode($slug) ?>">
-                        <input type="file" name="datei" accept="application/pdf" required style="font-size:0.9rem;">
+                        <input type="file" name="datei" accept="application/pdf" required style="font-size:0.9rem;" aria-label="Plakat-PDF auswählen">
                         <button type="submit" class="btn btn-primary">PDF hochladen</button>
                     </form>
                     <?php endif; ?>
