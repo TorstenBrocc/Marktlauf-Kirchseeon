@@ -709,8 +709,8 @@ try {
 
                 <form method="get" class="filter-bar">
                     <div class="form-group">
-                        <label>Status</label>
-                        <select name="status" onchange="this.form.submit()">
+                        <label for="filter-status">Status</label>
+                        <select id="filter-status" name="status" onchange="this.form.submit()">
                             <option value="">Alle (ohne Abgelehnt)</option>
                             <?php foreach (SPONSOR_STATUS as $key => $meta): ?>
                                 <option value="<?= $key ?>" <?= $filterStatus === $key ? 'selected' : '' ?>><?= htmlspecialchars($meta['label']) ?></option>
@@ -718,8 +718,8 @@ try {
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Paket</label>
-                        <select name="paket" onchange="this.form.submit()">
+                        <label for="filter-paket">Paket</label>
+                        <select id="filter-paket" name="paket" onchange="this.form.submit()">
                             <option value="">Alle</option>
                             <option value="hauptsponsor" <?= $filterPaket === 'hauptsponsor' ? 'selected' : '' ?>>Hauptsponsor</option>
                             <option value="gold" <?= $filterPaket === 'gold' ? 'selected' : '' ?>>Gold</option>
@@ -730,8 +730,8 @@ try {
                     </div>
                     <?php if ($hasZustaendig): ?>
                     <div class="form-group">
-                        <label>Zuständig</label>
-                        <select name="zustaendig" onchange="this.form.submit()">
+                        <label for="filter-zustaendig">Zuständig</label>
+                        <select id="filter-zustaendig" name="zustaendig" onchange="this.form.submit()">
                             <option value="">Alle</option>
                             <option value="mine" <?= $filterZustaendig === 'mine' ? 'selected' : '' ?>>Nur meine</option>
                             <?php foreach ($users as $u): ?>
