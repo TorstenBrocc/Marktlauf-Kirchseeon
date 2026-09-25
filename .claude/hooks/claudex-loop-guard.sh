@@ -6,6 +6,7 @@
 #   - git commit while on main/master
 #   - ssh/scp/sftp/rsync/lftp (the loop never deploys itself, never touches Prod)
 #   - any access to the sensor secrets (~/.config/claudex, ~/.cache/claudex)
+#   - any access to the private intern repo (Marktlauf-Projekt/intern, marktlauf-intern)
 [ "${CLAUDEX_LOOP:-}" = "1" ] || exit 0
 
 input=$(cat)
@@ -17,11 +18,13 @@ deny() {
   exit 0
 }
 SECRET_MSG="Sensor-Zugangsdaten sind tabu — nur über buehne-login / buehne-wait / axe-check nutzen."
+INTERN_MSG="Das private intern-Repo ist für den Loop tabu (öffentliches Repo, Einbahnstraße intern → website). Was aus intern nötig ist, steht im Auftrag."
 
 case "$tool" in
   Read|Edit|Write|MultiEdit|Grep|Glob|NotebookEdit)
     p=$(printf '%s' "$input" | jq -r '.tool_input.file_path // .tool_input.path // .tool_input.notebook_path // empty')
     case "$p" in *.config/claudex*|*.cache/claudex*) deny "$SECRET_MSG" ;; esac
+    case "$p" in *Marktlauf-Projekt/intern*|*marktlauf-intern*) deny "$INTERN_MSG" ;; esac
     exit 0 ;;
   Bash) ;;
   *) exit 0 ;;
@@ -30,6 +33,7 @@ esac
 cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // empty')
 
 case "$cmd" in *.config/claudex*|*.cache/claudex*|*buehne.env*) deny "$SECRET_MSG" ;; esac
+case "$cmd" in *Marktlauf-Projekt/intern*|*marktlauf-intern*) deny "$INTERN_MSG" ;; esac
 
 if printf '%s' "$cmd" | grep -qE '(^|[;&|(`[:space:]])(ssh|scp|sftp|rsync|lftp)([[:space:]]|$)'; then
   deny "Der Loop deployt nie selbst und berührt nie Prod — kein ssh/scp/sftp/rsync. Deploy nur per Push auf claudex/** (Actions)."

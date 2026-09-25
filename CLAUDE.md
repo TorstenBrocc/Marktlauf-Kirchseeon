@@ -32,12 +32,12 @@ vom 14.08.–11.09.2026 sind dort vollständig erhalten (zusammengeführt am 202
     Stammdaten-Blick den **CSV-Export** nutzen (Sponsoren-Übersicht → Export, hinter Login)
     und vom Nutzer geben lassen.
 
-**Inhaber-Setup (lokal):** Basisordner `~/Repo/github/Marktlauf-Projekt/`. Darunter mehrere
-Git-Worktrees `website-*` (Haupt-`main` = **`website-main`**; feature-spezifische wie
-`website-strecke-10km`, `website-freilayout`, `website-poster-wf`, `website-versand-ux` …)
-plus `intern/`/`intern-rr14/` (Vault/intern, NICHT der Website-Code). Merke: die lokalen
-Ordner heißen `website-*`, nicht „Marktlauf-Kirchseeon" — ein
-`find ~ -name Marktlauf-Kirchseeon` findet daher nichts.
+**Inhaber-Setup (lokal):** Basisordner `~/Repo/github/Marktlauf-Projekt/` mit `website/`
+(Haupt-Checkout `main`), feature-spezifischen Worktrees `website-*` daneben und `intern/`
+(privates Repo, NICHT der Website-Code). Auf coreone gleich aufgebaut unter
+`~/work/Marktlauf-Projekt/`; der Claudex-Loop hat einen eigenen Klon `~/work/marktlauf`.
+Merke: kein Ordner heißt „Marktlauf-Kirchseeon" — ein `find ~ -name Marktlauf-Kirchseeon`
+findet daher nichts.
 
 ## Datenbank-Migrationen anwenden
 
@@ -70,7 +70,7 @@ Ordner heißen `website-*`, nicht „Marktlauf-Kirchseeon" — ein
   sind per `.gitignore` bewusst ausgeschlossen. Keine CRM-/Personendaten committen;
   Migrationen dürfen Organisations-/Programmnamen enthalten, aber möglichst keine
   privaten Personendaten. **Interne Specs gehören nie ins öffentliche Repo** — sie liegen
-  im Vault unter `intern/`.
+  in `intern/` (Regel und Absicherung: Abschnitt „MARKTLAUF = EIN PROJEKT IN ZWEI REPOS").
 - Branch-Arbeit: Feature-Branch entwickeln, dann per Fast-Forward nach `main` (Deploy).
   `main` bewegt sich häufig → vor dem Push `git fetch origin main` + rebasen.
 
@@ -144,16 +144,44 @@ richtig: `--delete` würde Renntag-Meldungen löschen. Gleiches Muster wie `spon
 **`INSIGHTS_MAX_VERSUCHE`** muss in `orga/api/post_status_callback.php` und
 `orga/api/posts_pending_insights.php` übereinstimmen, sonst läuft die Wiedervorlage endlos.
 
-**Die `intern/`-Datenhygiene-Regel oben (Zeile 69–73) schützt nur Datei-Drops, nicht
-handgetippte Inhalte.** `.gitignore` fängt `sponsor-data/`/`*.sponsor.csv` ab, aber nichts
-verhindert, dass ein Sponsorname/-betrag direkt in ein Template getippt wird. Es gab keine
-technische Durchsetzung dafür — nur Konvention, und die wurde „hier und da" nicht eingehalten
-(TT, 2026-09-25). **Vor jedem `git add`/`git commit` in diesem Repo: bewusst prüfen und
-benennen, ob und welche Inhalte aus `intern/` (Sponsoren-Realdaten, Namen, Beträge, interne
-Notizen) eingeflossen sind** — nur explizit als öffentlich freigegebene Ausschnitte dürfen
-rüberwandern, nie automatisch. Gilt für jede Session mit Sicht auf `intern/` daneben, egal ob
-lokal am Eltern-Level (`~/Repo/github/Marktlauf-Projekt/`) oder auf coreone (separate
-SSH-Session gegen `~agent/work/marktlauf-intern`, Regel dort in `intern/.claude/lessons.md`).
+## MARKTLAUF = EIN PROJEKT IN ZWEI REPOS
+
+*Identischer Block in `intern/CLAUDE.md` und `website/CLAUDE.md` — Änderungen immer an beiden
+Stellen. Ersetzt die früheren Einzelfassungen (auch in den `lessons.md`-Dateien). TT 2026-09-25.*
+
+**Aufbau.** `intern/` (privat, `TorstenBrocc/marktlauf-intern`): Orga, Specs, Konzepte,
+Sponsoren- und Förderplanung, RaceResult-Protokolle, Übergaben, Verweise auf Zugangsdaten.
+`website/` (**öffentlich**, `TorstenBrocc/Marktlauf-Kirchseeon`): nur deploybarer Code und
+öffentliche Texte.
+
+**Immer beide.** Keine Arbeit an einem Repo ohne das andere: jede Aufgabe liest ihre Spec und
+den Stand in `intern/`, baut in `website/` und schreibt die Rückkopplung nach `intern/` zurück.
+Deshalb die Session immer im **Elternordner** starten — dort lädt die `CLAUDE.md` (Loader) beide
+Regelwerke:
+- Mac: `~/Repo/github/Marktlauf-Projekt/`
+- iPhone / claude.ai / coreone: Umgebungswähler → Remote Control → **`Marktlauf-Projekt`**
+
+Der Loader ist nicht versioniert (Elternordner ist kein Repo). Bei Verlust neu anlegen als
+`Marktlauf-Projekt/CLAUDE.md` mit genau zwei Import-Zeilen: `@intern/CLAUDE.md` und
+`@website/CLAUDE.md`.
+
+**Einbahnstraße intern → website.** Ins öffentliche Repo darf nur, was ausdrücklich öffentlich
+sein soll. **Nie:** Daten aus der Datenbank (Sponsoren-, Helfer-, Teilnehmerdatensätze, Beträge,
+interne IDs), private Personennamen und -adressen, Zugangsdaten und Benutzernamen externer
+Dienste, interne Specs, Notizen und Übergaben. Was die Website bewusst öffentlich zeigt (z. B.
+Sponsor-Logos), ist kein Verstoß.
+
+**Vor jedem Commit in `website/`:** bewusst prüfen und benennen, ob Inhalte aus `intern/`
+eingeflossen sind. Technische Absicherung: `~/.claude/hooks/intern-leak-guard.sh`
+(`claude-config`, Mac + coreone, Benutzer-Ebene — greift egal in welchem Ordner die Session
+startet) blockt einen Commit ins Website-Repo, dessen neue Zeilen einen Eintrag aus
+`intern/.claude/oeffentlich-verboten.txt` enthalten.
+Die Liste wird nur intern gepflegt und fängt nur, was darin steht — der Blick vor dem Commit
+bleibt Pflicht.
+
+**Ausnahme Claudex-Loop** (`CLAUDEX_LOOP=1`, Umgebung `marktlauf`): arbeitet nur im
+Website-Repo und darf `intern/` nicht lesen (`claudex-loop-guard.sh`). Was der Loop aus intern
+braucht, steht im Auftrag.
 
 ## Externe Dienste — Konfigurationsstand
 
@@ -169,8 +197,8 @@ nächste ein.
 - cURL-Timeout 90 s (`llmCurlPost`); PHP `max_execution_time` auf Strato = 240 s.
 - **GitHub Models** ist zum 30.07.2026 eingestellt — nicht einbauen.
 
-**RaceResult:** Event `412617`. Die ausführliche Setup-Doku liegt im Vault unter
-`intern-rr14/docs/raceresult/setup-protokoll.md` — dort stehen Formulare, Keys, Fenster und
+**RaceResult:** Event `412617`. Die ausführliche Setup-Doku liegt intern unter
+`intern/docs/raceresult/setup-protokoll.md` — dort stehen Formulare, Keys, Fenster und
 die Renntags-Nachmeldung. Für die Website relevant: siehe „Anmeldung & Nachmeldung" unten.
 
 **Mailversand aus RaceResult prüft man in Brevo, nicht in RaceResult** (verifiziert
