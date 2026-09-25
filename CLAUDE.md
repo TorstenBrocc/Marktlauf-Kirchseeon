@@ -174,8 +174,8 @@ nächste ein.
 die Renntags-Nachmeldung. Für die Website relevant: siehe „Anmeldung & Nachmeldung" unten.
 
 **Mailversand aus RaceResult prüft man in Brevo, nicht in RaceResult** (verifiziert
-2026-09-18). RaceResult versendet über eigenen SMTP (`smtp-relay.brevo.com:587`, User
-`abd914001@smtp-brevo.com`, Absender `info@atsv-kirchseeon-marktlauf.de`). Der **Jobs-Tab
+2026-09-18). RaceResult versendet über eigenen SMTP (Brevo-Relay; Zugangsdaten stehen intern, nicht in
+diesem öffentlichen Repo), Absender `info@atsv-kirchseeon-marktlauf.de`. Der **Jobs-Tab
 einer Email-Vorlage bleibt leer**, wenn die Mail über „Anmelde-Formulare → <Formular> →
 Aktionen nach Speichern → EMAIL SENDEN" ausgelöst wird — er protokolliert nur manuelle
 Versände. Leerer Jobs-Tab heißt also **nicht** „nichts versendet".
@@ -270,18 +270,9 @@ mit 1,5–5,5 h Abstand. Auf zeitkritische Fenster ist ein GitHub-Cron nicht ver
   NUR auf TT-Wort** — dann mechanisch nach `intern/docs/strecken-10km-freigabe-runbook.md`.
   1 km / 2 km tragen den Vorbehalts-Hinweis weiter.
 
-**Sponsoren / CRM**
-- **Kernkompetenz** der bestätigten Sponsoren füllen (Feld existiert, Migration 077) —
-  erst **7/108** gepflegt. Die KI baut daraus den Marktlauf-Bezug selbst.
-- **Test-Datensätze** `98 _torsten`, `102 _Anja Jost GmbH`, `65 Testfirma` — Löschen ist
-  destruktiv, daher Rückfrage offen.
-- Mögliche Dublette `30` vs `80` (Allianz Waldhör/Schrödinger).
-- **75 VR-Förderpreis:** Notiz steht auf „vermutlich", sollte auf „bestätigt" (Prod-Write).
-  Recherchiert: „Sterne des Sports" (DOSB + Volksbanken, Bewerbung 1.4.–30.6., lokal bis
-  1.500 €) passt, Weg über Raiffeisen-Volksbank Ebersberg (id 7), Ziel 2027.
-- **78 VK-Stiftung:** Hebel = Ehrenamtspreis (kein Sport-Projektantrag). **112
-  Sportjugendstiftung:** nur überregional → jährlich/regionsübergreifend argumentieren.
-  **BSJ/BLSV** (074): `jugendfoerderung@blsv.de`.
+**Sponsoren / CRM** — offene Punkte stehen intern (`intern/CLAUDE.md`, Abschnitt „OFFENE
+PUNKTE — SPONSOREN / CRM"), nicht in diesem öffentlichen Repo: Sponsor- und Förderdaten liegen
+in der Datenbank und gehören nicht nach draußen.
 
 **Social / make.com**
 - make-Callback vor den Kommentar-Filter ziehen (Szenario 6642115) — sonst keine Permalinks
