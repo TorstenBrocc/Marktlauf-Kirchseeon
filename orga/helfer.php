@@ -274,8 +274,8 @@ $totalCount = (int) $countStmt->fetchColumn();
 
             <form method="get" class="filter-bar">
                 <div class="form-group">
-                    <label>Status</label>
-                    <select name="status" onchange="this.form.submit()">
+                    <label for="filter-status">Status</label>
+                    <select name="status" id="filter-status" onchange="this.form.submit()">
                         <option value="">Alle</option>
                         <option value="neu" <?= $filterStatus === 'neu' ? 'selected' : '' ?>>Neu</option>
                         <option value="bestaetigt" <?= $filterStatus === 'bestaetigt' ? 'selected' : '' ?>>Bestätigt</option>
@@ -321,7 +321,7 @@ $totalCount = (int) $countStmt->fetchColumn();
                                         <form method="post" action="api/helfer_status.php" class="inline-form">
                                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                                             <input type="hidden" name="helfer_id" value="<?= $h['id'] ?>">
-                                            <select name="status" onchange="this.form.submit()">
+                                            <select name="status" aria-label="Status von <?= htmlspecialchars($h['vorname'] . ' ' . $h['nachname']) ?>" onchange="this.form.submit()">
                                                 <option value="neu" <?= $h['status'] === 'neu' ? 'selected' : '' ?>>Neu</option>
                                                 <option value="bestaetigt" <?= $h['status'] === 'bestaetigt' ? 'selected' : '' ?>>Bestätigt</option>
                                                 <option value="abgelehnt" <?= $h['status'] === 'abgelehnt' ? 'selected' : '' ?>>Abgelehnt</option>
