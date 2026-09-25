@@ -224,12 +224,12 @@ body {
 }
 
 .btn-primary {
-    background: var(--primary);
+    background: var(--primary-dark);
     color: var(--white);
 }
 
 .btn-primary:hover {
-    background: var(--primary-dark);
+    filter: brightness(0.85);
 }
 
 /* Sekundaer = ruhig (Outline), nicht gefuellt — cleaner im Admin-UI */
@@ -334,7 +334,7 @@ body {
 
 .sidebar-header h2 {
     font-size: 1.05rem;
-    color: var(--primary);
+    color: var(--primary-dark);
     margin: 0;
 }
 
@@ -366,7 +366,7 @@ body {
 
 .nav-item.active a {
     background: rgba(0, 150, 64, 0.1);
-    color: var(--primary);
+    color: var(--primary-dark);
     font-weight: 500;
 }
 
@@ -569,7 +569,7 @@ a.card-tile:hover {
     margin-top: 0.25rem;
     font-size: 0.9rem;
     font-weight: 500;
-    color: var(--primary);
+    color: var(--link);
 }
 
 .card-tile-disabled {
@@ -600,7 +600,7 @@ a.card-tile:hover {
 }
 
 .quick-links a {
-    color: var(--primary);
+    color: var(--link);
     text-decoration: none;
 }
 
@@ -644,6 +644,7 @@ a.card-tile:hover {
     font-size: 0.8rem;
     color: var(--text-light);
 }
+.quick-links .quick-hint a { text-decoration: underline; }
 .btn-brand-strava { background: #FC4C02; }
 .btn-brand-meta { background: #0866FF; }
 

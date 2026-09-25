@@ -369,13 +369,13 @@ $makeWebhookSecret = (string) ($config['make_webhook_secret'] ?? '');
                             <div style="overflow-x:auto">
                                 <table style="border-collapse:collapse;font-size:0.82rem">
                                     <thead><tr><th style="padding:0.2rem 0.5rem"></th>
-                                        <?php foreach ($wtLabels as $n => $lbl): ?><th style="padding:0.2rem 0.4rem;font-weight:600;color:var(--text-light)"><?= $lbl ?></th><?php endforeach; ?>
+                                        <?php foreach ($wtLabels as $n => $lbl): ?><th id="bsz-th-<?= $n ?>" style="padding:0.2rem 0.4rem;font-weight:600;color:var(--text-light)"><?= $lbl ?></th><?php endforeach; ?>
                                     </tr></thead>
                                     <tbody>
                                         <?php foreach (['instagram' => 'Instagram', 'facebook' => 'Facebook'] as $ch => $chLbl): ?>
-                                        <tr><td style="padding:0.2rem 0.5rem;font-weight:600;white-space:nowrap"><?= $chLbl ?></td>
+                                        <tr><td id="bsz-ch-<?= $ch ?>" style="padding:0.2rem 0.5rem;font-weight:600;white-space:nowrap"><?= $chLbl ?></td>
                                             <?php for ($n = 1; $n <= 7; $n++): $v = $bszStruktur[$ch][$n] ?? ($bszStruktur[$ch][(string) $n] ?? ''); ?>
-                                            <td style="padding:0.15rem 0.25rem"><input type="time" name="bsz_<?= $ch ?>_<?= $n ?>" value="<?= htmlspecialchars(preg_match('/^\d{2}:\d{2}$/', (string) $v) ? (string) $v : '') ?>" style="width:6.2rem;font-size:0.82rem;padding:0.2rem 0.3rem"></td>
+                                            <td style="padding:0.15rem 0.25rem"><input type="time" name="bsz_<?= $ch ?>_<?= $n ?>" aria-labelledby="bsz-ch-<?= $ch ?> bsz-th-<?= $n ?>" value="<?= htmlspecialchars(preg_match('/^\d{2}:\d{2}$/', (string) $v) ? (string) $v : '') ?>" style="width:6.2rem;font-size:0.82rem;padding:0.2rem 0.3rem"></td>
                                             <?php endfor; ?>
                                         </tr>
                                         <?php endforeach; ?>
@@ -477,7 +477,7 @@ $makeWebhookSecret = (string) ($config['make_webhook_secret'] ?? '');
                 <ul id="branchen-liste" style="list-style:none;padding:0;margin:0 0 0.75rem;display:flex;flex-direction:column;gap:0.4rem">
                     <?php foreach ($bListe as $i => $b): ?>
                         <li style="display:flex;align-items:center;gap:0.5rem">
-                            <input type="text" class="branche-name" value="<?= htmlspecialchars($b) ?>" data-orig="<?= htmlspecialchars($b) ?>" maxlength="100"
+                            <input type="text" class="branche-name" aria-label="Branche bearbeiten" value="<?= htmlspecialchars($b) ?>" data-orig="<?= htmlspecialchars($b) ?>" maxlength="100"
                                    style="flex:1;padding:0.4rem 0.55rem;border:1px solid var(--border);border-radius:6px;font-size:0.875rem">
                             <button type="button" class="btn-icon branche-del" title="Löschen">✕</button>
                         </li>

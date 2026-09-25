@@ -1093,18 +1093,19 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
                         </div>
 
                         <div class="form-group">
-                            <label>Leitfaden / ausgefüllte Anfrage</label>
+                            <?php $leitfadenId = ($isEdit && !empty($sponsor['leitfaden_datei'])) ? 'leitfaden-ersetzen' : 'leitfaden'; ?>
+                            <label for="<?= $leitfadenId ?>">Leitfaden / ausgefüllte Anfrage</label>
                             <?php if ($isEdit && !empty($sponsor['leitfaden_datei'])): ?>
                                 <p style="margin:0.2rem 0 0.4rem;">
                                     📄 <a href="api/leitfaden_download.php?id=<?= (int) $sponsorId ?>" target="_blank" rel="noopener noreferrer"><?= htmlspecialchars(sponsorLeitfadenDisplayName((string) $sponsor['leitfaden_datei'])) ?> ↓</a>
                                 </p>
                                 <details style="font-size:0.85rem; color: var(--text-light);">
                                     <summary style="cursor:pointer;">ersetzen</summary>
-                                    <input type="file" name="leitfaden" style="margin-top:0.4rem;"
+                                    <input type="file" id="<?= $leitfadenId ?>" name="leitfaden" style="margin-top:0.4rem;"
                                            accept=".pdf,.doc,.docx,.odt,.rtf,.md,.txt">
                                 </details>
                             <?php else: ?>
-                                <input type="file" name="leitfaden"
+                                <input type="file" id="<?= $leitfadenId ?>" name="leitfaden"
                                        accept=".pdf,.doc,.docx,.odt,.rtf,.md,.txt">
                                 <p style="font-size:0.8rem; color: var(--text-light); margin-top:0.4rem;">
                                     Optional: die ausgefüllte Anfrage/Ausfüllhilfe hochladen (PDF, DOC(X), ODT, RTF, MD, TXT; max. 10&nbsp;MB).

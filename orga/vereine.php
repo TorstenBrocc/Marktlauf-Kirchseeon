@@ -224,16 +224,16 @@ $katLabel = ['verein' => 'Verein', 'laufevent' => 'Laufevent'];
 
             <form method="get" class="filter-bar">
                 <div class="form-group">
-                    <label>Kategorie</label>
-                    <select name="kategorie" onchange="this.form.submit()">
+                    <label for="filter-kategorie">Kategorie</label>
+                    <select id="filter-kategorie" name="kategorie" onchange="this.form.submit()">
                         <option value="">Alle</option>
                         <option value="verein" <?= $filterKategorie === 'verein' ? 'selected' : '' ?>>Vereine</option>
                         <option value="laufevent" <?= $filterKategorie === 'laufevent' ? 'selected' : '' ?>>Laufevents</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Status</label>
-                    <select name="status" onchange="this.form.submit()">
+                    <label for="filter-status">Status</label>
+                    <select id="filter-status" name="status" onchange="this.form.submit()">
                         <option value="">Alle</option>
                         <?php foreach (VEREIN_STATUS as $key => $meta): ?>
                             <option value="<?= $key ?>" <?= $filterStatus === $key ? 'selected' : '' ?>><?= htmlspecialchars($meta['label']) ?></option>

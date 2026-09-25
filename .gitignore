@@ -2,6 +2,9 @@
 .clinerules
 # .memory/   # entkommentieren zum Ignorieren; im public-Repo ohnehin nicht relevant
 
+# --- hyperclaude (Plan-/Review-/Recap-Scratch, nie committen) ---
+.hyperclaude/
+
 # --- macOS ---
 .DS_Store
 .AppleDouble

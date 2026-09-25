@@ -290,6 +290,39 @@ mit 1,5–5,5 h Abstand. Auf zeitkritische Fenster ist ein GitHub-Cron nicht ver
 - Echter GPT-4-Klasse-Tier nur über Azure OpenAI (Azure-Nonprofit-Grant) — der
   OpenAI-ChatGPT-Nonprofit-Grant deckt **keine** API.
 
+## Claudex-Loop auf coreone — Pflichtregeln (ADR-041)
+
+Gilt für Sessions mit `CLAUDEX_LOOP=1` (RC-Umgebung `marktlauf` auf coreone). Mac- und
+Web-Sessions sind davon nicht betroffen.
+
+**Leitplanken.**
+- Arbeiten nur auf `claudex/<thema>`, Start mit `git fetch origin && git switch -c claudex/<thema> origin/main`.
+  Push ausschließlich `git push -u origin HEAD:claudex/<thema>`.
+- Der Loop **deployt nie selbst** und **berührt nie Prod**: der Push auf `claudex/**` löst „Staging
+  Deployment (Buehne S)" aus — der einzige Weg auf die Bühne. Kein Merge nach `main`; das macht der Mensch.
+- Hart: `main` ist per GitHub-Ruleset nur für Admins beschreibbar (der Loop pusht als Nicht-Admin-Bot).
+  Weich: `.claude/hooks/claudex-loop-guard.sh` blockt andere Push-Ziele, Commits auf `main`,
+  `ssh/scp/sftp/rsync` und jeden Zugriff auf die Sensor-Zugangsdaten.
+- Bühne = nur synthetische Daten; nie echte Personendaten erzeugen oder aus Prod holen.
+- Den Abschnitt „Aktueller Stand / Übergabe" fasst der Loop nicht an — sein Bericht ist das Recap.
+
+**UI/UX-Gate — PFLICHT vor „fertig"/Recap (ADR-041 Festlegung 9).** Sensoren liegen in `~/.local/bin`
+(Quelle `coreone-runner/claudex-sensors`); nur sie lesen die Zugangsdaten, der Loop sieht und nennt sie nie.
+0. **Baseline vor dem ersten Push:** `axe-check <geänderte Pfade>` (die Bühne zeigt dann noch den
+   letzten Stand) — trennt vorbestehende von neuen Verstößen.
+1. Push, dann `buehne-wait $(git rev-parse HEAD)` — wartet, bis die Bühne genau diesen Commit ausliefert.
+   Die Bühne ist geteilt: sie zeigt den zuletzt gepushten `claudex/**`-Stand.
+2. `axe-check <Pfade, z. B. /orga/sponsoren.php>` — axe-core, WCAG 2.2 AA, eingeloggt als Test-Admin;
+   Exit 2 = kritische/ernste Verstöße. Report + Ganzseiten-Screenshot unter dem ausgegebenen `out`.
+3. **accessibility-agents** auf die geänderten Seiten; **claude-seo** nur bei öffentlichen Seiten (nicht `orga/`).
+4. Visuell: `buehne-login` (gibt die Basis-URL aus), dann Playwright-MCP (`browser_navigate` + Screenshot)
+   gegen die Ziel-Spec der Aufgabe.
+5. Ins Recap: axe-Zusammenfassung (Pfad, Verstöße nach Schwere, Baseline vs. neu), Agenten-Findings,
+   Screenshot-Pfade. **Neu eingeführte** kritische/ernste Verstöße müssen behoben sein.
+
+Ohne diese Schritte gilt der Lauf **nicht als fertig**. Automatisierte a11y fängt nur ~57 % — die
+Ästhetik bleibt Screenshot-Urteil plus Mensch.
+
 ## Bühne S — Staging für Claudex (Stand 2026-09-17)
 
 - **Zweck:** login-gated `orga/`-UI für das UI/UX-Gate des autonomen Bau-Loops sichtbar machen — auf einer
@@ -308,4 +341,9 @@ mit 1,5–5,5 h Abstand. Auf zeitkritische Fenster ist ein GitHub-Cron nicht ver
 - **Stumm:** Mail/Make/Gemini/Brevo sind auf der Bühne durch leere Config-Keys deaktiviert.
 - **Regel (Incident 17.09.):** nach **jeder** Strato-Umleitungsänderung Prod **und** Ziel von außen prüfen.
   MySQL-Client auf Strato liest `~/.my.cnf` (= Prod) — für Staging `--defaults-file` + `DATABASE()`-Guard.
+  Die Basic-Auth-Passwortdatei unter `storage/` muss für Apache lesbar sein (Gruppe `www` → Modus 644; bei 600
+  antwortet Apache mit **500**, auch bei falschem Passwort). Serverseitig gepflegte Staging-Dateien gehören
+  **alle** in die `EXCLUDE`-Liste des Staging-Workflows, sonst löscht `rsync --delete` sie beim nächsten Deploy.
+  Datenabhängige Migrationen (Seeds mit Prod-IDs) brechen auf der leeren Bühne → Schema-Resync aus Prod
+  (`mysqldump --no-data` → `baseline` → Seed), Prozedur im Vault-Plan.
 - **Kanon/Details:** Vault `00_meta/plans/claudex-marktlauf-onboarding.md`.
