@@ -128,7 +128,7 @@ $stufen = ['bronze' => 'Bronze', 'silber' => 'Silber', 'gold' => 'Gold', 'haupts
                             <td>
                                 <input type="text" class="pk-inp"
                                        data-feld="label" data-key="<?= htmlspecialchars($pos['key']) ?>"
-                                       aria-label="bezeichnung: <?= $posLabel ?>"
+                                       aria-label="bezeichnung"
                                        value="<?= htmlspecialchars($pos['label']) ?>" maxlength="120">
                             </td>
                             <td>
