@@ -84,11 +84,12 @@ $stufen = ['bronze' => 'Bronze', 'silber' => 'Silber', 'gold' => 'Gold', 'haupts
                 <table class="pk-table">
                     <thead><tr><th style="width:12rem">Paket</th><th>Investition</th></tr></thead>
                     <tbody>
-                    <?php foreach ($pakete as $key => $p): ?>
+                    <?php foreach ($pakete as $key => $p):
+                        $investitionFeldId = 'pk-inv-' . preg_replace('/[^a-zA-Z0-9_-]/', '_', (string) $key); ?>
                         <tr>
-                            <td style="font-weight:600"><?= htmlspecialchars((string) ($p['name'] ?? $key)) ?></td>
+                            <td style="font-weight:600"><label for="<?= $investitionFeldId ?>"><?= htmlspecialchars((string) ($p['name'] ?? $key)) ?></label></td>
                             <td>
-                                <input type="text" class="pk-inp" style="max-width:16rem"
+                                <input type="text" class="pk-inp" style="max-width:16rem" id="<?= $investitionFeldId ?>"
                                        data-feld="investition" data-paket="<?= htmlspecialchars((string) $key) ?>"
                                        value="<?= htmlspecialchars((string) ($p['investition'] ?? '')) ?>" maxlength="60">
                             </td>
@@ -121,15 +122,18 @@ $stufen = ['bronze' => 'Bronze', 'silber' => 'Silber', 'gold' => 'Gold', 'haupts
                     <tbody>
                     <?php foreach ($katalog as $pos):
                         $aktiv = ($pos['aktiv'] ?? true) !== false;
-                        $istMenge = $pos['typ'] === 'startplaetze'; ?>
+                        $istMenge = $pos['typ'] === 'startplaetze';
+                        $posLabel = htmlspecialchars((string) $pos['label']); ?>
                         <tr class="<?= $aktiv ? '' : 'pk-inaktiv' ?>">
                             <td>
                                 <input type="text" class="pk-inp"
                                        data-feld="label" data-key="<?= htmlspecialchars($pos['key']) ?>"
+                                       aria-label="bezeichnung: <?= $posLabel ?>"
                                        value="<?= htmlspecialchars($pos['label']) ?>" maxlength="120">
                             </td>
                             <td>
-                                <select class="pk-sel" data-feld="min_stufe" data-key="<?= htmlspecialchars($pos['key']) ?>">
+                                <select class="pk-sel" data-feld="min_stufe" data-key="<?= htmlspecialchars($pos['key']) ?>"
+                                        aria-label="gilt ab: <?= $posLabel ?>">
                                     <?php foreach ($stufen as $sk => $sl): ?>
                                         <option value="<?= $sk ?>" <?= $pos['min'] === $sk ? 'selected' : '' ?>><?= $sl ?></option>
                                     <?php endforeach; ?>
@@ -140,6 +144,7 @@ $stufen = ['bronze' => 'Bronze', 'silber' => 'Silber', 'gold' => 'Gold', 'haupts
                                     <?php if ($istMenge): ?>
                                         <input type="number" min="0" class="pk-inp pk-mini"
                                                data-feld="menge_<?= $stufe ?>" data-key="<?= htmlspecialchars($pos['key']) ?>"
+                                               aria-label="<?= htmlspecialchars($stufen[$stufe]) ?> stückzahl: <?= $posLabel ?>"
                                                value="<?= isset($pos['menge'][$stufe]) ? (int) $pos['menge'][$stufe] : '' ?>"
                                                placeholder="–">
                                     <?php else: ?>
@@ -149,6 +154,7 @@ $stufen = ['bronze' => 'Bronze', 'silber' => 'Silber', 'gold' => 'Gold', 'haupts
                             <?php endforeach; ?>
                             <td class="pk-num">
                                 <input type="checkbox" data-feld="aktiv" data-key="<?= htmlspecialchars($pos['key']) ?>"
+                                       aria-label="angeboten: <?= $posLabel ?>"
                                        <?= $aktiv ? 'checked' : '' ?> style="accent-color:var(--primary);width:16px;height:16px;cursor:pointer">
                             </td>
                         </tr>
