@@ -249,7 +249,7 @@ $kategorien = [
             <div class="pb-card">
                 <div class="pb-meta-row">
                     <input type="text" id="pb-titel" class="pb-titel-input" placeholder="Titel …" maxlength="120">
-                    <select id="pb-kat" class="pb-kat-select">
+                    <select id="pb-kat" class="pb-kat-select" aria-label="Kategorie">
                         <?php foreach ($kategorien as $key => $label): ?>
                             <option value="<?= htmlspecialchars($key) ?>"><?= htmlspecialchars($label) ?></option>
                         <?php endforeach; ?>
