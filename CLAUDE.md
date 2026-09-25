@@ -144,6 +144,17 @@ richtig: `--delete` würde Renntag-Meldungen löschen. Gleiches Muster wie `spon
 **`INSIGHTS_MAX_VERSUCHE`** muss in `orga/api/post_status_callback.php` und
 `orga/api/posts_pending_insights.php` übereinstimmen, sonst läuft die Wiedervorlage endlos.
 
+**Die `intern/`-Datenhygiene-Regel oben (Zeile 69–73) schützt nur Datei-Drops, nicht
+handgetippte Inhalte.** `.gitignore` fängt `sponsor-data/`/`*.sponsor.csv` ab, aber nichts
+verhindert, dass ein Sponsorname/-betrag direkt in ein Template getippt wird. Es gab keine
+technische Durchsetzung dafür — nur Konvention, und die wurde „hier und da" nicht eingehalten
+(TT, 2026-09-25). **Vor jedem `git add`/`git commit` in diesem Repo: bewusst prüfen und
+benennen, ob und welche Inhalte aus `intern/` (Sponsoren-Realdaten, Namen, Beträge, interne
+Notizen) eingeflossen sind** — nur explizit als öffentlich freigegebene Ausschnitte dürfen
+rüberwandern, nie automatisch. Gilt für jede Session mit Sicht auf `intern/` daneben, egal ob
+lokal am Eltern-Level (`~/Repo/github/Marktlauf-Projekt/`) oder auf coreone (separate
+SSH-Session gegen `~agent/work/marktlauf-intern`, Regel dort in `intern/.claude/lessons.md`).
+
 ## Externe Dienste — Konfigurationsstand
 
 **LLM-Provider-Kette** (`src/llm_client.php`, `llmGenerate()`): Fallback-Reihenfolge
