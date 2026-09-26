@@ -161,6 +161,7 @@ Deshalb die Session immer im **Elternordner** starten — dort lädt die `CLAUDE
 Regelwerke:
 - Mac: `~/Repo/github/Marktlauf-Projekt/`
 - iPhone / claude.ai / coreone: Umgebungswähler → Remote Control → **`Marktlauf-Projekt`**
+  (Bauaufträge über den Claudex-Loop: Umgebung **`website`**)
 
 Der Loader ist nicht versioniert (Elternordner ist kein Repo). Bei Verlust neu anlegen als
 `Marktlauf-Projekt/CLAUDE.md` mit genau zwei Import-Zeilen: `@intern/CLAUDE.md` und
@@ -180,7 +181,7 @@ startet) blockt einen Commit ins Website-Repo, dessen neue Zeilen einen Eintrag 
 Die Liste wird nur intern gepflegt und fängt nur, was darin steht — der Blick vor dem Commit
 bleibt Pflicht.
 
-**Claudex-Loop** (`CLAUDEX_LOOP=1`, Umgebung `marktlauf`): arbeitet ebenfalls im Projektordner
+**Claudex-Loop** (`CLAUDEX_LOOP=1`, Remote-Control-Umgebung **`website`**): arbeitet ebenfalls im Projektordner
 (`~/work/Marktlauf-Projekt/website`, eigene Worktrees), lädt damit beide Regelwerke und liest und
 schreibt `intern/` wie jede andere Session. Die Einbahnstraße gilt für ihn genauso, der Leak-Guard
 greift auch dort. Ablauf mit Zwei-Go-Schranke: `website/CLAUDE.md`, Abschnitt „Claudex-Loop auf
@@ -314,7 +315,7 @@ in der Datenbank und gehören nicht nach draußen.
 
 ## Claudex-Loop auf coreone — Pflichtregeln (ADR-041, ADR-055)
 
-Gilt für Sessions mit `CLAUDEX_LOOP=1` (RC-Umgebung `marktlauf` auf coreone). Mac- und
+Gilt für Sessions mit `CLAUDEX_LOOP=1` (Remote-Control-Umgebung **`website`** auf coreone — der Name ist der Ordnername). Mac- und
 Web-Sessions sind davon nicht betroffen — dort gilt die normale Freigabe-Kette.
 
 **Zwei-Go-Schranke — PFLICHT, jeder Lauf (ADR-055).** Der Loop hält an genau zwei Stellen an und
