@@ -35,7 +35,8 @@ vom 14.08.–11.09.2026 sind dort vollständig erhalten (zusammengeführt am 202
 **Inhaber-Setup (lokal):** Basisordner `~/Repo/github/Marktlauf-Projekt/` mit `website/`
 (Haupt-Checkout `main`), feature-spezifischen Worktrees `website-*` daneben und `intern/`
 (privates Repo, NICHT der Website-Code). Auf coreone gleich aufgebaut unter
-`~/work/Marktlauf-Projekt/`; der Claudex-Loop hat einen eigenen Klon `~/work/marktlauf`.
+`~/work/Marktlauf-Projekt/`; der Claudex-Loop arbeitet in eigenen Worktrees von
+`~/work/Marktlauf-Projekt/website`.
 Merke: kein Ordner heißt „Marktlauf-Kirchseeon" — ein `find ~ -name Marktlauf-Kirchseeon`
 findet daher nichts.
 
@@ -179,9 +180,11 @@ startet) blockt einen Commit ins Website-Repo, dessen neue Zeilen einen Eintrag 
 Die Liste wird nur intern gepflegt und fängt nur, was darin steht — der Blick vor dem Commit
 bleibt Pflicht.
 
-**Ausnahme Claudex-Loop** (`CLAUDEX_LOOP=1`, Umgebung `marktlauf`): arbeitet nur im
-Website-Repo und darf `intern/` nicht lesen (`claudex-loop-guard.sh`). Was der Loop aus intern
-braucht, steht im Auftrag.
+**Claudex-Loop** (`CLAUDEX_LOOP=1`, Umgebung `marktlauf`): arbeitet ebenfalls im Projektordner
+(`~/work/Marktlauf-Projekt/website`, eigene Worktrees), lädt damit beide Regelwerke und liest und
+schreibt `intern/` wie jede andere Session. Die Einbahnstraße gilt für ihn genauso, der Leak-Guard
+greift auch dort. Ablauf mit Zwei-Go-Schranke: `website/CLAUDE.md`, Abschnitt „Claudex-Loop auf
+coreone" (ADR-055).
 
 ## Externe Dienste — Konfigurationsstand
 
@@ -309,21 +312,53 @@ in der Datenbank und gehören nicht nach draußen.
 - Echter GPT-4-Klasse-Tier nur über Azure OpenAI (Azure-Nonprofit-Grant) — der
   OpenAI-ChatGPT-Nonprofit-Grant deckt **keine** API.
 
-## Claudex-Loop auf coreone — Pflichtregeln (ADR-041)
+## Claudex-Loop auf coreone — Pflichtregeln (ADR-041, ADR-055)
 
 Gilt für Sessions mit `CLAUDEX_LOOP=1` (RC-Umgebung `marktlauf` auf coreone). Mac- und
-Web-Sessions sind davon nicht betroffen.
+Web-Sessions sind davon nicht betroffen — dort gilt die normale Freigabe-Kette.
+
+**Zwei-Go-Schranke — PFLICHT, jeder Lauf (ADR-055).** Der Loop hält an genau zwei Stellen an und
+wartet auf TTs ausdrückliches „Go" in der Session. Ohne Go kein nächster Schritt.
+
+1. **Plan:** `hyper-plan-loop` (Claude plant, Codex grillt, bis keine Blocker mehr offen sind) —
+   **nicht** `hyper-auto` am Stück, das liefe ohne Halt durch. Danach **Go 1** anfordern mit dieser
+   Zusammenfassung, in dieser Reihenfolge:
+   1. **Lebensweltbezug** — zuerst für TT als Nutzer: was ändert sich für ihn, wo und wann merkt er
+      es; danach für die anderen, für die gebaut wird (Läufer, Helfer, Sponsoren, Orga-Team).
+   2. **Ziel und Erfolgsmaß** — messbar (z. B. axe 2 → 0, Seite X zeigt Y).
+   3. **Produktionsschritte** — was in welcher Reihenfolge wo gebaut wird (Dateien, Seiten, Migrationen).
+   4. **Getroffene Entscheidungen** — gewählte Lösung, verworfene Alternativen, warum; was Codex im
+      Plan-Grilling beanstandet hat und wie es gelöst wurde.
+   5. **Was bewusst nicht gemacht wird** — Scope-Rand.
+   6. **Risiken und Berührungspunkte** — Prod-Daten, Migrationen, öffentliche Inhalte
+      (Einbahnstraße intern → website), Mails an echte Menschen.
+2. **Bau:** nach Go 1 `hyper-implement-loop` + UI/UX-Gate (unten) + `hyper-recap`. Weicht der Bau
+   **spürbar** vom freigegebenen Plan ab: anhalten und fragen, nicht weiterbauen.
+3. **Go 2** anfordern mit **nur**: Abweichungen von Schritten (1.3) und Entscheidungen (1.4),
+   Besonderheiten, Ergebnis gegen das Erfolgsmaß (1.2).
+4. **Nach Go 2 merged und deployt der Loop selbst:** `git push origin HEAD:main` (nur Fast-Forward).
+   Lehnt GitHub mit „Required status check "check" is expected" ab, läuft der Check auf dem
+   `claudex/`-Branch noch — kurz warten, erneut. Danach Prod von außen prüfen (HTTP 200, neuer
+   `?v=<sha>`), dann `git push origin --delete claudex/<thema>`.
+5. Beide Zusammenfassungen als Datei nach `intern/claudex-laeufe/<JJJJ-MM-TT>-<thema>.md` — Rückkopplung.
 
 **Leitplanken.**
 - Arbeiten nur auf `claudex/<thema>`, Start mit `git fetch origin && git switch -c claudex/<thema> origin/main`.
-  Push ausschließlich `git push -u origin HEAD:claudex/<thema>`.
-- Der Loop **deployt nie selbst** und **berührt nie Prod**: der Push auf `claudex/**` löst „Staging
-  Deployment (Buehne S)" aus — der einzige Weg auf die Bühne. Kein Merge nach `main`; das macht der Mensch.
-- Hart: `main` ist per GitHub-Ruleset nur für Admins beschreibbar (der Loop pusht als Nicht-Admin-Bot).
-  Weich: `.claude/hooks/claudex-loop-guard.sh` blockt andere Push-Ziele, Commits auf `main`,
-  `ssh/scp/sftp/rsync` und jeden Zugriff auf die Sensor-Zugangsdaten.
+  Push während des Baus ausschließlich `git push -u origin HEAD:claudex/<thema>` — der Push löst
+  „Staging Deployment (Buehne S)" aus. Nach `main` nur der eine Fast-Forward nach Go 2.
+- Hart (GitHub): `main` lässt sich weder löschen noch per Force-Push umschreiben; der Pflicht-Check
+  `check` muss grün sein. Weich: `.claude/hooks/claudex-loop-guard.sh` erlaubt nur die Push-Ziele
+  oben, blockt Commits direkt auf `main`, `ssh/scp/sftp/rsync` und jeden Zugriff auf die
+  Sensor-Zugangsdaten. Ob das Go wirklich von TT kam, sichert **die Regel**, nicht die Technik (ADR-055).
+- **Kein PR, keine Attribution-Zeile** (z. B. `Generated with Claude Code`) in Commits (Lauf 2, 25.09.).
+- **Der Plan baut keine eigenen Prüf-/Test-Skripte** — Prüfer sind ausschließlich die vorhandenen
+  Sensoren (`axe-check`, `accessibility-agents`, `claude-seo`). Lehre Lauf 1 (24.09.): 605-Zeilen-Plan
+  mit selbstgebautem Prüfskript brach im Plan-Loop als Overbuild ab.
+- **Review-Brief an Codex eng fassen.** Codex liest den Auftrag sonst breiter als gemeint und sieht
+  `.hyperclaude/`-Artefakte nicht als Nachweis (Lauf 2, 25.09.: 3 von 4 Codex-Findings widerlegt).
 - Bühne = nur synthetische Daten; nie echte Personendaten erzeugen oder aus Prod holen.
-- Den Abschnitt „Aktueller Stand / Übergabe" fasst der Loop nicht an — sein Bericht ist das Recap.
+- Den Abschnitt „Aktueller Stand / Übergabe" fasst der Loop nicht an — seine Berichte sind die
+  Zusammenfassungen aus der Zwei-Go-Schranke.
 
 **UI/UX-Gate — PFLICHT vor „fertig"/Recap (ADR-041 Festlegung 9).** Sensoren liegen in `~/.local/bin`
 (Quelle `coreone-runner/claudex-sensors`); nur sie lesen die Zugangsdaten, der Loop sieht und nennt sie nie.

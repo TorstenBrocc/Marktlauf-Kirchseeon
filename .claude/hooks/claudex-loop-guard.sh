@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
-# Claudex loop guard (ADR-041) — PreToolUse hook, active only when CLAUDEX_LOOP=1
-# (set by the coreone RC unit). Soft second layer behind the GitHub ruleset on main.
+# Claudex loop guard (ADR-041, ADR-055) — PreToolUse hook, active only when CLAUDEX_LOOP=1
+# (set by the coreone RC unit). Soft layer next to GitHub (main: no deletion, no force-push,
+# required check). The two-Go gate itself is a RULE (website/CLAUDE.md) — this guard cannot know
+# whether TT said Go; it only limits WHAT a push may do.
 # In loop sessions it denies:
-#   - git push to anything other than: git push [-u|-q] origin [HEAD:]claudex/<name>
+#   - git push to anything other than: git push [-u|-q] origin [HEAD:]claudex/<name>,
+#     the fast-forward git push [-q] origin HEAD:main (after Go 2) and
+#     git push origin --delete claudex/<name>
 #   - git commit while on main/master
 #   - ssh/scp/sftp/rsync/lftp (the loop never deploys itself, never touches Prod)
 #   - any access to the sensor secrets (~/.config/claudex, ~/.cache/claudex)
-#   - any access to the private intern repo (Marktlauf-Projekt/intern, marktlauf-intern)
 [ "${CLAUDEX_LOOP:-}" = "1" ] || exit 0
 
 input=$(cat)
@@ -18,13 +21,11 @@ deny() {
   exit 0
 }
 SECRET_MSG="Sensor-Zugangsdaten sind tabu — nur über buehne-login / buehne-wait / axe-check nutzen."
-INTERN_MSG="Das private intern-Repo ist für den Loop tabu (öffentliches Repo, Einbahnstraße intern → website). Was aus intern nötig ist, steht im Auftrag."
 
 case "$tool" in
   Read|Edit|Write|MultiEdit|Grep|Glob|NotebookEdit)
     p=$(printf '%s' "$input" | jq -r '.tool_input.file_path // .tool_input.path // .tool_input.notebook_path // empty')
     case "$p" in *.config/claudex*|*.cache/claudex*) deny "$SECRET_MSG" ;; esac
-    case "$p" in *Marktlauf-Projekt/intern*|*marktlauf-intern*) deny "$INTERN_MSG" ;; esac
     exit 0 ;;
   Bash) ;;
   *) exit 0 ;;
@@ -33,7 +34,6 @@ esac
 cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // empty')
 
 case "$cmd" in *.config/claudex*|*.cache/claudex*|*buehne.env*) deny "$SECRET_MSG" ;; esac
-case "$cmd" in *Marktlauf-Projekt/intern*|*marktlauf-intern*) deny "$INTERN_MSG" ;; esac
 
 if printf '%s' "$cmd" | grep -qE '(^|[;&|(`[:space:]])(ssh|scp|sftp|rsync|lftp)([[:space:]]|$)'; then
   deny "Der Loop deployt nie selbst und berührt nie Prod — kein ssh/scp/sftp/rsync. Deploy nur per Push auf claudex/** (Actions)."
@@ -42,8 +42,10 @@ fi
 GIT='git([[:space:]]+-C[[:space:]]+[^[:space:]]+)?[[:space:]]+'
 if printf '%s' "$cmd" | grep -qE "${GIT}push"; then
   bad=$(printf '%s' "$cmd" | grep -oE "${GIT}push[^;&|]*" |
-    grep -vE "^${GIT}push([[:space:]]+(-u|--set-upstream|-q|--quiet))*[[:space:]]+origin[[:space:]]+(HEAD:)?(refs/heads/)?claudex/[A-Za-z0-9._/-]+[[:space:]]*$")
-  [ -n "$bad" ] && deny "Push nur als 'git push -u origin HEAD:claudex/<thema>' — main/master, --all, --mirror, --force, Tags und andere Ziele sind im Loop gesperrt."
+    grep -vE "^${GIT}push([[:space:]]+(-u|--set-upstream|-q|--quiet))*[[:space:]]+origin[[:space:]]+(HEAD:)?(refs/heads/)?claudex/[A-Za-z0-9._/-]+[[:space:]]*$" |
+    grep -vE "^${GIT}push([[:space:]]+(-q|--quiet))*[[:space:]]+origin[[:space:]]+HEAD:(refs/heads/)?main[[:space:]]*$" |
+    grep -vE "^${GIT}push[[:space:]]+origin[[:space:]]+--delete[[:space:]]+claudex/[A-Za-z0-9._/-]+[[:space:]]*$")
+  [ -n "$bad" ] && deny "Push nur als 'git push -u origin HEAD:claudex/<thema>', nach Go 2 als 'git push origin HEAD:main' (Fast-Forward) oder 'git push origin --delete claudex/<thema>' — --force, --all, --mirror, Tags und andere Ziele sind im Loop gesperrt."
 fi
 
 if printf '%s' "$cmd" | grep -qE "${GIT}commit"; then
