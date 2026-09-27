@@ -523,8 +523,8 @@ function ds_render_markdown(string $md, int $headingOffset = 0): string
         .ds-snip-title { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
         .ds-snip-title strong { font-size: 0.92rem; }
         .ds-snip-title span { font-size: 0.76rem; color: var(--text-light); }
-        .ds-snip-copy { margin-left: auto; flex: 0 0 auto; appearance: none; border: 1px solid var(--primary); background: var(--primary); color: #fff; font: inherit; font-size: 0.8rem; font-weight: 600; padding: 0.4rem 0.8rem; border-radius: 8px; cursor: pointer; transition: background 0.12s; }
-        .ds-snip-copy:hover { background: var(--primary-dark, #007230); }
+        .ds-snip-copy { margin-left: auto; flex: 0 0 auto; appearance: none; border: 1px solid var(--primary); background: var(--white); color: var(--primary-dark); font: inherit; font-size: 0.8rem; font-weight: 600; padding: 0.4rem 0.8rem; border-radius: 8px; cursor: pointer; transition: background 0.12s; }
+        .ds-snip-copy:hover { background: var(--primary-tint); }
         .ds-snip-copy:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
         .ds-snip-actions { margin-left: auto; display: flex; align-items: center; gap: 0.5rem; flex: 0 0 auto; }
         .ds-snip-actions .ds-snip-copy { margin-left: 0; }

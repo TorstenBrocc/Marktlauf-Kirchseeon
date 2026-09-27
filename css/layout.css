@@ -393,9 +393,15 @@
     transition: color 0.3s ease;
 }
 
-.footer-credits-link:hover {
+.footer-credits-link:hover,
+.footer-credits-link:focus-visible {
     color: #fff;
     text-decoration: underline;
+}
+
+.footer-credits-link:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
 }
 
 /* ==========================================================================

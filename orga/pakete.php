@@ -51,7 +51,9 @@ $stufen = ['bronze' => 'Bronze', 'silber' => 'Silber', 'gold' => 'Gold', 'haupts
         .pk-inp.pk-mini { text-align: center; }
         .pk-sel { padding: 0.3rem 0.4rem; border: 1px solid var(--border); border-radius: 4px; font-size: 0.85rem; background: var(--white); color: var(--text); }
         .pk-save { outline: 2px solid var(--primary); outline-offset: 1px; }
-        .pk-inaktiv td { opacity: 0.5; }
+        /* Inactive rows: muted but readable text instead of opacity (opacity .5 drops text below 4.5:1) */
+        .pk-inaktiv td { background: #fafafa; }
+        .pk-inaktiv td, .pk-inaktiv .pk-inp, .pk-inaktiv .pk-sel { color: var(--text-light); }
         .pk-hinweis { font-size: 0.82rem; color: var(--text); background: rgba(255,193,7,0.15); border: 1px solid rgba(255,193,7,0.55); border-radius: 6px; padding: 0.6rem 0.8rem; margin: 0 0 1rem; line-height: 1.5; }
         .pk-vorschau { font-size: 0.85rem; line-height: 1.6; }
         .pk-vorschau dt { font-weight: 600; margin-top: 0.6rem; }

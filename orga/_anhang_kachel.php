@@ -52,12 +52,12 @@ foreach (sponsorAnhangPlan($slug) as $g) {
         // anbietet. Sonst wird sie wie ein fester Anhang markiert — sonst stünde die Datei
         // ohne jeden Marker da und man wüsste nicht, ob sie mitgeht.
         $abwaehlbar = !$gruppe['fest'] && $anhangAbwahl; ?>
-        <h4 class="anhang-gruppe-titel">
+        <h3 class="anhang-gruppe-titel">
             <?= $abwaehlbar ? '' : '🔒 ' ?><?= htmlspecialchars($gruppe['titel']) ?>
             <?php if (!$abwaehlbar): ?>
                 <span class="brief-hint">fest — geht immer mit</span>
             <?php endif; ?>
-        </h4>
+        </h3>
 
         <?php if ($gruppe['hinweis'] !== ''): ?>
             <p class="anhang-warn"><?= htmlspecialchars($gruppe['hinweis']) ?></p>
