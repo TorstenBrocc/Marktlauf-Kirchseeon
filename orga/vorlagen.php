@@ -215,7 +215,7 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
         .vt-seg { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
         .vt-seg label { margin: 0; padding: 0.4rem 0.75rem; font-size: 0.85rem; cursor: pointer; color: var(--text); background: var(--white); }
         .vt-seg input { display: none; }
-        .vt-seg input:checked + label { background: var(--primary); color: #fff; }
+        .vt-seg input:checked + label { background: var(--primary-tint); color: var(--primary-dark); font-weight: 600; box-shadow: inset 0 0 0 1px var(--primary); }
         .vt-photo-picker { display: none; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; max-height: 220px; overflow-y: auto; }
         .vt-thumb { width: 84px; cursor: pointer; text-align: center; }
         .vt-thumb img { width: 84px; height: 84px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); display: block; }

@@ -57,7 +57,7 @@ $kategorien = [
             color: var(--text); cursor: pointer; transition: background 0.15s;
         }
         .pb-filter-btn.active {
-            background: var(--primary); color: #fff; border-color: var(--primary);
+            background: var(--primary-tint); color: var(--primary-dark); border-color: var(--primary); font-weight: 600;
         }
         .pb-list { display: flex; flex-direction: column; gap: 0.5rem; }
         .pb-item {

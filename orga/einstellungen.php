@@ -224,10 +224,13 @@ $makeWebhookSecret = (string) ($config['make_webhook_secret'] ?? '');
             background: var(--bg);
         }
         .reminder-tag input:checked + span {
-            background: var(--primary);
+            background: var(--primary-tint);
             border-color: var(--primary);
-            color: #fff;
+            color: var(--primary-dark);
             font-weight: 600;
+        }
+        .reminder-tag input:checked + span::before {
+            content: "✓ ";
         }
         .reminder-tag input:focus-visible + span {
             outline: 2px solid var(--primary);

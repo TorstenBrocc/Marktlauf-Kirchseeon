@@ -156,8 +156,9 @@ try {
         }
         .you-badge {
             font-size: 0.625rem;
-            background: var(--primary);
-            color: white;
+            background: var(--primary-tint);
+            color: var(--primary-dark);
+            box-shadow: inset 0 0 0 1px #9fceb2;
             padding: 0.125rem 0.375rem;
             border-radius: 3px;
             margin-left: 0.5rem;

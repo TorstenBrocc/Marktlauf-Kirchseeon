@@ -123,8 +123,9 @@ function boardBeitragTooltip(array $beitragProHelfer, int $helferId): string {
         }
         .board-actions .btn-link:hover { border-color: var(--primary); color: var(--primary); }
         .board-actions .btn-link.primary {
-            background: var(--primary); border-color: var(--primary); color: #fff;
+            background: var(--white); border-color: var(--primary); color: var(--primary-dark); font-weight: 600;
         }
+        .board-actions .btn-link.primary:hover { background: var(--primary-tint); border-color: var(--primary); color: var(--primary-dark); }
 
         /* Zweispaltiges Board: Pool links (klebt), Schichten rechts. */
         .board { display: grid; grid-template-columns: 280px 1fr; gap: 1.25rem; align-items: start; }

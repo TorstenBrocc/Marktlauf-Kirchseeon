@@ -785,11 +785,11 @@ try {
                     <div class="ansicht-toggle" style="display:inline-flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;font-size:0.85rem">
                         <?php $fgFirst = true; foreach (SPONSOR_FOERDERGRUPPE as $fgKey => $fgLabel): $qsFg['fg'] = $fgKey; ?>
                             <a href="?<?= htmlspecialchars(http_build_query($qsFg)) ?>"
-                               style="padding:0.4rem 0.85rem;text-decoration:none;<?= $fgFirst ? '' : 'border-left:1px solid var(--border);' ?><?= $filterFg === $fgKey ? 'background:var(--primary);color:#fff' : 'color:var(--text)' ?>"><?= htmlspecialchars($fgLabel) ?></a>
+                               style="padding:0.4rem 0.85rem;text-decoration:none;<?= $fgFirst ? '' : 'border-left:1px solid var(--border);' ?><?= $filterFg === $fgKey ? 'background:var(--primary-tint);color:var(--primary-dark);box-shadow:inset 0 0 0 1px var(--primary);font-weight:600' : 'color:var(--text)' ?>"><?= htmlspecialchars($fgLabel) ?></a>
                         <?php $fgFirst = false; endforeach; ?>
                         <?php $qsFg['fg'] = 'alle'; ?>
                         <a href="?<?= htmlspecialchars(http_build_query($qsFg)) ?>"
-                           style="padding:0.4rem 0.85rem;text-decoration:none;border-left:1px solid var(--border);<?= $filterFg === 'alle' ? 'background:var(--primary);color:#fff' : 'color:var(--text)' ?>">Alle</a>
+                           style="padding:0.4rem 0.85rem;text-decoration:none;border-left:1px solid var(--border);<?= $filterFg === 'alle' ? 'background:var(--primary-tint);color:var(--primary-dark);box-shadow:inset 0 0 0 1px var(--primary);font-weight:600' : 'color:var(--text)' ?>">Alle</a>
                     </div>
                 </div>
                 <?php $fgKern = ($filterFg !== 'alle') ? sponsorFoerdergruppeHinweis((string) $filterFg) : ''; ?>
