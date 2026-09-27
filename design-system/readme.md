@@ -91,6 +91,25 @@ Flächen sind weiß oder `--gray-50`; Logo-Plakette und Kooperations-Pille sind
 beide weiß (`--surface-plakette`). Höchstens zwei Hintergrundfarben pro Seite — Weiß und
 Grau-50 im Wechsel markieren die Abschnitte.
 
+**Grün und Kontrast.** Das Markengrün `#009640` ist zu hell für Schrift: Weiß darauf
+erreicht nur 3,86 : 1, grüne Schrift auf Weiß ebenso — WCAG AA verlangt für normalen
+Text 4,5 : 1. Deshalb gilt: `#009640` nur für Flächen **ohne** Text, für Rahmen, Fokus
+und Deko. Sobald Grün Text trägt oder Text auf Grün steht, wird es `#007230`
+(`--color-primary-dark` / im Dashboard `--primary-dark` bzw. `--link`, 6,09 : 1).
+Gefüllte grüne Buttons der Website stehen damit auf `#007230`.
+
+**Dashboard: Farbe als Signal, nicht als Fläche.** Aktive Reiter, Filter, Chips und
+Umschalter werden im Dashboard **getönt, nicht gefüllt**: Hintergrund `--primary-tint`
+(`#eaf5ee`), Rahmen bzw. Indikator `#009640`, Schrift `#007230` (5,45 : 1), halbfett.
+Zustände hängen nicht nur an der Farbe — Mehrfachauswahl zeigt zusätzlich ein Häkchen.
+Nebenaktionen sind Outline-Buttons (weiß, grüner Rahmen, dunkelgrüne Schrift).
+Vollflächige grüne Reiter oder Chips kommen im Dashboard nicht vor.
+
+**Fremdmarken.** Farben fremder Dienste (Strava-Orange, Trello-Blau, Race Result …)
+bleiben unverändert und werden nicht mit dunkler Schrift „lesbar gemacht". Die Marke
+trägt ihr Original-Icon (`assets/images/brands/`), der Text steht daneben in normaler
+Schriftfarbe. Logos sind nach WCAG 1.4.3 von der Kontrastpflicht ausgenommen.
+
 **Verlauf.** Genau **ein** Verlauf: `linear-gradient(128deg, #12a877, #5cbd45, #bcd531)`,
 groß und nur im Hero bzw. in Story-Hintergründen. Darauf liegen zwei weiche
 radiale Blobs (Gold oben rechts, Grün unten links) und ein linkes Kontrast-Overlay
@@ -144,7 +163,7 @@ im Modal dreht 90°). Der Hero baut sich in 0,55-s-Schritten gestaffelt auf
 langsam weiter. Das Sponsorenband läuft 28 s pro Durchlauf und pausiert im Hover.
 Alle Animationen sind unter `prefers-reduced-motion: reduce` abgeschaltet.
 
-**Hover- und Druckzustände.** Gefüllte Buttons dunkeln ab (`#009640 → #007230`,
+**Hover- und Druckzustände.** Gefüllte Buttons dunkeln ab (`#007230 → #005c26`,
 `#f4b81e → #e5aa18`), transparente hellen auf. Links wechseln die Farbe oder
 unterstreichen mit 3px Offset. Tabellenzeilen färben sich `#fafafa`. Fokus ist
 immer grün: 1px grüner Rand plus `0 0 0 3px rgba(0,150,64,.1)`.

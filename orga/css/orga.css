@@ -7,7 +7,9 @@
  */
 
 :root {
+    /* Brand green: surfaces without text, borders, focus, decoration only (white on it = 3.86:1, fails AA) */
     --primary: #009640;
+    /* Text green / green behind text: 6.09:1 with white (see design-system/readme.md, "Grün und Kontrast") */
     --primary-dark: #007230;
     --accent: #ff6b35;
     --text: #333;
