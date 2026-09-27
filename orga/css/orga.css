@@ -33,6 +33,8 @@
        gemessenen Ist-Zustand der Seiten; das Ummappen der Seiten folgt in P2. ---- */
     /* Abgetöntes Link-Grün — Ziel-Look-Vorlage (intern/CLAUDE.md §UI-Kachel-Pattern) */
     --link: #007230;
+    /* V1 active state (tabs/pills): tinted background, --primary-dark text = 5.45:1 */
+    --primary-tint: #eaf5ee;
     /* Signal-Skala: Text- + Flächenfarbe je Stufe (ok / warnung / kritisch).
        --success/--error bleiben als Alt-Aliase bis zur Seiten-Migration (P2). */
     --signal-ok: #065f46;
@@ -301,7 +303,7 @@ body {
 
 .alert-error {
     background: var(--error-bg);
-    color: var(--error);
+    color: #b91c1c; /* darker than --error for 4.5:1 on --error-bg */
 }
 
 .alert-success {

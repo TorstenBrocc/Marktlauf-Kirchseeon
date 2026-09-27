@@ -255,7 +255,7 @@ $katLabel = ['verein' => 'Verein', 'laufevent' => 'Laufevent'];
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th class="col-check"><input type="checkbox" id="check-all" title="Alle auswählen"></th>
+                            <th class="col-check"><input type="checkbox" id="check-all" title="Alle auswählen" aria-label="Alle auswählen"></th>
                             <th>Name</th>
                             <th>Ansprechpartner</th>
                             <th>Laufsport-Relevanz / Distanzen</th>

@@ -126,14 +126,14 @@ if ($isUserScoped && $vorlage['draft'] && $vorlage['draft_ts'] !== '') {
         .brief-split { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
         @media (max-width: 900px) { .brief-split { grid-template-columns: 1fr; } }
         .brief-split-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.5rem; flex-wrap: wrap; }
-        .brief-split-head h3 { margin: 0; font-size: 0.9rem; color: var(--text-light); }
+        .brief-split-head h2, .brief-split-head h3 { margin: 0; font-size: 0.9rem; color: var(--text-light); }
         #koerper_md { width: 100%; min-height: 420px; padding: 0.75rem; border: 1px solid var(--border); border-radius: 4px; font-family: monospace; font-size: 0.85rem; line-height: 1.5; box-sizing: border-box; resize: vertical; }
         #preview-frame { width: 100%; height: 420px; border: 1px solid var(--border); border-radius: 4px; background: #fff; box-sizing: border-box; }
         .brief-actions { display: flex; gap: 1rem; margin-top: 1.25rem; align-items: center; flex-wrap: wrap; }
         .fg-reiter { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0 0 0.85rem; }
         .fg-reiter-tab { padding: 0.45rem 0.9rem; border: 1px solid var(--border); border-radius: 6px; background: #fff; color: var(--text); text-decoration: none; font-size: 0.9rem; font-weight: 600; white-space: nowrap; }
         .fg-reiter-tab:hover { background: var(--bg); }
-        .fg-reiter-tab.aktiv { background: var(--primary); border-color: var(--primary); color: #fff; }
+        .fg-reiter-tab.aktiv { background: var(--primary-tint); border-color: var(--primary); color: var(--primary-dark); font-weight: 600; }
         .fg-hinweis { margin: 0 0 1rem; padding: 0.6rem 0.8rem; background: rgba(0,150,64,0.07); border-left: 3px solid var(--primary); border-radius: 4px; font-size: 0.85rem; line-height: 1.5; color: var(--text); }
         .versand-card { border: 1px solid var(--primary); }
         .versand-warn { font-size: 0.85rem; color: var(--text); background: rgba(255,193,7,0.15); border: 1px solid rgba(255,193,7,0.55); border-radius: 6px; padding: 0.6rem 0.8rem; margin: 0 0 1rem; line-height: 1.5; }
@@ -177,11 +177,11 @@ if ($isUserScoped && $vorlage['draft'] && $vorlage['draft_ts'] !== '') {
             ?>
 
             <?php if ($foerderReiter): ?>
-            <div class="fg-reiter" role="tablist" aria-label="Fördergruppe">
+            <nav class="fg-reiter" aria-label="Fördergruppe">
                 <?php foreach ($foerderReiter as $r): ?>
-                    <a class="fg-reiter-tab<?= $r['aktiv'] ? ' aktiv' : '' ?>" href="<?= htmlspecialchars($r['url']) ?>"><?= htmlspecialchars((string) $r['label']) ?></a>
+                    <a class="fg-reiter-tab<?= $r['aktiv'] ? ' aktiv' : '' ?>" href="<?= htmlspecialchars($r['url']) ?>"<?= $r['aktiv'] ? ' aria-current="page"' : '' ?>><?= htmlspecialchars((string) $r['label']) ?></a>
                 <?php endforeach; ?>
-            </div>
+            </nav>
             <?php $fgHinweis = $aktiveFg !== '' ? sponsorFoerdergruppeHinweis($aktiveFg) : ''; ?>
             <div class="fg-hinweis">
                 <?php if ($fgHinweis !== ''): ?>
@@ -214,14 +214,14 @@ if ($isUserScoped && $vorlage['draft'] && $vorlage['draft_ts'] !== '') {
                     <div class="brief-split">
                         <div>
                             <div class="brief-split-head">
-                                <h3 id="koerper-md-label">Markdown</h3>
+                                <h2 id="koerper-md-label">Markdown</h2>
                                 <?= sponsorMarkdownLegende() ?>
                             </div>
                             <textarea id="koerper_md" name="koerper_md" aria-labelledby="koerper-md-label"><?= htmlspecialchars($vorlage['koerper_md']) ?></textarea>
                         </div>
                         <div>
                             <div class="brief-split-head">
-                                <h3>Vorschau</h3>
+                                <h2>Vorschau</h2>
                                 <?php if ($versandfaehig): ?>
                                 <select id="preview-sponsor" class="empf-select" style="min-width:12rem;font-size:0.82rem;padding:0.25rem 0.4rem"
                                         title="Vorschau mit den echten Daten dieses Empfängers">
@@ -255,7 +255,7 @@ if ($isUserScoped && $vorlage['draft'] && $vorlage['draft_ts'] !== '') {
 
             <?php if ($mitVersand): ?>
             <div class="brief-card versand-card">
-                <h3 style="font-size:0.95rem;margin:0 0 0.75rem">Empfänger &amp; Versand</h3>
+                <h2 style="font-size:0.95rem;margin:0 0 0.75rem">Empfänger &amp; Versand</h2>
                 <?= $empfBlockHtml ?>
                 <p id="versand-unsaved" class="versand-warn" hidden>
                     ⚠️ Du hast ungespeicherte Änderungen am Text. Der Versand nimmt den

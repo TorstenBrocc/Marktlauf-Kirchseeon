@@ -55,7 +55,7 @@ $plakate = plakateAnhang($pdo);
             padding: 0.5rem 1rem; border-radius: 6px; text-decoration: none;
             background: var(--white); border: 1px solid var(--border); color: var(--text); font-size: 0.9rem;
         }
-        .brief-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+        .brief-tab.active { background: var(--primary-tint); color: var(--primary-dark); border-color: var(--primary); font-weight: 600; }
         .brief-card { background: var(--white); border-radius: 8px; box-shadow: var(--shadow-card); padding: 1.5rem; margin-bottom: 1.25rem; }
         .brief-betreff { width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px; font-size: 0.95rem; box-sizing: border-box; }
         .brief-platzhalter { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0.75rem 0; }
@@ -66,10 +66,10 @@ $plakate = plakateAnhang($pdo);
         .ph-chip:hover { background: var(--border); }
         .brief-split { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
         @media (max-width: 900px) { .brief-split { grid-template-columns: 1fr; } }
-        .brief-split h3 { font-size: 0.9rem; margin: 0 0 0.5rem; color: var(--text-light); }
+        .brief-split h2, .brief-split h3 { font-size: 0.9rem; margin: 0 0 0.5rem; color: var(--text-light); }
         /* Kopfzeile wie im Sponsoren-Editor, damit die Legende rechts andockt */
         .brief-split-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
-        .brief-split-head h3 { margin: 0; }
+        .brief-split-head h2, .brief-split-head h3 { margin: 0; }
         #koerper_md {
             width: 100%; min-height: 460px; padding: 0.75rem; border: 1px solid var(--border);
             border-radius: 4px; font-family: monospace; font-size: 0.85rem; line-height: 1.5;
@@ -130,13 +130,13 @@ $plakate = plakateAnhang($pdo);
                     <div class="brief-split">
                         <div>
                             <div class="brief-split-head">
-                                <h3 id="koerper-md-label">Markdown</h3>
+                                <h2 id="koerper-md-label">Markdown</h2>
                                 <?= sponsorMarkdownLegende() ?>
                             </div>
                             <textarea id="koerper_md" name="koerper_md" aria-labelledby="koerper-md-label"><?= htmlspecialchars($vorlage['koerper_md']) ?></textarea>
                         </div>
                         <div>
-                            <h3>Vorschau (Beispieldaten)</h3>
+                            <h2>Vorschau (Beispieldaten)</h2>
                             <iframe id="preview-frame" sandbox="" title="Vorschau"></iframe>
                         </div>
                     </div>
