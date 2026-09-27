@@ -215,7 +215,7 @@ if ($assetsRoot !== false && is_dir($assetsRoot)) {
         .vt-seg { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
         .vt-seg label { margin: 0; padding: 0.4rem 0.75rem; font-size: 0.85rem; cursor: pointer; color: var(--text); background: var(--white); }
         /* Visually hidden but keyboard-focusable (display:none removed the radios from tab order) */
-        .vt-seg input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; pointer-events: none; }
+        .vt-seg input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
         .vt-seg input:focus-visible + label { outline: 2px solid var(--primary-dark); outline-offset: -3px; }
         .vt-seg input:checked + label { background: var(--primary-tint); color: var(--primary-dark); font-weight: 600; box-shadow: inset 0 0 0 1px var(--primary); }
         .vt-photo-picker { display: none; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; max-height: 220px; overflow-y: auto; }

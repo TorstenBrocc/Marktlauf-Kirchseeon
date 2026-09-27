@@ -7,6 +7,7 @@
     /* Primary Colors */
     --color-primary: #009640;
     --color-primary-dark: #007230;
+    --color-primary-hover: #005c26; /* filled button hover, darker than -dark (white = 8.2:1) */
     --color-primary-light: #2ecc71;
     --color-accent: #ff6b35;
 

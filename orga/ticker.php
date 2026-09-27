@@ -46,7 +46,7 @@ $typColors = ['info' => '#1a73e8', 'warnung' => '#b45309', 'ergebnis' => '#00723
 
         .ticker-typ-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
         /* Visually hidden but keyboard-focusable (display:none removed the radios from tab order) */
-        .ticker-typ-option { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; pointer-events: none; }
+        .ticker-typ-option { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
         .ticker-typ-option:focus-visible + .ticker-typ-label { outline: 2px solid var(--primary-dark); outline-offset: 2px; }
         .ticker-typ-label {
             padding: 0.35rem 0.9rem; border-radius: 20px; cursor: pointer; font-size: 0.85rem;
