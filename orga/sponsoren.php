@@ -534,7 +534,7 @@ try {
             color: var(--text);
             text-align: center;
         }
-        .fg-kern-hinweis strong { color: var(--primary); }
+        .fg-kern-hinweis strong { color: var(--link); }
         .data-table.grouped thead th {
             /* Position wird pro Breite gesetzt: Desktop = sticky am Box-Rand (Media-Block
                weiter unten), Mobil = static (normaler Fluss). Hier nur die Optik. */
@@ -665,7 +665,7 @@ try {
         }
         .stat-value {
             font-weight: 600;
-            color: var(--primary);
+            color: var(--link);
         }
         .inline-form {
             display: inline;

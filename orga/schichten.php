@@ -112,7 +112,7 @@ function beitragTooltip(array $beitragProHelfer, int $helferId): string {
         /* Anlege-Formular eingeklappt. */
         .neu-details { margin-bottom: 0.5rem; }
         .neu-details > summary {
-            cursor: pointer; font-weight: 600; color: var(--primary);
+            cursor: pointer; font-weight: 600; color: var(--link);
             padding: 0.6rem 0.9rem; background: var(--white);
             border: 1px dashed var(--border); border-radius: 8px; list-style: none;
         }

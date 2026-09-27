@@ -47,9 +47,9 @@ $stufen = ['bronze' => 'Bronze', 'silber' => 'Silber', 'gold' => 'Gold', 'haupts
         .pk-table th, .pk-table td { border-bottom: 1px solid var(--border); padding: 0.45rem 0.5rem; text-align: left; vertical-align: middle; }
         .pk-table thead th { background: var(--bg); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-light); font-weight: 600; }
         .pk-table td.pk-num, .pk-table th.pk-num { text-align: center; width: 5.5rem; }
-        .pk-inp { padding: 0.3rem 0.4rem; border: 1px solid var(--border); border-radius: 4px; font-size: 0.85rem; box-sizing: border-box; width: 100%; }
+        .pk-inp { padding: 0.3rem 0.4rem; border: 1px solid var(--border); border-radius: 4px; font-size: 0.85rem; box-sizing: border-box; width: 100%; color: var(--text); }
         .pk-inp.pk-mini { text-align: center; }
-        .pk-sel { padding: 0.3rem 0.4rem; border: 1px solid var(--border); border-radius: 4px; font-size: 0.85rem; background: var(--white); }
+        .pk-sel { padding: 0.3rem 0.4rem; border: 1px solid var(--border); border-radius: 4px; font-size: 0.85rem; background: var(--white); color: var(--text); }
         .pk-save { outline: 2px solid var(--primary); outline-offset: 1px; }
         .pk-inaktiv td { opacity: 0.5; }
         .pk-hinweis { font-size: 0.82rem; color: var(--text); background: rgba(255,193,7,0.15); border: 1px solid rgba(255,193,7,0.55); border-radius: 6px; padding: 0.6rem 0.8rem; margin: 0 0 1rem; line-height: 1.5; }

@@ -51,10 +51,10 @@ $typColors = ['info' => '#1a73e8', 'warnung' => '#e67e22', 'ergebnis' => '#00964
             transition: border-color 0.15s, background 0.15s; user-select: none;
         }
         .ticker-typ-option:checked + .ticker-typ-label {
-            border-color: var(--primary); background: #e8f5ee; color: var(--primary); font-weight: 600;
+            border-color: var(--primary); background: #e8f5ee; color: var(--link); font-weight: 600;
         }
         #typ-warnung:checked  + .ticker-typ-label { border-color: #e67e22; background: #fef4eb; color: #e67e22; }
-        #typ-ergebnis:checked + .ticker-typ-label { border-color: #009640; background: #e8f5ee; color: #009640; }
+        #typ-ergebnis:checked + .ticker-typ-label { border-color: #009640; background: #e8f5ee; color: var(--link); }
 
         .ticker-list { margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.6rem; }
         .ticker-item {
@@ -69,7 +69,7 @@ $typColors = ['info' => '#1a73e8', 'warnung' => '#e67e22', 'ergebnis' => '#00964
             font-weight: 600; color: #fff;
         }
         .ticker-item-text  { flex: 1; font-size: 0.9rem; line-height: 1.45; }
-        .ticker-item-meta  { font-size: 0.75rem; color: var(--text-muted, #888); margin-top: 0.2rem; }
+        .ticker-item-meta  { font-size: 0.75rem; color: var(--text-light); margin-top: 0.2rem; }
         .ticker-item-actions { display: flex; gap: 0.4rem; flex-shrink: 0; }
 
         .ticker-live-badge {
@@ -136,7 +136,7 @@ $typColors = ['info' => '#1a73e8', 'warnung' => '#e67e22', 'ergebnis' => '#00964
 
         <!-- Bestehende Einträge -->
         <?php if (empty($posts)): ?>
-            <p style="color: var(--text-muted, #888); margin-top: 1rem;">Noch keine Einträge.</p>
+            <p style="color: var(--text-light); margin-top: 1rem;">Noch keine Einträge.</p>
         <?php else: ?>
             <div class="ticker-list">
                 <?php foreach ($posts as $p): ?>
