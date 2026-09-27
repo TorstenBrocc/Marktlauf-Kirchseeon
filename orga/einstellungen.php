@@ -121,22 +121,18 @@ $makeWebhookSecret = (string) ($config['make_webhook_secret'] ?? '');
             font-weight: 500;
             margin-bottom: 0.25rem;
         }
-        /* Überschriften der Schnellzugriff-URL-Felder als farbige Pille,
-           in der Button-Farbe der jeweiligen Kachel im Cockpit. */
-        .form-group label.link-pill {
+        /* Überschriften der Schnellzugriff-URL-Felder: Original-Icon des Dienstes + Text.
+           Markenfarben bleiben unverändert im Icon (Logos sind von WCAG 1.4.3 ausgenommen),
+           der Text steht lesbar in normaler Schriftfarbe daneben (design-system/readme.md, „Fremdmarken"). */
+        .form-group label.link-brand {
             align-self: flex-start;
-            display: inline-block;
-            color: #fff;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
             font-weight: 600;
-            padding: 0.15rem 0.7rem;
-            border-radius: 999px;
-            letter-spacing: 0.01em;
+            color: var(--text);
         }
-        .link-pill-raceresult { background: #C41011; }
-        .link-pill-trello     { background: #0079BF; }
-        .link-pill-onedrive   { background: #6264A7; }
-        .link-pill-strava     { background: #FC4C02; }
-        .link-pill-meta       { background: #0866FF; }
+        .link-brand img { width: 20px; height: 20px; border-radius: 5px; display: block; flex-shrink: 0; }
         .form-group input,
         .form-group textarea {
             padding: 0.5rem;
@@ -407,7 +403,7 @@ $makeWebhookSecret = (string) ($config['make_webhook_secret'] ?? '');
 
                     <div class="form-row single" id="link-raceresult_hinweis">
                         <div class="form-group">
-                            <label for="raceresult_url" class="link-pill link-pill-raceresult">Race-Result-URL</label>
+                            <label for="raceresult_url" class="link-brand"><img src="../assets/images/brands/raceresult.png" alt="" width="20" height="20">Race-Result-URL</label>
                             <input type="url" id="raceresult_url" name="raceresult_url" value="<?= htmlspecialchars($raceresultUrl) ?>" placeholder="https://my.raceresult.com/...">
                         </div>
                         <div class="form-group">
@@ -418,7 +414,7 @@ $makeWebhookSecret = (string) ($config['make_webhook_secret'] ?? '');
 
                     <div class="form-row single" id="link-trello_hinweis">
                         <div class="form-group">
-                            <label for="trello_board_url" class="link-pill link-pill-trello">Trello-Board-URL</label>
+                            <label for="trello_board_url" class="link-brand"><img src="../assets/images/brands/trello.svg" alt="" width="20" height="20">Trello-Board-URL</label>
                             <input type="url" id="trello_board_url" name="trello_board_url" value="<?= htmlspecialchars($trelloUrl) ?>" placeholder="https://trello.com/b/...">
                         </div>
                         <div class="form-group">
@@ -429,7 +425,7 @@ $makeWebhookSecret = (string) ($config['make_webhook_secret'] ?? '');
 
                     <div class="form-row single" id="link-onedrive_hinweis">
                         <div class="form-group">
-                            <label for="onedrive_url" class="link-pill link-pill-onedrive">OneDrive-URL</label>
+                            <label for="onedrive_url" class="link-brand"><img src="../assets/images/brands/onedrive.svg" alt="" width="20" height="20">OneDrive-URL</label>
                             <input type="url" id="onedrive_url" name="onedrive_url" value="<?= htmlspecialchars($onedriveUrl) ?>" placeholder="https://onedrive.live.com/...">
                         </div>
                         <div class="form-group">
@@ -440,7 +436,7 @@ $makeWebhookSecret = (string) ($config['make_webhook_secret'] ?? '');
 
                     <div class="form-row single" id="link-strava_hinweis">
                         <div class="form-group">
-                            <label for="strava_url" class="link-pill link-pill-strava">Strava-URL</label>
+                            <label for="strava_url" class="link-brand"><img src="../assets/images/brands/strava.png" alt="" width="20" height="20">Strava-URL</label>
                             <input type="url" id="strava_url" name="strava_url" value="<?= htmlspecialchars($stravaUrl) ?>" placeholder="https://www.strava.com/clubs/...">
                         </div>
                         <div class="form-group">
@@ -451,7 +447,7 @@ $makeWebhookSecret = (string) ($config['make_webhook_secret'] ?? '');
 
                     <div class="form-row single" id="link-meta_business_hinweis">
                         <div class="form-group">
-                            <label for="meta_business_url" class="link-pill link-pill-meta">Meta Business</label>
+                            <label for="meta_business_url" class="link-brand"><img src="../assets/images/brands/meta.svg" alt="" width="20" height="20">Meta Business</label>
                             <input type="url" id="meta_business_url" name="meta_business_url" value="<?= htmlspecialchars($metaBusinessUrl) ?>" placeholder="https://business.facebook.com/...">
                         </div>
                         <div class="form-group">
