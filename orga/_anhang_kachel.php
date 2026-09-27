@@ -43,7 +43,7 @@ foreach (sponsorAnhangPlan($slug) as $g) {
 ?>
 <div class="brief-card anhang-kachel">
     <div class="anhang-kachel-head">
-        <strong>📎 Anhänge</strong>
+        <h2 class="anhang-kachel-titel">📎 Anhänge</h2>
         <span class="brief-hint">alles, was mit dieser Mail rausgeht</span>
     </div>
 

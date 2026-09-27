@@ -227,6 +227,7 @@ $makeWebhookSecret = (string) ($config['make_webhook_secret'] ?? '');
         }
         .reminder-tag input:checked + span::before {
             content: "✓ ";
+            content: "✓ " / "";
         }
         .reminder-tag input:focus-visible + span {
             outline: 2px solid var(--primary);

@@ -107,7 +107,7 @@ $plakate = plakateAnhang($pdo);
 
             <div class="brief-tabs">
                 <?php foreach ($defaults as $s => $d): ?>
-                    <a class="brief-tab<?= $s === $slug ? ' active' : '' ?>" href="vereine_briefe.php?slug=<?= urlencode($s) ?>"><?= htmlspecialchars($d['name']) ?></a>
+                    <a class="brief-tab<?= $s === $slug ? ' active' : '' ?>" href="vereine_briefe.php?slug=<?= urlencode($s) ?>"<?= $s === $slug ? ' aria-current="page"' : '' ?>><?= htmlspecialchars($d['name']) ?></a>
                 <?php endforeach; ?>
             </div>
 

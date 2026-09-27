@@ -622,7 +622,7 @@ function ds_render_markdown(string $md, int $headingOffset = 0): string
                             ? '<span class="ds-nav-count">' . str_pad((string) $count, 2, '0', STR_PAD_LEFT) . '</span>'
                             : '';
                         ?>
-                        <a class="ds-nav-link<?= $key === $defaultSection ? ' is-active' : '' ?>"
+                        <a class="ds-nav-link<?= $key === $defaultSection ? ' is-active' : '' ?>"<?= $key === $defaultSection ? ' aria-current="true"' : '' ?>
                            href="#ds-<?= htmlspecialchars($key) ?>">
                             <?= htmlspecialchars($label) ?><?= $countBadge ?>
                         </a>
@@ -847,8 +847,8 @@ function ds_render_markdown(string $md, int $headingOffset = 0): string
         var linkByKey = {};
         navLinks.forEach(function (a) { linkByKey[(a.getAttribute('href') || '').replace('#', '')] = a; });
         function setActive(id) {
-            navLinks.forEach(function (a) { a.classList.remove('is-active'); });
-            if (linkByKey[id]) linkByKey[id].classList.add('is-active');
+            navLinks.forEach(function (a) { a.classList.remove('is-active'); a.removeAttribute('aria-current'); });
+            if (linkByKey[id]) { linkByKey[id].classList.add('is-active'); linkByKey[id].setAttribute('aria-current', 'true'); }
         }
         if ('IntersectionObserver' in window && sections.length) {
             var spy = new IntersectionObserver(function (entries) {

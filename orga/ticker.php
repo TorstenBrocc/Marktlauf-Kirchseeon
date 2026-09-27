@@ -29,7 +29,8 @@ $posts = $pdo->query(
 )->fetchAll(PDO::FETCH_ASSOC);
 
 $typLabels = ['info' => 'Info', 'warnung' => 'Warnung', 'ergebnis' => 'Ergebnis'];
-$typColors = ['info' => '#1a73e8', 'warnung' => '#e67e22', 'ergebnis' => '#009640'];
+// Pill backgrounds carry white 0.75rem text → each ≥ 4.5:1 (warnung/ergebnis darkened for WCAG AA)
+$typColors = ['info' => '#1a73e8', 'warnung' => '#b45309', 'ergebnis' => '#007230'];
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -44,7 +45,9 @@ $typColors = ['info' => '#1a73e8', 'warnung' => '#e67e22', 'ergebnis' => '#00964
         .ticker-form-card { max-width: 640px; }
 
         .ticker-typ-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-        .ticker-typ-option { display: none; }
+        /* Visually hidden but keyboard-focusable (display:none removed the radios from tab order) */
+        .ticker-typ-option { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; pointer-events: none; }
+        .ticker-typ-option:focus-visible + .ticker-typ-label { outline: 2px solid var(--primary-dark); outline-offset: 2px; }
         .ticker-typ-label {
             padding: 0.35rem 0.9rem; border-radius: 20px; cursor: pointer; font-size: 0.85rem;
             border: 2px solid var(--border); background: var(--white); color: var(--text);
@@ -53,7 +56,7 @@ $typColors = ['info' => '#1a73e8', 'warnung' => '#e67e22', 'ergebnis' => '#00964
         .ticker-typ-option:checked + .ticker-typ-label {
             border-color: var(--primary); background: #e8f5ee; color: var(--link); font-weight: 600;
         }
-        #typ-warnung:checked  + .ticker-typ-label { border-color: #e67e22; background: #fef4eb; color: #e67e22; }
+        #typ-warnung:checked  + .ticker-typ-label { border-color: #b45309; background: #fef4eb; color: #9a4a06; }
         #typ-ergebnis:checked + .ticker-typ-label { border-color: #009640; background: #e8f5ee; color: var(--link); }
 
         .ticker-list { margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.6rem; }
@@ -62,7 +65,8 @@ $typColors = ['info' => '#1a73e8', 'warnung' => '#e67e22', 'ergebnis' => '#00964
             padding: 0.75rem 1rem; border-radius: 8px;
             background: var(--white); border: 1px solid var(--border);
         }
-        .ticker-item.inaktiv { opacity: 0.5; }
+        /* Inactive entries: muted but readable instead of opacity (opacity .5 drops text below 4.5:1) */
+        .ticker-item.inaktiv { background: #fafafa; color: var(--text-light); }
         .ticker-typ-pill {
             flex-shrink: 0; margin-top: 2px;
             padding: 0.15rem 0.6rem; border-radius: 12px; font-size: 0.75rem;

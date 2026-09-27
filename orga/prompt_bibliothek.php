@@ -234,9 +234,9 @@ $kategorien = [
         <!-- ── LISTE ── -->
         <div class="pb-list-col">
             <div class="pb-filter-bar" id="pb-filter-bar">
-                <button class="pb-filter-btn active" data-kat="">Alle</button>
+                <button class="pb-filter-btn active" data-kat="" aria-pressed="true">Alle</button>
                 <?php foreach ($kategorien as $key => $label): ?>
-                    <button class="pb-filter-btn" data-kat="<?= htmlspecialchars($key) ?>"><?= htmlspecialchars($label) ?></button>
+                    <button class="pb-filter-btn" data-kat="<?= htmlspecialchars($key) ?>" aria-pressed="false"><?= htmlspecialchars($label) ?></button>
                 <?php endforeach; ?>
             </div>
             <div class="pb-list" id="pb-list">
@@ -594,8 +594,9 @@ $kategorien = [
     // ── Filter ────────────────────────────────────────────────
     filterBar.querySelectorAll('.pb-filter-btn').forEach(function(btn) {
         btn.addEventListener('click', function() {
-            filterBar.querySelectorAll('.pb-filter-btn').forEach(function(b) { b.classList.remove('active'); });
+            filterBar.querySelectorAll('.pb-filter-btn').forEach(function(b) { b.classList.remove('active'); b.setAttribute('aria-pressed', 'false'); });
             btn.classList.add('active');
+            btn.setAttribute('aria-pressed', 'true');
             currentKat = btn.dataset.kat;
             loadList(currentKat);
         });

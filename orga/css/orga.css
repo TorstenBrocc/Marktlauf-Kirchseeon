@@ -1064,6 +1064,9 @@ a.card-tile:hover {
     margin-bottom: 0.5rem;
 }
 
+/* Card title is a real heading (h2) for the outline; looks like the former <strong> */
+.anhang-kachel-titel { font-size: 1em; font-weight: 700; margin: 0; }
+
 .anhang-gruppe-titel {
     font-size: 0.82rem;
     font-weight: 600;
