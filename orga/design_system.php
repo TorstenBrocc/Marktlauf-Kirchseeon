@@ -461,9 +461,9 @@ function ds_render_markdown(string $md, int $headingOffset = 0): string
             display: flex; align-items: center; gap: 0.5rem; transition: background 0.12s;
         }
         .ds-nav a:hover { background: var(--bg); }
-        .ds-nav a.is-active { background: var(--primary); color: #fff; font-weight: 600; }
+        .ds-nav a.is-active { background: var(--primary-tint); color: var(--primary-dark); font-weight: 600; box-shadow: inset 3px 0 0 var(--primary); }
         .ds-nav .ds-nav-count { margin-left: auto; font-size: 0.72rem; opacity: 0.7; font-variant-numeric: tabular-nums; }
-        .ds-nav a.is-active .ds-nav-count { opacity: 0.85; }
+        .ds-nav a.is-active .ds-nav-count { opacity: 1; color: var(--primary-dark); }
         .ds-content { flex: 1 1 auto; min-width: 0; }
 
         /* Fließende Seite: alle Sektionen untereinander, Menü springt per Anker. */
@@ -502,13 +502,14 @@ function ds_render_markdown(string $md, int $headingOffset = 0): string
         .ds-var:hover { color: var(--primary); }
         .ds-val { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.7rem; color: var(--text-light); word-break: break-all; }
         .ds-src { align-self: flex-start; margin-top: 0.1rem; font-size: 0.62rem; font-weight: 600; letter-spacing: 0.02em; padding: 0.08rem 0.4rem; border-radius: 999px; }
-        .ds-src--base { background: rgba(0,150,64,0.12); color: var(--primary); }
+        .ds-src--base { background: rgba(0,150,64,0.12); color: var(--link); }
         .ds-src--orga { background: rgba(0,0,0,0.06); color: var(--text-light); }
 
         /* Marke-Sektion. */
         .ds-brand-row { display: grid; gap: 0.85rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-bottom: 0.85rem; }
         .ds-brand-card { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; box-shadow: var(--shadow-card); background: var(--white); }
-        .ds-brand-swatch { height: 120px; display: flex; align-items: flex-end; padding: 0.6rem 0.8rem; color: #fff; font-weight: 700; text-shadow: 0 1px 2px rgba(0,0,0,0.25); }
+        .ds-brand-swatch { height: 120px; display: flex; align-items: flex-end; padding: 0.6rem 0.8rem; font-weight: 700; }
+        .ds-brand-swatch-label { background: rgba(255,255,255,0.94); color: #333; padding: 0.15rem 0.5rem; border-radius: 999px; font-size: 0.8rem; text-shadow: none; }
         .ds-brand-foot { padding: 0.5rem 0.8rem 0.65rem; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.76rem; color: var(--text-light); }
 
         .ds-empty { color: var(--text-light); font-size: 0.85rem; }
@@ -529,8 +530,8 @@ function ds_render_markdown(string $md, int $headingOffset = 0): string
         .ds-snip-actions .ds-snip-copy { margin-left: 0; }
 
         /* Download-Link (Ghost-Button) — für Element-/Vorlagen-/Readme-Downloads (Punkt 6 #3). */
-        .ds-dl { align-self: flex-start; display: inline-flex; align-items: center; gap: 0.4rem; text-decoration: none; appearance: none; border: 1px solid var(--primary); background: transparent; color: var(--primary); font: inherit; font-size: 0.78rem; font-weight: 600; padding: 0.32rem 0.7rem; border-radius: 8px; cursor: pointer; transition: background 0.12s, color 0.12s; }
-        .ds-dl:hover { background: var(--primary); color: #fff; }
+        .ds-dl { align-self: flex-start; display: inline-flex; align-items: center; gap: 0.4rem; text-decoration: none; appearance: none; border: 1px solid var(--primary); background: transparent; color: var(--link); font: inherit; font-size: 0.78rem; font-weight: 600; padding: 0.32rem 0.7rem; border-radius: 8px; cursor: pointer; transition: background 0.12s, color 0.12s; }
+        .ds-dl:hover { background: var(--primary-tint); color: var(--primary-dark); }
         .ds-dl:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
         .ds-dl svg { width: 13px; height: 13px; flex: 0 0 auto; }
         .ds-guide-cap .ds-dl { margin-top: 0.35rem; }
@@ -659,17 +660,17 @@ function ds_render_markdown(string $md, int $headingOffset = 0): string
                         <p class="ds-lead">Die tragenden Werte. Grün trägt die Marke, Orange ist die Aktion.</p>
                         <div class="ds-brand-row">
                             <div class="ds-brand-card">
-                                <div class="ds-brand-swatch" style="background:<?= htmlspecialchars($primary) ?>">Primär · ATSV-Grün</div>
+                                <div class="ds-brand-swatch" style="background:<?= htmlspecialchars($primary) ?>"><span class="ds-brand-swatch-label">Primär · ATSV-Grün</span></div>
                                 <div class="ds-brand-foot"><?= htmlspecialchars($primary) ?></div>
                             </div>
                             <div class="ds-brand-card">
-                                <div class="ds-brand-swatch" style="background:<?= htmlspecialchars($accent) ?>">Akzent · Aktion</div>
+                                <div class="ds-brand-swatch" style="background:<?= htmlspecialchars($accent) ?>"><span class="ds-brand-swatch-label">Akzent · Aktion</span></div>
                                 <div class="ds-brand-foot"><?= htmlspecialchars($accent) ?></div>
                             </div>
                         </div>
                         <?php if ($gradient !== null): ?>
                             <div class="ds-brand-card">
-                                <div class="ds-brand-swatch" style="background:<?= htmlspecialchars($gradient) ?>">Hero-Verlauf</div>
+                                <div class="ds-brand-swatch" style="background:<?= htmlspecialchars($gradient) ?>"><span class="ds-brand-swatch-label">Hero-Verlauf</span></div>
                                 <div class="ds-brand-foot"><?= htmlspecialchars(
                                     $map['--hero-gradient-start'] . ' → ' . $map['--hero-gradient-mid'] . ' → ' . $map['--hero-gradient-end']
                                 ) ?></div>
