@@ -16,13 +16,13 @@
 }
 
 .btn-primary {
-    background-color: var(--color-primary);
+    background-color: var(--color-primary-dark);
     color: var(--white);
     box-shadow: var(--shadow-sm);
 }
 
 .btn-primary:hover {
-    background-color: var(--color-primary-dark);
+    background-color: #005c26;
     transform: translateY(-2px);
     box-shadow: var(--shadow-md);
 }
