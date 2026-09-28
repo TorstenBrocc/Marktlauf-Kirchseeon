@@ -462,7 +462,7 @@ $pageTitle = $isEdit ? 'Sponsor bearbeiten' : 'Neuer Sponsor';
             min-width: 5.5rem;
             text-align: right;
         }
-        .ap-status.ok { color: var(--primary); }
+        .ap-status.ok { color: var(--primary-dark); }
         .ap-status.err { color: var(--error); }
         .ap-remove {
             background: var(--error-bg);

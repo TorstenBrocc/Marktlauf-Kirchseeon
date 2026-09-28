@@ -84,14 +84,14 @@ $paketLabel = static function (?string $p): string {
         .data-table tr:hover { background: #fafafa; }
         .data-table td { font-size: 0.875rem; vertical-align: middle; }
         .rech-firma { font-weight: 600; }
-        .rech-betrag { font-weight: 600; color: var(--primary); white-space: nowrap; }
+        .rech-betrag { font-weight: 600; color: var(--link); white-space: nowrap; }
         .rech-nr-badge { font-weight: 600; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 0.2rem 0.5rem; font-size: 0.85rem; white-space: nowrap; }
         .rech-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
         .rech-nr-form { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
         .rech-nr-input { width: 68px; padding: 0.4rem 0.5rem; border: 1px solid var(--border); border-radius: 4px; font-size: 0.9rem; text-align: right; }
         .rech-nr-suffix { font-size: 0.9rem; color: var(--text-light); }
         .rech-nr-form select { padding: 0.35rem 0.5rem; border: 1px solid var(--border); border-radius: 4px; font-size: 0.85rem; max-width: 220px; }
-        .rech-versand-ok { color: var(--primary); white-space: nowrap; }
+        .rech-versand-ok { color: var(--link); white-space: nowrap; }
         .rech-versand-none { color: var(--text-light); }
         .rech-hist { margin-top: 0.4rem; }
         .rech-hist summary { cursor: pointer; font-size: 0.78rem; color: var(--text-light); }

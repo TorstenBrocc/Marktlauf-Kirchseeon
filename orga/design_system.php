@@ -499,7 +499,7 @@ function ds_render_markdown(string $md, int $headingOffset = 0): string
 
         .ds-meta { padding: 0.55rem 0.7rem 0.65rem; display: flex; flex-direction: column; gap: 0.2rem; }
         .ds-var { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.76rem; font-weight: 600; word-break: break-all; line-height: 1.3; }
-        .ds-var:hover { color: var(--primary); }
+        .ds-var:hover { color: var(--primary-dark); }
         .ds-val { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.7rem; color: var(--text-light); word-break: break-all; }
         .ds-src { align-self: flex-start; margin-top: 0.1rem; font-size: 0.62rem; font-weight: 600; letter-spacing: 0.02em; padding: 0.08rem 0.4rem; border-radius: 999px; }
         .ds-src--base { background: rgba(0,150,64,0.12); color: var(--link); }
@@ -565,7 +565,7 @@ function ds_render_markdown(string $md, int $headingOffset = 0): string
         .ds-readme ul { margin: 0 0 0.9rem; padding-left: 1.25rem; }
         .ds-readme li { margin: 0.2rem 0; }
         .ds-readme code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; background: #eee; padding: 0.1em 0.4em; border-radius: 4px; font-size: 0.85em; word-break: break-word; }
-        .ds-readme a { color: var(--primary); }
+        .ds-readme a { color: var(--primary-dark); }
         .ds-readme hr { border: 0; border-top: 1px solid var(--border); margin: 1.75rem 0; }
         .ds-md-table { border-collapse: collapse; width: 100%; margin: 0 0 1rem; font-size: 0.82rem; }
         .ds-md-table th, .ds-md-table td { border: 1px solid var(--border); padding: 0.4rem 0.6rem; text-align: left; vertical-align: top; }

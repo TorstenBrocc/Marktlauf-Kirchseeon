@@ -149,14 +149,14 @@ $totalCount = (int) $countStmt->fetchColumn();
         .inline-form button {
             padding: 4px 10px;
             font-size: 0.8rem;
-            background: var(--primary);
-            color: var(--white);
-            border: none;
+            background: var(--white);
+            border: 1px solid var(--primary);
+            color: var(--primary-dark);
             border-radius: 4px;
             cursor: pointer;
         }
         .inline-form button:hover {
-            background: var(--primary-dark);
+            background: var(--primary-tint);
         }
         .btn-confirm {
             padding: 4px 10px;

@@ -140,7 +140,7 @@ $spaltenGesamt = count($katalog) + 2; // Firma + Katalog-Spalten + Notiz
         .wm-row select, .wm-row input { flex: 1; padding: 0.22rem 0.35rem; border: 1px solid var(--border); border-radius: 4px; font-size: 0.74rem; background: var(--white); min-width: 0; }
         .wm-statusrow { display: flex; gap: 0.25rem; flex: 1; }
         .wm-seg { flex: 1; text-align: center; font-size: 0.66rem; padding: 0.2rem 0.1rem; border: 1px solid var(--border); border-radius: 5px; cursor: pointer; color: var(--text-light); background: var(--white); white-space: nowrap; }
-        .wm-seg.on { background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 600; }
+        .wm-seg.on { background: var(--primary-tint); border-color: var(--primary); color: var(--primary-dark); font-weight: 600; }
     </style>
 </head>
 <body>

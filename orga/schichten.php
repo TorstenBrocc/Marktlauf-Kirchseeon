@@ -181,10 +181,10 @@ function beitragTooltip(array $beitragProHelfer, int $helferId): string {
         .gemeldet-chip { background: #f5f8ff; border-color: #c9d8ff; }
         .chip-status { font-size: 0.7rem; color: #856404; }
         .chip-add {
-            border: none; background: var(--primary); color: var(--white);
+            border: 1px solid var(--primary); background: var(--white); color: var(--primary-dark);
             border-radius: 999px; padding: 0.05rem 0.4rem; font-size: 0.8rem; cursor: pointer; line-height: 1.2;
         }
-        .chip-add:hover { background: var(--primary-dark); }
+        .chip-add:hover { background: var(--primary-tint); }
         .col-bedarf { display: flex; align-items: center; gap: 0.5rem; }
         .del-btn { border: none; background: transparent; cursor: pointer; font-size: 0.95rem; opacity: 0.55; }
         .del-btn:hover { opacity: 1; }
@@ -222,10 +222,10 @@ function beitragTooltip(array $beitragProHelfer, int $helferId): string {
         .ie-zeit-edit input[type="time"] { width: 7rem; }
         .ie-bedarf .ie-edit input { width: 4rem; }
         .ie-save {
-            border: none; background: var(--primary); color: var(--white);
+            border: 1px solid var(--primary); background: var(--white); color: var(--primary-dark);
             border-radius: 4px; padding: 0.25rem 0.5rem; cursor: pointer; font-size: 0.85rem; line-height: 1;
         }
-        .ie-save:hover { background: var(--primary-dark); }
+        .ie-save:hover { background: var(--primary-tint); }
 
         /* Schmalere Screens: Spalten aufbrechen, Zeilen stapeln (nur vertikales Scrollen). */
         @media (max-width: 1100px) {

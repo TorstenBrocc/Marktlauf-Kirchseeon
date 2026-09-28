@@ -68,7 +68,7 @@ $katLabel = ['verein' => 'Verein', 'laufevent' => 'Laufevent'];
         .filter-bar label { font-size: 0.75rem; margin-bottom: 0.25rem; }
         .filter-bar select { padding: 0.5rem; min-width: 150px; }
         .stats { display: flex; gap: 2rem; font-size: 0.875rem; color: var(--text-light); margin-bottom: 1rem; flex-wrap: wrap; }
-        .stat-value { font-weight: 600; color: var(--primary); }
+        .stat-value { font-weight: 600; color: var(--primary-dark); }
         .action-bar {
             display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; align-items: center;
             margin-bottom: 1.25rem; padding: 0.6rem 0.875rem; background: var(--white);

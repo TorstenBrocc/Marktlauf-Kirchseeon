@@ -70,7 +70,7 @@ $basePath = '../';
             max-width: 400px;
         }
         .login-card h1 {
-            color: var(--primary);
+            color: var(--primary-dark);
             text-align: center;
             margin-bottom: var(--space-lg);
             font-size: var(--text-2xl);

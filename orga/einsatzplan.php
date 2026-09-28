@@ -121,7 +121,7 @@ function boardBeitragTooltip(array $beitragProHelfer, int $helferId): string {
             border: 1px solid var(--border); background: var(--white);
             color: var(--text); text-decoration: none; font-size: 0.85rem;
         }
-        .board-actions .btn-link:hover { border-color: var(--primary); color: var(--primary); }
+        .board-actions .btn-link:hover { border-color: var(--primary); color: var(--primary-dark); }
         .board-actions .btn-link.primary {
             background: var(--white); border-color: var(--primary); color: var(--primary-dark); font-weight: 600;
         }
@@ -153,7 +153,7 @@ function boardBeitragTooltip(array $beitragProHelfer, int $helferId): string {
         .chip:active { cursor: grabbing; }
         .chip.dragging { opacity: 0.45; }
         .chip .chip-zahl {
-            background: var(--primary); color: #fff; border-radius: 999px;
+            background: var(--primary-tint); color: var(--primary-dark); border-radius: 999px;
             font-size: 0.68rem; padding: 0 0.32rem; line-height: 1.4;
         }
         .chip.chip-neu { border-style: dashed; background: #fffdf2; }

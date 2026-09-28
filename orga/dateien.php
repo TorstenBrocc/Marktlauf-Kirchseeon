@@ -90,7 +90,7 @@ if ($configured) {
         #fb-ctx { position:fixed; z-index:60; background:var(--white); border:1px solid var(--border); border-radius:8px; box-shadow:var(--shadow-card); padding:0.3rem; min-width:200px; display:flex; flex-direction:column; }
         #fb-ctx[hidden] { display:none; }
         .fb-ctx-item { text-align:left; background:none; border:none; padding:0.42rem 0.7rem; border-radius:5px; font-size:0.85rem; color:var(--text); cursor:pointer; white-space:nowrap; }
-        .fb-ctx-item:hover { background:#f2f8f4; color:var(--primary); }
+        .fb-ctx-item:hover { background:#f2f8f4; color:var(--primary-dark); }
         .fb-ctx-item.danger:hover { background:#fef2f2; color:#dc2626; }
         .fb-ctx-sep { height:1px; background:var(--border); margin:0.25rem 0.3rem; }
         #vis-modal { position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:70; display:flex; align-items:center; justify-content:center; padding:1rem; }
@@ -101,7 +101,7 @@ if ($configured) {
         .vis-hint { font-size:0.78rem; color:var(--text-light); margin:0 0 0.75rem; }
         .vis-quick { display:flex; gap:0.5rem; margin-bottom:0.5rem; }
         .vis-quick button { font-size:0.75rem; padding:0.2rem 0.6rem; border:1px solid var(--border); border-radius:4px; background:var(--white); cursor:pointer; color:var(--text); }
-        .vis-quick button:hover { border-color:var(--primary); color:var(--primary); }
+        .vis-quick button:hover { border-color:var(--primary); color:var(--primary-dark); }
         .trestr { flex:0 0 auto; font-size:0.8rem; opacity:0.75; margin-left:0.2rem; }
         .vis-list { overflow-y:auto; border:1px solid var(--border); border-radius:6px; padding:0.4rem 0.5rem; margin-bottom:1rem; }
         .vis-row { display:flex; align-items:center; gap:0.55rem; padding:0.32rem 0.2rem; font-size:0.9rem; cursor:pointer; }
@@ -109,13 +109,13 @@ if ($configured) {
         .vis-actions { display:flex; justify-content:flex-end; gap:0.6rem; }
         .fb-trash { margin-top:1rem; }
         .fb-trash-toggle { background:none; border:1px solid var(--border); border-radius:6px; padding:0.4rem 0.8rem; font-size:0.85rem; cursor:pointer; color:var(--text); }
-        .fb-trash-toggle:hover { border-color:var(--primary); color:var(--primary); }
+        .fb-trash-toggle:hover { border-color:var(--primary); color:var(--primary-dark); }
         .fb-trash-panel { margin-top:0.6rem; border:1px solid var(--border); border-radius:8px; background:var(--white); padding:0.5rem 0.75rem; box-shadow:var(--shadow-card); }
         .fb-trash-panel[hidden] { display:none; }
         .trash-row { display:flex; align-items:center; gap:0.5rem; padding:0.34rem 0.2rem; border-bottom:1px solid var(--border); }
         .trash-row:last-child { border-bottom:none; }
         .trash-restore { font-size:0.72rem; padding:0.2rem 0.6rem; border:1px solid var(--border); border-radius:4px; background:var(--white); cursor:pointer; color:var(--text); white-space:nowrap; flex:0 0 auto; }
-        .trash-restore:hover { border-color:var(--primary); color:var(--primary); }
+        .trash-restore:hover { border-color:var(--primary); color:var(--primary-dark); }
         .trash-empty, .trash-loading { color:var(--text-light); font-size:0.85rem; padding:0.4rem 0.2rem; }
     </style>
 </head>

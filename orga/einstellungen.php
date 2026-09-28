@@ -193,7 +193,7 @@ $makeWebhookSecret = (string) ($config['make_webhook_secret'] ?? '');
         }
         /* Autosave-Status statt Speicher-Button — dezent, nur kurz farbig bei Erfolg/Fehler. */
         .autosave-status { font-size: 0.85rem; color: var(--text-light); transition: color 0.2s; }
-        .autosave-status.ok { color: var(--primary); font-weight: 600; }
+        .autosave-status.ok { color: var(--primary-dark); font-weight: 600; }
         .autosave-status.err { color: var(--error); font-weight: 600; }
         /* Versandtage: 7 Wochentags-Schalter als Pillen (Checkbox versteckt, Zustand am Rahmen). */
         .reminder-tage {
@@ -674,7 +674,7 @@ $makeWebhookSecret = (string) ($config['make_webhook_secret'] ?? '');
                     // Umbenennungen sind gespeichert -> Ausgangswerte nachziehen.
                     inputs().forEach(function(i) { i.dataset.orig = i.value.trim(); });
                     statusEl.textContent = d.migrated ? ('Gespeichert ✓ (' + d.migrated + ' Sponsoren angepasst)') : 'Gespeichert ✓';
-                    statusEl.style.color = 'var(--primary)';
+                    statusEl.style.color = 'var(--primary-dark)';
                 } else {
                     statusEl.textContent = d.message || 'Fehler';
                     statusEl.style.color = 'var(--error)';

@@ -109,7 +109,7 @@ body {
 
 .login-container h1 {
     margin-bottom: 1.5rem;
-    color: var(--primary);
+    color: var(--primary-dark);
     text-align: center;
 }
 
@@ -533,7 +533,7 @@ body {
 .card-stat {
     font-size: 1.6rem;
     font-weight: 600;
-    color: var(--primary);
+    color: var(--primary-dark);
 }
 
 .card-label {
@@ -1095,7 +1095,7 @@ a.card-tile:hover {
 
 .mobile-header h1 {
     font-size: 1.1rem;
-    color: var(--primary);
+    color: var(--primary-dark);
     margin: 0;
 }
 
@@ -1219,7 +1219,7 @@ a.card-tile:hover {
 
 .md-legende > summary:hover {
     border-color: var(--primary);
-    color: var(--primary);
+    color: var(--primary-dark);
 }
 
 /* Als überlagerndes Panel statt im Fluss: die Kopfzeile ist ein Flex-Container,
@@ -1345,7 +1345,7 @@ a.card-tile:hover {
 }
 
 .empf-zahl { font-size: 0.9rem; color: var(--text); }
-.empf-zahl strong { font-size: 1.05rem; color: var(--primary); }
+.empf-zahl strong { font-size: 1.05rem; color: var(--primary-dark); }
 
 .empf-chip {
     display: inline-flex;

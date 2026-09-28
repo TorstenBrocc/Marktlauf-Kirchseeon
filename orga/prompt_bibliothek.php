@@ -190,7 +190,7 @@ $kategorien = [
         }
 
         /* Vorschau-Typographie */
-        #pb-preview h1 { font-size: 1.15rem; margin: 0.75rem 0 0.4rem; border-bottom: 2px solid var(--primary); padding-bottom: 0.25rem; color: var(--primary); }
+        #pb-preview h1 { font-size: 1.15rem; margin: 0.75rem 0 0.4rem; border-bottom: 2px solid var(--primary); padding-bottom: 0.25rem; color: var(--primary-dark); }
         #pb-preview h2 { font-size: 1rem; margin: 0.75rem 0 0.3rem; color: var(--text); }
         #pb-preview h3 { font-size: 0.9rem; margin: 0.6rem 0 0.25rem; color: var(--text-light); }
         #pb-preview strong { color: var(--text); font-weight: 700; }

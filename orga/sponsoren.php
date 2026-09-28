@@ -641,7 +641,7 @@ try {
             text-align: center;
         }
         .bed-ja {
-            color: var(--primary);
+            color: var(--primary-dark);
             font-weight: 600;
         }
         .bed-nein {

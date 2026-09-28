@@ -159,7 +159,7 @@ $prioLabel = ['normal' => 'Normal', 'wichtig' => 'Wichtig', 'notfall' => '⚠️
                                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf) ?>">
                                 <input type="hidden" name="action" value="toggle">
                                 <input type="hidden" name="id" value="<?= (int) $b['id'] ?>">
-                                <button type="submit" class="btn-icon" style="border:none;background:none;color:var(--primary);cursor:pointer;font-size:0.72rem"><?= $b['sichtbar'] ? 'ausblenden' : 'einblenden' ?></button>
+                                <button type="submit" class="btn-icon" style="border:none;background:none;color:var(--link);cursor:pointer;font-size:0.72rem"><?= $b['sichtbar'] ? 'ausblenden' : 'einblenden' ?></button>
                             </form>
                             ·
                             <form class="inline-form" method="post" action="api/briefing_crud.php" onsubmit="return confirm('Briefing löschen?')">
