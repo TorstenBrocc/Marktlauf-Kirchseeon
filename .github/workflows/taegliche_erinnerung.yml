@@ -49,3 +49,5 @@ jobs:
             cd ${{ secrets.SFTP_REMOTE_PATH }}
             MARKTLAUF_CLI=1 /bin/php bin/aufgaben_erinnerung.php
             MARKTLAUF_CLI=1 /bin/php bin/offene_todos_digest.php --modus=auto
+            # make.com-Waechter: Mail an TT nur, wenn ein make-Szenario still steht.
+            MARKTLAUF_CLI=1 /bin/php bin/make_waechter.php

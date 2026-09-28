@@ -5,7 +5,8 @@
  *
  * OEFFENTLICH — das geplante make-Szenario ruft an, KEIN Login/CSRF. Auth wie der Rueckkanal:
  * Header `X-Signature: sha256=hmac_sha256(rawBody, make_webhook_secret)` ODER `secret` im JSON-Body.
- * Ohne konfiguriertes Secret: abgelehnt. READ-ONLY, liefert nur IDs + Media-IDs (keine
+ * Ohne konfiguriertes Secret: abgelehnt. Liest nur (einzige Schreibaktion: Lebenszeichen-Stempel fuer
+ * src/make_waechter.php), liefert nur IDs + Media-IDs (keine
  * personenbezogenen Daten).
  *
  * Antwort: {"ok":true,"posts":[{"post_id":123,"channel":"instagram","media_id":"…"}, …]}
@@ -18,6 +19,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../../src/db.php';
 require_once __DIR__ . '/../../src/logger.php';
+require_once __DIR__ . '/../../src/make_waechter.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -67,6 +69,7 @@ $versucheIgnorieren = !empty($data['versuche_ignorieren']);
 
 try {
     $pdo  = getDbConnection();
+    makeInsightsHeartbeat($pdo);
     $stmt = $pdo->prepare(
         // insights_versuche < 3: dauerhaftes Aufgeben nach zu vielen Fehlversuchen (Migration
         // 090). Der Make-Error-Handler meldet Fehlschlaege via post_status_callback.php

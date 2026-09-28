@@ -432,6 +432,17 @@ $quickLinks[] = [
     'hint'  => null,
 ];
 
+// make.com-Waechter (src/make_waechter.php): stale make scenarios, admins only.
+$makeBefunde = [];
+if ($isAdmin) {
+    require_once __DIR__ . '/../src/make_waechter.php';
+    try {
+        $makeBefunde = makeWaechterBefunde($pdo);
+    } catch (PDOException $e) {
+        logError('Cockpit make-Waechter: ' . $e->getMessage());
+    }
+}
+
 $flashSuccess = $_SESSION['flash_success'] ?? '';
 $flashError = $_SESSION['flash_error'] ?? '';
 unset($_SESSION['flash_success'], $_SESSION['flash_error']);
@@ -473,6 +484,18 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
 
             <?php if ($flashError): ?>
                 <div class="alert alert-error" role="alert"><?= htmlspecialchars($flashError) ?></div>
+            <?php endif; ?>
+
+            <?php if ($makeBefunde): ?>
+                <div class="alert alert-error" role="alert">
+                    <strong>make.com steht still — bitte prüfen</strong>
+                    <ul>
+                        <?php foreach ($makeBefunde as $befund): ?>
+                            <li><?= htmlspecialchars($befund) ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                    <a href="https://eu1.make.com/organization/8428610/dashboard" target="_blank" rel="noopener">make.com öffnen<span class="sr-only"> (öffnet in neuem Tab)</span></a>
+                </div>
             <?php endif; ?>
 
             <nav class="quick-bar" aria-label="Schnellzugriff">
