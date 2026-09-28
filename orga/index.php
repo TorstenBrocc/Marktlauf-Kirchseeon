@@ -815,6 +815,13 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
         function startTab() {
             const params = new URLSearchParams(window.location.search);
             if (params.has('erledigt')) {
+                // A task can sit in Meine AND Orga — prefer the tab the user clicked in (stored on activate).
+                try {
+                    const zuletzt = localStorage.getItem('mkl_cockpit_tab');
+                    if (KEYS.indexOf(zuletzt) !== -1 && document.querySelector('#panel-' + zuletzt + ' .ist-frisch-erledigt')) {
+                        return zuletzt;
+                    }
+                } catch (e) {}
                 const frisch = document.querySelector('.ist-frisch-erledigt');
                 const panel = frisch ? frisch.closest('.aufgaben-panel') : null;
                 if (panel) { return panel.dataset.panel; }
@@ -858,8 +865,10 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
         // kehrt der Fokus schlicht zur Aufgaben-Karte zurück (neu angelegt: Titelfeld
         // des Zielreiters; sonst: aktiver Reiter-Button).
         const params = new URLSearchParams(window.location.search);
+        const aktivesPanel = document.querySelector('.aufgaben-panel:not([hidden])');
         const frischStatusBtn = params.has('erledigt')
-            ? document.querySelector('.ist-frisch-erledigt .status-punkt')
+            ? ((aktivesPanel && aktivesPanel.querySelector('.ist-frisch-erledigt .status-punkt'))
+                || document.querySelector('.ist-frisch-erledigt .status-punkt'))
             : null;
         if (frischStatusBtn) {
             frischStatusBtn.focus();
