@@ -232,6 +232,7 @@ function socialVersandBildUrl(array $post): array
  * Facebook wird also nicht doppelt gepostet. Ohne ersten Kommentar (IG-Kommentar via API schlaegt
  * bei Meta ohnehin fehl, Spec §6); der Anmelde-Link steht auf der Grafik (QR) + in der Bio.
  * Erfolg -> gesendet_kanaele um 'instagram' ergaenzt. Fehler -> logError, false (kein Retry).
+ * Kommt keine Instagram-Rueckmeldung, meldet das der make-Waechter nach 30 min (src/make_waechter.php).
  */
 function sendeInstagramNach(PDO $pdo, array $post): bool
 {
@@ -250,6 +251,16 @@ function sendeInstagramNach(PDO $pdo, array $post): bool
         return false;
     }
     $text     = socialVersandHashtagsAnhaengen($pdo, $text);
+    // The Facebook callback already confirmed this post days ago (at scheduling time). Clear the
+    // confirmation BEFORE dispatch so the Instagram callback has to set it again — otherwise the
+    // make watchdog (src/make_waechter.php) could never notice a failed Instagram follow-up.
+    // Cleared before, not after: the callback may arrive before socialDispatch() returns.
+    try {
+        $pdo->prepare('UPDATE post_race_contents SET versand_bestaetigt_am = NULL WHERE id = :id')
+            ->execute(['id' => $postId]);
+    } catch (PDOException $e) {
+        logError('sendeInstagramNach: Bestaetigung zuruecksetzen fehlgeschlagen (Post ' . $postId . '): ' . $e->getMessage());
+    }
     $ergebnis = socialDispatch($text, $bild['url'], ['instagram'], $postId);
     if (empty($ergebnis['ok'])) {
         logError('sendeInstagramNach: Post ' . $postId . ' nicht gesendet: ' . (string) ($ergebnis['message'] ?? '?'));

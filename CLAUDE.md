@@ -245,6 +245,8 @@ erledigt). Fallen, teuer erkauft (Ausfall 04.–28.09., Details `intern/make-com
   stempelt `einstellungen.make_insights_letzter_abruf`; > 26 h still oder ein Post > 30 min ohne
   Rückmeldung → roter Hinweis im Cockpit (nur Admins) + Tagesmail an TT (`bin/make_waechter.php`
   im Workflow „Tägliche Erinnerungen“). Wer von Hand nachholt, setzt den Stempel mit — harmlos.
+  Terminierte Posts: `sendeInstagramNach()` leert `versand_bestaetigt_am` vor dem IG-Versand,
+  sonst bliebe ein gescheiterter Instagram-Nachversand unsichtbar (FB hatte schon bestätigt).
 
 ## Sponsoren-/Fördergruppen-Modell
 
