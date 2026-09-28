@@ -132,6 +132,107 @@ $anzMeine = count($meineAufgaben);
 $anzSponsoring = (int) ($todos['gesamt'] ?? 0);
 $anzOrga = count($orgaOffen);
 
+/**
+ * Status-Punkt-Formular für eine Aufgabenzeile (Meine + Orga, Task 5/6 — geteilte Closure,
+ * Inhaber-Entscheid Runde 3: nur ein Punkt, kein Auswahlfeld). Ein Submit-Button je Zeile
+ * schaltet den Status im Kreis weiter (offen → in Arbeit → erledigt → offen); Form + Farbe
+ * tragen die Bedeutung, nicht nur die Farbe (WCAG 1.4.1) — aria-label/title benennen
+ * Ist- und Ziel-Zustand ausdrücklich. `zurueck=cockpit` fällt im Endpunkt heute noch auf
+ * den Standard-Rücksprung `../index.php` zurück (kein `todos`/`sponsor`-Wert) — harmlos,
+ * bis Task 6 den Wert dort auswertet.
+ */
+$renderStatusPunkt = function (array $aufgabe) use ($csrfToken): string {
+    $naechsterStatus = ['offen' => 'in_arbeit', 'in_arbeit' => 'erledigt', 'erledigt' => 'offen'];
+    $label = ['offen' => 'offen', 'in_arbeit' => 'in Arbeit', 'erledigt' => 'erledigt'];
+    $ist = (string) ($aufgabe['status'] ?? 'offen');
+    if (!isset($naechsterStatus[$ist])) {
+        $ist = 'offen';
+    }
+    $naechster = $naechsterStatus[$ist];
+    $ueberfaellig = $ist !== 'erledigt'
+        && !empty($aufgabe['faellig_am'])
+        && (string) $aufgabe['faellig_am'] < date('Y-m-d');
+    $klasse = 'status-punkt status-' . $ist . ($ueberfaellig ? ' ist-ueberfaellig' : '');
+    $titel = 'Status: ' . $label[$ist] . ' – klicken: ' . $label[$naechster];
+    return '<form method="post" action="api/aufgabe_orga_crud.php" class="status-form">'
+        . '<input type="hidden" name="csrf_token" value="' . htmlspecialchars($csrfToken) . '">'
+        . '<input type="hidden" name="action" value="set_status">'
+        . '<input type="hidden" name="aufgabe_id" value="' . (int) $aufgabe['id'] . '">'
+        . '<input type="hidden" name="status" value="' . htmlspecialchars($naechster) . '">'
+        . '<input type="hidden" name="zurueck" value="cockpit">'
+        . '<button type="submit" class="' . htmlspecialchars($klasse) . '" aria-label="' . htmlspecialchars($titel) . '" title="' . htmlspecialchars($titel) . '"></button>'
+        . '</form>';
+};
+
+/** Alters-/Fristtext für eine Sponsoring-Zeile im Cockpit — Kurzform von $alter aus
+ * orga/offene_todos.php, eigene Kopie: das Layout hier ist ein reiner Fließtext ohne
+ * Badges, die Datenquelle bleibt dieselbe ($todos aus offeneTodosAlle()). */
+$frist = static function (int $tage, string $heuteText, string $mehrText): string {
+    return $tage <= 0 ? $heuteText : sprintf($mehrText, $tage);
+};
+
+/**
+ * Eine Zeile im Reiter „Sponsoring" — Firma (Link, außer versand_fehler) + Grund/Frist,
+ * ohne Status/Wer/Löschen (das sind Sponsoring-ToDos, keine Orga-Aufgaben). Gruppen und
+ * Reihenfolge wie orga/offene_todos.php, nur die Felder unterscheiden sich je Gruppe.
+ */
+$renderSponsorZeile = function (string $gruppe, array $t) use ($frist): string {
+    switch ($gruppe) {
+        case 'bestaetigung':
+            $firmaHtml = '<a href="sponsor_form.php?id=' . (int) $t['id'] . '">' . htmlspecialchars((string) $t['firma']) . '</a>';
+            $grundHtml = htmlspecialchars($frist((int) $t['tage'], 'heute zugesagt', 'seit %d Tagen zugesagt'));
+            $ueberfaellig = false;
+            break;
+        case 'bedingungen':
+            $firmaHtml = '<a href="sponsor_form.php?id=' . (int) $t['id'] . '">' . htmlspecialchars((string) $t['firma']) . '</a>';
+            $grundHtml = htmlspecialchars($frist((int) $t['tage'], 'seit heute', 'seit %d Tagen'));
+            $ueberfaellig = false;
+            break;
+        case 'wiedervorlagen':
+            $firmaHtml = '<a href="sponsor_form.php?id=' . (int) $t['id'] . '">' . htmlspecialchars((string) $t['firma']) . '</a>';
+            $grundHtml = htmlspecialchars($frist((int) $t['tage'], 'heute fällig', 'seit %d Tagen überfällig'));
+            $ueberfaellig = (int) $t['tage'] > 0;
+            break;
+        case 'versand_fehler':
+            $firmaHtml = htmlspecialchars((string) $t['firma']);
+            $fehlerText = (string) $t['fehler'] !== '' ? (string) $t['fehler'] : 'Versand fehlgeschlagen';
+            $grundHtml = '<a href="offene_todos.php">' . htmlspecialchars($fehlerText) . '</a>';
+            $ueberfaellig = false;
+            break;
+        case 'nie_angeschrieben':
+            $firmaHtml = '<a href="sponsor_form.php?id=' . (int) $t['id'] . '">' . htmlspecialchars((string) $t['firma']) . '</a>';
+            $grundHtml = htmlspecialchars($frist((int) $t['tage'], 'heute angelegt', 'liegt seit %d Tagen'));
+            $ueberfaellig = false;
+            break;
+        case 'ohne_reaktion':
+            $firmaHtml = '<a href="sponsor_form.php?id=' . (int) $t['id'] . '">' . htmlspecialchars((string) $t['firma']) . '</a>';
+            $grundHtml = htmlspecialchars($frist((int) $t['tage'], 'seit heute', 'seit %d Tagen ohne Antwort'));
+            $ueberfaellig = false;
+            break;
+        default: // sponsor_aufgaben
+            // Real task at a sponsor: show what to do, not just the firm.
+            $firmaHtml = '<a href="sponsor_form.php?id=' . (int) $t['sponsor_id'] . '">' . htmlspecialchars((string) $t['firma']) . '</a>'
+                . ' · ' . htmlspecialchars((string) $t['titel']);
+            $tage = (int) $t['tage_ueberfaellig'];
+            // Negative = due in the future ($frist would wrongly say "heute fällig").
+            $grundHtml = $tage < 0
+                ? 'fällig ' . htmlspecialchars(date('d.m.', strtotime((string) $t['faellig_am'])))
+                : htmlspecialchars($frist($tage, 'heute fällig', 'seit %d Tagen überfällig'));
+            $ueberfaellig = $tage > 0;
+            break;
+    }
+    $faelligKlasse = 'aufgabe-faellig' . ($ueberfaellig ? ' ueberfaellig' : '');
+    return '<div class="aufgabe-zeile aufgabe-zeile-sponsor">'
+        . '<div class="aufgabe-titel">' . $firmaHtml . '</div>'
+        . '<div class="' . $faelligKlasse . '">' . $grundHtml . '</div>'
+        . '</div>';
+};
+
+// Reihenfolge wie orga/offene_todos.php, aber nur die Gruppen, die in $todos['gesamt']
+// zählen (bedingungen_beleg bleibt außen vor — „inhaltlich erledigt, nur Beleg fehlt").
+$sponsoringReihenfolge = ['bestaetigung', 'bedingungen', 'wiedervorlagen', 'versand_fehler', 'nie_angeschrieben', 'ohne_reaktion', 'sponsor_aufgaben'];
+$todoGruppenMeta = todoGruppenMeta();
+
 $trelloBoardUrl = '';
 try {
     $trelloStmt = $pdo->prepare('SELECT `value` FROM einstellungen WHERE `key` = :key');
@@ -344,11 +445,26 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                             <?php if (empty($meineAufgaben)): ?>
                             <p class="aufgaben-leer">Nichts offen.</p>
                             <?php else: ?>
-                            <ul>
-                                <?php foreach ($meineAufgaben as $ma): ?>
-                                <li><?= htmlspecialchars($ma['titel']) ?></li>
+                                <?php foreach ($meineAufgaben as $ma):
+                                    $faelligAm = (string) ($ma['faellig_am'] ?? '');
+                                    $ueberfaellig = $faelligAm !== '' && $faelligAm < date('Y-m-d');
+                                    $faelligText = $faelligAm !== '' ? 'Fällig: ' . date('d.m.Y', strtotime($faelligAm)) : '';
+                                ?>
+                                <div class="aufgabe-zeile">
+                                    <?= $renderStatusPunkt($ma) ?>
+                                    <div class="aufgabe-titel">
+                                        <?= htmlspecialchars((string) $ma['titel']) ?>
+                                        <?php if (($ma['kontext_typ'] ?? '') === 'sponsor' && !empty($ma['firma'])): ?>
+                                            &middot; <a href="sponsor_form.php?id=<?= (int) $ma['kontext_id'] ?>"><?= htmlspecialchars((string) $ma['firma']) ?></a>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="aufgabe-meta">
+                                        <?php if ($faelligText !== ''): ?>
+                                        <span class="aufgabe-faellig<?= $ueberfaellig ? ' ueberfaellig' : '' ?>"><?= htmlspecialchars($faelligText) ?></span>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
                                 <?php endforeach; ?>
-                            </ul>
                             <?php endif; ?>
                         </section>
 
@@ -357,15 +473,26 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                             <?php if ($anzSponsoring === 0): ?>
                             <p class="aufgaben-leer">Nichts offen.</p>
                             <?php else: ?>
-                            <ul>
-                                <?php foreach ($todos as $gruppe => $eintraege): ?>
-                                    <?php if ($gruppe === 'gesamt' || !is_array($eintraege)) { continue; } ?>
-                                    <?php foreach ($eintraege as $eintrag): ?>
-                                    <li><?= htmlspecialchars($eintrag['firma'] ?? '') ?></li>
-                                    <?php endforeach; ?>
+                                <?php $sponsoringRest = TODO_LISTE_MAX; ?>
+                                <?php foreach ($sponsoringReihenfolge as $gruppe):
+                                    if ($sponsoringRest <= 0) {
+                                        break;
+                                    }
+                                    $liste = $gruppe === 'sponsor_aufgaben'
+                                        ? array_values(array_filter($todos['sponsor_aufgaben'] ?? [], static fn (array $a): bool => !empty($a['faellig_am'])))
+                                        : ($todos[$gruppe] ?? []);
+                                    if (empty($liste)) {
+                                        continue;
+                                    }
+                                ?>
+                                <p class="todo-gruppe"><?= htmlspecialchars($todoGruppenMeta[$gruppe]['titel']) ?> (<?= count($liste) ?>)</p>
+                                <?php foreach (array_slice($liste, 0, $sponsoringRest) as $eintrag):
+                                    echo $renderSponsorZeile($gruppe, $eintrag);
+                                    $sponsoringRest--;
+                                endforeach; ?>
                                 <?php endforeach; ?>
-                            </ul>
                             <?php endif; ?>
+                            <p class="aufgaben-mehr"><a href="offene_todos.php">Alle <?= $anzSponsoring ?> ToDos &rarr;</a></p>
                         </section>
 
                         <section class="aufgaben-panel" id="panel-orga" data-panel="orga">

@@ -68,6 +68,11 @@
     --radius-pill: 999px;
     /* Control-Höhe — eine Quelle für gleich hohe Buttons/Inputs/Selects */
     --control-h: calc(var(--fs-base) * 1.5 + 2 * var(--control-pad-y) + 2px);
+    /* Status-Punkt (Cockpit-Aufgabenzeile, Inhaber-Entscheid Runde 3): Form + Farbe,
+       nicht nur Farbe — Ring leer/halb/voll je Zustand, s. .status-punkt unten. */
+    --status-offen: #6b7280;
+    --status-arbeit: #b45309;
+    --status-erledigt: #007230;
 }
 
 * {
@@ -810,6 +815,147 @@ a.card-tile:hover {
 .aufgaben-leer {
     color: var(--text-light);
     font-size: 0.875rem;
+}
+
+/* Cockpit: kompakte Aufgabenzeile (Meine/Orga) — geteilte Grid-Basis, Task 5/6.
+   Spalten: Status | Titel (flexibel) | Fällig | Wer | Löschen; die letzten beiden
+   bleiben in Meine/Sponsoring einfach ungenutzt (keine Elemente, kein Platzbedarf). */
+.aufgabe-zeile {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.875rem;
+}
+.aufgabe-zeile:last-child {
+    border-bottom: none;
+}
+.aufgabe-titel {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+.aufgabe-titel small {
+    display: block;
+    color: var(--text-light);
+}
+.aufgabe-titel a {
+    color: var(--link);
+}
+.aufgabe-faellig {
+    white-space: nowrap;
+    color: var(--text-light);
+}
+.ueberfaellig {
+    color: var(--signal-crit);
+    font-weight: 600;
+}
+@media (max-width: 599px) {
+    .aufgabe-zeile {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        grid-template-areas: "status titel loeschen" "status meta meta";
+    }
+    .aufgabe-zeile .status-form {
+        grid-area: status;
+    }
+    .aufgabe-zeile .aufgabe-titel {
+        grid-area: titel;
+    }
+    /* .aufgabe-loeschen sitzt in der Area "loeschen" — Löschen-Formular kommt mit
+       dem Orga-Panel (Task 6), die Area steht hier schon für die geteilte Basis. */
+    .aufgabe-zeile .aufgabe-meta {
+        grid-area: meta;
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+    .aufgabe-zeile .aufgabe-meta > * {
+        white-space: nowrap;
+    }
+}
+
+/* Status-Punkt (Inhaber-Entscheid Runde 3): ein Submit-Button je Zeile, schaltet den
+   Status im Kreis weiter (offen → in Arbeit → erledigt → offen). Form + Farbe trägt die
+   Bedeutung, nicht nur die Farbe (WCAG 1.4.1): leerer Ring, halb gefüllt, voll mit Haken. */
+.status-form {
+    display: inline-flex;
+}
+.status-punkt {
+    position: relative;
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    background: none;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+}
+.status-punkt::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    box-sizing: border-box;
+}
+.status-punkt.status-offen::before {
+    border: 2px solid var(--status-offen);
+    background: none;
+}
+.status-punkt.status-in_arbeit::before {
+    border: 2px solid var(--status-arbeit);
+    background: linear-gradient(90deg, var(--status-arbeit) 50%, #fff 50%);
+}
+.status-punkt.status-erledigt::before {
+    border: 2px solid var(--status-erledigt);
+    background: var(--status-erledigt);
+}
+.status-punkt.status-erledigt::after {
+    content: "\2713";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #fff;
+    font-size: 0.7rem;
+    line-height: 1;
+}
+.status-punkt.ist-ueberfaellig::before {
+    border-color: var(--signal-crit);
+}
+.status-punkt:focus-visible {
+    outline: 2px solid var(--primary-dark);
+    outline-offset: 2px;
+}
+
+/* Panel Sponsoring: nur Firma + Grund/Frist, ohne Status/Wer/Löschen — eigene
+   Spaltenzahl statt der 5-spaltigen Basis (höhere Spezifität durch zwei Klassen). */
+.aufgabe-zeile.aufgabe-zeile-sponsor {
+    grid-template-columns: minmax(0, 1fr) auto;
+}
+.todo-gruppe {
+    margin: 1rem 0 0.35rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.todo-gruppe:first-child {
+    margin-top: 0;
+}
+.aufgaben-mehr {
+    margin: 0.75rem 0 0;
+    font-size: 0.8rem;
+    color: var(--text-light);
+}
+.aufgaben-mehr a {
+    color: var(--link);
 }
 
 /* sr-only: nur für Screenreader, visuell verborgen (Standard-Clip-Muster) */
