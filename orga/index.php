@@ -482,7 +482,6 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                         <a class="quick-btn" href="<?= htmlspecialchars($link['href']) ?>" target="_blank" rel="noopener">
                             <img src="../assets/images/brands/<?= htmlspecialchars($link['icon']) ?>" alt="" width="16" height="16">
                             <?= htmlspecialchars($link['label']) ?>
-                            <span aria-hidden="true">&#8599;</span>
                             <span class="sr-only">(öffnet neuen Tab)</span>
                         </a>
                         <?php if ($link['hint']): ?><?= $renderHinweisButton($link['hint'], $link['label']) ?><?php endif; ?>
@@ -496,7 +495,6 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                         <a class="quick-btn quick-btn-primaer" href="../helfer-anmeldung.php" target="_blank" rel="noopener">
                             <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>
                             Helfer-Anmeldung
-                            <span aria-hidden="true">&#8599;</span>
                             <span class="sr-only">(öffnet neuen Tab)</span>
                         </a>
                     </li>
