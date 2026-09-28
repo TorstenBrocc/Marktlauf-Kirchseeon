@@ -242,6 +242,10 @@ try {
             // (Zweig greift nur bei zurueck=cockpit).
             if ($zurueck === 'cockpit' && $status === 'erledigt') {
                 $redirectUrl = '../index.php?erledigt=' . $aufgabeId . '#aufgaben';
+            } elseif ($zurueck === 'cockpit' && $status === 'offen') {
+                // Re-open focus (additive): sets the focus back on the row's status button
+                // after the reload, same pattern as ?erledigt= above.
+                $redirectUrl = '../index.php?offen=' . $aufgabeId . '#aufgaben';
             }
             header('Location: ' . $redirectUrl);
             exit;

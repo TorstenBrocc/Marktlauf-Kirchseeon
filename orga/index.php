@@ -223,16 +223,17 @@ $renderStatusPunkt = function (array $aufgabe) use ($csrfToken): string {
         && (string) $aufgabe['faellig_am'] < date('Y-m-d');
     $klasse = 'status-punkt status-' . $ist . ($ueberfaellig ? ' ist-ueberfaellig' : '');
     $aufgabenTitel = (string) ($aufgabe['titel'] ?? '');
+    $istStatusText = $ist === 'in_arbeit' ? 'in Arbeit' : 'offen';
     $titel = $istErledigt
         ? $aufgabenTitel . ' – erledigt – klicken: wieder offen'
-        : $aufgabenTitel . ' – offen' . ($ueberfaellig ? ', überfällig' : '') . ' – klicken: erledigt';
+        : $aufgabenTitel . ' – ' . $istStatusText . ($ueberfaellig ? ', überfällig' : '') . ' – klicken: erledigt';
     return '<form method="post" action="api/aufgabe_orga_crud.php" class="status-form">'
         . '<input type="hidden" name="csrf_token" value="' . htmlspecialchars($csrfToken) . '">'
         . '<input type="hidden" name="action" value="set_status">'
         . '<input type="hidden" name="aufgabe_id" value="' . (int) $aufgabe['id'] . '">'
         . '<input type="hidden" name="status" value="' . htmlspecialchars($naechster) . '">'
         . '<input type="hidden" name="zurueck" value="cockpit">'
-        . '<button type="submit" class="' . htmlspecialchars($klasse) . '" aria-label="' . htmlspecialchars($titel) . '" title="' . htmlspecialchars($titel) . '"></button>'
+        . '<button type="submit" class="' . htmlspecialchars($klasse) . '" data-aufgabe-id="' . (int) $aufgabe['id'] . '" aria-label="' . htmlspecialchars($titel) . '" title="' . htmlspecialchars($titel) . '"></button>'
         . '</form>';
 };
 
@@ -282,9 +283,11 @@ $renderSponsorZeile = function (string $gruppe, array $t) use ($frist): string {
             $ueberfaellig = false;
             break;
         default: // sponsor_aufgaben
-            // Real task at a sponsor: show what to do, not just the firm.
-            $firmaHtml = '<a href="sponsor_form.php?id=' . (int) $t['sponsor_id'] . '">' . htmlspecialchars((string) $t['firma']) . '</a>'
-                . ' · ' . htmlspecialchars((string) $t['titel']);
+            // Real task at a sponsor: show what to do, not just the firm. Firm link sits on its
+            // own line above the title (WCAG 1.4.1 — the link is not distinguished by color alone
+            // when it stays without underline, s. Inhaber-Entscheid).
+            $firmaHtml = '<span class="aufgabe-firma"><a href="sponsor_form.php?id=' . (int) $t['sponsor_id'] . '">' . htmlspecialchars((string) $t['firma']) . '</a></span>'
+                . htmlspecialchars((string) $t['titel']);
             $tage = (int) $t['tage_ueberfaellig'];
             // Negative = due in the future ($frist would wrongly say "heute fällig").
             $grundHtml = $tage < 0
@@ -466,15 +469,15 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
             </header>
 
             <?php if ($flashSuccess): ?>
-                <div class="alert alert-success"><?= htmlspecialchars($flashSuccess) ?></div>
+                <div class="alert alert-success" role="status"><?= htmlspecialchars($flashSuccess) ?></div>
             <?php endif; ?>
 
             <?php if ($flashError): ?>
-                <div class="alert alert-error"><?= htmlspecialchars($flashError) ?></div>
+                <div class="alert alert-error" role="alert"><?= htmlspecialchars($flashError) ?></div>
             <?php endif; ?>
 
             <nav class="quick-bar" aria-label="Schnellzugriff">
-                <ul class="quick-bar-liste">
+                <ul class="quick-bar-liste" role="list">
                     <?php foreach ($quickLinks as $link): ?>
                     <li>
                         <a class="quick-btn" href="<?= htmlspecialchars($link['href']) ?>" target="_blank" rel="noopener">
@@ -485,6 +488,9 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                         </a>
                         <?php if ($link['hint']): ?><?= $renderHinweisButton($link['hint'], $link['label']) ?><?php endif; ?>
                     </li>
+                    <?php if ($link['hint'] && trim((string) ($linkHinweise[$link['hint']] ?? '')) !== ''): ?>
+                    <li class="quick-bar-notiz"><?= $renderHinweisNote($link['hint'], $link['label']) ?></li>
+                    <?php endif; ?>
                     <?php endforeach; ?>
                     <li class="quick-bar-trenner" aria-hidden="true"></li>
                     <li>
@@ -496,11 +502,6 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                         </a>
                     </li>
                 </ul>
-                <div class="quick-bar-notes">
-                    <?php foreach ($quickLinks as $link): ?>
-                        <?php if ($link['hint']): ?><?= $renderHinweisNote($link['hint'], $link['label']) ?><?php endif; ?>
-                    <?php endforeach; ?>
-                </div>
             </nav>
 
             <section class="dashboard-group">
@@ -520,7 +521,7 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                             <?php if (empty($meineAufgaben)): ?>
                             <p class="aufgaben-leer">Nichts offen.</p>
                             <?php else: ?>
-                            <ul class="aufgaben-liste">
+                            <ul class="aufgaben-liste" role="list">
                                 <?php foreach ($meineAufgaben as $ma):
                                     $faelligAm = (string) ($ma['faellig_am'] ?? '');
                                     $ueberfaellig = $faelligAm !== '' && $faelligAm < date('Y-m-d');
@@ -532,7 +533,7 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                                     <div class="aufgabe-titel">
                                         <?= htmlspecialchars((string) $ma['titel']) ?>
                                         <?php if (($ma['kontext_typ'] ?? '') === 'sponsor' && !empty($ma['firma'])): ?>
-                                            &middot; <a href="sponsor_form.php?id=<?= (int) $ma['kontext_id'] ?>"><?= htmlspecialchars((string) $ma['firma']) ?></a>
+                                            <span class="aufgabe-firma"><a href="sponsor_form.php?id=<?= (int) $ma['kontext_id'] ?>"><?= htmlspecialchars((string) $ma['firma']) ?></a></span>
                                         <?php endif; ?>
                                     </div>
                                     <div class="aufgabe-meta">
@@ -551,8 +552,10 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                                 <input type="hidden" name="zurueck" value="cockpit">
                                 <input type="hidden" name="neu_tab" value="meine">
                                 <input type="hidden" name="verantwortlich_user_id" value="<?= (int) $user['id'] ?>">
-                                <label for="neu_titel_meine" class="sr-only">Neue Aufgabe</label>
-                                <input id="neu_titel_meine" class="aufgabe-neu-titel" name="titel" required placeholder="+ Neue Aufgabe">
+                                <div class="aufgabe-neu-titel-feld">
+                                    <label for="neu_titel_meine" class="aufgabe-neu-titel-label">Neue Aufgabe</label>
+                                    <input id="neu_titel_meine" class="aufgabe-neu-titel" name="titel" required placeholder="+ Neue Aufgabe">
+                                </div>
                                 <div class="aufgabe-neu-feld">
                                     <label for="neu_faellig_meine">Fällig am</label>
                                     <input type="date" id="neu_faellig_meine" name="faellig_am" class="aufgabe-neu-opt">
@@ -579,7 +582,7 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                                     }
                                 ?>
                                 <h4 class="todo-gruppe"><?= htmlspecialchars($todoGruppenMeta[$gruppe]['titel']) ?> <span class="todo-gruppe-zahl"><?= count($liste) ?></span></h4>
-                                <ul class="aufgaben-liste">
+                                <ul class="aufgaben-liste" role="list">
                                 <?php foreach (array_slice($liste, 0, $sponsoringRest) as $eintrag):
                                     echo $renderSponsorZeile($gruppe, $eintrag);
                                     $sponsoringRest--;
@@ -594,8 +597,10 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                                 <input type="hidden" name="zurueck" value="cockpit">
                                 <input type="hidden" name="neu_tab" value="sponsoring">
                                 <input type="hidden" name="kontext_typ" value="sponsor">
-                                <label for="neu_titel_sponsoring" class="sr-only">Neue Aufgabe</label>
-                                <input id="neu_titel_sponsoring" class="aufgabe-neu-titel" name="titel" required placeholder="+ Neue Aufgabe">
+                                <div class="aufgabe-neu-titel-feld">
+                                    <label for="neu_titel_sponsoring" class="aufgabe-neu-titel-label">Neue Aufgabe</label>
+                                    <input id="neu_titel_sponsoring" class="aufgabe-neu-titel" name="titel" required placeholder="+ Neue Aufgabe">
+                                </div>
                                 <div class="aufgabe-neu-feld">
                                     <label for="neu_sponsor">Sponsor</label>
                                     <select id="neu_sponsor" name="kontext_id" class="aufgabe-neu-opt" required>
@@ -620,7 +625,7 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                             <?php if (empty($orgaOffen)): ?>
                             <p class="aufgaben-leer">Nichts offen.</p>
                             <?php else: ?>
-                            <ul class="aufgaben-liste">
+                            <ul class="aufgaben-liste" role="list">
                                 <?php foreach ($orgaOffen as $oa):
                                     $faelligAm = (string) ($oa['faellig_am'] ?? '');
                                     $ueberfaellig = (string) $oa['status'] !== 'erledigt' && $faelligAm !== '' && $faelligAm < date('Y-m-d');
@@ -673,8 +678,10 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                                 <input type="hidden" name="action" value="create">
                                 <input type="hidden" name="zurueck" value="cockpit">
                                 <input type="hidden" name="neu_tab" value="orga">
-                                <label for="neu_titel_orga" class="sr-only">Neue Aufgabe</label>
-                                <input id="neu_titel_orga" class="aufgabe-neu-titel" name="titel" required placeholder="+ Neue Aufgabe">
+                                <div class="aufgabe-neu-titel-feld">
+                                    <label for="neu_titel_orga" class="aufgabe-neu-titel-label">Neue Aufgabe</label>
+                                    <input id="neu_titel_orga" class="aufgabe-neu-titel" name="titel" required placeholder="+ Neue Aufgabe">
+                                </div>
                                 <div class="aufgabe-neu-feld">
                                     <label for="neu_verantwortlich_orga">Verantwortlich</label>
                                     <select id="neu_verantwortlich_orga" name="verantwortlich_user_id" class="aufgabe-neu-opt">
@@ -694,7 +701,7 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                             <?php if (!empty($orgaErledigt)): ?>
                             <details class="aufgaben-erledigt" id="orga-erledigt">
                                 <summary>✓ <?= count($orgaErledigt) ?> erledigt</summary>
-                                <ul class="aufgaben-liste">
+                                <ul class="aufgaben-liste" role="list">
                                 <?php foreach ($orgaErledigt as $oe):
                                     $faelligAmE = (string) ($oe['faellig_am'] ?? '');
                                     $faelligTextE = $faelligAmE !== '' ? 'Fällig: ' . date('d.m.Y', strtotime($faelligAmE)) : '';
@@ -872,8 +879,16 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                 ? ((aktivesPanel && aktivesPanel.querySelector('.ist-frisch-erledigt .status-punkt'))
                     || document.querySelector('.ist-frisch-erledigt .status-punkt'))
                 : null;
+            const offenId = params.get('offen');
+            const offenIstZahl = offenId !== null && /^\d+$/.test(offenId);
+            const wiederOffenBtn = offenIstZahl
+                ? ((aktivesPanel && aktivesPanel.querySelector('.status-punkt[data-aufgabe-id="' + offenId + '"]'))
+                    || document.querySelector('.status-punkt[data-aufgabe-id="' + offenId + '"]'))
+                : null;
             if (frischStatusBtn) {
                 frischStatusBtn.focus();
+            } else if (wiederOffenBtn) {
+                wiederOffenBtn.focus();
             } else if (window.location.hash === '#aufgaben') {
                 const neuTab = params.get('neu');
                 const titelFeld = KEYS.indexOf(neuTab) !== -1

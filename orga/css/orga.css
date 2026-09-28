@@ -702,9 +702,10 @@ a.card-tile:hover {
     color: var(--primary-dark);
     font-weight: 600;
 }
-.quick-bar-notes .qc-note {
-    width: 100%;
-    margin-top: 0.5rem;
+/* Quick bar hint panel: its own <li> right after the button's <li> (DOM order), spans the
+   full row via flex-basis so it doesn't squeeze next to the remaining buttons. */
+.quick-bar-notiz {
+    flex-basis: 100%;
 }
 
 /* Cockpit: Aufgaben-Karte (drei Reiter Meine · Sponsoring · Orga).
@@ -812,6 +813,13 @@ a.card-tile:hover {
 .aufgabe-titel a:hover,
 .aufgabe-titel a:focus-visible {
     text-decoration: underline;
+}
+/* Firm link in the task card: own block line, no " · " joiner (WCAG 1.4.1 — the firm link
+   stays without underline by Inhaber-Entscheid, so it needs a structural cue instead of color
+   alone to be told apart from surrounding text). */
+.aufgabe-firma {
+    display: block;
+    font-size: 0.8rem;
 }
 .aufgabe-faellig {
     white-space: nowrap;
@@ -1009,13 +1017,49 @@ a.card-tile:hover {
     font-size: 0.75rem;
     color: var(--text-light);
 }
-.aufgabe-neu-titel {
+.aufgabe-neu-titel-feld {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
     flex: 1 1 12rem;
     min-width: 0;
+}
+.aufgabe-neu-titel {
+    width: 100%;
+    box-sizing: border-box;
     padding: 0.35rem 0.5rem;
     border: 1px solid var(--border);
     border-radius: var(--radius);
     font: inherit;
+}
+/* Title label: same visual style as .aufgabe-neu-feld label, but sr-only (not display:none,
+   so it keeps counting as the accessible name) while the row is collapsed — visible once the
+   row expands (same :has()/focus-within condition as the other field labels below). */
+.aufgabe-neu-titel-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+@supports selector(:has(*)) {
+    .aufgabe-neu:focus-within .aufgabe-neu-titel-label,
+    .aufgabe-neu:has(.aufgabe-neu-titel:not(:placeholder-shown)) .aufgabe-neu-titel-label {
+        position: static;
+        width: auto;
+        height: auto;
+        padding: 0;
+        margin: 0;
+        overflow: visible;
+        clip: auto;
+        white-space: normal;
+        font-size: 0.75rem;
+        color: var(--text-light);
+    }
 }
 .aufgabe-neu-opt {
     flex: 0 1 auto;

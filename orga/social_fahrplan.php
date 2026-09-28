@@ -435,7 +435,7 @@ $icons = [
         <!-- Plattformen — Schnellzugriff im Cockpit-Muster (ⓘ = Zugangsdaten je Button, nur Admin) -->
         <div class="hd-card fp-notiz">
             <h2 style="font-size:0.95rem;margin:0 0 0.7rem">Plattformen</h2>
-            <ul class="quick-bar-liste">
+            <ul class="quick-bar-liste" role="list">
                 <li>
                     <a class="quick-btn" href="<?= htmlspecialchars($metaBusinessUrl ?: 'https://business.facebook.com/latest/home?nav_ref=bm_home_redirect&asset_id=1236742862857199') ?>"
                        target="_blank" rel="noopener noreferrer">
@@ -446,6 +446,9 @@ $icons = [
                     </a>
                     <?= $renderHinweisButton('meta_business_hinweis', 'Meta Business') ?>
                 </li>
+                <?php if (trim((string) ($linkHinweise['meta_business_hinweis'] ?? '')) !== ''): ?>
+                <li class="quick-bar-notiz"><?= $renderHinweisNote('meta_business_hinweis', 'Meta Business') ?></li>
+                <?php endif; ?>
                 <?php if ($stravaUrl): ?>
                 <li>
                     <a class="quick-btn" href="<?= htmlspecialchars($stravaUrl) ?>" target="_blank" rel="noopener noreferrer">
@@ -456,14 +459,11 @@ $icons = [
                     </a>
                     <?= $renderHinweisButton('strava_hinweis', 'Strava') ?>
                 </li>
+                <?php if (trim((string) ($linkHinweise['strava_hinweis'] ?? '')) !== ''): ?>
+                <li class="quick-bar-notiz"><?= $renderHinweisNote('strava_hinweis', 'Strava') ?></li>
+                <?php endif; ?>
                 <?php endif; ?>
             </ul>
-            <div class="quick-bar-notes">
-                <?= $renderHinweisNote('meta_business_hinweis', 'Meta Business') ?>
-                <?php if ($stravaUrl): ?>
-                <?= $renderHinweisNote('strava_hinweis', 'Strava') ?>
-                <?php endif; ?>
-            </div>
         </div>
 <?php endif; ?>
     </main>
