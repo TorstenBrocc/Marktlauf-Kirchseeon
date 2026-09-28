@@ -49,10 +49,11 @@ if ($isAdmin) {
 }
 
 /**
- * ⓘ-Button + aufklappbare, kopierbare Zugangsdaten-Notiz (identisch zum Cockpit, index.php).
+ * Render-Helfer: ⓘ-Button für einen Plattformen-Link (aufklappt die zugehörige Notiz).
+ * Gegenstück $renderHinweisNote liegt separat (identisch zum Cockpit-Muster, index.php).
  * Leerer String, wenn kein Admin oder kein Hinweis hinterlegt.
  */
-$renderHinweis = function (string $key) use ($isAdmin, $linkHinweise): string {
+$renderHinweisButton = function (string $key, string $label) use ($isAdmin, $linkHinweise): string {
     if (!$isAdmin) {
         return '';
     }
@@ -60,11 +61,24 @@ $renderHinweis = function (string $key) use ($isAdmin, $linkHinweise): string {
     if ($text === '') {
         return '';
     }
-    $id      = 'hint-' . $key;
-    $anzRows = min(6, max(2, substr_count($text, "\n") + 1));
-    return '<button type="button" class="qc-info" aria-expanded="false" aria-controls="' . $id . '" onclick="toggleHint(this)" title="' . htmlspecialchars($text) . '">&#9432;</button>'
-        . '<div class="qc-note" id="' . $id . '" hidden>'
-        . '<textarea class="qc-note-text" readonly rows="' . $anzRows . '" onclick="this.select()">' . htmlspecialchars($text) . '</textarea>'
+    $id = 'hint-' . $key;
+    $bezeichnung = 'Zugangshinweis ' . $label;
+    return '<button type="button" class="qc-info" aria-expanded="false" aria-controls="' . $id . '" onclick="toggleHint(this)" aria-label="' . htmlspecialchars($bezeichnung) . '">&#9432;</button>';
+};
+
+$renderHinweisNote = function (string $key, string $label) use ($isAdmin, $linkHinweise): string {
+    if (!$isAdmin) {
+        return '';
+    }
+    $text = trim((string) ($linkHinweise[$key] ?? ''));
+    if ($text === '') {
+        return '';
+    }
+    $id = 'hint-' . $key;
+    $rows = min(6, max(2, substr_count($text, "\n") + 1));
+    $bezeichnung = 'Zugangshinweis ' . $label;
+    return '<div class="qc-note" id="' . $id . '" hidden>'
+        . '<textarea class="qc-note-text" readonly rows="' . $rows . '" aria-label="' . htmlspecialchars($bezeichnung) . '" onclick="this.select()">' . htmlspecialchars($text) . '</textarea>'
         . '<div class="qc-note-actions">'
         . '<button type="button" class="qc-copy" onclick="copyHint(this)">Kopieren</button>'
         . '<a class="qc-edit" href="einstellungen.php#link-' . htmlspecialchars($key) . '">Bearbeiten &rarr;</a>'
@@ -157,10 +171,6 @@ $icons = [
             font-family: inherit; font-size: 0.85rem; padding: 0.25rem 0.4rem; max-width: 100%;
             border: 1px solid var(--border); border-radius: 6px; background: var(--white); color: var(--text);
         }
-        /* Plattformen-Buttons nebeneinander (statt gestapelt wie im Cockpit) */
-        .pf-links { display: flex; gap: 1.5rem; flex-wrap: wrap; align-items: flex-start; }
-        .pf-links li { border-bottom: none; padding: 0; }
-        .pf-links .qc-note { min-width: 240px; }
         .fp-form { display: none; margin-bottom: 1rem; padding: 0.9rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); }
         .fp-form.offen { display: block; }
         .fp-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 0.7rem; }
@@ -425,13 +435,35 @@ $icons = [
         <!-- Plattformen — Schnellzugriff im Cockpit-Muster (ⓘ = Zugangsdaten je Button, nur Admin) -->
         <div class="hd-card fp-notiz">
             <h2 style="font-size:0.95rem;margin:0 0 0.7rem">Plattformen</h2>
-            <ul class="quick-links pf-links">
-                <li><a href="<?= htmlspecialchars($metaBusinessUrl ?: 'https://business.facebook.com/latest/home?nav_ref=bm_home_redirect&asset_id=1236742862857199') ?>"
-                       target="_blank" rel="noopener" class="btn-brand btn-brand-meta">Meta Business</a><?= $renderHinweis('meta_business_hinweis') ?></li>
+            <ul class="quick-bar-liste">
+                <li>
+                    <a class="quick-btn" href="<?= htmlspecialchars($metaBusinessUrl ?: 'https://business.facebook.com/latest/home?nav_ref=bm_home_redirect&asset_id=1236742862857199') ?>"
+                       target="_blank" rel="noopener noreferrer">
+                        <img src="../assets/images/brands/meta.svg" alt="" width="16" height="16">
+                        Meta Business
+                        <span aria-hidden="true">&#8599;</span>
+                        <span class="sr-only">(öffnet neuen Tab)</span>
+                    </a>
+                    <?= $renderHinweisButton('meta_business_hinweis', 'Meta Business') ?>
+                </li>
                 <?php if ($stravaUrl): ?>
-                <li><a href="<?= htmlspecialchars($stravaUrl) ?>" target="_blank" rel="noopener" class="btn-brand btn-brand-strava">Strava</a><?= $renderHinweis('strava_hinweis') ?></li>
+                <li>
+                    <a class="quick-btn" href="<?= htmlspecialchars($stravaUrl) ?>" target="_blank" rel="noopener noreferrer">
+                        <img src="../assets/images/brands/strava.png" alt="" width="16" height="16">
+                        Strava
+                        <span aria-hidden="true">&#8599;</span>
+                        <span class="sr-only">(öffnet neuen Tab)</span>
+                    </a>
+                    <?= $renderHinweisButton('strava_hinweis', 'Strava') ?>
+                </li>
                 <?php endif; ?>
             </ul>
+            <div class="quick-bar-notes">
+                <?= $renderHinweisNote('meta_business_hinweis', 'Meta Business') ?>
+                <?php if ($stravaUrl): ?>
+                <?= $renderHinweisNote('strava_hinweis', 'Strava') ?>
+                <?php endif; ?>
+            </div>
         </div>
 <?php endif; ?>
     </main>

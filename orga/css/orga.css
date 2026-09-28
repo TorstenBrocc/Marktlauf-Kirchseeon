@@ -591,51 +591,6 @@ a.card-tile:hover {
     gap: 0.4rem;
 }
 
-.quick-links {
-    list-style: none;
-}
-
-.quick-links li {
-    padding: 0.5rem 0;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-}
-
-.quick-links li:last-child {
-    border-bottom: none;
-}
-
-.quick-links a {
-    color: var(--link);
-    text-decoration: none;
-}
-
-.quick-links a:hover {
-    text-decoration: underline;
-}
-
-.quick-links a.btn-brand {
-    display: inline-block;
-    padding: 0.35rem 0.7rem;
-    border-radius: var(--radius);
-    color: #fff;
-    font-size: 0.85rem;
-    font-weight: 500;
-    text-decoration: none;
-}
-
-.quick-links a.btn-brand:hover {
-    text-decoration: none;
-    filter: brightness(0.9);
-}
-
-
-.btn-brand-strava { background: #FC4C02; }
-.btn-brand-meta { background: #0866FF; }
-
 /* Zugangsdaten-Hinweis je Schnellzugriff-Button (nur Admin sichtbar) */
 .qc-info {
     background: none;
