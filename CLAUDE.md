@@ -160,8 +160,9 @@ den Stand in `intern/`, baut in `website/` und schreibt die Rückkopplung nach `
 Deshalb die Session immer im **Elternordner** starten — dort lädt die `CLAUDE.md` (Loader) beide
 Regelwerke:
 - Mac: `~/Repo/github/Marktlauf-Projekt/`
-- iPhone / claude.ai / coreone: Umgebungswähler → Remote Control → **`Marktlauf-Projekt`**
-  (Bauaufträge über den Claudex-Loop: Umgebung **`website`**)
+- iPhone / claude.ai / coreone: Umgebungswähler → Remote Control → **`website`** — die **einzige**
+  Marktlauf-Umgebung auf coreone (Claudex-Loop; lädt über den Projektordner ebenfalls beide Regelwerke).
+  Die frühere Umgebung `Marktlauf-Projekt` ist seit 2026-09-28 abgeschaltet (TT: eine Umgebung, keine Doppelung).
 
 Der Loader ist nicht versioniert (Elternordner ist kein Repo). Bei Verlust neu anlegen als
 `Marktlauf-Projekt/CLAUDE.md` mit genau zwei Import-Zeilen: `@intern/CLAUDE.md` und
