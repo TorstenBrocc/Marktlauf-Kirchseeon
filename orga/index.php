@@ -120,15 +120,6 @@ if ($trelloBoardUrl === '') {
     $trelloBoardUrl = $config['trello_board_url'] ?? '';
 }
 
-$onedriveUrl = '';
-try {
-    $onedriveStmt = $pdo->prepare('SELECT `value` FROM einstellungen WHERE `key` = :key');
-    $onedriveStmt->execute(['key' => 'onedrive_url']);
-    $onedriveUrl = $onedriveStmt->fetchColumn() ?: '';
-} catch (PDOException $e) {
-    // Table may not exist yet
-}
-
 $stravaUrl = '';
 try {
     $stravaStmt = $pdo->prepare('SELECT `value` FROM einstellungen WHERE `key` = :key');
@@ -151,7 +142,7 @@ try {
 $linkHinweise = [];
 if ($isAdmin) {
     try {
-        $hinweisStmt = $pdo->query("SELECT `key`, `value` FROM einstellungen WHERE `key` IN ('raceresult_hinweis','trello_hinweis','onedrive_hinweis','strava_hinweis','meta_business_hinweis')");
+        $hinweisStmt = $pdo->query("SELECT `key`, `value` FROM einstellungen WHERE `key` IN ('raceresult_hinweis','trello_hinweis','strava_hinweis','meta_business_hinweis')");
         foreach ($hinweisStmt as $row) {
             $linkHinweise[$row['key']] = $row['value'];
         }
@@ -161,10 +152,27 @@ if ($isAdmin) {
 }
 
 /**
- * Render-Helfer: ⓘ-Button + aufklappbare, kopierbare Notiz für einen Schnellzugriff-Link.
+ * Render-Helfer: ⓘ-Button für einen Schnellzugriff-Link (aufklappt die zugehörige Notiz).
  * Gibt leeren String zurück, wenn kein Admin oder kein Hinweis hinterlegt ist.
  */
-$renderHinweis = function (string $key) use ($isAdmin, $linkHinweise): string {
+$renderHinweisButton = function (string $key) use ($isAdmin, $linkHinweise): string {
+    if (!$isAdmin) {
+        return '';
+    }
+    $text = trim((string) ($linkHinweise[$key] ?? ''));
+    if ($text === '') {
+        return '';
+    }
+    $id = 'hint-' . $key;
+    return '<button type="button" class="qc-info" aria-expanded="false" aria-controls="' . $id . '" onclick="toggleHint(this)" title="' . htmlspecialchars($text) . '">&#9432;</button>';
+};
+
+/**
+ * Render-Helfer: aufklappbare, kopierbare Notiz zu einem Schnellzugriff-Link (Gegenstück
+ * zu $renderHinweisButton — liegt separat, damit die Leiste die Panels gesammelt unter
+ * sich zeigen kann statt je Button eingestreut).
+ */
+$renderHinweisNote = function (string $key) use ($isAdmin, $linkHinweise): string {
     if (!$isAdmin) {
         return '';
     }
@@ -174,14 +182,53 @@ $renderHinweis = function (string $key) use ($isAdmin, $linkHinweise): string {
     }
     $id = 'hint-' . $key;
     $rows = min(6, max(2, substr_count($text, "\n") + 1));
-    return '<button type="button" class="qc-info" aria-expanded="false" aria-controls="' . $id . '" onclick="toggleHint(this)" title="' . htmlspecialchars($text) . '">&#9432;</button>'
-        . '<div class="qc-note" id="' . $id . '" hidden>'
+    return '<div class="qc-note" id="' . $id . '" hidden>'
         . '<textarea class="qc-note-text" readonly rows="' . $rows . '" onclick="this.select()">' . htmlspecialchars($text) . '</textarea>'
         . '<div class="qc-note-actions">'
         . '<button type="button" class="qc-copy" onclick="copyHint(this)">Kopieren</button>'
         . '<a class="qc-edit" href="einstellungen.php#link-' . htmlspecialchars($key) . '">Bearbeiten &rarr;</a>'
         . '</div></div>';
 };
+
+// Schnellzugriff-Leiste: Reihenfolge und Bedingungen wie bisher (Inhaber-Entscheid Runde 3),
+// Helfer-Anmeldung steht als eigener, letzter Button außerhalb dieser Liste (grüner Rahmen,
+// kein Hinweis-Panel).
+$quickLinks = [
+    [
+        'href'  => 'https://www.raceresult.com/de-de/account/index',
+        'label' => 'Race Result',
+        'icon'  => 'raceresult.png',
+        'hint'  => 'raceresult_hinweis',
+    ],
+    [
+        'href'  => 'https://github.com/TorstenBrocc/Marktlauf-Kirchseeon',
+        'label' => 'GitHub',
+        'icon'  => 'github.svg',
+        'hint'  => null,
+    ],
+];
+if ($trelloBoardUrl) {
+    $quickLinks[] = [
+        'href'  => $trelloBoardUrl,
+        'label' => 'Trello',
+        'icon'  => 'trello.svg',
+        'hint'  => 'trello_hinweis',
+    ];
+}
+if ($stravaUrl) {
+    $quickLinks[] = [
+        'href'  => $stravaUrl,
+        'label' => 'Strava',
+        'icon'  => 'strava.png',
+        'hint'  => 'strava_hinweis',
+    ];
+}
+$quickLinks[] = [
+    'href'  => $metaBusinessUrl ?: 'https://business.facebook.com/latest/home?nav_ref=bm_home_redirect&asset_id=1236742862857199',
+    'label' => 'Meta Business',
+    'icon'  => 'meta.svg',
+    'hint'  => 'meta_business_hinweis',
+];
 
 $flashSuccess = $_SESSION['flash_success'] ?? '';
 $flashError = $_SESSION['flash_error'] ?? '';
@@ -340,6 +387,36 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
             <?php if ($flashError): ?>
                 <div class="alert alert-error"><?= htmlspecialchars($flashError) ?></div>
             <?php endif; ?>
+
+            <nav class="quick-bar" aria-label="Schnellzugriff">
+                <ul class="quick-bar-liste">
+                    <?php foreach ($quickLinks as $link): ?>
+                    <li>
+                        <a class="quick-btn" href="<?= htmlspecialchars($link['href']) ?>" target="_blank" rel="noopener">
+                            <img src="../assets/images/brands/<?= htmlspecialchars($link['icon']) ?>" alt="" width="16" height="16">
+                            <?= htmlspecialchars($link['label']) ?>
+                            <span aria-hidden="true">&#8599;</span>
+                            <span class="sr-only">(öffnet neuen Tab)</span>
+                        </a>
+                        <?php if ($link['hint']): ?><?= $renderHinweisButton($link['hint']) ?><?php endif; ?>
+                    </li>
+                    <?php endforeach; ?>
+                    <li class="quick-bar-trenner" aria-hidden="true"></li>
+                    <li>
+                        <a class="quick-btn quick-btn-primaer" href="../helfer-anmeldung.php" target="_blank" rel="noopener">
+                            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>
+                            Helfer-Anmeldung
+                            <span aria-hidden="true">&#8599;</span>
+                            <span class="sr-only">(öffnet neuen Tab)</span>
+                        </a>
+                    </li>
+                </ul>
+                <div class="quick-bar-notes">
+                    <?php foreach ($quickLinks as $link): ?>
+                        <?php if ($link['hint']): ?><?= $renderHinweisNote($link['hint']) ?><?php endif; ?>
+                    <?php endforeach; ?>
+                </div>
+            </nav>
 
             <?php if (!empty($meineAufgaben)): ?>
             <div class="meine-aufgaben">
