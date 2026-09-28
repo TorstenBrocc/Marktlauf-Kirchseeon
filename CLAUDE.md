@@ -241,6 +241,10 @@ erledigt). Fallen, teuer erkauft (Ausfall 04.–28.09., Details `intern/make-com
 - Die Fehlerzweige (`Ignore`) verschlucken Metas Meldung — zur Diagnose ein Einzelmodul-Szenario
   ohne Fehlerzweig bauen, dann steht der Fehler im Lauf-Ergebnis.
 - **Nachholen:** `posts_pending_insights.php` nimmt optional `{"tage":N,"versuche_ignorieren":true}`.
+- **Wächter** (`src/make_waechter.php`, seit 28.09.): Lebenszeichen statt make-API. Insights-Abruf
+  stempelt `einstellungen.make_insights_letzter_abruf`; > 26 h still oder ein Post > 30 min ohne
+  Rückmeldung → roter Hinweis im Cockpit (nur Admins) + Tagesmail an TT (`bin/make_waechter.php`
+  im Workflow „Tägliche Erinnerungen“). Wer von Hand nachholt, setzt den Stempel mit — harmlos.
 
 ## Sponsoren-/Fördergruppen-Modell
 
