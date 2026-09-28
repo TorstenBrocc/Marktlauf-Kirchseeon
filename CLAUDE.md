@@ -227,10 +227,20 @@ Namen des Abgemeldeten trägt. Eine so freigewordene Nummer gehört deshalb **vo
 in das Feld „Startnummern ausschließen" auf derselben Seite (Komma-/Zeilen-getrennt, Bereiche
 wie `1-50,77` erlaubt).
 
-**make.com** Szenario 6642115 (Posting) und 7094793 (Social Insights Stage C).
-Bekannte Lücke: die Callback-HTTP-Module (10/11) hängen hinter dem Kommentar-Filter →
-terminierte FB-Posts ohne `first_comment` melden nie Post-ID/Permalink. Fix nur im
-Szenario (Callback vor den Filter) — Inhaber-Entscheid offen.
+**make.com** Szenario 6642115 (Posting) und 7094793 (Social Insights Stage C, täglich 17:56).
+Die Callbacks im Posting-Szenario liegen seit 03.09. **vor** dem Kommentar-Filter (alte Lücke
+erledigt). Fallen, teuer erkauft (Ausfall 04.–28.09., Details `intern/make-com-optimierung-spec.md` §7.6):
+- **Free-Plan: max. 2 aktive Szenarien.** Beide Plätze sind belegt — ein Zusatz-Szenario
+  (Test, Nachholen) geht nur, wenn 7094793 kurz aus- und danach wieder eingeschaltet wird.
+- **Ein einziger `InvalidConfigurationError` (am 17.09. ein HTTP 403) hat 7094793 dauerhaft
+  abgeschaltet** und blieb elf Tage unbemerkt — in der Auswertung sah es nur nach „ausstehend“ aus.
+- **Blueprint per API (`scenarios_update`) schreiben:** Mehrfachauswahl-Felder als Liste
+  (`"metrics": ["reach"]`), Ausgabefelder nach Modul-Schema (`app-module_get`) benennen
+  (FB-Reaktionen: `totalCount`, nicht `total_count`). Ein falsches Feld liefert still `""`, und der
+  Callback meldet trotzdem „ok“.
+- Die Fehlerzweige (`Ignore`) verschlucken Metas Meldung — zur Diagnose ein Einzelmodul-Szenario
+  ohne Fehlerzweig bauen, dann steht der Fehler im Lauf-Ergebnis.
+- **Nachholen:** `posts_pending_insights.php` nimmt optional `{"tage":N,"versuche_ignorieren":true}`.
 
 ## Sponsoren-/Fördergruppen-Modell
 
@@ -308,8 +318,8 @@ PUNKTE — SPONSOREN / CRM"), nicht in diesem öffentlichen Repo: Sponsor- und F
 in der Datenbank und gehören nicht nach draußen.
 
 **Social / make.com**
-- make-Callback vor den Kommentar-Filter ziehen (Szenario 6642115) — sonst keine Permalinks
-  für terminierte FB-Posts. Inhaber-Entscheid offen.
+- Insights-Fehlerzähler `insights_versuche` gilt je Post, nicht je Kanal — ein scheiternder
+  Kanal nimmt den anderen mit aus der Wiedervorlage. Klein (Migration + zwei Endpunkte), nicht dringend.
 - **TikTok** in die eine Pipeline einhängen (Kollegin hat begonnen); Spec im Vault.
 - Echter GPT-4-Klasse-Tier nur über Azure OpenAI (Azure-Nonprofit-Grant) — der
   OpenAI-ChatGPT-Nonprofit-Grant deckt **keine** API.
