@@ -707,6 +707,11 @@ a.card-tile:hover {
 .quick-bar-notiz {
     flex-basis: 100%;
 }
+/* A closed (or empty) hint panel must not take up its full-width row, otherwise every
+   button with a hint forces a line break and the bar no longer sits on one line. */
+.quick-bar-notiz:not(:has(> .qc-note:not([hidden]))) {
+    display: none;
+}
 
 /* Cockpit: Aufgaben-Karte (drei Reiter Meine · Sponsoring · Orga).
    Kartenbreite (Inhaber-Entscheid Runde 4): die Karte ist einziges Kind eines eigenen

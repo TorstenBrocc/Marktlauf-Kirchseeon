@@ -393,23 +393,10 @@ $renderHinweisNote = function (string $key, string $label) use ($isAdmin, $linkH
         . '</div></div>';
 };
 
-// Schnellzugriff-Leiste: Reihenfolge und Bedingungen wie bisher (Inhaber-Entscheid Runde 3),
-// Helfer-Anmeldung steht als eigener, letzter Button außerhalb dieser Liste (grüner Rahmen,
-// kein Hinweis-Panel).
-$quickLinks = [
-    [
-        'href'  => 'https://www.raceresult.com/de-de/account/index',
-        'label' => 'Race Result',
-        'icon'  => 'raceresult.png',
-        'hint'  => 'raceresult_hinweis',
-    ],
-    [
-        'href'  => 'https://github.com/TorstenBrocc/Marktlauf-Kirchseeon',
-        'label' => 'GitHub',
-        'icon'  => 'github.svg',
-        'hint'  => null,
-    ],
-];
+// Schnellzugriff-Leiste: Reihenfolge Trello · Meta Business · Strava · Race Result · GitHub
+// (Inhaber-Entscheid 2026-09-28), alle in einer Zeile. Helfer-Anmeldung steht als eigener,
+// letzter Button außerhalb dieser Liste (grüner Rahmen, kein Hinweis-Panel).
+$quickLinks = [];
 if ($trelloBoardUrl) {
     $quickLinks[] = [
         'href'  => $trelloBoardUrl,
@@ -418,6 +405,12 @@ if ($trelloBoardUrl) {
         'hint'  => 'trello_hinweis',
     ];
 }
+$quickLinks[] = [
+    'href'  => $metaBusinessUrl ?: 'https://business.facebook.com/latest/home?nav_ref=bm_home_redirect&asset_id=1236742862857199',
+    'label' => 'Meta Business',
+    'icon'  => 'meta.svg',
+    'hint'  => 'meta_business_hinweis',
+];
 if ($stravaUrl) {
     $quickLinks[] = [
         'href'  => $stravaUrl,
@@ -427,10 +420,16 @@ if ($stravaUrl) {
     ];
 }
 $quickLinks[] = [
-    'href'  => $metaBusinessUrl ?: 'https://business.facebook.com/latest/home?nav_ref=bm_home_redirect&asset_id=1236742862857199',
-    'label' => 'Meta Business',
-    'icon'  => 'meta.svg',
-    'hint'  => 'meta_business_hinweis',
+    'href'  => 'https://www.raceresult.com/de-de/account/index',
+    'label' => 'Race Result',
+    'icon'  => 'raceresult.png',
+    'hint'  => 'raceresult_hinweis',
+];
+$quickLinks[] = [
+    'href'  => 'https://github.com/TorstenBrocc/Marktlauf-Kirchseeon',
+    'label' => 'GitHub',
+    'icon'  => 'github.svg',
+    'hint'  => null,
 ];
 
 $flashSuccess = $_SESSION['flash_success'] ?? '';
