@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - 'claudex/**'
   pull_request:
 
 jobs:
