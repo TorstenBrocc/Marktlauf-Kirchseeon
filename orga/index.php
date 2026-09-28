@@ -661,6 +661,103 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
         });
     })();
 
+    // Aufgaben-Karte: barrierefreies Tab-Widget (progressive enhancement — ohne JS
+    // bleiben alle drei Panels sichtbar mit eigener Überschrift, siehe Markup oben).
+    (function initTabs() {
+        const tabsEl = document.querySelector('.aufgaben-karte .tabs');
+        if (!tabsEl) return;
+        const tabButtons = Array.prototype.slice.call(tabsEl.querySelectorAll('.tab'));
+        const panels = Array.prototype.slice.call(document.querySelectorAll('.aufgaben-karte .aufgaben-panel'));
+        if (!tabButtons.length || !panels.length) return;
+
+        const KEYS = ['meine', 'sponsoring', 'orga'];
+
+        tabsEl.setAttribute('role', 'tablist');
+        tabsEl.setAttribute('aria-label', 'Aufgaben nach Bereich');
+        tabsEl.removeAttribute('hidden');
+
+        tabButtons.forEach(function (btn) {
+            btn.setAttribute('role', 'tab');
+            btn.setAttribute('aria-controls', 'panel-' + btn.dataset.tab);
+        });
+        panels.forEach(function (panel) {
+            panel.setAttribute('role', 'tabpanel');
+            panel.setAttribute('aria-labelledby', 'tab-' + panel.dataset.panel);
+            panel.setAttribute('tabindex', '0');
+            const titel = panel.querySelector('.aufgaben-panel-titel');
+            if (titel) { titel.classList.add('sr-only'); }
+        });
+
+        function activate(key, opts) {
+            opts = opts || {};
+            tabButtons.forEach(function (btn) {
+                const isActive = btn.dataset.tab === key;
+                btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+                btn.setAttribute('tabindex', isActive ? '0' : '-1');
+            });
+            panels.forEach(function (panel) {
+                if (panel.dataset.panel === key) {
+                    panel.removeAttribute('hidden');
+                } else {
+                    panel.setAttribute('hidden', '');
+                }
+            });
+            if (opts.focus) {
+                const active = tabButtons.filter(function (btn) { return btn.dataset.tab === key; })[0];
+                if (active) { active.focus(); }
+            }
+            try { localStorage.setItem('mkl_cockpit_tab', key); } catch (e) {}
+        }
+
+        function startTab() {
+            const hatErledigtHinweis = new URLSearchParams(window.location.search).has('erledigt')
+                && document.querySelector('.aufgabe-erledigt-hinweis');
+            if (hatErledigtHinweis) { return 'orga'; }
+            try {
+                const gespeichert = localStorage.getItem('mkl_cockpit_tab');
+                if (KEYS.indexOf(gespeichert) !== -1) { return gespeichert; }
+            } catch (e) {}
+            return 'meine';
+        }
+
+        tabButtons.forEach(function (btn) {
+            btn.addEventListener('click', function () { activate(btn.dataset.tab); });
+        });
+
+        tabsEl.addEventListener('keydown', function (event) {
+            const currentIndex = tabButtons.indexOf(document.activeElement);
+            if (currentIndex === -1) return;
+            let nextIndex = null;
+            if (event.key === 'ArrowRight') {
+                nextIndex = (currentIndex + 1) % tabButtons.length;
+            } else if (event.key === 'ArrowLeft') {
+                nextIndex = (currentIndex - 1 + tabButtons.length) % tabButtons.length;
+            } else if (event.key === 'Home') {
+                nextIndex = 0;
+            } else if (event.key === 'End') {
+                nextIndex = tabButtons.length - 1;
+            }
+            if (nextIndex === null) return;
+            event.preventDefault();
+            activate(tabButtons[nextIndex].dataset.tab, { focus: true });
+        });
+
+        activate(startTab());
+    })();
+
+    // Cockpit: Auf-/Zu-Zustand des Erledigt-Bereichs merken (Reiter Orga).
+    (function initErledigtGedaechtnis() {
+        const details = document.getElementById('orga-erledigt');
+        if (!details) return;
+        const STORAGE_KEY = 'mkl_cockpit_erledigt';
+        try {
+            if (localStorage.getItem(STORAGE_KEY) === 'open') { details.open = true; }
+        } catch (e) {}
+        details.addEventListener('toggle', function () {
+            try { localStorage.setItem(STORAGE_KEY, details.open ? 'open' : 'closed'); } catch (e) {}
+        });
+    })();
+
     // Zugangsdaten-Hinweis je Schnellzugriff-Button: aufklappen + kopieren
     function toggleHint(btn) {
         var note = document.getElementById(btn.getAttribute('aria-controls'));

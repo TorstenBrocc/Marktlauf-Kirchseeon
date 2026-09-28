@@ -105,6 +105,14 @@ Zustände hängen nicht nur an der Farbe — Mehrfachauswahl zeigt zusätzlich e
 Nebenaktionen sind Outline-Buttons (weiß, grüner Rahmen, dunkelgrüne Schrift).
 Vollflächige grüne Reiter oder Chips kommen im Dashboard nicht vor.
 
+**Cockpit-Muster.** Schnellzugriff-Leiste = Outline-Knöpfe mit 16-px-Original-Icon
+(`.quick-btn`), Hauptaktion zuletzt mit grünem Rahmen (`.quick-btn-primaer`). Reiter =
+getönter Aktivzustand mit `role="tab"` und Pfeiltasten-Bedienung (`.tabs`/`.tab`).
+Status-Punkt als Schalter statt Auswahlfeld: offen = grauer Ring `#6b7280`, in Arbeit =
+halb gefüllter Ring `#b45309`, erledigt = voll `#007230` mit weißem Häkchen, überfällig
+zusätzlich roter Ring (`.status-punkt`). Erledigtes klappt ein, steht grau durchgestrichen
+und lässt sich per „Rückgängig" zurückholen (`.aufgaben-erledigt`). Alles in `orga/css/orga.css`.
+
 **Fremdmarken.** Farben fremder Dienste (Strava-Orange, Trello-Blau, Race Result …)
 bleiben unverändert und werden nicht mit dunkler Schrift „lesbar gemacht". Die Marke
 trägt ihr Original-Icon (`assets/images/brands/`), der Text steht daneben in normaler
