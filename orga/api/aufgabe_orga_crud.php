@@ -116,7 +116,7 @@ try {
                             SELECT DISTINCT ap.sponsor_id
                             FROM sponsor_ansprechpartner ap
                             JOIN sponsors s ON s.id = ap.sponsor_id
-                            WHERE TRIM(CONCAT(ap.vorname, ' ', ap.nachname)) = :wert
+                            WHERE TRIM(CONCAT_WS(' ', ap.vorname, ap.nachname)) = :wert
                         ");
                         $perStmt->execute(['wert' => $eingabe]);
                         $ids = $perStmt->fetchAll(PDO::FETCH_COLUMN);

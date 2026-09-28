@@ -255,14 +255,14 @@ $katLabel = ['verein' => 'Verein', 'laufevent' => 'Laufevent'];
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th class="col-check"><input type="checkbox" id="check-all" title="Alle auswählen" aria-label="Alle auswählen"></th>
-                            <th>Name</th>
-                            <th>Ansprechpartner</th>
-                            <th>Laufsport-Relevanz / Distanzen</th>
-                            <th>Website</th>
-                            <th>Status</th>
-                            <th>Notiz</th>
-                            <th>Aktion</th>
+                            <th class="col-check" scope="col"><input type="checkbox" id="check-all" title="Alle auswählen" aria-label="Alle auswählen"></th>
+                            <th scope="col">Name</th>
+                            <th scope="col">Ansprechpartner</th>
+                            <th scope="col">Laufsport-Relevanz / Distanzen</th>
+                            <th scope="col">Website</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Notiz</th>
+                            <th scope="col">Aktion</th>
                         </tr>
                     </thead>
                     <tbody>

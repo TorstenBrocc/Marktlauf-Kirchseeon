@@ -395,7 +395,7 @@
 
 .footer-credits-link:hover,
 .footer-credits-link:focus-visible {
-    color: #fff;
+    color: var(--white);
     text-decoration: underline;
 }
 
