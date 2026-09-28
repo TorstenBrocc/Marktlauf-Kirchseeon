@@ -161,9 +161,9 @@ $katLabel = ['verein' => 'Verein', 'laufevent' => 'Laufevent'];
                 <strong>⚠️ <?= count($queueFehler) ?> Versand-Fehler in der Queue</strong>
                 <table style="width:100%;margin-top:0.6rem;font-size:0.85rem;border-collapse:collapse;">
                     <thead><tr style="text-align:left;border-bottom:1px solid rgba(0,0,0,.15);">
-                        <th style="padding:0.25rem 0.5rem 0.25rem 0;">Empfänger</th>
-                        <th style="padding:0.25rem 0.5rem;">E-Mail</th>
-                        <th style="padding:0.25rem 0;">Fehlermeldung</th>
+                        <th scope="col" style="padding:0.25rem 0.5rem 0.25rem 0;">Empfänger</th>
+                        <th scope="col" style="padding:0.25rem 0.5rem;">E-Mail</th>
+                        <th scope="col" style="padding:0.25rem 0;">Fehlermeldung</th>
                     </tr></thead>
                     <tbody>
                     <?php foreach ($queueFehler as $fz): ?>
