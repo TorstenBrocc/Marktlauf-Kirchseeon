@@ -740,6 +740,78 @@ a.card-tile:hover {
     margin-top: 0.5rem;
 }
 
+/* Cockpit: Aufgaben-Karte (drei Reiter Meine · Sponsoring · Orga).
+   Kartenbreite (Inhaber-Entscheid, Task 4): die Karte ist einziges Kind eines eigenen
+   .dashboard-grid und spannt per Default die volle Breite; erst ab genug Platz für sechs
+   Kachelspalten (@container) deckelt sie sich auf fünf Kachelspalten. Browser ohne
+   Container-Queries ignorieren den Deckel und zeigen die volle Breite — nie kaputt. */
+.cockpit-aufgaben {
+    container-type: inline-size;
+    container-name: cockpit;
+}
+.aufgaben-karte {
+    grid-column: 1 / -1;
+    min-width: 0;
+}
+@container cockpit (min-width: 1520px) {
+    .aufgaben-karte {
+        grid-column: 1 / 6;
+    }
+}
+.aufgaben-kopf {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.75rem;
+    border-bottom: 2px solid var(--border);
+}
+.aufgaben-kopf h2 {
+    font-size: 1.1rem;
+    margin: 0;
+}
+@media (max-width: 599px) {
+    .aufgaben-kopf .tabs {
+        flex-basis: 100%;
+    }
+}
+/* Reiter: V1-getönter Aktivzustand (design-system/readme.md, "Farbe als Signal") */
+.tabs {
+    display: flex;
+    gap: 0.25rem;
+}
+.tab {
+    background: none;
+    border: 1px solid transparent;
+    border-radius: var(--radius) var(--radius) 0 0;
+    padding: 0.4rem 0.7rem;
+    color: var(--text-light);
+    white-space: nowrap;
+    font: inherit;
+    cursor: pointer;
+}
+.tab[aria-selected="true"] {
+    background: var(--primary-tint);
+    border-color: var(--primary);
+    color: var(--primary-dark);
+    font-weight: 600;
+}
+.tab:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+.tab-zahl {
+    font-weight: 400;
+}
+.aufgaben-panel + .aufgaben-panel {
+    margin-top: 1rem;
+}
+.aufgaben-leer {
+    color: var(--text-light);
+    font-size: 0.875rem;
+}
+
 /* sr-only: nur für Screenreader, visuell verborgen (Standard-Clip-Muster) */
 .sr-only {
     position: absolute;

@@ -8,6 +8,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/api/_auth.php';
 require_once __DIR__ . '/../src/db.php';
 require_once __DIR__ . '/../src/logger.php';
+require_once __DIR__ . '/../src/offene_todos.php';
 
 $user = getCurrentUserFromGuard();
 $isAdmin = isAdminFromGuard();
@@ -74,14 +75,17 @@ $renderTile = static function (array $tile): void {
 };
 
 $meineAufgaben = [];
-$orgaAufgaben = [];
+$orgaOffen = [];
+$orgaErledigt = [];
 $orgaUsers = [];
+$todos = ['gesamt' => 0];
 try {
     $meineStmt = $pdo->prepare("
-        SELECT 'orga' AS quelle, titel, faellig_am, status
-        FROM aufgaben
-        WHERE status != 'erledigt' AND verantwortlich_user_id = :user_id
-        ORDER BY faellig_am ASC, created_at DESC
+        SELECT a.id, a.titel, a.faellig_am, a.status, a.kontext_typ, a.kontext_id, s.firma
+        FROM aufgaben a
+        LEFT JOIN sponsors s ON a.kontext_typ = 'sponsor' AND s.id = a.kontext_id
+        WHERE a.status != 'erledigt' AND a.verantwortlich_user_id = :user_id
+        ORDER BY a.faellig_am ASC, a.created_at DESC
     ");
     $meineStmt->execute(['user_id' => $user['id']]);
     $meineAufgaben = $meineStmt->fetchAll();
@@ -91,22 +95,42 @@ try {
     // Ohne den Filter würde diese Verwaltungsliste mit Sponsoring-Einträgen volllaufen.
     // „Meine offenen Aufgaben" oben filtert bewusst NICHT — was mir zugewiesen ist, gehört
     // in meine persönliche Liste, egal woran es hängt.
-    $orgaStmt = $pdo->query("
+    $orgaOffenStmt = $pdo->query("
         SELECT a.*, u.name AS verantwortlich_name
         FROM aufgaben a
         LEFT JOIN users u ON a.verantwortlich_user_id = u.id
-        WHERE a.kontext_typ IS NULL
+        WHERE a.kontext_typ IS NULL AND a.status != 'erledigt'
         ORDER BY
             CASE a.status WHEN 'offen' THEN 1 WHEN 'in_arbeit' THEN 2 ELSE 3 END,
             a.faellig_am ASC,
             a.created_at DESC
     ");
-    $orgaAufgaben = $orgaStmt->fetchAll();
+    $orgaOffen = $orgaOffenStmt->fetchAll();
+
+    // Erledigte verschwinden aus der offenen Liste (Inhaber-Entscheid Runde 3), bleiben aber
+    // 30 Tage im Cockpit einsehbar (Klapp-Bereich „✓ N erledigt", Task 6) — u. a. damit
+    // „Rückgängig" nach einem Klick funktioniert. Älteres bleibt in der DB, taucht hier nicht mehr auf.
+    $orgaErledigtStmt = $pdo->query("
+        SELECT a.*, u.name AS verantwortlich_name
+        FROM aufgaben a
+        LEFT JOIN users u ON a.verantwortlich_user_id = u.id
+        WHERE a.kontext_typ IS NULL AND a.status = 'erledigt'
+          AND a.updated_at >= NOW() - INTERVAL 30 DAY
+        ORDER BY a.updated_at DESC
+    ");
+    $orgaErledigt = $orgaErledigtStmt->fetchAll();
 
     $orgaUsers = orgaUserListe($pdo);
+
+    $todos = offeneTodosAlle($pdo);
 } catch (PDOException $e) {
     // Table may not exist yet
 }
+
+// Zähler für die drei Reiter der Aufgaben-Karte (Meine · Sponsoring · Orga).
+$anzMeine = count($meineAufgaben);
+$anzSponsoring = (int) ($todos['gesamt'] ?? 0);
+$anzOrga = count($orgaOffen);
 
 $trelloBoardUrl = '';
 try {
@@ -244,121 +268,6 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
     <link rel="stylesheet" href="css/orga.css?v=<?= @filemtime(__DIR__ . '/css/orga.css') ?>">
     <link rel="icon" type="image/svg+xml" href="../assets/images/logo-final.svg">
     <style>
-        .meine-aufgaben {
-            background: #fff3cd;
-            border: 1px solid #ffc107;
-            border-radius: 8px;
-            padding: 1rem 1.5rem;
-            margin-bottom: 1.5rem;
-        }
-        .meine-aufgaben h3 {
-            margin: 0 0 0.75rem 0;
-            font-size: 1rem;
-            color: #856404;
-        }
-        .meine-aufgaben ul {
-            margin: 0;
-            padding: 0;
-            list-style: none;
-        }
-        .meine-aufgaben li {
-            padding: 0.5rem 0;
-            border-bottom: 1px solid rgba(0,0,0,0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 1rem;
-        }
-        .meine-aufgaben li:last-child { border-bottom: none; }
-        .meine-aufgaben .aufgabe-titel { flex: 1; }
-        .meine-aufgaben .aufgabe-faellig {
-            font-size: 0.75rem;
-            color: #856404;
-            white-space: nowrap;
-        }
-        .meine-aufgaben .aufgabe-faellig.ueberfaellig { color: var(--signal-crit); font-weight: 600; }
-        .aufgaben-section {
-            background: var(--white);
-            border-radius: 8px;
-            box-shadow: var(--shadow-card);
-            padding: 1.5rem;
-            margin-top: 1.5rem;
-        }
-        .aufgaben-section h2 {
-            font-size: 1.1rem;
-            margin: 0 0 1rem 0;
-            padding-bottom: 0.5rem;
-            border-bottom: 2px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .aufgaben-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        .aufgaben-table th,
-        .aufgaben-table td {
-            padding: 0.5rem;
-            text-align: left;
-            border-bottom: 1px solid var(--border);
-            font-size: 0.875rem;
-        }
-        .aufgaben-table th {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            color: var(--text-light);
-            font-weight: 600;
-        }
-        .aufgaben-table tr:hover { background: #fafafa; }
-        .status-select {
-            padding: 0.25rem 0.5rem;
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            font-size: 0.75rem;
-            background: var(--white);
-        }
-        .status-offen { background: #fff3cd; }
-        .status-in_arbeit { background: #cce5ff; }
-        .status-erledigt { background: #d4edda; }
-        .aufgabe-form {
-            display: grid;
-            grid-template-columns: 1fr 1fr auto auto auto;
-            gap: 0.75rem;
-            align-items: end;
-            margin-top: 1rem;
-            padding-top: 1rem;
-            border-top: 1px solid var(--border);
-        }
-        .aufgabe-form input,
-        .aufgabe-form select {
-            padding: 0.5rem;
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            font-size: 0.875rem;
-        }
-        .aufgabe-form label {
-            font-size: 0.75rem;
-            color: var(--text-light);
-            display: block;
-            margin-bottom: 0.25rem;
-        }
-        .btn-icon {
-            padding: 0.25rem 0.5rem;
-            font-size: 0.75rem;
-            background: var(--border);
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .btn-icon:hover { background: #ccc; }
-        .btn-icon.btn-danger { background: var(--signal-crit-bg); color: var(--signal-crit); }
-        .btn-icon.btn-danger:hover { background: var(--signal-crit); color: white; }
-        @media (max-width: 900px) {
-            .aufgabe-form {
-                grid-template-columns: 1fr;
-            }
-        }
         .dashboard-group {
             margin-bottom: 1.75rem;
         }
@@ -418,28 +327,62 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                 </div>
             </nav>
 
-            <?php if (!empty($meineAufgaben)): ?>
-            <div class="meine-aufgaben">
-                <h3>📋 Meine offenen Aufgaben (<?= count($meineAufgaben) ?>)</h3>
-                <ul>
-                    <?php foreach ($meineAufgaben as $ma): ?>
-                    <li>
-                        <span class="aufgabe-titel"><?= htmlspecialchars($ma['titel']) ?></span>
-                        <?php if ($ma['faellig_am']): ?>
-                            <?php
-                            $faelligDate = strtotime($ma['faellig_am']);
-                            $heute = strtotime('today');
-                            $ueberfaellig = $faelligDate < $heute;
-                            ?>
-                            <span class="aufgabe-faellig <?= $ueberfaellig ? 'ueberfaellig' : '' ?>">
-                                <?= $ueberfaellig ? '⚠️ ' : '' ?>Fällig: <?= date('d.m.Y', $faelligDate) ?>
-                            </span>
-                        <?php endif; ?>
-                    </li>
-                    <?php endforeach; ?>
-                </ul>
-            </div>
-            <?php endif; ?>
+            <section class="dashboard-group cockpit-aufgaben">
+                <div class="dashboard-grid">
+                    <article class="card aufgaben-karte">
+                        <div class="aufgaben-kopf">
+                            <h2>Aufgaben</h2>
+                            <div class="tabs" hidden>
+                                <button type="button" class="tab" id="tab-meine" data-tab="meine">Meine <span class="tab-zahl">(<?= $anzMeine ?>)</span></button>
+                                <button type="button" class="tab" id="tab-sponsoring" data-tab="sponsoring">Sponsoring <span class="tab-zahl">(<?= $anzSponsoring ?>)</span></button>
+                                <button type="button" class="tab" id="tab-orga" data-tab="orga">Orga <span class="tab-zahl">(<?= $anzOrga ?>)</span></button>
+                            </div>
+                        </div>
+
+                        <section class="aufgaben-panel" id="panel-meine" data-panel="meine">
+                            <h3 class="aufgaben-panel-titel">Meine (<?= $anzMeine ?>)</h3>
+                            <?php if (empty($meineAufgaben)): ?>
+                            <p class="aufgaben-leer">Nichts offen.</p>
+                            <?php else: ?>
+                            <ul>
+                                <?php foreach ($meineAufgaben as $ma): ?>
+                                <li><?= htmlspecialchars($ma['titel']) ?></li>
+                                <?php endforeach; ?>
+                            </ul>
+                            <?php endif; ?>
+                        </section>
+
+                        <section class="aufgaben-panel" id="panel-sponsoring" data-panel="sponsoring">
+                            <h3 class="aufgaben-panel-titel">Sponsoring (<?= $anzSponsoring ?>)</h3>
+                            <?php if ($anzSponsoring === 0): ?>
+                            <p class="aufgaben-leer">Nichts offen.</p>
+                            <?php else: ?>
+                            <ul>
+                                <?php foreach ($todos as $gruppe => $eintraege): ?>
+                                    <?php if ($gruppe === 'gesamt' || !is_array($eintraege)) { continue; } ?>
+                                    <?php foreach ($eintraege as $eintrag): ?>
+                                    <li><?= htmlspecialchars($eintrag['firma'] ?? '') ?></li>
+                                    <?php endforeach; ?>
+                                <?php endforeach; ?>
+                            </ul>
+                            <?php endif; ?>
+                        </section>
+
+                        <section class="aufgaben-panel" id="panel-orga" data-panel="orga">
+                            <h3 class="aufgaben-panel-titel">Orga (<?= $anzOrga ?>)</h3>
+                            <?php if (empty($orgaOffen)): ?>
+                            <p class="aufgaben-leer">Nichts offen.</p>
+                            <?php else: ?>
+                            <ul>
+                                <?php foreach ($orgaOffen as $oa): ?>
+                                <li><?= htmlspecialchars($oa['titel']) ?></li>
+                                <?php endforeach; ?>
+                            </ul>
+                            <?php endif; ?>
+                        </section>
+                    </article>
+                </div>
+            </section>
 
             <?php foreach ($dashboardGroups as $section => $tiles): ?>
                 <?php if ($section === 'ADMIN') { continue; } // ADMIN nicht aufs Dashboard ?>
@@ -452,100 +395,6 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                     </div>
                 </section>
             <?php endforeach; ?>
-
-            <div class="aufgaben-section">
-                <h2>Orga-Aufgaben</h2>
-
-                <?php if (!empty($orgaAufgaben)): ?>
-                <div style="overflow-x:auto">
-                    <table class="aufgaben-table">
-                        <thead>
-                            <tr>
-                                <th>Titel</th>
-                                <th>Verantwortlich</th>
-                                <th>Fällig</th>
-                                <th>Status</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($orgaAufgaben as $aufgabe): ?>
-                            <tr>
-                                <td>
-                                    <?= htmlspecialchars($aufgabe['titel']) ?>
-                                    <?php if ($aufgabe['notiz']): ?>
-                                        <br><small style="color:var(--text-light)"><?= htmlspecialchars(mb_substr($aufgabe['notiz'], 0, 60)) ?><?= mb_strlen($aufgabe['notiz']) > 60 ? '…' : '' ?></small>
-                                    <?php endif; ?>
-                                </td>
-                                <td><?= $aufgabe['verantwortlich_name'] ? htmlspecialchars($aufgabe['verantwortlich_name']) : '–' ?></td>
-                                <td>
-                                    <?php if ($aufgabe['faellig_am']): ?>
-                                        <?php
-                                        $faelligDate = strtotime($aufgabe['faellig_am']);
-                                        $heute = strtotime('today');
-                                        $ueberfaellig = $faelligDate < $heute && $aufgabe['status'] !== 'erledigt';
-                                        ?>
-                                        <span style="<?= $ueberfaellig ? 'color:var(--signal-crit);font-weight:600' : '' ?>">
-                                            <?= date('d.m.Y', $faelligDate) ?>
-                                        </span>
-                                    <?php else: ?>
-                                        –
-                                    <?php endif; ?>
-                                </td>
-                                <td>
-                                    <form method="post" action="api/aufgabe_orga_crud.php" style="display:inline">
-                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                                        <input type="hidden" name="action" value="set_status">
-                                        <input type="hidden" name="aufgabe_id" value="<?= $aufgabe['id'] ?>">
-                                        <select name="status" class="status-select status-<?= $aufgabe['status'] ?>" onchange="this.form.submit()">
-                                            <option value="offen" <?= $aufgabe['status'] === 'offen' ? 'selected' : '' ?>>Offen</option>
-                                            <option value="in_arbeit" <?= $aufgabe['status'] === 'in_arbeit' ? 'selected' : '' ?>>In Arbeit</option>
-                                            <option value="erledigt" <?= $aufgabe['status'] === 'erledigt' ? 'selected' : '' ?>>Erledigt</option>
-                                        </select>
-                                    </form>
-                                </td>
-                                <td>
-                                    <form method="post" action="api/aufgabe_orga_crud.php" style="display:inline" onsubmit="return confirm('Aufgabe löschen?')">
-                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                                        <input type="hidden" name="action" value="delete">
-                                        <input type="hidden" name="aufgabe_id" value="<?= $aufgabe['id'] ?>">
-                                        <button type="submit" class="btn-icon btn-danger" title="Löschen">✕</button>
-                                    </form>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-                <?php else: ?>
-                <p style="color:var(--text-light);font-size:0.875rem">Keine Aufgaben vorhanden.</p>
-                <?php endif; ?>
-
-                <form method="post" action="api/aufgabe_orga_crud.php" class="aufgabe-form">
-                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                    <input type="hidden" name="action" value="create">
-                    <div>
-                        <label for="new_titel">Neue Aufgabe</label>
-                        <input type="text" id="new_titel" name="titel" required placeholder="Titel">
-                    </div>
-                    <div>
-                        <label for="new_verantwortlich">Verantwortlich</label>
-                        <select id="new_verantwortlich" name="verantwortlich_user_id">
-                            <option value="">– Niemand –</option>
-                            <?php foreach ($orgaUsers as $ou): ?>
-                            <option value="<?= $ou['id'] ?>"><?= htmlspecialchars($ou['name']) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="new_faellig">Fällig am</label>
-                        <input type="date" id="new_faellig" name="faellig_am">
-                    </div>
-                    <div style="align-self:end">
-                        <button type="submit" class="btn btn-primary">Hinzufügen</button>
-                    </div>
-                </form>
-            </div>
         </main>
     </div>
     <script>
