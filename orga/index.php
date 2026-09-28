@@ -132,6 +132,22 @@ $anzMeine = count($meineAufgaben);
 $anzSponsoring = (int) ($todos['gesamt'] ?? 0);
 $anzOrga = count($orgaOffen);
 
+// Cockpit-„Rückgängig" (Inhaber-Entscheid Runde 3): nach einem Abhaken aus dem Cockpit
+// hängt aufgabe_orga_crud.php ?erledigt=<id> an. Titel wird ausschließlich in der bereits
+// geladenen $orgaErledigt-Liste nachgeschlagen — unbekannte/fremde IDs zeigen nichts an.
+$erledigtId = 0;
+$erledigtTitel = '';
+if (isset($_GET['erledigt']) && ctype_digit((string) $_GET['erledigt'])) {
+    $erledigtKandidat = (int) $_GET['erledigt'];
+    foreach ($orgaErledigt as $oe) {
+        if ((int) $oe['id'] === $erledigtKandidat) {
+            $erledigtId = $erledigtKandidat;
+            $erledigtTitel = (string) $oe['titel'];
+            break;
+        }
+    }
+}
+
 /**
  * Status-Punkt-Formular für eine Aufgabenzeile (Meine + Orga, Task 5/6 — geteilte Closure,
  * Inhaber-Entscheid Runde 3: nur ein Punkt, kein Auswahlfeld). Ein Submit-Button je Zeile
@@ -428,6 +444,20 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                 </div>
             </nav>
 
+            <?php if ($erledigtId > 0): ?>
+            <div class="alert alert-success aufgabe-erledigt-hinweis" role="status">
+                ✓ „<?= htmlspecialchars($erledigtTitel) ?>“ erledigt.
+                <form method="post" action="api/aufgabe_orga_crud.php">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                    <input type="hidden" name="action" value="set_status">
+                    <input type="hidden" name="aufgabe_id" value="<?= $erledigtId ?>">
+                    <input type="hidden" name="status" value="offen">
+                    <input type="hidden" name="zurueck" value="cockpit">
+                    <button type="submit" class="link-button">Rückgängig</button>
+                </form>
+            </div>
+            <?php endif; ?>
+
             <section class="dashboard-group cockpit-aufgaben">
                 <div class="dashboard-grid">
                     <article class="card aufgaben-karte">
@@ -500,11 +530,92 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                             <?php if (empty($orgaOffen)): ?>
                             <p class="aufgaben-leer">Nichts offen.</p>
                             <?php else: ?>
-                            <ul>
-                                <?php foreach ($orgaOffen as $oa): ?>
-                                <li><?= htmlspecialchars($oa['titel']) ?></li>
+                                <?php foreach ($orgaOffen as $oa):
+                                    $faelligAm = (string) ($oa['faellig_am'] ?? '');
+                                    $ueberfaellig = (string) $oa['status'] !== 'erledigt' && $faelligAm !== '' && $faelligAm < date('Y-m-d');
+                                    $faelligText = $faelligAm !== '' ? 'Fällig: ' . date('d.m.Y', strtotime($faelligAm)) : '';
+                                    $notizAuszug = trim((string) ($oa['notiz'] ?? ''));
+                                    if (mb_strlen($notizAuszug) > 60) {
+                                        $notizAuszug = mb_substr($notizAuszug, 0, 60) . '…';
+                                    }
+                                    $verantwortlichName = trim((string) ($oa['verantwortlich_name'] ?? ''));
+                                    $initialen = '';
+                                    foreach (array_slice(preg_split('/\s+/', $verantwortlichName, -1, PREG_SPLIT_NO_EMPTY), 0, 2) as $wortteil) {
+                                        $initialen .= mb_strtoupper(mb_substr($wortteil, 0, 1));
+                                    }
+                                ?>
+                                <div class="aufgabe-zeile">
+                                    <?= $renderStatusPunkt($oa) ?>
+                                    <div class="aufgabe-titel">
+                                        <?= htmlspecialchars((string) $oa['titel']) ?>
+                                        <?php if ($notizAuszug !== ''): ?>
+                                        <small><?= htmlspecialchars($notizAuszug) ?></small>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="aufgabe-meta">
+                                        <?php if ($faelligText !== ''): ?>
+                                        <span class="aufgabe-faellig<?= $ueberfaellig ? ' ueberfaellig' : '' ?>"><?= htmlspecialchars($faelligText) ?></span>
+                                        <?php endif; ?>
+                                        <?php if ($verantwortlichName !== ''): ?>
+                                        <span class="aufgabe-wer" aria-hidden="true" title="<?= htmlspecialchars($verantwortlichName) ?>"><?= htmlspecialchars($initialen) ?></span>
+                                        <span class="sr-only">Verantwortlich: <?= htmlspecialchars($verantwortlichName) ?></span>
+                                        <?php else: ?>
+                                        <span class="aufgabe-wer" aria-hidden="true">–</span>
+                                        <span class="sr-only">Verantwortlich: niemand</span>
+                                        <?php endif; ?>
+                                    </div>
+                                    <form method="post" action="api/aufgabe_orga_crud.php" class="aufgabe-loeschen-form" onsubmit="return confirm('Aufgabe löschen?')">
+                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                                        <input type="hidden" name="action" value="delete">
+                                        <input type="hidden" name="aufgabe_id" value="<?= (int) $oa['id'] ?>">
+                                        <input type="hidden" name="zurueck" value="cockpit">
+                                        <button type="submit" class="aufgabe-loeschen" aria-label="Aufgabe löschen: <?= htmlspecialchars((string) $oa['titel']) ?>">✕</button>
+                                    </form>
+                                </div>
                                 <?php endforeach; ?>
-                            </ul>
+                            <?php endif; ?>
+
+                            <form method="post" action="api/aufgabe_orga_crud.php" class="aufgabe-neu">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                                <input type="hidden" name="action" value="create">
+                                <input type="hidden" name="zurueck" value="cockpit">
+                                <label for="neu_titel" class="sr-only">Neue Aufgabe</label>
+                                <input id="neu_titel" name="titel" required placeholder="+ Neue Aufgabe">
+                                <select name="verantwortlich_user_id" aria-label="Verantwortlich" class="aufgabe-neu-opt">
+                                    <option value="">– Niemand –</option>
+                                    <?php foreach ($orgaUsers as $ou): ?>
+                                    <option value="<?= (int) $ou['id'] ?>"><?= htmlspecialchars($ou['name']) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <input type="date" name="faellig_am" aria-label="Fällig am" class="aufgabe-neu-opt">
+                                <button type="submit" class="aufgabe-neu-plus" aria-label="Aufgabe anlegen">+</button>
+                            </form>
+
+                            <?php if (!empty($orgaErledigt)): ?>
+                            <details class="aufgaben-erledigt" id="orga-erledigt">
+                                <summary>✓ <?= count($orgaErledigt) ?> erledigt</summary>
+                                <?php foreach ($orgaErledigt as $oe):
+                                    $faelligAmE = (string) ($oe['faellig_am'] ?? '');
+                                    $faelligTextE = $faelligAmE !== '' ? 'Fällig: ' . date('d.m.Y', strtotime($faelligAmE)) : '';
+                                ?>
+                                <div class="aufgabe-zeile">
+                                    <?= $renderStatusPunkt($oe) ?>
+                                    <div class="aufgabe-titel"><?= htmlspecialchars((string) $oe['titel']) ?></div>
+                                    <div class="aufgabe-meta">
+                                        <?php if ($faelligTextE !== ''): ?>
+                                        <span class="aufgabe-faellig"><?= htmlspecialchars($faelligTextE) ?></span>
+                                        <?php endif; ?>
+                                    </div>
+                                    <form method="post" action="api/aufgabe_orga_crud.php" class="aufgabe-loeschen-form" onsubmit="return confirm('Aufgabe löschen?')">
+                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                                        <input type="hidden" name="action" value="delete">
+                                        <input type="hidden" name="aufgabe_id" value="<?= (int) $oe['id'] ?>">
+                                        <input type="hidden" name="zurueck" value="cockpit">
+                                        <button type="submit" class="aufgabe-loeschen" aria-label="Aufgabe löschen: <?= htmlspecialchars((string) $oe['titel']) ?>">✕</button>
+                                    </form>
+                                </div>
+                                <?php endforeach; ?>
+                            </details>
                             <?php endif; ?>
                         </section>
                     </article>

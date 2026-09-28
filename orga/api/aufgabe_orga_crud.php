@@ -41,6 +41,11 @@ if ($zurueck === 'todos') {
     $redirectUrl = '../offene_todos.php';
 } elseif ($zurueck === 'sponsor' && $sponsorId > 0) {
     $redirectUrl = '../sponsor_form.php?id=' . $sponsorId;
+} elseif ($zurueck === 'cockpit') {
+    // Whitelisted wie 'todos'/'sponsor'; Ziel ist heute identisch mit dem Standard-Rücksprung
+    // '../index.php' — set_status hängt unten additiv den ?erledigt=-Parameter an, wenn genau
+    // dieser Rücksprung ein Abhaken war (Cockpit-„Rückgängig", Inhaber-Entscheid Runde 3).
+    $redirectUrl = '../index.php';
 }
 
 try {
@@ -225,6 +230,12 @@ try {
 
             $stmt = $pdo->prepare('UPDATE aufgaben SET status = :status WHERE id = :id');
             $stmt->execute(['status' => $status, 'id' => $aufgabeId]);
+            // Cockpit-„Rückgängig" (Inhaber-Entscheid Runde 3): nur bei einem erfolgreichen
+            // Abhaken aus dem Cockpit zeigt index.php eine Erfolgsmeldung mit Rücknahme-Link.
+            // todos/sponsor bleiben unverändert (Zweig greift nur bei zurueck=cockpit).
+            if ($zurueck === 'cockpit' && $status === 'erledigt') {
+                $redirectUrl = '../index.php?erledigt=' . $aufgabeId;
+            }
             header('Location: ' . $redirectUrl);
             exit;
 

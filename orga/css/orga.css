@@ -862,8 +862,9 @@ a.card-tile:hover {
     .aufgabe-zeile .aufgabe-titel {
         grid-area: titel;
     }
-    /* .aufgabe-loeschen sitzt in der Area "loeschen" — Löschen-Formular kommt mit
-       dem Orga-Panel (Task 6), die Area steht hier schon für die geteilte Basis. */
+    .aufgabe-zeile .aufgabe-loeschen-form {
+        grid-area: loeschen;
+    }
     .aufgabe-zeile .aufgabe-meta {
         grid-area: meta;
         display: flex;
@@ -956,6 +957,153 @@ a.card-tile:hover {
 }
 .aufgaben-mehr a {
     color: var(--link);
+}
+
+/* Panel Orga: Initialen-Kreis „Wer" und Löschen-Button (Task 6). */
+.aufgabe-wer {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.6rem;
+    height: 1.6rem;
+    border-radius: 50%;
+    background: var(--bg);
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text);
+}
+.aufgabe-loeschen {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.6rem;
+    height: 1.6rem;
+    padding: 0;
+    background: none;
+    border: none;
+    border-radius: var(--radius);
+    color: var(--text-light);
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+.aufgabe-loeschen:hover,
+.aufgabe-loeschen:focus-visible {
+    color: var(--signal-crit);
+    background: var(--signal-crit-bg);
+}
+.aufgabe-loeschen:focus-visible {
+    outline: 2px solid var(--signal-crit);
+    outline-offset: 2px;
+}
+/* Nur mit echtem Hover ausblenden (opacity, nie display:none) — Touch behält den
+   Löschen-Button immer sichtbar, weil es dort kein :hover/:focus-within vor dem Tippen gibt. */
+@media (hover: hover) {
+    .aufgabe-zeile:not(:hover):not(:focus-within) .aufgabe-loeschen {
+        opacity: 0;
+    }
+}
+
+/* Anlegezeile am Ende des Orga-Panels (Task 6). Titel-Input flexibel, Verantwortlich/Datum
+   standardmäßig sichtbar — nur mit :has()-Unterstützung blenden sie sich aus, solange das
+   Formular weder fokussiert noch der Titel befüllt ist. Ohne :has() bleiben sie stehen. */
+.aufgabe-neu {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border);
+}
+.aufgabe-neu #neu_titel {
+    flex: 1 1 12rem;
+    min-width: 0;
+    padding: 0.35rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font: inherit;
+}
+.aufgabe-neu-opt {
+    flex: 0 1 auto;
+    padding: 0.35rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font: inherit;
+}
+@supports selector(:has(*)) {
+    .aufgabe-neu:not(:focus-within):not(:has(#neu_titel:not(:placeholder-shown))) .aufgabe-neu-opt {
+        display: none;
+    }
+}
+.aufgabe-neu-plus {
+    flex: 0 0 auto;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    background: none;
+    border: 1px solid var(--primary);
+    border-radius: var(--radius);
+    color: var(--primary-dark);
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+}
+.aufgabe-neu-plus:hover {
+    background: var(--primary-tint);
+}
+.aufgabe-neu-plus:focus-visible {
+    outline: 2px solid var(--primary-dark);
+    outline-offset: 2px;
+}
+
+/* Klapp-Bereich „✓ N erledigt" (Task 6, Inhaber-Entscheid Runde 3): kleiner, neutraler
+   Pill-Knopf, aufgeklappt die erledigten Aufgaben der letzten 30 Tage. Titelfarbe #767676
+   auf Weiß = 4,54:1 (WCAG AA für Fließtext). */
+.aufgaben-erledigt {
+    margin-top: 0.75rem;
+}
+.aufgaben-erledigt summary {
+    display: inline-block;
+    padding: 0.25rem 0.65rem;
+    border-radius: var(--radius-pill);
+    background: var(--bg);
+    color: var(--text-light);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+.aufgaben-erledigt[open] summary {
+    margin-bottom: 0.5rem;
+}
+.aufgaben-erledigt summary:focus-visible {
+    outline: 2px solid var(--primary-dark);
+    outline-offset: 2px;
+}
+.aufgaben-erledigt .aufgabe-titel {
+    color: #767676;
+    text-decoration: line-through;
+}
+.aufgaben-erledigt .aufgabe-faellig {
+    color: var(--text-light);
+}
+
+/* Inline-Textknopf (sieht aus wie ein Link) für „Rückgängig" nach dem Abhaken. */
+.link-button {
+    background: none;
+    border: none;
+    padding: 0;
+    margin-left: 0.35rem;
+    color: var(--link);
+    text-decoration: underline;
+    font: inherit;
+    cursor: pointer;
+}
+.link-button:hover,
+.link-button:focus-visible {
+    color: var(--primary-dark);
+}
+.aufgabe-erledigt-hinweis form {
+    display: inline;
 }
 
 /* sr-only: nur für Screenreader, visuell verborgen (Standard-Clip-Muster) */
