@@ -48,100 +48,7 @@ return [
         'key'   => 'offene_todos',
         'label' => 'ToDos Sponsoring',
         'href'  => 'offene_todos.php',
-        'kpi'   => static function (PDO $pdo): array {
-            require_once __DIR__ . '/../src/offene_todos.php';
-            $todos = offeneTodosAlle($pdo);
-            return [
-                'value'  => (string) $todos['gesamt'],
-                'label'  => $todos['gesamt'] === 1 ? 'offenes ToDo' : 'offene ToDos',
-                'signal' => $todos['gesamt'] === 0 ? 'ok' : 'attention',
-            ];
-        },
-    ],
-    [
-        'key'     => 'helfer',
-        'label'   => 'Helfer-Übersicht',
-        'section' => 'HELFER-ORGA',
-        'href'    => 'helfer.php',
-        'kpi'   => static function (PDO $pdo): array {
-            $anzahl = (int) $pdo->query('SELECT COUNT(*) FROM helfer')->fetchColumn();
-            $neu    = (int) $pdo->query("SELECT COUNT(*) FROM helfer WHERE status = 'neu'")->fetchColumn();
-            return [
-                'value'  => (string) $anzahl,
-                'label'  => 'Anmeldungen' . ($neu > 0 ? " · {$neu} neu" : ''),
-                'signal' => $neu > 0 ? 'attention' : 'ok',
-            ];
-        },
-    ],
-    [
-        'key'     => 'schichten',
-        'label'   => 'Einsatzplan',
-        'section' => 'HELFER-ORGA',
-        'href'    => 'schichten.php',
-        'kpi'   => static function (PDO $pdo): array {
-            $bedarf    = (int) $pdo->query('SELECT COALESCE(SUM(bedarf), 0) FROM schichten')->fetchColumn();
-            $zugeteilt = (int) $pdo->query('SELECT COUNT(*) FROM schicht_zuteilung')->fetchColumn();
-            if ($bedarf === 0) {
-                return ['value' => '0', 'label' => 'Schichten angelegt', 'signal' => 'neutral'];
-            }
-            $offen = max(0, $bedarf - $zugeteilt);
-            return [
-                'value'  => "{$zugeteilt}/{$bedarf}",
-                'label'  => 'Plätze besetzt' . ($offen > 0 ? " · {$offen} offen" : ''),
-                'signal' => $offen > 0 ? 'attention' : 'ok',
-            ];
-        },
-    ],
-    [
-        // Board = Zuteilen per Drag & Drop. Die Tabelle daneben (schichten.php)
-        // bleibt das Pflege-Werkzeug (anlegen, Zeiten, Bedarf, Sichtbarkeit).
-        'key'     => 'einsatzplan',
-        'label'   => 'Einsatzplan-Board',
-        'section' => 'HELFER-ORGA',
-        'href'    => 'einsatzplan.php',
-        'kpi'   => static function (PDO $pdo): array {
-            $ohne = (int) $pdo->query('
-                SELECT COUNT(*) FROM schichten s
-                WHERE (SELECT COUNT(*) FROM schicht_zuteilung sz WHERE sz.schicht_id = s.id) < s.bedarf
-            ')->fetchColumn();
-            return [
-                'value'  => (string) $ohne,
-                'label'  => $ohne === 1 ? 'Schicht unterbesetzt' : 'Schichten unterbesetzt',
-                'signal' => $ohne > 0 ? 'attention' : 'ok',
-            ];
-        },
-    ],
-    [
-        'key'     => 'beitraege',
-        'label'   => 'Sonstige Unterstützung',
-        'section' => 'HELFER-ORGA',
-        'href'    => 'beitraege.php',
-        'kpi'   => static function (PDO $pdo): array {
-            $sonstiges = (int) $pdo->query("SELECT COUNT(*) FROM helfer_beitrag WHERE typ = 'sonstiges'")->fetchColumn();
-            return [
-                'value'  => (string) $sonstiges,
-                'label'  => 'Angebote',
-                'signal' => 'neutral',
-            ];
-        },
-    ],
-    [
-        'key'     => 'helfer_draht',
-        'label'   => 'Helfer-Draht',
-        'section' => 'HELFER-ORGA',
-        'href'    => 'helfer_verzeichnis.php',
-        'kpi'   => static function (PDO $pdo): array {
-            $best = (int) $pdo->query("SELECT COUNT(*) FROM helfer WHERE status = 'bestaetigt'")->fetchColumn();
-            $notfall = 0;
-            try {
-                $notfall = (int) $pdo->query("SELECT COUNT(*) FROM briefings WHERE sichtbar = 1 AND prioritaet = 'notfall'")->fetchColumn();
-            } catch (PDOException $e) { /* Tabelle evtl. noch nicht da */ }
-            return [
-                'value'  => (string) $best,
-                'label'  => 'erreichbare Helfer' . ($notfall > 0 ? " · {$notfall} Notfall-Info" : ''),
-                'signal' => $notfall > 0 ? 'attention' : 'neutral',
-            ];
-        },
+        'tile'  => false, // Zahl lebt jetzt im Reiter „Sponsoring" des Cockpits
     ],
     // --- SPONSOREN · DATEN ------------------------------------------------
     [
@@ -360,6 +267,91 @@ return [
         },
     ],
     [
+        'key'     => 'helfer',
+        'label'   => 'Helfer-Übersicht',
+        'section' => 'HELFER-ORGA',
+        'href'    => 'helfer.php',
+        'kpi'   => static function (PDO $pdo): array {
+            $anzahl = (int) $pdo->query('SELECT COUNT(*) FROM helfer')->fetchColumn();
+            $neu    = (int) $pdo->query("SELECT COUNT(*) FROM helfer WHERE status = 'neu'")->fetchColumn();
+            return [
+                'value'  => (string) $anzahl,
+                'label'  => 'Anmeldungen' . ($neu > 0 ? " · {$neu} neu" : ''),
+                'signal' => $neu > 0 ? 'attention' : 'ok',
+            ];
+        },
+    ],
+    [
+        'key'     => 'schichten',
+        'label'   => 'Einsatzplan',
+        'section' => 'HELFER-ORGA',
+        'href'    => 'schichten.php',
+        'kpi'   => static function (PDO $pdo): array {
+            $bedarf    = (int) $pdo->query('SELECT COALESCE(SUM(bedarf), 0) FROM schichten')->fetchColumn();
+            $zugeteilt = (int) $pdo->query('SELECT COUNT(*) FROM schicht_zuteilung')->fetchColumn();
+            if ($bedarf === 0) {
+                return ['value' => '0', 'label' => 'Schichten angelegt', 'signal' => 'neutral'];
+            }
+            $offen = max(0, $bedarf - $zugeteilt);
+            return [
+                'value'  => "{$zugeteilt}/{$bedarf}",
+                'label'  => 'Plätze besetzt' . ($offen > 0 ? " · {$offen} offen" : ''),
+                'signal' => $offen > 0 ? 'attention' : 'ok',
+            ];
+        },
+    ],
+    [
+        // Board = Zuteilen per Drag & Drop. Die Tabelle daneben (schichten.php)
+        // bleibt das Pflege-Werkzeug (anlegen, Zeiten, Bedarf, Sichtbarkeit).
+        'key'     => 'einsatzplan',
+        'label'   => 'Einsatzplan-Board',
+        'section' => 'HELFER-ORGA',
+        'href'    => 'einsatzplan.php',
+        'kpi'   => static function (PDO $pdo): array {
+            $ohne = (int) $pdo->query('
+                SELECT COUNT(*) FROM schichten s
+                WHERE (SELECT COUNT(*) FROM schicht_zuteilung sz WHERE sz.schicht_id = s.id) < s.bedarf
+            ')->fetchColumn();
+            return [
+                'value'  => (string) $ohne,
+                'label'  => $ohne === 1 ? 'Schicht unterbesetzt' : 'Schichten unterbesetzt',
+                'signal' => $ohne > 0 ? 'attention' : 'ok',
+            ];
+        },
+    ],
+    [
+        'key'     => 'beitraege',
+        'label'   => 'Sonstige Unterstützung',
+        'section' => 'HELFER-ORGA',
+        'href'    => 'beitraege.php',
+        'kpi'   => static function (PDO $pdo): array {
+            $sonstiges = (int) $pdo->query("SELECT COUNT(*) FROM helfer_beitrag WHERE typ = 'sonstiges'")->fetchColumn();
+            return [
+                'value'  => (string) $sonstiges,
+                'label'  => 'Angebote',
+                'signal' => 'neutral',
+            ];
+        },
+    ],
+    [
+        'key'     => 'helfer_draht',
+        'label'   => 'Helfer-Draht',
+        'section' => 'HELFER-ORGA',
+        'href'    => 'helfer_verzeichnis.php',
+        'kpi'   => static function (PDO $pdo): array {
+            $best = (int) $pdo->query("SELECT COUNT(*) FROM helfer WHERE status = 'bestaetigt'")->fetchColumn();
+            $notfall = 0;
+            try {
+                $notfall = (int) $pdo->query("SELECT COUNT(*) FROM briefings WHERE sichtbar = 1 AND prioritaet = 'notfall'")->fetchColumn();
+            } catch (PDOException $e) { /* Tabelle evtl. noch nicht da */ }
+            return [
+                'value'  => (string) $best,
+                'label'  => 'erreichbare Helfer' . ($notfall > 0 ? " · {$notfall} Notfall-Info" : ''),
+                'signal' => $notfall > 0 ? 'attention' : 'neutral',
+            ];
+        },
+    ],
+    [
         'key'     => 'dateien',
         'label'   => 'Dateien',
         'section' => 'ABLAGE',
@@ -401,6 +393,7 @@ return [
         'label'   => 'Design-System',
         'section' => 'ADMIN',
         'href'    => 'design_system.php',
+        'tile'    => false,
         // Navigierbarer DS-Browser (Marke/Farben/Typo/…). Wie ci.php für alle Orga
         // sichtbar, ohne KPI. Spec: intern/design-system-integration-spec.md
     ],

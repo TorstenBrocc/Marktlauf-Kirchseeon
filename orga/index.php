@@ -365,46 +365,16 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
             <?php endif; ?>
 
             <?php foreach ($dashboardGroups as $section => $tiles): ?>
-                <?php if ($section === 'ADMIN' || $section === '') { continue; } // ADMIN nicht aufs Dashboard; '' unten mit Schnellzugriff ?>
+                <?php if ($section === 'ADMIN') { continue; } // ADMIN nicht aufs Dashboard ?>
                 <section class="dashboard-group">
+                    <?php if ($section !== ''): ?>
                     <h2 class="dashboard-group-title"><?= htmlspecialchars($dashboardTitles[$section] ?? $section) ?></h2>
+                    <?php endif; ?>
                     <div class="dashboard-grid">
                         <?php foreach ($tiles as $tile) { $renderTile($tile); } ?>
                     </div>
                 </section>
             <?php endforeach; ?>
-
-            <section class="dashboard-group">
-                <div class="dashboard-grid">
-                    <?php
-                    // Kacheln ohne eigenen Abschnitt sowie die ADMIN-Kachel (nur CI &
-                    // Design — für alle sichtbar, aber ohne ADMIN-Überschrift hier) plus
-                    // die Schnellzugriff-Karte als „Absprung"-Bereich am Ende.
-                    foreach (($dashboardGroups[''] ?? []) as $tile) { $renderTile($tile); }
-                    foreach (($dashboardGroups['ADMIN'] ?? []) as $tile) { $renderTile($tile); }
-                    ?>
-
-                <article class="card">
-                    <h3>Schnellzugriff</h3>
-                    <ul class="quick-links">
-                        <li><a href="../helfer-anmeldung.php" target="_blank">Helfer-Formular (öffentlich)</a></li>
-                        <li><a href="https://www.raceresult.com/de-de/account/index" target="_blank" rel="noopener" class="btn-brand btn-brand-raceresult">Race Result</a><?= $renderHinweis('raceresult_hinweis') ?></li>
-                        <li><a href="https://github.com/TorstenBrocc/Marktlauf-Kirchseeon" target="_blank" rel="noopener" class="btn-brand btn-brand-github">GitHub-Repo (Website)</a></li>
-                        <?php if ($trelloBoardUrl): ?>
-                        <li><a href="<?= htmlspecialchars($trelloBoardUrl) ?>" target="_blank" rel="noopener" class="btn-brand btn-brand-trello">Trello-Board</a><?= $renderHinweis('trello_hinweis') ?></li>
-                        <?php endif; ?>
-                        <li>
-                            <span class="btn-brand btn-brand-onedrive is-disabled" aria-disabled="true" title="Abgelöst – Dateiablage jetzt unter „Dateien“">OneDrive (abgelöst)</span>
-                            <span class="quick-hint">Dateiablage jetzt direkt im Dashboard unter <a href="dateien.php">Dateien</a> (Google Drive).</span>
-                        </li>
-                        <?php if ($stravaUrl): ?>
-                        <li><a href="<?= htmlspecialchars($stravaUrl) ?>" target="_blank" rel="noopener" class="btn-brand btn-brand-strava">Strava</a><?= $renderHinweis('strava_hinweis') ?></li>
-                        <?php endif; ?>
-                        <li><a href="<?= htmlspecialchars($metaBusinessUrl ?: 'https://business.facebook.com/latest/home?nav_ref=bm_home_redirect&asset_id=1236742862857199') ?>" target="_blank" rel="noopener" class="btn-brand btn-brand-meta">Meta Business</a><?= $renderHinweis('meta_business_hinweis') ?></li>
-                    </ul>
-                </article>
-                </div>
-            </section>
 
             <div class="aufgaben-section">
                 <h2>Orga-Aufgaben</h2>
