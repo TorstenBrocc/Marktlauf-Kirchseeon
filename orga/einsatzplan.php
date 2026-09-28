@@ -121,7 +121,7 @@ function boardBeitragTooltip(array $beitragProHelfer, int $helferId): string {
             border: 1px solid var(--border); background: var(--white);
             color: var(--text); text-decoration: none; font-size: 0.85rem;
         }
-        .board-actions .btn-link:hover { border-color: var(--primary); color: var(--primary-dark); }
+        .board-actions .btn-link:hover { border-color: var(--primary); color: var(--primary); }
         .board-actions .btn-link.primary {
             background: var(--white); border-color: var(--primary); color: var(--primary-dark); font-weight: 600;
         }
