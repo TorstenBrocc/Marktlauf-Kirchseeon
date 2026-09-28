@@ -864,26 +864,31 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
         // auf ihrem Status-Punkt, damit man sie sofort wieder zurücksetzen kann. Sonst
         // kehrt der Fokus schlicht zur Aufgaben-Karte zurück (neu angelegt: Titelfeld
         // des Zielreiters; sonst: aktiver Reiter-Button).
-        const params = new URLSearchParams(window.location.search);
-        const aktivesPanel = document.querySelector('.aufgaben-panel:not([hidden])');
-        const frischStatusBtn = params.has('erledigt')
-            ? ((aktivesPanel && aktivesPanel.querySelector('.ist-frisch-erledigt .status-punkt'))
-                || document.querySelector('.ist-frisch-erledigt .status-punkt'))
-            : null;
-        if (frischStatusBtn) {
-            frischStatusBtn.focus();
-        } else if (window.location.hash === '#aufgaben') {
-            const neuTab = params.get('neu');
-            const titelFeld = KEYS.indexOf(neuTab) !== -1
-                ? document.querySelector('#panel-' + neuTab + ' input[name="titel"]')
+        // Deferred until after load: the browser's scroll to #aufgaben would otherwise reset focus.
+        function fokusRueckkehr() {
+            const params = new URLSearchParams(window.location.search);
+            const aktivesPanel = document.querySelector('.aufgaben-panel:not([hidden])');
+            const frischStatusBtn = params.has('erledigt')
+                ? ((aktivesPanel && aktivesPanel.querySelector('.ist-frisch-erledigt .status-punkt'))
+                    || document.querySelector('.ist-frisch-erledigt .status-punkt'))
                 : null;
-            if (titelFeld) {
-                titelFeld.focus();
-            } else {
-                const aktiverTab = tabButtons.filter(function (btn) { return btn.getAttribute('aria-selected') === 'true'; })[0];
-                if (aktiverTab) { aktiverTab.focus(); }
+            if (frischStatusBtn) {
+                frischStatusBtn.focus();
+            } else if (window.location.hash === '#aufgaben') {
+                const neuTab = params.get('neu');
+                const titelFeld = KEYS.indexOf(neuTab) !== -1
+                    ? document.querySelector('#panel-' + neuTab + ' input[name="titel"]')
+                    : null;
+                if (titelFeld) {
+                    titelFeld.focus();
+                } else {
+                    const aktiverTab = tabButtons.filter(function (btn) { return btn.getAttribute('aria-selected') === 'true'; })[0];
+                    if (aktiverTab) { aktiverTab.focus(); }
+                }
             }
         }
+        if (document.readyState === 'complete') { setTimeout(fokusRueckkehr, 0); }
+        else { window.addEventListener('load', function () { setTimeout(fokusRueckkehr, 0); }); }
     })();
 
     // Cockpit: Auf-/Zu-Zustand des Erledigt-Bereichs merken (Reiter Orga).
