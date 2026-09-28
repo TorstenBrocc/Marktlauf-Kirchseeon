@@ -169,7 +169,8 @@ $renderStatusPunkt = function (array $aufgabe) use ($csrfToken): string {
         && !empty($aufgabe['faellig_am'])
         && (string) $aufgabe['faellig_am'] < date('Y-m-d');
     $klasse = 'status-punkt status-' . $ist . ($ueberfaellig ? ' ist-ueberfaellig' : '');
-    $titel = 'Status: ' . $label[$ist] . ' – klicken: ' . $label[$naechster];
+    $aufgabenTitel = (string) ($aufgabe['titel'] ?? '');
+    $titel = $aufgabenTitel . ' – Status: ' . $label[$ist] . ($ueberfaellig ? ', überfällig' : '') . ' – klicken: ' . $label[$naechster];
     return '<form method="post" action="api/aufgabe_orga_crud.php" class="status-form">'
         . '<input type="hidden" name="csrf_token" value="' . htmlspecialchars($csrfToken) . '">'
         . '<input type="hidden" name="action" value="set_status">'
@@ -238,9 +239,10 @@ $renderSponsorZeile = function (string $gruppe, array $t) use ($frist): string {
             break;
     }
     $faelligKlasse = 'aufgabe-faellig' . ($ueberfaellig ? ' ueberfaellig' : '');
+    $ueberfaelligHinweis = $ueberfaellig ? '<span class="sr-only"> (überfällig)</span>' : '';
     return '<div class="aufgabe-zeile aufgabe-zeile-sponsor">'
         . '<div class="aufgabe-titel">' . $firmaHtml . '</div>'
-        . '<div class="' . $faelligKlasse . '">' . $grundHtml . '</div>'
+        . '<div class="' . $faelligKlasse . '">' . $grundHtml . $ueberfaelligHinweis . '</div>'
         . '</div>';
 };
 
@@ -296,7 +298,7 @@ if ($isAdmin) {
  * Render-Helfer: ⓘ-Button für einen Schnellzugriff-Link (aufklappt die zugehörige Notiz).
  * Gibt leeren String zurück, wenn kein Admin oder kein Hinweis hinterlegt ist.
  */
-$renderHinweisButton = function (string $key) use ($isAdmin, $linkHinweise): string {
+$renderHinweisButton = function (string $key, string $label) use ($isAdmin, $linkHinweise): string {
     if (!$isAdmin) {
         return '';
     }
@@ -305,7 +307,8 @@ $renderHinweisButton = function (string $key) use ($isAdmin, $linkHinweise): str
         return '';
     }
     $id = 'hint-' . $key;
-    return '<button type="button" class="qc-info" aria-expanded="false" aria-controls="' . $id . '" onclick="toggleHint(this)" title="' . htmlspecialchars($text) . '">&#9432;</button>';
+    $bezeichnung = 'Zugangshinweis ' . $label;
+    return '<button type="button" class="qc-info" aria-expanded="false" aria-controls="' . $id . '" onclick="toggleHint(this)" aria-label="' . htmlspecialchars($bezeichnung) . '" title="' . htmlspecialchars($bezeichnung) . '">&#9432;</button>';
 };
 
 /**
@@ -313,7 +316,7 @@ $renderHinweisButton = function (string $key) use ($isAdmin, $linkHinweise): str
  * zu $renderHinweisButton — liegt separat, damit die Leiste die Panels gesammelt unter
  * sich zeigen kann statt je Button eingestreut).
  */
-$renderHinweisNote = function (string $key) use ($isAdmin, $linkHinweise): string {
+$renderHinweisNote = function (string $key, string $label) use ($isAdmin, $linkHinweise): string {
     if (!$isAdmin) {
         return '';
     }
@@ -323,8 +326,9 @@ $renderHinweisNote = function (string $key) use ($isAdmin, $linkHinweise): strin
     }
     $id = 'hint-' . $key;
     $rows = min(6, max(2, substr_count($text, "\n") + 1));
+    $bezeichnung = 'Zugangshinweis ' . $label;
     return '<div class="qc-note" id="' . $id . '" hidden>'
-        . '<textarea class="qc-note-text" readonly rows="' . $rows . '" onclick="this.select()">' . htmlspecialchars($text) . '</textarea>'
+        . '<textarea class="qc-note-text" readonly rows="' . $rows . '" aria-label="' . htmlspecialchars($bezeichnung) . '" onclick="this.select()">' . htmlspecialchars($text) . '</textarea>'
         . '<div class="qc-note-actions">'
         . '<button type="button" class="qc-copy" onclick="copyHint(this)">Kopieren</button>'
         . '<a class="qc-edit" href="einstellungen.php#link-' . htmlspecialchars($key) . '">Bearbeiten &rarr;</a>'
@@ -424,7 +428,7 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                             <span aria-hidden="true">&#8599;</span>
                             <span class="sr-only">(öffnet neuen Tab)</span>
                         </a>
-                        <?php if ($link['hint']): ?><?= $renderHinweisButton($link['hint']) ?><?php endif; ?>
+                        <?php if ($link['hint']): ?><?= $renderHinweisButton($link['hint'], $link['label']) ?><?php endif; ?>
                     </li>
                     <?php endforeach; ?>
                     <li class="quick-bar-trenner" aria-hidden="true"></li>
@@ -439,13 +443,13 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                 </ul>
                 <div class="quick-bar-notes">
                     <?php foreach ($quickLinks as $link): ?>
-                        <?php if ($link['hint']): ?><?= $renderHinweisNote($link['hint']) ?><?php endif; ?>
+                        <?php if ($link['hint']): ?><?= $renderHinweisNote($link['hint'], $link['label']) ?><?php endif; ?>
                     <?php endforeach; ?>
                 </div>
             </nav>
 
             <?php if ($erledigtId > 0): ?>
-            <div class="alert alert-success aufgabe-erledigt-hinweis" role="status">
+            <div class="alert alert-success aufgabe-erledigt-hinweis" role="status" tabindex="-1">
                 ✓ „<?= htmlspecialchars($erledigtTitel) ?>“ erledigt.
                 <form method="post" action="api/aufgabe_orga_crud.php">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
@@ -490,7 +494,7 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                                     </div>
                                     <div class="aufgabe-meta">
                                         <?php if ($faelligText !== ''): ?>
-                                        <span class="aufgabe-faellig<?= $ueberfaellig ? ' ueberfaellig' : '' ?>"><?= htmlspecialchars($faelligText) ?></span>
+                                        <span class="aufgabe-faellig<?= $ueberfaellig ? ' ueberfaellig' : '' ?>"><?= htmlspecialchars($faelligText) ?><?php if ($ueberfaellig): ?><span class="sr-only"> (überfällig)</span><?php endif; ?></span>
                                         <?php endif; ?>
                                     </div>
                                 </div>
@@ -515,7 +519,7 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                                         continue;
                                     }
                                 ?>
-                                <p class="todo-gruppe"><?= htmlspecialchars($todoGruppenMeta[$gruppe]['titel']) ?> (<?= count($liste) ?>)</p>
+                                <h4 class="todo-gruppe"><?= htmlspecialchars($todoGruppenMeta[$gruppe]['titel']) ?> (<?= count($liste) ?>)</h4>
                                 <?php foreach (array_slice($liste, 0, $sponsoringRest) as $eintrag):
                                     echo $renderSponsorZeile($gruppe, $eintrag);
                                     $sponsoringRest--;
@@ -554,7 +558,7 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                                     </div>
                                     <div class="aufgabe-meta">
                                         <?php if ($faelligText !== ''): ?>
-                                        <span class="aufgabe-faellig<?= $ueberfaellig ? ' ueberfaellig' : '' ?>"><?= htmlspecialchars($faelligText) ?></span>
+                                        <span class="aufgabe-faellig<?= $ueberfaellig ? ' ueberfaellig' : '' ?>"><?= htmlspecialchars($faelligText) ?><?php if ($ueberfaellig): ?><span class="sr-only"> (überfällig)</span><?php endif; ?></span>
                                         <?php endif; ?>
                                         <?php if ($verantwortlichName !== ''): ?>
                                         <span class="aufgabe-wer" aria-hidden="true" title="<?= htmlspecialchars($verantwortlichName) ?>"><?= htmlspecialchars($initialen) ?></span>
@@ -683,7 +687,6 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
         panels.forEach(function (panel) {
             panel.setAttribute('role', 'tabpanel');
             panel.setAttribute('aria-labelledby', 'tab-' + panel.dataset.panel);
-            panel.setAttribute('tabindex', '0');
             const titel = panel.querySelector('.aufgaben-panel-titel');
             if (titel) { titel.classList.add('sr-only'); }
         });
@@ -698,8 +701,10 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
             panels.forEach(function (panel) {
                 if (panel.dataset.panel === key) {
                     panel.removeAttribute('hidden');
+                    panel.setAttribute('tabindex', '0');
                 } else {
                     panel.setAttribute('hidden', '');
+                    panel.setAttribute('tabindex', '-1');
                 }
             });
             if (opts.focus) {
@@ -743,6 +748,11 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
         });
 
         activate(startTab());
+
+        // Nach dem Reload aus „Erledigt": Fokus auf den Hinweis, damit Screenreader-/
+        // Tastatur-Nutzer die Bestätigung samt Rückgängig-Button sofort mitbekommen.
+        const erledigtHinweisEl = document.querySelector('.aufgabe-erledigt-hinweis');
+        if (erledigtHinweisEl) { erledigtHinweisEl.focus(); }
     })();
 
     // Cockpit: Auf-/Zu-Zustand des Erledigt-Bereichs merken (Reiter Orga).

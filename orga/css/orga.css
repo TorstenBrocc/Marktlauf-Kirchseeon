@@ -786,6 +786,9 @@ a.card-tile:hover {
     display: flex;
     gap: 0.25rem;
 }
+.tabs[hidden] {
+    display: none;
+}
 .tab {
     background: none;
     border: 1px solid transparent;
