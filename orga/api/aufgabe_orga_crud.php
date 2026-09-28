@@ -42,10 +42,10 @@ if ($zurueck === 'todos') {
 } elseif ($zurueck === 'sponsor' && $sponsorId > 0) {
     $redirectUrl = '../sponsor_form.php?id=' . $sponsorId;
 } elseif ($zurueck === 'cockpit') {
-    // Whitelisted wie 'todos'/'sponsor'; Ziel ist heute identisch mit dem Standard-Rücksprung
-    // '../index.php' — set_status hängt unten additiv den ?erledigt=-Parameter an, wenn genau
-    // dieser Rücksprung ein Abhaken war (Cockpit-„Rückgängig", Inhaber-Entscheid Runde 3).
-    $redirectUrl = '../index.php';
+    // Whitelisted wie 'todos'/'sponsor'. `#aufgaben` bringt den Fokus nach dem Reload zur
+    // Aufgaben-Karte zurück (Task 5); create/set_status hängen unten zusätzlich `?neu=`/
+    // `?erledigt=` an, damit das Cockpit-JS die richtige Stelle fokussieren kann.
+    $redirectUrl = '../index.php#aufgaben';
 }
 
 try {
@@ -150,6 +150,12 @@ try {
                 'kontext_typ'            => $kontextTyp,
                 'kontext_id'             => $kontextId,
             ]);
+            // Cockpit-Anlegezeile (Task 5, Runde 4): welcher Reiter hat angelegt, damit das
+            // Cockpit-JS nach dem Reload dorthin springt und das Titelfeld fokussiert.
+            $neuTab = $_POST['neu_tab'] ?? '';
+            if ($zurueck === 'cockpit' && in_array($neuTab, ['meine', 'sponsoring', 'orga'], true)) {
+                $redirectUrl = '../index.php?neu=' . $neuTab . '#aufgaben';
+            }
             $_SESSION['flash_success'] = 'Aufgabe erstellt.';
             header('Location: ' . $redirectUrl);
             exit;
@@ -230,11 +236,12 @@ try {
 
             $stmt = $pdo->prepare('UPDATE aufgaben SET status = :status WHERE id = :id');
             $stmt->execute(['status' => $status, 'id' => $aufgabeId]);
-            // Cockpit-„Rückgängig" (Inhaber-Entscheid Runde 3): nur bei einem erfolgreichen
-            // Abhaken aus dem Cockpit zeigt index.php eine Erfolgsmeldung mit Rücknahme-Link.
-            // todos/sponsor bleiben unverändert (Zweig greift nur bei zurueck=cockpit).
+            // Cockpit (Inhaber-Entscheid Runde 4): nach einem Abhaken bleibt die Zeile an ihrer
+            // Stelle sichtbar (grau/durchgestrichen) statt in einem Rückgängig-Banner — index.php
+            // lädt sie über ?erledigt=<id> frisch nach. todos/sponsor bleiben unverändert
+            // (Zweig greift nur bei zurueck=cockpit).
             if ($zurueck === 'cockpit' && $status === 'erledigt') {
-                $redirectUrl = '../index.php?erledigt=' . $aufgabeId;
+                $redirectUrl = '../index.php?erledigt=' . $aufgabeId . '#aufgaben';
             }
             header('Location: ' . $redirectUrl);
             exit;

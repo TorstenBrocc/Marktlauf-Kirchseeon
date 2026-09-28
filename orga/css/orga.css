@@ -516,6 +516,13 @@ body {
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     gap: 1rem;
 }
+/* Cockpit (Inhaber-Entscheid Runde 4): höchstens 5 Kachelspalten pro Zeile, mehr bricht
+   um statt zu scrollen. Nur auf der Cockpit-Seite (main.cockpit) — andere Seiten mit
+   .dashboard-grid bleiben bei der unbegrenzten auto-fill-Breite oben unberührt. Die 4rem
+   im calc() sind die vier Lücken (--gap 1rem) zwischen fünf Spalten. */
+.cockpit .dashboard-grid {
+    grid-template-columns: repeat(auto-fill, minmax(max(240px, calc((100% - 4rem) / 5)), 1fr));
+}
 
 .card {
     background: var(--white);
@@ -701,22 +708,13 @@ a.card-tile:hover {
 }
 
 /* Cockpit: Aufgaben-Karte (drei Reiter Meine · Sponsoring · Orga).
-   Kartenbreite (Inhaber-Entscheid, Task 4): die Karte ist einziges Kind eines eigenen
-   .dashboard-grid und spannt per Default die volle Breite; erst ab genug Platz für sechs
-   Kachelspalten (@container) deckelt sie sich auf fünf Kachelspalten. Browser ohne
-   Container-Queries ignorieren den Deckel und zeigen die volle Breite — nie kaputt. */
-.cockpit-aufgaben {
-    container-type: inline-size;
-    container-name: cockpit;
-}
+   Kartenbreite (Inhaber-Entscheid Runde 4): die Karte ist einziges Kind eines eigenen
+   .dashboard-grid und spannt per Default die volle (auf höchstens 5 Spalten gedeckelte,
+   s. .cockpit .dashboard-grid unten) Zeile. Die frühere @container-Regel (Deckel erst ab
+   sechs Kachelspalten) ist damit überflüssig geworden. */
 .aufgaben-karte {
     grid-column: 1 / -1;
     min-width: 0;
-}
-@container cockpit (min-width: 1520px) {
-    .aufgaben-karte {
-        grid-column: 1 / 6;
-    }
 }
 .aufgaben-kopf {
     display: flex;
@@ -775,6 +773,14 @@ a.card-tile:hover {
     font-size: 0.875rem;
 }
 
+/* Cockpit: Aufgabenzeilen sind <li> in einer <ul> (Task 4) — Listen-Semantik für
+   Screenreader, kein visueller Unterschied zur vorherigen div-Variante. */
+.aufgaben-liste {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
 /* Cockpit: kompakte Aufgabenzeile (Meine/Orga) — geteilte Grid-Basis, Task 5/6.
    Spalten: Status | Titel (flexibel) | Fällig | Wer | Löschen; die letzten beiden
    bleiben in Meine/Sponsoring einfach ungenutzt (keine Elemente, kein Platzbedarf). */
@@ -800,6 +806,12 @@ a.card-tile:hover {
 }
 .aufgabe-titel a {
     color: var(--link);
+    font-weight: normal;
+    text-decoration: none;
+}
+.aufgabe-titel a:hover,
+.aufgabe-titel a:focus-visible {
+    text-decoration: underline;
 }
 .aufgabe-faellig {
     white-space: nowrap;
@@ -834,9 +846,11 @@ a.card-tile:hover {
     }
 }
 
-/* Status-Punkt (Inhaber-Entscheid Runde 3): ein Submit-Button je Zeile, schaltet den
-   Status im Kreis weiter (offen → in Arbeit → erledigt → offen). Form + Farbe trägt die
-   Bedeutung, nicht nur die Farbe (WCAG 1.4.1): leerer Ring, halb gefüllt, voll mit Haken. */
+/* Status-Punkt (Inhaber-Entscheid Runde 4): ein Submit-Button je Zeile, schaltet nur noch
+   zwischen offen/in Arbeit → erledigt und erledigt → offen um. Der halbe Ring bleibt rein
+   optisch für bestehende „in Arbeit"-Einträge stehen — per Klick wird dieser Status nicht
+   mehr gesetzt. Form + Farbe trägt die Bedeutung, nicht nur die Farbe (WCAG 1.4.1): leerer
+   Ring, halb gefüllt, voll mit Haken. */
 .status-form {
     display: inline-flex;
 }
@@ -898,15 +912,26 @@ a.card-tile:hover {
     grid-template-columns: minmax(0, 1fr) auto;
 }
 .todo-gruppe {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
     margin: 1rem 0 0.35rem;
     font-size: 0.8rem;
-    font-weight: 700;
-    color: var(--text-light);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    font-weight: 600;
+    color: var(--text);
 }
 .todo-gruppe:first-child {
     margin-top: 0;
+}
+.todo-gruppe-zahl {
+    display: inline-flex;
+    align-items: center;
+    background: var(--bg);
+    border-radius: 999px;
+    padding: 0 0.45rem;
+    font-weight: 600;
+    font-size: 0.75rem;
+    color: var(--text-light);
 }
 .aufgaben-mehr {
     margin: 0.75rem 0 0;
@@ -961,19 +986,30 @@ a.card-tile:hover {
     }
 }
 
-/* Anlegezeile am Ende des Orga-Panels (Task 6). Titel-Input flexibel, Verantwortlich/Datum
-   standardmäßig sichtbar — nur mit :has()-Unterstützung blenden sie sich aus, solange das
-   Formular weder fokussiert noch der Titel befüllt ist. Ohne :has() bleiben sie stehen. */
+/* Anlegezeile — jetzt in allen drei Reitern (Task 3 + Runde 4). Titel-Input flexibel, die
+   übrigen Felder stecken je in einer .aufgabe-neu-feld-Spalte mit sichtbarem Label darüber
+   und sind standardmäßig sichtbar — nur mit :has()-Unterstützung blenden sie sich aus,
+   solange das Formular weder fokussiert noch der Titel befüllt ist. Ohne :has() bleiben sie
+   stehen. Die Titel-Klasse (statt einer festen ID) erlaubt eigene IDs je Reiter. */
 .aufgabe-neu {
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
+    align-items: flex-end;
     gap: 0.5rem;
     margin-top: 0.75rem;
     padding-top: 0.75rem;
     border-top: 1px solid var(--border);
 }
-.aufgabe-neu #neu_titel {
+.aufgabe-neu-feld {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+.aufgabe-neu-feld label {
+    font-size: 0.75rem;
+    color: var(--text-light);
+}
+.aufgabe-neu-titel {
     flex: 1 1 12rem;
     min-width: 0;
     padding: 0.35rem 0.5rem;
@@ -988,8 +1024,13 @@ a.card-tile:hover {
     border-radius: var(--radius);
     font: inherit;
 }
+/* Rahmenkontrast nur in der Anlegezeile: #8c8c8c auf Weiß = 3,36:1 (≥ 3:1, WCAG 1.4.11). */
+.aufgabe-neu .aufgabe-neu-titel,
+.aufgabe-neu .aufgabe-neu-opt {
+    border-color: #8c8c8c;
+}
 @supports selector(:has(*)) {
-    .aufgabe-neu:not(:focus-within):not(:has(#neu_titel:not(:placeholder-shown))) .aufgabe-neu-opt {
+    .aufgabe-neu:not(:focus-within):not(:has(.aufgabe-neu-titel:not(:placeholder-shown))) .aufgabe-neu-feld {
         display: none;
     }
 }
@@ -1037,31 +1078,18 @@ a.card-tile:hover {
     outline: 2px solid var(--primary-dark);
     outline-offset: 2px;
 }
-.aufgaben-erledigt .aufgabe-titel {
+.aufgaben-erledigt .aufgabe-titel,
+.ist-frisch-erledigt .aufgabe-titel {
     color: #767676;
+    text-decoration: line-through;
+}
+.ist-frisch-erledigt .aufgabe-titel a {
+    /* Sponsor-Link im Titel (Reiter „Meine") behält die Durchstreichung mit. */
+    color: inherit;
     text-decoration: line-through;
 }
 .aufgaben-erledigt .aufgabe-faellig {
     color: var(--text-light);
-}
-
-/* Inline-Textknopf (sieht aus wie ein Link) für „Rückgängig" nach dem Abhaken. */
-.link-button {
-    background: none;
-    border: none;
-    padding: 0;
-    margin-left: 0.35rem;
-    color: var(--link);
-    text-decoration: underline;
-    font: inherit;
-    cursor: pointer;
-}
-.link-button:hover,
-.link-button:focus-visible {
-    color: var(--primary-dark);
-}
-.aufgabe-erledigt-hinweis form {
-    display: inline;
 }
 
 /* sr-only: nur für Screenreader, visuell verborgen (Standard-Clip-Muster) */

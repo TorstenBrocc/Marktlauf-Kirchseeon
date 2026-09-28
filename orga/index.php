@@ -78,6 +78,7 @@ $meineAufgaben = [];
 $orgaOffen = [];
 $orgaErledigt = [];
 $orgaUsers = [];
+$alleSponsoren = [];
 $todos = ['gesamt' => 0];
 try {
     $meineStmt = $pdo->prepare("
@@ -108,8 +109,9 @@ try {
     $orgaOffen = $orgaOffenStmt->fetchAll();
 
     // Erledigte verschwinden aus der offenen Liste (Inhaber-Entscheid Runde 3), bleiben aber
-    // 30 Tage im Cockpit einsehbar (Klapp-Bereich „✓ N erledigt", Task 6) — u. a. damit
-    // „Rückgängig" nach einem Klick funktioniert. Älteres bleibt in der DB, taucht hier nicht mehr auf.
+    // 30 Tage im Cockpit einsehbar (Klapp-Bereich „✓ N erledigt", Task 6) — die gerade erst
+    // abgehakte Zeile wird unten zusätzlich frisch geladen und an ihrer Stelle eingemischt
+    // (Runde 4). Älteres bleibt in der DB, taucht hier nicht mehr auf.
     $orgaErledigtStmt = $pdo->query("
         SELECT a.*, u.name AS verantwortlich_name
         FROM aufgaben a
@@ -122,6 +124,10 @@ try {
 
     $orgaUsers = orgaUserListe($pdo);
 
+    // Für die Sponsor-Anlegezeile im Reiter „Sponsoring" (Runde 4) — alle Sponsoren,
+    // nicht nur offene ToDos, damit man auch ohne bestehendes ToDo eine Aufgabe anlegen kann.
+    $alleSponsoren = $pdo->query('SELECT id, firma FROM sponsors ORDER BY firma')->fetchAll();
+
     $todos = offeneTodosAlle($pdo);
 } catch (PDOException $e) {
     // Table may not exist yet
@@ -132,45 +138,94 @@ $anzMeine = count($meineAufgaben);
 $anzSponsoring = (int) ($todos['gesamt'] ?? 0);
 $anzOrga = count($orgaOffen);
 
-// Cockpit-„Rückgängig" (Inhaber-Entscheid Runde 3): nach einem Abhaken aus dem Cockpit
-// hängt aufgabe_orga_crud.php ?erledigt=<id> an. Titel wird ausschließlich in der bereits
-// geladenen $orgaErledigt-Liste nachgeschlagen — unbekannte/fremde IDs zeigen nichts an.
-$erledigtId = 0;
-$erledigtTitel = '';
+// Cockpit-„gerade abgehakt" (Inhaber-Entscheid Runde 4, ersetzt das bisherige
+// Rückgängig-Banner): aufgabe_orga_crud.php hängt nach einem Abhaken ?erledigt=<id> an.
+// Die Zeile wird einmalig frisch geladen und in die Liste(n) gemischt, aus denen sie kam
+// (Meine, wenn ich verantwortlich bin; Orga, wenn kontext_typ NULL ist — beides kann
+// gleichzeitig zutreffen), dort an ihrer Stelle sichtbar (grau/durchgestrichen, grüner
+// ✓-Punkt), Klick auf den Punkt setzt sie zurück auf offen. Aus der 30-Tage-Klapp-Liste
+// wird sie für diesen Request ausgeblendet, damit sie nicht doppelt auftaucht.
+$frischErledigtId = 0;
 if (isset($_GET['erledigt']) && ctype_digit((string) $_GET['erledigt'])) {
-    $erledigtKandidat = (int) $_GET['erledigt'];
-    foreach ($orgaErledigt as $oe) {
-        if ((int) $oe['id'] === $erledigtKandidat) {
-            $erledigtId = $erledigtKandidat;
-            $erledigtTitel = (string) $oe['titel'];
-            break;
+    $frischErledigtKandidat = (int) $_GET['erledigt'];
+    try {
+        $frischStmt = $pdo->prepare("
+            SELECT a.id, a.titel, a.notiz, a.faellig_am, a.status, a.kontext_typ, a.kontext_id,
+                   a.verantwortlich_user_id, u.name AS verantwortlich_name, s.firma
+            FROM aufgaben a
+            LEFT JOIN users u ON a.verantwortlich_user_id = u.id
+            LEFT JOIN sponsors s ON a.kontext_typ = 'sponsor' AND s.id = a.kontext_id
+            WHERE a.id = :id AND a.status = 'erledigt'
+        ");
+        $frischStmt->execute(['id' => $frischErledigtKandidat]);
+        $frischRow = $frischStmt->fetch();
+        if ($frischRow) {
+            $frischErledigtId = $frischErledigtKandidat;
+            // Sortierhilfe: bildet dieselbe Fällig-am-Reihenfolge wie die SQL-ORDER-BYs oben nach,
+            // damit die frisch gemischte Zeile an ihrer natürlichen Stelle landet, nicht am Ende.
+            $mitFaelligAsc = static function (array $a, array $b): int {
+                $fa = $a['faellig_am'] ?: null;
+                $fb = $b['faellig_am'] ?: null;
+                if ($fa === $fb) {
+                    return 0;
+                }
+                if ($fa === null) {
+                    return -1;
+                }
+                if ($fb === null) {
+                    return 1;
+                }
+                return strcmp((string) $fa, (string) $fb);
+            };
+            if ((int) ($frischRow['verantwortlich_user_id'] ?? 0) === (int) $user['id']) {
+                $meineAufgaben[] = $frischRow;
+                usort($meineAufgaben, $mitFaelligAsc);
+            }
+            if (($frischRow['kontext_typ'] ?? null) === null) {
+                $orgaOffen[] = $frischRow;
+                usort($orgaOffen, static function (array $a, array $b) use ($mitFaelligAsc): int {
+                    $prio = static fn (array $x): int => match ((string) ($x['status'] ?? '')) {
+                        'offen' => 1,
+                        'in_arbeit' => 2,
+                        default => 3,
+                    };
+                    $pa = $prio($a);
+                    $pb = $prio($b);
+                    return $pa !== $pb ? $pa <=> $pb : $mitFaelligAsc($a, $b);
+                });
+            }
+            $orgaErledigt = array_values(array_filter($orgaErledigt, static function (array $oe) use ($frischErledigtId): bool {
+                return (int) $oe['id'] !== $frischErledigtId;
+            }));
         }
+    } catch (PDOException $e) {
+        // Table may not exist yet
     }
 }
 
 /**
- * Status-Punkt-Formular für eine Aufgabenzeile (Meine + Orga, Task 5/6 — geteilte Closure,
- * Inhaber-Entscheid Runde 3: nur ein Punkt, kein Auswahlfeld). Ein Submit-Button je Zeile
- * schaltet den Status im Kreis weiter (offen → in Arbeit → erledigt → offen); Form + Farbe
- * tragen die Bedeutung, nicht nur die Farbe (WCAG 1.4.1) — aria-label/title benennen
- * Ist- und Ziel-Zustand ausdrücklich. `zurueck=cockpit` fällt im Endpunkt heute noch auf
- * den Standard-Rücksprung `../index.php` zurück (kein `todos`/`sponsor`-Wert) — harmlos,
- * bis Task 6 den Wert dort auswertet.
+ * Status-Punkt-Formular für eine Aufgabenzeile (Meine + Orga, Inhaber-Entscheid Runde 4:
+ * nur noch zwei Klick-Zustände). Ein Submit-Button je Zeile schaltet zwischen offen/in
+ * Arbeit → erledigt und erledigt → offen um; „in Arbeit" wird nicht mehr per Klick gesetzt,
+ * bestehende Einträge zeigen weiterhin den halben Kreis (rein optisch, s. .status-in_arbeit
+ * in orga.css). Form + Farbe tragen die Bedeutung, nicht nur die Farbe (WCAG 1.4.1) —
+ * aria-label/title benennen Ist- und Ziel-Zustand ausdrücklich.
  */
 $renderStatusPunkt = function (array $aufgabe) use ($csrfToken): string {
-    $naechsterStatus = ['offen' => 'in_arbeit', 'in_arbeit' => 'erledigt', 'erledigt' => 'offen'];
-    $label = ['offen' => 'offen', 'in_arbeit' => 'in Arbeit', 'erledigt' => 'erledigt'];
     $ist = (string) ($aufgabe['status'] ?? 'offen');
-    if (!isset($naechsterStatus[$ist])) {
+    if (!in_array($ist, ['offen', 'in_arbeit', 'erledigt'], true)) {
         $ist = 'offen';
     }
-    $naechster = $naechsterStatus[$ist];
-    $ueberfaellig = $ist !== 'erledigt'
+    $istErledigt = $ist === 'erledigt';
+    $naechster = $istErledigt ? 'offen' : 'erledigt';
+    $ueberfaellig = !$istErledigt
         && !empty($aufgabe['faellig_am'])
         && (string) $aufgabe['faellig_am'] < date('Y-m-d');
     $klasse = 'status-punkt status-' . $ist . ($ueberfaellig ? ' ist-ueberfaellig' : '');
     $aufgabenTitel = (string) ($aufgabe['titel'] ?? '');
-    $titel = $aufgabenTitel . ' – Status: ' . $label[$ist] . ($ueberfaellig ? ', überfällig' : '') . ' – klicken: ' . $label[$naechster];
+    $titel = $istErledigt
+        ? $aufgabenTitel . ' – erledigt – klicken: wieder offen'
+        : $aufgabenTitel . ' – offen' . ($ueberfaellig ? ', überfällig' : '') . ' – klicken: erledigt';
     return '<form method="post" action="api/aufgabe_orga_crud.php" class="status-form">'
         . '<input type="hidden" name="csrf_token" value="' . htmlspecialchars($csrfToken) . '">'
         . '<input type="hidden" name="action" value="set_status">'
@@ -207,7 +262,7 @@ $renderSponsorZeile = function (string $gruppe, array $t) use ($frist): string {
             break;
         case 'wiedervorlagen':
             $firmaHtml = '<a href="sponsor_form.php?id=' . (int) $t['id'] . '">' . htmlspecialchars((string) $t['firma']) . '</a>';
-            $grundHtml = htmlspecialchars($frist((int) $t['tage'], 'heute fällig', 'seit %d Tagen überfällig'));
+            $grundHtml = htmlspecialchars($frist((int) $t['tage'], 'heute fällig', '%d Tage überfällig'));
             $ueberfaellig = (int) $t['tage'] > 0;
             break;
         case 'versand_fehler':
@@ -234,16 +289,16 @@ $renderSponsorZeile = function (string $gruppe, array $t) use ($frist): string {
             // Negative = due in the future ($frist would wrongly say "heute fällig").
             $grundHtml = $tage < 0
                 ? 'fällig ' . htmlspecialchars(date('d.m.', strtotime((string) $t['faellig_am'])))
-                : htmlspecialchars($frist($tage, 'heute fällig', 'seit %d Tagen überfällig'));
+                : htmlspecialchars($frist($tage, 'heute fällig', '%d Tage überfällig'));
             $ueberfaellig = $tage > 0;
             break;
     }
     $faelligKlasse = 'aufgabe-faellig' . ($ueberfaellig ? ' ueberfaellig' : '');
     $ueberfaelligHinweis = $ueberfaellig ? '<span class="sr-only"> (überfällig)</span>' : '';
-    return '<div class="aufgabe-zeile aufgabe-zeile-sponsor">'
+    return '<li class="aufgabe-zeile aufgabe-zeile-sponsor">'
         . '<div class="aufgabe-titel">' . $firmaHtml . '</div>'
         . '<div class="' . $faelligKlasse . '">' . $grundHtml . $ueberfaelligHinweis . '</div>'
-        . '</div>';
+        . '</li>';
 };
 
 // Reihenfolge wie orga/offene_todos.php, aber nur die Gruppen, die in $todos['gesamt']
@@ -405,7 +460,7 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
 <body>
 <?php $activeNav = 'dashboard'; require __DIR__ . '/_sidebar.php'; ?>
 
-        <main class="main-content">
+        <main class="main-content cockpit">
             <header class="content-header">
                 <h1>Cockpit</h1>
             </header>
@@ -448,23 +503,9 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                 </div>
             </nav>
 
-            <?php if ($erledigtId > 0): ?>
-            <div class="alert alert-success aufgabe-erledigt-hinweis" role="status" tabindex="-1">
-                ✓ „<?= htmlspecialchars($erledigtTitel) ?>“ erledigt.
-                <form method="post" action="api/aufgabe_orga_crud.php">
-                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-                    <input type="hidden" name="action" value="set_status">
-                    <input type="hidden" name="aufgabe_id" value="<?= $erledigtId ?>">
-                    <input type="hidden" name="status" value="offen">
-                    <input type="hidden" name="zurueck" value="cockpit">
-                    <button type="submit" class="link-button">Rückgängig</button>
-                </form>
-            </div>
-            <?php endif; ?>
-
-            <section class="dashboard-group cockpit-aufgaben">
+            <section class="dashboard-group">
                 <div class="dashboard-grid">
-                    <article class="card aufgaben-karte">
+                    <article class="card aufgaben-karte" id="aufgaben">
                         <div class="aufgaben-kopf">
                             <h2>Aufgaben</h2>
                             <div class="tabs" hidden>
@@ -479,12 +520,14 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                             <?php if (empty($meineAufgaben)): ?>
                             <p class="aufgaben-leer">Nichts offen.</p>
                             <?php else: ?>
+                            <ul class="aufgaben-liste">
                                 <?php foreach ($meineAufgaben as $ma):
                                     $faelligAm = (string) ($ma['faellig_am'] ?? '');
                                     $ueberfaellig = $faelligAm !== '' && $faelligAm < date('Y-m-d');
                                     $faelligText = $faelligAm !== '' ? 'Fällig: ' . date('d.m.Y', strtotime($faelligAm)) : '';
+                                    $istFrisch = (int) $ma['id'] === $frischErledigtId;
                                 ?>
-                                <div class="aufgabe-zeile">
+                                <li class="aufgabe-zeile<?= $istFrisch ? ' ist-frisch-erledigt' : '' ?>">
                                     <?= $renderStatusPunkt($ma) ?>
                                     <div class="aufgabe-titel">
                                         <?= htmlspecialchars((string) $ma['titel']) ?>
@@ -497,9 +540,25 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                                         <span class="aufgabe-faellig<?= $ueberfaellig ? ' ueberfaellig' : '' ?>"><?= htmlspecialchars($faelligText) ?><?php if ($ueberfaellig): ?><span class="sr-only"> (überfällig)</span><?php endif; ?></span>
                                         <?php endif; ?>
                                     </div>
-                                </div>
+                                </li>
                                 <?php endforeach; ?>
+                            </ul>
                             <?php endif; ?>
+
+                            <form method="post" action="api/aufgabe_orga_crud.php" class="aufgabe-neu">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                                <input type="hidden" name="action" value="create">
+                                <input type="hidden" name="zurueck" value="cockpit">
+                                <input type="hidden" name="neu_tab" value="meine">
+                                <input type="hidden" name="verantwortlich_user_id" value="<?= (int) $user['id'] ?>">
+                                <label for="neu_titel_meine" class="sr-only">Neue Aufgabe</label>
+                                <input id="neu_titel_meine" class="aufgabe-neu-titel" name="titel" required placeholder="+ Neue Aufgabe">
+                                <div class="aufgabe-neu-feld">
+                                    <label for="neu_faellig_meine">Fällig am</label>
+                                    <input type="date" id="neu_faellig_meine" name="faellig_am" class="aufgabe-neu-opt">
+                                </div>
+                                <button type="submit" class="aufgabe-neu-plus" aria-label="Aufgabe anlegen">+</button>
+                            </form>
                         </section>
 
                         <section class="aufgaben-panel" id="panel-sponsoring" data-panel="sponsoring">
@@ -519,13 +578,40 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                                         continue;
                                     }
                                 ?>
-                                <h4 class="todo-gruppe"><?= htmlspecialchars($todoGruppenMeta[$gruppe]['titel']) ?> (<?= count($liste) ?>)</h4>
+                                <h4 class="todo-gruppe"><?= htmlspecialchars($todoGruppenMeta[$gruppe]['titel']) ?> <span class="todo-gruppe-zahl"><?= count($liste) ?></span></h4>
+                                <ul class="aufgaben-liste">
                                 <?php foreach (array_slice($liste, 0, $sponsoringRest) as $eintrag):
                                     echo $renderSponsorZeile($gruppe, $eintrag);
                                     $sponsoringRest--;
                                 endforeach; ?>
+                                </ul>
                                 <?php endforeach; ?>
                             <?php endif; ?>
+
+                            <form method="post" action="api/aufgabe_orga_crud.php" class="aufgabe-neu">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                                <input type="hidden" name="action" value="create">
+                                <input type="hidden" name="zurueck" value="cockpit">
+                                <input type="hidden" name="neu_tab" value="sponsoring">
+                                <input type="hidden" name="kontext_typ" value="sponsor">
+                                <label for="neu_titel_sponsoring" class="sr-only">Neue Aufgabe</label>
+                                <input id="neu_titel_sponsoring" class="aufgabe-neu-titel" name="titel" required placeholder="+ Neue Aufgabe">
+                                <div class="aufgabe-neu-feld">
+                                    <label for="neu_sponsor">Sponsor</label>
+                                    <select id="neu_sponsor" name="kontext_id" class="aufgabe-neu-opt" required>
+                                        <option value="">Sponsor wählen …</option>
+                                        <?php foreach ($alleSponsoren as $sp): ?>
+                                        <option value="<?= (int) $sp['id'] ?>"><?= htmlspecialchars((string) $sp['firma']) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <div class="aufgabe-neu-feld">
+                                    <label for="neu_faellig_sponsoring">Fällig am</label>
+                                    <input type="date" id="neu_faellig_sponsoring" name="faellig_am" class="aufgabe-neu-opt">
+                                </div>
+                                <button type="submit" class="aufgabe-neu-plus" aria-label="Aufgabe anlegen">+</button>
+                            </form>
+
                             <p class="aufgaben-mehr"><a href="offene_todos.php">Alle <?= $anzSponsoring ?> ToDos &rarr;</a></p>
                         </section>
 
@@ -534,6 +620,7 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                             <?php if (empty($orgaOffen)): ?>
                             <p class="aufgaben-leer">Nichts offen.</p>
                             <?php else: ?>
+                            <ul class="aufgaben-liste">
                                 <?php foreach ($orgaOffen as $oa):
                                     $faelligAm = (string) ($oa['faellig_am'] ?? '');
                                     $ueberfaellig = (string) $oa['status'] !== 'erledigt' && $faelligAm !== '' && $faelligAm < date('Y-m-d');
@@ -547,8 +634,9 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                                     foreach (array_slice(preg_split('/\s+/', $verantwortlichName, -1, PREG_SPLIT_NO_EMPTY), 0, 2) as $wortteil) {
                                         $initialen .= mb_strtoupper(mb_substr($wortteil, 0, 1));
                                     }
+                                    $istFrisch = (int) $oa['id'] === $frischErledigtId;
                                 ?>
-                                <div class="aufgabe-zeile">
+                                <li class="aufgabe-zeile<?= $istFrisch ? ' ist-frisch-erledigt' : '' ?>">
                                     <?= $renderStatusPunkt($oa) ?>
                                     <div class="aufgabe-titel">
                                         <?= htmlspecialchars((string) $oa['titel']) ?>
@@ -575,34 +663,43 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                                         <input type="hidden" name="zurueck" value="cockpit">
                                         <button type="submit" class="aufgabe-loeschen" aria-label="Aufgabe löschen: <?= htmlspecialchars((string) $oa['titel']) ?>">✕</button>
                                     </form>
-                                </div>
+                                </li>
                                 <?php endforeach; ?>
+                            </ul>
                             <?php endif; ?>
 
                             <form method="post" action="api/aufgabe_orga_crud.php" class="aufgabe-neu">
                                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
                                 <input type="hidden" name="action" value="create">
                                 <input type="hidden" name="zurueck" value="cockpit">
-                                <label for="neu_titel" class="sr-only">Neue Aufgabe</label>
-                                <input id="neu_titel" name="titel" required placeholder="+ Neue Aufgabe">
-                                <select name="verantwortlich_user_id" aria-label="Verantwortlich" class="aufgabe-neu-opt">
-                                    <option value="">– Niemand –</option>
-                                    <?php foreach ($orgaUsers as $ou): ?>
-                                    <option value="<?= (int) $ou['id'] ?>"><?= htmlspecialchars($ou['name']) ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                                <input type="date" name="faellig_am" aria-label="Fällig am" class="aufgabe-neu-opt">
+                                <input type="hidden" name="neu_tab" value="orga">
+                                <label for="neu_titel_orga" class="sr-only">Neue Aufgabe</label>
+                                <input id="neu_titel_orga" class="aufgabe-neu-titel" name="titel" required placeholder="+ Neue Aufgabe">
+                                <div class="aufgabe-neu-feld">
+                                    <label for="neu_verantwortlich_orga">Verantwortlich</label>
+                                    <select id="neu_verantwortlich_orga" name="verantwortlich_user_id" class="aufgabe-neu-opt">
+                                        <option value="">– Niemand –</option>
+                                        <?php foreach ($orgaUsers as $ou): ?>
+                                        <option value="<?= (int) $ou['id'] ?>"><?= htmlspecialchars($ou['name']) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <div class="aufgabe-neu-feld">
+                                    <label for="neu_faellig_orga">Fällig am</label>
+                                    <input type="date" id="neu_faellig_orga" name="faellig_am" class="aufgabe-neu-opt">
+                                </div>
                                 <button type="submit" class="aufgabe-neu-plus" aria-label="Aufgabe anlegen">+</button>
                             </form>
 
                             <?php if (!empty($orgaErledigt)): ?>
                             <details class="aufgaben-erledigt" id="orga-erledigt">
                                 <summary>✓ <?= count($orgaErledigt) ?> erledigt</summary>
+                                <ul class="aufgaben-liste">
                                 <?php foreach ($orgaErledigt as $oe):
                                     $faelligAmE = (string) ($oe['faellig_am'] ?? '');
                                     $faelligTextE = $faelligAmE !== '' ? 'Fällig: ' . date('d.m.Y', strtotime($faelligAmE)) : '';
                                 ?>
-                                <div class="aufgabe-zeile">
+                                <li class="aufgabe-zeile">
                                     <?= $renderStatusPunkt($oe) ?>
                                     <div class="aufgabe-titel"><?= htmlspecialchars((string) $oe['titel']) ?></div>
                                     <div class="aufgabe-meta">
@@ -617,8 +714,9 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                                         <input type="hidden" name="zurueck" value="cockpit">
                                         <button type="submit" class="aufgabe-loeschen" aria-label="Aufgabe löschen: <?= htmlspecialchars((string) $oe['titel']) ?>">✕</button>
                                     </form>
-                                </div>
+                                </li>
                                 <?php endforeach; ?>
+                                </ul>
                             </details>
                             <?php endif; ?>
                         </section>
@@ -715,9 +813,14 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
         }
 
         function startTab() {
-            const hatErledigtHinweis = new URLSearchParams(window.location.search).has('erledigt')
-                && document.querySelector('.aufgabe-erledigt-hinweis');
-            if (hatErledigtHinweis) { return 'orga'; }
+            const params = new URLSearchParams(window.location.search);
+            if (params.has('erledigt')) {
+                const frisch = document.querySelector('.ist-frisch-erledigt');
+                const panel = frisch ? frisch.closest('.aufgaben-panel') : null;
+                if (panel) { return panel.dataset.panel; }
+            }
+            const neuTab = params.get('neu');
+            if (KEYS.indexOf(neuTab) !== -1) { return neuTab; }
             try {
                 const gespeichert = localStorage.getItem('mkl_cockpit_tab');
                 if (KEYS.indexOf(gespeichert) !== -1) { return gespeichert; }
@@ -749,10 +852,29 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
 
         activate(startTab());
 
-        // Nach dem Reload aus „Erledigt": Fokus auf den Hinweis, damit Screenreader-/
-        // Tastatur-Nutzer die Bestätigung samt Rückgängig-Button sofort mitbekommen.
-        const erledigtHinweisEl = document.querySelector('.aufgabe-erledigt-hinweis');
-        if (erledigtHinweisEl) { erledigtHinweisEl.focus(); }
+        // Fokus-Rückkehr nach Cockpit-Aktionen (Task 5): das Abhaken hat Vorrang — die
+        // frisch abgehakte Zeile (grau/durchgestrichen, grüner Punkt) bekommt den Fokus
+        // auf ihrem Status-Punkt, damit man sie sofort wieder zurücksetzen kann. Sonst
+        // kehrt der Fokus schlicht zur Aufgaben-Karte zurück (neu angelegt: Titelfeld
+        // des Zielreiters; sonst: aktiver Reiter-Button).
+        const params = new URLSearchParams(window.location.search);
+        const frischStatusBtn = params.has('erledigt')
+            ? document.querySelector('.ist-frisch-erledigt .status-punkt')
+            : null;
+        if (frischStatusBtn) {
+            frischStatusBtn.focus();
+        } else if (window.location.hash === '#aufgaben') {
+            const neuTab = params.get('neu');
+            const titelFeld = KEYS.indexOf(neuTab) !== -1
+                ? document.querySelector('#panel-' + neuTab + ' input[name="titel"]')
+                : null;
+            if (titelFeld) {
+                titelFeld.focus();
+            } else {
+                const aktiverTab = tabButtons.filter(function (btn) { return btn.getAttribute('aria-selected') === 'true'; })[0];
+                if (aktiverTab) { aktiverTab.focus(); }
+            }
+        }
     })();
 
     // Cockpit: Auf-/Zu-Zustand des Erledigt-Bereichs merken (Reiter Orga).
