@@ -17,8 +17,8 @@
  * ODER in einem spaeteren (verzoegerten) Callback kommen; es wird nur gesetzt, was mitkommt, ein
  * Insights-only-Callback loescht den Permalink NICHT.
  * Stage C (Robustheit): zusaetzlich optional {"insights_status":"failed"} aus dem Make-Error-
- * Handler des Insights-Moduls — zaehlt insights_versuche hoch (Migration 091), damit ein nicht
- * abrufbarer Post nach ein paar Versuchen dauerhaft aus der Pending-Liste faellt.
+ * Handler des Insights-Moduls — zaehlt ig_/fb_insights_versuche hoch (je Kanal, Migration 110),
+ * damit ein nicht abrufbarer Kanal nach ein paar Versuchen dauerhaft aus der Pending-Liste faellt.
  * Antwort: {"ok":true} / {"ok":false,"message":"…"}
  */
 
@@ -124,13 +124,13 @@ if ($hatLikes) {
 }
 if ($hatReichweite || $hatLikes) {
     $sets[] = 'versand_insights_am = NOW()';
-    // Erfolg -> Fehlversuchs-Zaehler zuruecksetzen (Migration 091).
-    $sets[] = '`insights_versuche` = 0';
+    // Erfolg -> Fehlversuchs-Zaehler dieses Kanals zuruecksetzen (Migration 110).
+    $sets[] = "`{$chPrefix}_insights_versuche` = 0";
 }
 
 // make.com Stage C (Robustheit): expliziter Fehl-Callback aus dem Make-Error-Handler des
 // Insights-Moduls: {..., "insights_status":"failed"}. Zaehlt Fehlversuche hoch; ab
-// INSIGHTS_MAX_VERSUCHE (siehe posts_pending_insights.php) faellt der Post dauerhaft aus der
+// INSIGHTS_MAX_VERSUCHE (src/social_insights.php) faellt dieser Kanal dauerhaft aus der
 // Pending-Liste — so wird ein nicht abrufbarer Post (geloeschte/ungueltige Media-ID ->
 // GraphMethodException 100) nicht endlos wiedervorgelegt, ein voruebergehender Fehler bekommt
 // bis dahin weitere Retries. Ausschluss bewusst ueber den Zaehler, NICHT ueber
@@ -139,7 +139,7 @@ if ($hatReichweite || $hatLikes) {
 $insightsFehlgeschlagen = !($hatReichweite || $hatLikes)
     && strtolower(trim((string) ($data['insights_status'] ?? ''))) === 'failed';
 if ($insightsFehlgeschlagen) {
-    $sets[] = '`insights_versuche` = insights_versuche + 1';
+    $sets[] = "`{$chPrefix}_insights_versuche` = `{$chPrefix}_insights_versuche` + 1";
     // Callback-Notiz sprechend machen (ueberschreibt das Default-"ok" dieses Anrufs).
     $params['info'] = '[' . date('d.m. H:i') . ' ' . $channel . ' insights-fehlgeschlagen] ';
 }

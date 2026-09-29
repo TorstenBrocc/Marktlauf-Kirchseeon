@@ -291,7 +291,7 @@ $icons = [
                     <td data-label="IG Reichw." data-v="<?= $p['ig_reichweite'] !== null ? (int) $p['ig_reichweite'] : -1 ?>"><?= $p['ig_reichweite'] !== null ? (int) $p['ig_reichweite'] : '<span class="sp-none">—</span>' ?></td>
                     <td data-label="IG Likes" data-v="<?= $p['ig_likes'] !== null ? (int) $p['ig_likes'] : -1 ?>"><?= $p['ig_likes'] !== null ? (int) $p['ig_likes'] : '<span class="sp-none">—</span>' ?></td>
                     <td data-label="FB Likes" data-v="<?= $p['fb_likes'] !== null ? (int) $p['fb_likes'] : -1 ?>"><?= $p['fb_likes'] !== null ? (int) $p['fb_likes'] : '<span class="sp-none">—</span>' ?></td>
-                    <td data-label="Stand"><?= $p['versand_insights_am'] ? htmlspecialchars(date('d.m. H:i', strtotime((string) $p['versand_insights_am']))) : '<span class="sp-none">ausstehend</span>' ?></td>
+                    <td data-label="Stand"><?php $stand = socialInsightsStand($p); ?><?= $p['versand_insights_am'] ? htmlspecialchars($stand) : '<span class="sp-none">' . htmlspecialchars($stand) . '</span>' ?></td>
                     <td data-label="Links" class="sp-links">
                         <?php if (!empty($p['ig_permalink'])): ?><a href="<?= htmlspecialchars((string) $p['ig_permalink']) ?>" target="_blank" rel="noopener">IG&#8599;</a><?php endif; ?>
                         <?php if (!empty($p['fb_permalink'])): ?><a href="<?= htmlspecialchars((string) $p['fb_permalink']) ?>" target="_blank" rel="noopener">FB&#8599;</a><?php endif; ?>

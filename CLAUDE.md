@@ -142,8 +142,9 @@ wer die Masse ändert, muss `width`/`height` im Markup mitziehen.
 **`data/status.json` ist Runtime-State, kein Deploy-Artefakt.** Der `deploy.yml`-EXCLUDE ist
 richtig: `--delete` würde Renntag-Meldungen löschen. Gleiches Muster wie `sponsoren.json`.
 
-**`INSIGHTS_MAX_VERSUCHE`** muss in `orga/api/post_status_callback.php` und
-`orga/api/posts_pending_insights.php` übereinstimmen, sonst läuft die Wiedervorlage endlos.
+**`INSIGHTS_MAX_VERSUCHE`** steht seit Migration 110 genau einmal (`src/social_insights.php`) und
+zählt **je Kanal** (`ig_/fb_insights_versuche`); die alte Spalte `insights_versuche` wird nicht mehr
+geschrieben. Erreicht ein Kanal die Schwelle, zeigt die Auswertung „IG/FB nicht abrufbar“.
 
 ## MARKTLAUF = EIN PROJEKT IN ZWEI REPOS
 
@@ -324,8 +325,6 @@ PUNKTE — SPONSOREN / CRM"), nicht in diesem öffentlichen Repo: Sponsor- und F
 in der Datenbank und gehören nicht nach draußen.
 
 **Social / make.com**
-- Insights-Fehlerzähler `insights_versuche` gilt je Post, nicht je Kanal — ein scheiternder
-  Kanal nimmt den anderen mit aus der Wiedervorlage. Klein (Migration + zwei Endpunkte), nicht dringend.
 - **TikTok** in die eine Pipeline einhängen (Kollegin hat begonnen); Spec im Vault.
 - Echter GPT-4-Klasse-Tier nur über Azure OpenAI (Azure-Nonprofit-Grant) — der
   OpenAI-ChatGPT-Nonprofit-Grant deckt **keine** API.

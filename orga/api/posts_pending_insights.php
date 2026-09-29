@@ -20,6 +20,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../../src/db.php';
 require_once __DIR__ . '/../../src/logger.php';
 require_once __DIR__ . '/../../src/make_waechter.php';
+require_once __DIR__ . '/../../src/social_insights.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -70,32 +71,31 @@ $versucheIgnorieren = !empty($data['versuche_ignorieren']);
 try {
     $pdo  = getDbConnection();
     makeInsightsHeartbeat($pdo);
+    // Failure limit per channel (migration 110): the make error handler reports failures via
+    // post_status_callback.php (insights_status=failed), which counts them up per channel. A
+    // channel at INSIGHTS_MAX_VERSUCHE drops out quietly (deleted/invalid media id) without
+    // taking the other channel of the same post with it.
     $stmt = $pdo->prepare(
-        // insights_versuche < 3: dauerhaftes Aufgeben nach zu vielen Fehlversuchen (Migration
-        // 090). Der Make-Error-Handler meldet Fehlschlaege via post_status_callback.php
-        // (insights_status=failed) zurueck, das den Zaehler hochsetzt — so verschwindet ein
-        // nicht abrufbarer Post (ungueltige/geloeschte Media-ID) leise aus der Wiedervorlage,
-        // statt den Sammler-Lauf jeden Durchgang scheitern zu lassen. Schwelle = 3, muss zur
-        // INSIGHTS_MAX_VERSUCHE-Logik im Callback passen.
-        "SELECT id, ig_media_id, fb_post_id
+        "SELECT id, ig_media_id, fb_post_id, ig_insights_versuche, fb_insights_versuche
            FROM post_race_contents
           WHERE status = 'gesendet'
             AND gesendet_am >= (NOW() - INTERVAL :tage DAY)
             AND (ig_media_id IS NOT NULL OR fb_post_id IS NOT NULL)
             AND (versand_insights_am IS NULL OR versand_insights_am < (NOW() - INTERVAL 6 HOUR))
-            AND (insights_versuche < 3 OR :ignorieren = 1)
           ORDER BY gesendet_am DESC
           LIMIT 100"
     );
-    $stmt->execute(['tage' => $tage, 'ignorieren' => $versucheIgnorieren ? 1 : 0]);
+    $stmt->execute(['tage' => $tage]);
 
     $posts = [];
     foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
         $postId = (int) $row['id'];
-        if (!empty($row['ig_media_id'])) {
+        $igOffen = $versucheIgnorieren || (int) $row['ig_insights_versuche'] < INSIGHTS_MAX_VERSUCHE;
+        $fbOffen = $versucheIgnorieren || (int) $row['fb_insights_versuche'] < INSIGHTS_MAX_VERSUCHE;
+        if (!empty($row['ig_media_id']) && $igOffen) {
             $posts[] = ['post_id' => $postId, 'channel' => 'instagram', 'media_id' => (string) $row['ig_media_id']];
         }
-        if (!empty($row['fb_post_id'])) {
+        if (!empty($row['fb_post_id']) && $fbOffen) {
             $posts[] = ['post_id' => $postId, 'channel' => 'facebook', 'media_id' => (string) $row['fb_post_id']];
         }
     }
