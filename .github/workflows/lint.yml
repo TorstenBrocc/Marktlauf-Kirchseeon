@@ -25,3 +25,13 @@ jobs:
           find . -type d \( -name vendor -o -name venv -o -name node_modules -o -name .git \) -prune \
             -o -name '*.php' -print0 \
             | xargs -0 -n1 -P4 php -l
+
+      # bin/-Skripte laufen teils über GitHub Actions; ihr stdout steht im Actions-Log, das im
+      # öffentlichen Repo jeder angemeldete GitHub-Nutzer lesen kann (Befund 2026-10-07).
+      # Ausgaben laufen über cliAusgabe() in src/logger.php und nennen nur IDs und Zähler.
+      - name: Keine E-Mail-Adressen in CLI-Ausgaben
+        run: |
+          if grep -nE "(echo|print|printf|cliAusgabe)\b.*\[['\"]email['\"]\]" bin/*.php; then
+            echo "::error::CLI-Ausgabe mit E-Mail-Adresse in bin/ — nur IDs ausgeben (siehe cliAusgabe in src/logger.php)."
+            exit 1
+          fi

@@ -26,7 +26,7 @@ try {
     $pdo = getDbConnection();
 
     $stmt = $pdo->query("
-        SELECT a.id, a.titel, a.faellig_am, u.name, u.email
+        SELECT a.id, a.titel, a.faellig_am, u.id AS user_id, u.name, u.email
         FROM aufgaben a
         JOIN users u ON a.verantwortlich_user_id = u.id
         WHERE a.faellig_am = CURDATE()
@@ -60,23 +60,23 @@ try {
                 $update = $pdo->prepare('UPDATE aufgaben SET erinnerung_gesendet = 1 WHERE id = :id');
                 $update->execute(['id' => $aufgabe['id']]);
                 $sent++;
-                echo "✓ Erinnerung gesendet: {$aufgabe['titel']} → {$aufgabe['email']}\n";
+                cliAusgabe("✓ Erinnerung gesendet: Aufgabe #{$aufgabe['id']} → User #{$aufgabe['user_id']}\n");
             } else {
                 $failed++;
                 logError("Aufgaben-Erinnerung fehlgeschlagen für Aufgabe #{$aufgabe['id']}: Mail nicht gesendet");
-                echo "✗ Fehlgeschlagen: {$aufgabe['titel']} → {$aufgabe['email']}\n";
+                cliAusgabe("✗ Fehlgeschlagen: Aufgabe #{$aufgabe['id']} → User #{$aufgabe['user_id']}\n");
             }
         } catch (Throwable $e) {
             $failed++;
             logError("Aufgaben-Erinnerung Exception für Aufgabe #{$aufgabe['id']}: " . $e->getMessage());
-            echo "✗ Exception: {$aufgabe['titel']} → {$e->getMessage()}\n";
+            cliAusgabe("✗ Exception: Aufgabe #{$aufgabe['id']} → {$e->getMessage()}\n");
         }
     }
 
-    echo "\nFertig. Gesendet: {$sent}, Fehlgeschlagen: {$failed}\n";
+    cliAusgabe("\nFertig. Gesendet: {$sent}, Fehlgeschlagen: {$failed}\n");
 
 } catch (PDOException $e) {
     logError('Aufgaben-Erinnerung DB error: ' . $e->getMessage());
-    echo "Datenbankfehler: {$e->getMessage()}\n";
+    cliAusgabe("Datenbankfehler: {$e->getMessage()}\n");
     exit(1);
 }

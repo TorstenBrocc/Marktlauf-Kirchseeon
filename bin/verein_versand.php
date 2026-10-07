@@ -40,13 +40,13 @@ try {
 
     $gotLock = (int) $pdo->query("SELECT GET_LOCK('" . VEREIN_VERSAND_LOCK . "', 0)")->fetchColumn();
     if ($gotLock !== 1) {
-        echo "Ein anderer Versandlauf ist bereits aktiv (Lock gesetzt). Abbruch.\n";
+        cliAusgabe("Ein anderer Versandlauf ist bereits aktiv (Lock gesetzt). Abbruch.\n");
         exit(0);
     }
 
     if ($retry) {
         $reopened = $pdo->exec("UPDATE verein_versand_queue SET status = 'offen', fehler_text = NULL WHERE status = 'fehler'");
-        echo "Retry: {$reopened} fehlgeschlagene Einträge auf 'offen' zurückgesetzt.\n";
+        cliAusgabe("Retry: {$reopened} fehlgeschlagene Einträge auf 'offen' zurückgesetzt.\n");
     }
 
     $stmt = $pdo->query("
@@ -58,12 +58,12 @@ try {
     $jobs = $stmt->fetchAll();
 
     if (empty($jobs)) {
-        echo "Keine offenen Einträge in der Sende-Queue.\n";
+        cliAusgabe("Keine offenen Einträge in der Sende-Queue.\n");
         exit(0);
     }
 
     $total = count($jobs);
-    echo "Sende-Queue: {$total} Einträge, Delay {$delay}s pro Mail.\n\n";
+    cliAusgabe("Sende-Queue: {$total} Einträge, Delay {$delay}s pro Mail.\n\n");
 
     $sent = 0; $failed = 0; $i = 0;
 
@@ -88,18 +88,18 @@ try {
                 $markGesendet->execute(['id' => $job['id']]);
                 vereinMarkGesendet($pdo, (int) $job['verein_id'], (string) $job['anschreiben_typ']);
                 $sent++;
-                echo "✓ [{$i}/{$total}] {$job['name']} → {$job['email']}\n";
+                cliAusgabe("✓ [{$i}/{$total}] Queue #{$job['id']} · Verein #{$job['verein_id']} · {$job['anschreiben_typ']}\n");
             } else {
                 $markFehler->execute(['id' => $job['id'], 'fehler' => 'Mail nicht gesendet']);
                 $failed++;
                 logError("Verein-Versand fehlgeschlagen Queue #{$job['id']}: Mail nicht gesendet");
-                echo "✗ [{$i}/{$total}] {$job['name']} → {$job['email']} (fehlgeschlagen)\n";
+                cliAusgabe("✗ [{$i}/{$total}] Queue #{$job['id']} · Verein #{$job['verein_id']} · {$job['anschreiben_typ']} (fehlgeschlagen)\n");
             }
         } catch (Throwable $e) {
             $markFehler->execute(['id' => $job['id'], 'fehler' => mb_substr($e->getMessage(), 0, 500)]);
             $failed++;
             logError("Verein-Versand Exception Queue #{$job['id']}: " . $e->getMessage());
-            echo "✗ [{$i}/{$total}] {$job['name']} → Exception: {$e->getMessage()}\n";
+            cliAusgabe("✗ [{$i}/{$total}] Queue #{$job['id']} · Verein #{$job['verein_id']} → Exception: {$e->getMessage()}\n");
         }
 
         if ($i < $total && $delay > 0) {
@@ -108,12 +108,12 @@ try {
     }
 
     $pdo->query("SELECT RELEASE_LOCK('" . VEREIN_VERSAND_LOCK . "')");
-    echo "\nFertig. Gesendet: {$sent}, Fehlgeschlagen: {$failed}\n";
+    cliAusgabe("\nFertig. Gesendet: {$sent}, Fehlgeschlagen: {$failed}\n");
     if ($failed > 0) {
-        echo "Hinweis: {$failed} fehlgeschlagen — erneuter Versuch mit: php bin/verein_versand.php --retry\n";
+        cliAusgabe("Hinweis: {$failed} fehlgeschlagen — erneuter Versuch mit: php bin/verein_versand.php --retry\n");
     }
 } catch (PDOException $e) {
     logError('Verein-Versand CLI DB error: ' . $e->getMessage());
-    echo "Datenbankfehler: {$e->getMessage()}\n";
+    cliAusgabe("Datenbankfehler: {$e->getMessage()}\n");
     exit(1);
 }

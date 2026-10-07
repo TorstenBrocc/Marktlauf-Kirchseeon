@@ -146,6 +146,15 @@ richtig: `--delete` würde Renntag-Meldungen löschen. Gleiches Muster wie `spon
 zählt **je Kanal** (`ig_/fb_insights_versuche`); die alte Spalte `insights_versuche` wird nicht mehr
 geschrieben. Erreicht ein Kanal die Schwelle, zeigt die Auswertung „IG/FB nicht abrufbar“.
 
+**Was ein CLI-Skript ausgibt, ist öffentlich.** Die Skripte in `bin/`, die GitHub Actions per
+SSH startet (`sponsor_versand.yml`, `taegliche_erinnerung.yml`, …), schreiben ihr stdout ins
+Actions-Log — und das kann im öffentlichen Repo jeder angemeldete GitHub-Nutzer lesen
+(90 Tage). Bis 2026-10-07 standen dort Sponsor- und Mitgliederadressen samt Firmennamen.
+Deshalb: **Ausgaben nur über `cliAusgabe()` (`src/logger.php`) und nur mit IDs und Zählern**;
+Adressen, Namen, Firmen, Aufgabentitel höchstens in `logError()` (Server-Datei). `cliAusgabe()`
+maskiert jede E-Mail-Adresse als Sicherheitsnetz, und `lint.yml` schlägt an, wenn eine Ausgabe
+in `bin/` `['email']` einsetzt.
+
 ## MARKTLAUF = EIN PROJEKT IN ZWEI REPOS
 
 *Identischer Block in `intern/CLAUDE.md` und `website/CLAUDE.md` — Änderungen immer an beiden
