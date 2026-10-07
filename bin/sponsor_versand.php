@@ -45,13 +45,13 @@ try {
     // Nur ein Versandlauf gleichzeitig (Cron + manuell dürfen sich nicht überholen).
     $gotLock = (int) $pdo->query("SELECT GET_LOCK('" . SPONSOR_VERSAND_LOCK . "', 0)")->fetchColumn();
     if ($gotLock !== 1) {
-        echo "Ein anderer Versandlauf ist bereits aktiv (Lock gesetzt). Abbruch.\n";
+        cliAusgabe("Ein anderer Versandlauf ist bereits aktiv (Lock gesetzt). Abbruch.\n");
         exit(0);
     }
 
     if ($retry) {
         $reopened = $pdo->exec("UPDATE sponsor_versand_queue SET status = 'offen', fehler_text = NULL WHERE status = 'fehler'");
-        echo "Retry: {$reopened} fehlgeschlagene Einträge auf 'offen' zurückgesetzt.\n";
+        cliAusgabe("Retry: {$reopened} fehlgeschlagene Einträge auf 'offen' zurückgesetzt.\n");
     }
 
     $stmt = $pdo->query("
@@ -64,12 +64,12 @@ try {
     $jobs = $stmt->fetchAll();
 
     if (empty($jobs)) {
-        echo "Keine offenen Einträge in der Sende-Queue.\n";
+        cliAusgabe("Keine offenen Einträge in der Sende-Queue.\n");
         exit(0);
     }
 
     $total = count($jobs);
-    echo "Sende-Queue: {$total} Einträge, Delay {$delay}s pro Mail.\n\n";
+    cliAusgabe("Sende-Queue: {$total} Einträge, Delay {$delay}s pro Mail.\n\n");
 
     $sent = 0;
     $failed = 0;
@@ -117,22 +117,22 @@ try {
                     } catch (Throwable $e) {
                         // Mail ist raus; Beleg-Ablage nachholbar per Retry in der Maske.
                         logError('Beleg-Ablage (queue) Sponsor ' . (int) $job['sponsor_id'] . ': ' . $e->getMessage());
-                        echo "  ⚠ Beleg-Ablage fehlgeschlagen (Sponsor {$job['sponsor_id']}): {$e->getMessage()}\n";
+                        cliAusgabe("  ⚠ Beleg-Ablage fehlgeschlagen (Sponsor {$job['sponsor_id']}): {$e->getMessage()}\n");
                     }
                 }
                 $sent++;
-                echo "✓ [{$i}/{$total}] {$job['firma']} → {$job['email']}\n";
+                cliAusgabe("✓ [{$i}/{$total}] Queue #{$job['id']} · Sponsor #{$job['sponsor_id']} · {$job['anschreiben_typ']}\n");
             } else {
                 $markFehler->execute(['id' => $job['id'], 'fehler' => 'Mail nicht gesendet']);
                 $failed++;
                 logError("Sponsor-Versand fehlgeschlagen Queue #{$job['id']}: Mail nicht gesendet");
-                echo "✗ [{$i}/{$total}] {$job['firma']} → {$job['email']} (fehlgeschlagen)\n";
+                cliAusgabe("✗ [{$i}/{$total}] Queue #{$job['id']} · Sponsor #{$job['sponsor_id']} · {$job['anschreiben_typ']} (fehlgeschlagen)\n");
             }
         } catch (Throwable $e) {
             $markFehler->execute(['id' => $job['id'], 'fehler' => mb_substr($e->getMessage(), 0, 500)]);
             $failed++;
             logError("Sponsor-Versand Exception Queue #{$job['id']}: " . $e->getMessage());
-            echo "✗ [{$i}/{$total}] {$job['firma']} → Exception: {$e->getMessage()}\n";
+            cliAusgabe("✗ [{$i}/{$total}] Queue #{$job['id']} · Sponsor #{$job['sponsor_id']} → Exception: {$e->getMessage()}\n");
         }
 
         // Delay nur zwischen den Mails, nicht nach der letzten
@@ -142,12 +142,12 @@ try {
     }
 
     $pdo->query("SELECT RELEASE_LOCK('" . SPONSOR_VERSAND_LOCK . "')");
-    echo "\nFertig. Gesendet: {$sent}, Fehlgeschlagen: {$failed}\n";
+    cliAusgabe("\nFertig. Gesendet: {$sent}, Fehlgeschlagen: {$failed}\n");
     if ($failed > 0) {
-        echo "Hinweis: {$failed} fehlgeschlagen — erneuter Versuch mit: php bin/sponsor_versand.php --retry\n";
+        cliAusgabe("Hinweis: {$failed} fehlgeschlagen — erneuter Versuch mit: php bin/sponsor_versand.php --retry\n");
     }
 } catch (PDOException $e) {
     logError('Sponsor-Versand CLI DB error: ' . $e->getMessage());
-    echo "Datenbankfehler: {$e->getMessage()}\n";
+    cliAusgabe("Datenbankfehler: {$e->getMessage()}\n");
     exit(1);
 }

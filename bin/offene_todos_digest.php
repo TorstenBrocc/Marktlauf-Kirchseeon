@@ -100,7 +100,7 @@ try {
 
     // Frequenz-Drossel nur für den automatischen Lauf — manuelle Aufrufe bleiben ungebremst.
     if ($modusWarAuto && !reminderVersandtagHeute($pdo)) {
-        echo "Heute kein Versandtag (Versandtage/Pause in den Orga-Einstellungen) — keine Mail verschickt.\n";
+        cliAusgabe("Heute kein Versandtag (Versandtage/Pause in den Orga-Einstellungen) — keine Mail verschickt.\n");
         exit(0);
     }
 
@@ -271,9 +271,9 @@ try {
     }
 
     if ($proUser === []) {
-        echo $modus === 'neu'
+        cliAusgabe($modus === 'neu'
             ? "Heute nichts Neues — keine Mail verschickt.\n"
-            : "Keine offenen ToDos — keine Mail verschickt.\n";
+            : "Keine offenen ToDos — keine Mail verschickt.\n");
         exit(0);
     }
 
@@ -349,12 +349,12 @@ try {
         }
 
         if ($dryRun) {
-            echo "\n=== {$e['name']} <{$e['email']}> — {$anzahl} ToDos (Modus: {$modus})\n";
+            cliAusgabe("\n=== {$e['name']} (User #{$uid}) — {$anzahl} ToDos (Modus: {$modus})\n");
             foreach ($gruppen as $g) {
-                echo '  ' . $g['titel'] . ' (' . count($g['zeilen']) . ")\n";
+                cliAusgabe('  ' . $g['titel'] . ' (' . count($g['zeilen']) . ")\n");
                 foreach ($g['zeilen'] as $z) {
                     if (isset($z['mehr'])) {
-                        echo '    ' . $z['mehr'] . "\n";
+                        cliAusgabe('    ' . $z['mehr'] . "\n");
                         continue;
                     }
                     $werte = [];
@@ -364,7 +364,7 @@ try {
                             $werte[] = $t;
                         }
                     }
-                    echo '    • ' . implode(' · ', $werte) . "\n";
+                    cliAusgabe('    • ' . implode(' · ', $werte) . "\n");
                 }
             }
             $sent++;
@@ -374,26 +374,26 @@ try {
         try {
             if (sendOffeneTodosDigest((string) $e['email'], (string) $e['name'], $anzahl, $gruppen, $modus)) {
                 $sent++;
-                echo "✓ {$e['email']} ({$anzahl} ToDos)\n";
+                cliAusgabe("✓ User #{$uid} ({$anzahl} ToDos)\n");
             } else {
                 $failed++;
                 logError("Offene-ToDos-Digest: Mail an {$e['email']} nicht gesendet");
-                echo "✗ Fehlgeschlagen: {$e['email']}\n";
+                cliAusgabe("✗ Fehlgeschlagen: User #{$uid}\n");
             }
         } catch (Throwable $ex) {
             $failed++;
             logError("Offene-ToDos-Digest Exception für {$e['email']}: " . $ex->getMessage());
-            echo "✗ Exception: {$e['email']} — {$ex->getMessage()}\n";
+            cliAusgabe("✗ Exception: User #{$uid} — {$ex->getMessage()}\n");
         }
     }
 
     if ($dryRun) {
-        echo "\nTROCKENLAUF (Modus: {$modus}) — nichts verschickt. Empfänger mit Inhalt: {$sent}, ohne: {$uebersprungen}\n";
+        cliAusgabe("\nTROCKENLAUF (Modus: {$modus}) — nichts verschickt. Empfänger mit Inhalt: {$sent}, ohne: {$uebersprungen}\n");
         exit(0);
     }
-    echo "\nFertig (Modus: {$modus}). Gesendet: {$sent}, Fehlgeschlagen: {$failed}, ohne eigene ToDos: {$uebersprungen}\n";
+    cliAusgabe("\nFertig (Modus: {$modus}). Gesendet: {$sent}, Fehlgeschlagen: {$failed}, ohne eigene ToDos: {$uebersprungen}\n");
 } catch (PDOException $e) {
     logError('Offene-ToDos-Digest DB error: ' . $e->getMessage());
-    echo "Datenbankfehler: {$e->getMessage()}\n";
+    cliAusgabe("Datenbankfehler: {$e->getMessage()}\n");
     exit(1);
 }
