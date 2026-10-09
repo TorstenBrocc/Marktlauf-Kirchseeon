@@ -81,7 +81,7 @@ $isAdmin = isAdminFromGuard();
                 <ul class="fr-facts">
                     <li><span class="k">GA4-Property</span><span class="v">„Marktlauf Kirchseeon" (Konto „ATSV Kirchseeon", Zeitzone DE, EUR)</span></li>
                     <li><span class="k">Mess-ID</span><span class="v"><code>G-F04JYXVLT7</code> (in <code>js/consent.js</code>)</span></li>
-                    <li><span class="k">Consent</span><span class="v">eigener Banner + Consent Mode v2, strikt Opt-in; IP-Anonymisierung aktiv</span></li>
+                    <li><span class="k">Consent</span><span class="v">eigener Banner + Consent Mode v2, strikt Opt-in; EU-IP-Adressen speichert Google laut eigener Angabe nicht; Aufbewahrung 2 Monate</span></li>
                     <li><span class="k">Conversions</span><span class="v"><code>anmeldung_start</code>, <code>newsletter_confirmed</code>, <code>contact_sent</code> — in GA4 Realtime bestätigt</span></li>
                 </ul>
 
